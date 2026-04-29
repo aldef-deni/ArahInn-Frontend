@@ -1,0 +1,240 @@
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { promoApi } from '@/services/index'
+import { useToast } from '@/hooks/use-toast'
+import { useForm } from 'react-hook-form'
+import { formatRupiah, formatDateShort } from '@/utils'
+import { Plus, Tag, Zap, Edit2, Trash2, X, Save } from 'lucide-react'
+
+const TYPE_ICONS  = { voucher: Tag, flash_sale: Zap, loyalty: '⭐' }
+const TYPE_COLORS = {
+  voucher    : 'bg-blue-100 text-blue-700',
+  flash_sale : 'bg-orange-100 text-orange-700',
+  loyalty    : 'bg-purple-100 text-purple-700',
+}
+
+export default function AdminPromos() {
+  const { toast } = useToast()
+  const qc        = useQueryClient()
+  const [showForm, setShowForm] = useState(false)
+  const [editing, setEditing]   = useState(null)
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-promos'],
+    queryFn : () => promoApi.getActive().then(r => r.data.data),
+  })
+
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm()
+  const discountType = watch('discountType')
+
+  const saveMutation = useMutation({
+    mutationFn: (d) => editing ? promoApi.update(editing.id, d) : promoApi.create(d),
+    onSuccess : () => {
+      qc.invalidateQueries(['admin-promos'])
+      toast({ title: editing ? 'Promo diperbarui.' : 'Promo berhasil dibuat.' })
+      setShowForm(false); setEditing(null); reset()
+    },
+    onError: (e) => toast({ title: 'Gagal', description: e?.response?.data?.message, variant: 'destructive' }),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => promoApi.remove(id),
+    onSuccess : () => { qc.invalidateQueries(['admin-promos']); toast({ title: 'Promo dinonaktifkan.' }) },
+  })
+
+  const openEdit = (promo) => {
+    setEditing(promo); setShowForm(true)
+    reset({
+      name: promo.name, code: promo.code, type: promo.type,
+      discountType: promo.discountType, discountValue: promo.discountValue,
+      minPurchase: promo.minPurchase, maxDiscount: promo.maxDiscount,
+      quota: promo.quota, startDate: promo.startDate?.slice(0, 10), endDate: promo.endDate?.slice(0, 10),
+    })
+  }
+
+  const onClose = () => { setShowForm(false); setEditing(null); reset() }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-semibold text-lg">Manajemen Promo</h2>
+          <p className="text-muted-foreground text-sm">Kelola voucher, flash sale, dan program loyalitas</p>
+        </div>
+        <button onClick={() => { setEditing(null); reset(); setShowForm(true) }}
+          className="flex items-center gap-2 px-4 py-2.5 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-700 transition-colors shadow-sm">
+          <Plus className="w-4 h-4" /> Buat Promo
+        </button>
+      </div>
+
+      {/* Promo grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {isLoading
+          ? Array(4).fill(0).map((_, i) => <div key={i} className="skeleton h-48 rounded-2xl" />)
+          : data?.map(promo => {
+              const Icon = TYPE_ICONS[promo.type]
+              return (
+                <div key={promo.id} className="bg-white border rounded-2xl p-5 shadow-card hover:shadow-card-hover transition-shadow">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold ${TYPE_COLORS[promo.type]}`}>
+                      {typeof Icon === 'string' ? Icon : Icon && <Icon className="w-3.5 h-3.5" />}
+                      <span className="capitalize">{promo.type.replace('_', ' ')}</span>
+                    </div>
+                    <div className="flex gap-1">
+                      <button onClick={() => openEdit(promo)}
+                        className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                        <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
+                      </button>
+                      <button onClick={() => deleteMutation.mutate(promo.id)}
+                        className="p-1.5 rounded-lg hover:bg-red-50 transition-colors">
+                        <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <h3 className="font-semibold text-base mb-1 line-clamp-1">{promo.name}</h3>
+
+                  {promo.code && (
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-muted rounded-lg font-mono text-xs font-bold text-foreground mb-3">
+                      <Tag className="w-3 h-3" /> {promo.code}
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Diskon</span>
+                      <span className="font-semibold text-foreground">
+                        {promo.discountType === 'percent'
+                          ? `${promo.discountValue}%`
+                          : formatRupiah(promo.discountValue)}
+                      </span>
+                    </div>
+                    {promo.minPurchase > 0 && (
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Min. pembelian</span>
+                        <span>{formatRupiah(promo.minPurchase)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Kuota</span>
+                      <span>{promo.usedCount || 0} / {promo.quota ?? '∞'}</span>
+                    </div>
+                    {promo.endDate && (
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Berlaku hingga</span>
+                        <span>{formatDateShort(promo.endDate)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Progress bar */}
+                  {promo.quota && (
+                    <div className="mt-3">
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-brand rounded-full transition-all"
+                          style={{ width: `${Math.min(100, ((promo.usedCount || 0) / promo.quota) * 100)}%` }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })
+        }
+        {!isLoading && !data?.length && (
+          <div className="col-span-3 py-16 text-center text-muted-foreground">
+            <Tag className="w-10 h-10 mx-auto mb-3 opacity-30" />
+            <p>Belum ada promo aktif.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Form modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-white">
+              <h3 className="font-semibold">{editing ? 'Edit Promo' : 'Buat Promo Baru'}</h3>
+              <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit(d => saveMutation.mutate(d))} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-1.5">Nama Promo <span className="text-red-500">*</span></label>
+                  <input {...register('name', { required: true })}
+                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Tipe</label>
+                  <select {...register('type')} className="w-full px-3 py-2.5 border rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/50">
+                    <option value="voucher">Voucher</option>
+                    <option value="flash_sale">Flash Sale</option>
+                    <option value="loyalty">Loyalty</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Kode (opsional)</label>
+                  <input {...register('code')} placeholder="HEMAT50"
+                    className="w-full px-3 py-2.5 border rounded-xl text-sm uppercase focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Tipe Diskon</label>
+                  <select {...register('discountType')} className="w-full px-3 py-2.5 border rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/50">
+                    <option value="percent">Persentase (%)</option>
+                    <option value="fixed">Nominal (Rp)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Nilai Diskon</label>
+                  <input type="number" {...register('discountValue')}
+                    placeholder={discountType === 'percent' ? '20' : '50000'}
+                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Min. Pembelian</label>
+                  <input type="number" {...register('minPurchase')} placeholder="0"
+                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Maks. Diskon (Rp)</label>
+                  <input type="number" {...register('maxDiscount')} placeholder="Tidak terbatas"
+                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Kuota</label>
+                  <input type="number" {...register('quota')} placeholder="Tidak terbatas"
+                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Tanggal Mulai</label>
+                  <input type="date" {...register('startDate')}
+                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Tanggal Berakhir</label>
+                  <input type="date" {...register('endDate')}
+                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={onClose}
+                  className="flex-1 py-2.5 border rounded-xl text-sm font-medium hover:bg-muted transition-colors">
+                  Batal
+                </button>
+                <button type="submit" disabled={saveMutation.isPending}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-700 disabled:opacity-50 transition-colors">
+                  <Save className="w-4 h-4" />
+                  {saveMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

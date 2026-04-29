@@ -1,0 +1,50 @@
+{
+  "nav": {
+    "home": "Home", "search": "Search Hotels", "orders": "My Orders",
+    "profile": "Profile", "login": "Sign In", "register": "Register", "logout": "Sign Out", "admin": "Admin Panel"
+  },
+  "hero": {
+    "title": "Find Your Dream Stay",
+    "subtitle": "From 5-star hotels to exclusive villas — all available at the best prices.",
+    "cta": "Search Now"
+  },
+  "search": {
+    "destination": "City / Destination", "checkin": "Check-in", "checkout": "Check-out",
+    "guests": "Guests", "search": "Search", "results": "Search Results",
+    "noResults": "No hotels found.", "filter": "Filter", "sortBy": "Sort By"
+  },
+  "hotel": {
+    "perNight": "/ night", "available": "Available", "unavailable": "Unavailable",
+    "facilities": "Facilities", "rooms": "Rooms", "reviews": "Reviews", "book": "Book Now",
+    "stars": "stars", "checkAvail": "Check Availability"
+  },
+  "booking": {
+    "summary": "Booking Summary", "guestInfo": "Guest Information", "promo": "Promo Code",
+    "apply": "Apply", "total": "Total", "book": "Proceed to Payment",
+    "nights": "nights", "basePrice": "Base Price", "tax": "Tax (11%)",
+    "discount": "Discount", "markup": "Service Fee", "loyalty": "Loyalty Points"
+  },
+  "payment": {
+    "title": "Payment", "method": "Payment Method", "virtualAccount": "Virtual Account",
+    "transfer": "Bank Transfer", "ewallet": "E-Wallet", "pay": "Pay Now",
+    "timeLeft": "Payment Deadline", "success": "Payment Successful!", "failed": "Payment Failed"
+  },
+  "order": {
+    "history": "Order History", "detail": "Order Detail", "cancel": "Cancel",
+    "reschedule": "Reschedule", "all": "All", "status": "Status"
+  },
+  "auth": {
+    "login": "Sign In", "register": "Register", "email": "Email", "password": "Password",
+    "name": "Full Name", "phone": "Phone Number", "forgot": "Forgot Password?",
+    "orWith": "or sign in with", "haveAccount": "Already have an account?", "noAccount": "Don't have an account?"
+  },
+  "profile": {
+    "title": "My Profile", "edit": "Edit Profile", "loyalty": "My Points", "save": "Save"
+  },
+  "common": {
+    "loading": "Loading...", "error": "Something went wrong", "retry": "Try again",
+    "cancel": "Cancel", "confirm": "Confirm", "save": "Save", "delete": "Delete",
+    "edit": "Edit", "close": "Close", "back": "Back", "next": "Next",
+    "noData": "No data available", "id": "ID", "en": "EN"
+  }
+}

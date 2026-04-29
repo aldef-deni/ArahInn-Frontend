@@ -1,0 +1,50 @@
+{
+  "nav": {
+    "home": "Beranda", "search": "Cari Hotel", "orders": "Pesanan",
+    "profile": "Profil", "login": "Masuk", "register": "Daftar", "logout": "Keluar", "admin": "Panel Admin"
+  },
+  "hero": {
+    "title": "Temukan Penginapan Impian Anda",
+    "subtitle": "Dari hotel bintang 5 hingga villa eksklusif — semua tersedia dengan harga terbaik.",
+    "cta": "Cari Sekarang"
+  },
+  "search": {
+    "destination": "Kota / Tujuan", "checkin": "Check-in", "checkout": "Check-out",
+    "guests": "Tamu", "search": "Cari", "results": "Hasil Pencarian",
+    "noResults": "Tidak ada hotel ditemukan.", "filter": "Filter", "sortBy": "Urutkan"
+  },
+  "hotel": {
+    "perNight": "/ malam", "available": "Tersedia", "unavailable": "Tidak Tersedia",
+    "facilities": "Fasilitas", "rooms": "Kamar", "reviews": "Ulasan", "book": "Pesan Sekarang",
+    "stars": "bintang", "checkAvail": "Cek Ketersediaan"
+  },
+  "booking": {
+    "summary": "Ringkasan Booking", "guestInfo": "Data Tamu", "promo": "Kode Promo",
+    "apply": "Gunakan", "total": "Total", "book": "Lanjutkan Pembayaran",
+    "nights": "malam", "basePrice": "Harga Dasar", "tax": "Pajak (11%)",
+    "discount": "Diskon", "markup": "Biaya Layanan", "loyalty": "Poin Loyalitas"
+  },
+  "payment": {
+    "title": "Pembayaran", "method": "Metode Pembayaran", "virtualAccount": "Virtual Account",
+    "transfer": "Transfer Bank", "ewallet": "E-Wallet", "pay": "Bayar Sekarang",
+    "timeLeft": "Batas Waktu Pembayaran", "success": "Pembayaran Berhasil!", "failed": "Pembayaran Gagal"
+  },
+  "order": {
+    "history": "Riwayat Pesanan", "detail": "Detail Pesanan", "cancel": "Batalkan",
+    "reschedule": "Jadwal Ulang", "all": "Semua", "status": "Status"
+  },
+  "auth": {
+    "login": "Masuk", "register": "Daftar", "email": "Email", "password": "Password",
+    "name": "Nama Lengkap", "phone": "Nomor Telepon", "forgot": "Lupa Password?",
+    "orWith": "atau masuk dengan", "haveAccount": "Sudah punya akun?", "noAccount": "Belum punya akun?"
+  },
+  "profile": {
+    "title": "Profil Saya", "edit": "Edit Profil", "loyalty": "Poin Saya", "save": "Simpan"
+  },
+  "common": {
+    "loading": "Memuat...", "error": "Terjadi kesalahan", "retry": "Coba lagi",
+    "cancel": "Batal", "confirm": "Konfirmasi", "save": "Simpan", "delete": "Hapus",
+    "edit": "Edit", "close": "Tutup", "back": "Kembali", "next": "Lanjut",
+    "noData": "Tidak ada data", "id": "ID", "en": "EN"
+  }
+}
