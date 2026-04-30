@@ -85,7 +85,15 @@
 
   /* Hero gradient */
   .hero-gradient {
-    background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 40%, #2563eb 70%, #3b82f6 100%);
+    background:
+      linear-gradient(to right,
+        rgba(15, 40, 110, 0.93) 0%,
+        rgba(20, 60, 160, 0.82) 40%,
+        rgba(30, 80, 180, 0.55) 70%,
+        rgba(30, 80, 180, 0.35) 100%
+      ),
+      url('https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1920&q=85')
+      center / cover no-repeat;
   }
 
   /* Glass card */

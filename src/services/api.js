@@ -1,6 +1,32 @@
 import axios from 'axios'
 import { useAuthStore } from '@/store/authStore'
 
+const isPlainObject = (value) =>
+  Object.prototype.toString.call(value) === '[object Object]'
+
+const toSnakeKey = (key) =>
+  key.replace(/([A-Z])/g, '_$1').toLowerCase()
+
+const toCamelKey = (key) =>
+  key.replace(/_([a-z])/g, (_, char) => char.toUpperCase())
+
+const convertKeysDeep = (value, keyConverter) => {
+  if (Array.isArray(value)) {
+    return value.map(item => convertKeysDeep(item, keyConverter))
+  }
+
+  if (!isPlainObject(value)) {
+    return value
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, nestedValue]) => [
+      keyConverter(key),
+      convertKeysDeep(nestedValue, keyConverter),
+    ])
+  )
+}
+
 const api = axios.create({
   baseURL        : import.meta.env.VITE_API_URL || '/api/v1',
   timeout        : 30000,
@@ -12,12 +38,27 @@ const api = axios.create({
 api.interceptors.request.use(config => {
   const token = useAuthStore.getState().token
   if (token) config.headers.Authorization = `Bearer ${token}`
+
+  if (config.params) {
+    config.params = convertKeysDeep(config.params, toSnakeKey)
+  }
+
+  if (config.data && isPlainObject(config.data)) {
+    config.data = convertKeysDeep(config.data, toSnakeKey)
+  }
+
   return config
 })
 
 // ── Response interceptor: handle 401 / refresh ────────
 api.interceptors.response.use(
-  res => res,
+  res => {
+    if (res.data) {
+      res.data = convertKeysDeep(res.data, toCamelKey)
+    }
+
+    return res
+  },
   async err => {
     const original = err.config
     if (err.response?.status === 401 && !original._retry) {

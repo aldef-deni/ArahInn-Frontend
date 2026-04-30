@@ -1,14 +1,15 @@
 import api from './api'
 
 export const bookingApi = {
-  calcPrice   : (d)    => api.post('/bookings/calculate-price', d),
-  create      : (d)    => api.post('/bookings', d),
-  myOrders    : (p)    => api.get('/bookings/my-orders', { params: p }),
-  getById     : (id)   => api.get(`/bookings/${id}`),
-  cancel      : (id)   => api.put(`/bookings/${id}/cancel`),
-  reschedule  : (id,d) => api.put(`/bookings/${id}/reschedule`, d),
-  refund      : (id)   => api.post(`/bookings/${id}/refund`),
-  getAll      : (p)    => api.get('/bookings', { params: p }),
+  calcPrice    : (d)      => api.post('/bookings/calculate-price', d),
+  create       : (d)      => api.post('/bookings', d),
+  myOrders     : (p)      => api.get('/bookings/my-orders', { params: p }),
+  getById      : (id)     => api.get(`/bookings/${id}`),
+  cancel       : (id)     => api.put(`/bookings/${id}/cancel`),
+  reschedule   : (id, d)  => api.put(`/bookings/${id}/reschedule`, d),
+  refund       : (id)     => api.post(`/bookings/${id}/refund`),
+  getAll       : (p)      => api.get('/bookings', { params: p }),
+  updateStatus : (id, d)  => api.put(`/orders/${id}/status`, d),
 }
 
 export const paymentApi = {
@@ -18,6 +19,7 @@ export const paymentApi = {
 }
 
 export const promoApi = {
+  getAll      : ()     => api.get('/promos'),
   getActive   : ()     => api.get('/promos/active'),
   flashSales  : ()     => api.get('/promos/flash-sales'),
   validate    : (d)    => api.post('/promos/validate', d),
@@ -32,24 +34,51 @@ export const promoApi = {
 }
 
 export const adminApi = {
-  dashboard   : ()     => api.get('/admin/dashboard'),
-  revenue     : (p)    => api.get('/admin/reports/revenue', { params: p }),
-  bookings    : (p)    => api.get('/admin/reports/bookings', { params: p }),
-  canceled    : (p)    => api.get('/admin/reports/canceled', { params: p }),
-  logs        : (p)    => api.get('/admin/logs', { params: p }),
-  pending     : ()     => api.get('/admin/hotels/pending'),
-  gateways    : ()     => api.get('/admin/settings/payment-gateways'),
-  setGateway  : (d)    => api.post('/admin/settings/payment-gateways', d),
+  dashboard      : ()       => api.get('/admin/dashboard'),
+  revenue        : (p)      => api.get('/admin/reports/revenue', { params: p }),
+  bookings       : (p)      => api.get('/admin/reports/bookings', { params: p }),
+  canceled       : (p)      => api.get('/admin/reports/canceled', { params: p }),
+  logs           : (p)      => api.get('/admin/logs', { params: p }),
+  gateways       : ()       => api.get('/admin/settings/payment-gateways'),
+  setGateway     : (d)      => api.post('/admin/settings/payment-gateways', d),
+  // Hotels CRUD
+  hotels         : (p)      => api.get('/admin/hotels', { params: p }),
+  pendingHotels  : ()       => api.get('/admin/hotels/pending'),
+  createHotel    : (d)      => d instanceof FormData
+    ? api.post('/admin/hotels', d, { headers: { 'Content-Type': 'multipart/form-data' } })
+    : api.post('/admin/hotels', d),
+  updateHotel    : (id, d)  => {
+    if (d instanceof FormData) {
+      if (!d.has('_method')) d.append('_method', 'PUT')
+      return api.post(`/admin/hotels/${id}`, d, { headers: { 'Content-Type': 'multipart/form-data' } })
+    }
+    return api.put(`/admin/hotels/${id}`, d)
+  },
+  deleteHotel    : (id)     => api.delete(`/admin/hotels/${id}`),
+  approveHotel   : (id)     => api.post(`/admin/hotels/${id}/approve`),
+  blockHotel     : (id)     => api.post(`/admin/hotels/${id}/block`),
 }
 
 export const userApi = {
-  profile     : ()     => api.get('/users/profile'),
-  update      : (d)    => api.put('/users/profile', d),
-  avatar      : (d)    => api.post('/users/profile/avatar', d, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  password    : (d)    => api.put('/users/change-password', d),
-  getAll      : (p)    => api.get('/users', { params: p }),
-  changeRole  : (id,d) => api.put(`/users/${id}/role`, d),
-  toggleStatus: (id)   => api.put(`/users/${id}/status`),
+  profile      : ()       => api.get('/users/profile'),
+  update       : (d)      => api.put('/users/profile', d),
+  avatar       : (d)      => api.post('/users/profile/avatar', d, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  password     : (d)      => api.put('/users/change-password', d),
+  getAll       : (p)      => api.get('/users', { params: p }),
+  getById      : (id)     => api.get(`/users/${id}`),
+  changeRole   : (id, d)  => api.put(`/users/${id}/role`, d),
+  toggleStatus : (id)     => api.put(`/users/${id}/status`),
+  // Superadmin CRUD
+  create       : (d)      => api.post('/users', d),
+  adminUpdate  : (id, d)  => api.put(`/users/${id}`, d),
+  delete       : (id)     => api.delete(`/users/${id}`),
+}
+
+export const chatApi = {
+  ownerRooms  : ()       => api.get('/chat/owner-rooms'),
+  createRoom  : (d)      => api.post('/chat/rooms', d),
+  messages    : (id)     => api.get(`/chat/rooms/${id}/messages`),
+  send        : (id, d)  => api.post(`/chat/rooms/${id}/messages`, d),
 }
 
 export const authApi = {

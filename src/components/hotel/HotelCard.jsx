@@ -1,20 +1,25 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Star, MapPin, Wifi, Car, Waves } from 'lucide-react'
 import { formatRupiah } from '@/utils'
+import { useTranslation } from 'react-i18next'
 
 const facilityIcons = { wifi: Wifi, parking: Car, pool: Waves }
 const facilityLabels = { wifi: 'WiFi', parking: 'Parkir', pool: 'Kolam', gym: 'Gym', spa: 'Spa', restaurant: 'Resto' }
 
 export default function HotelCard({ hotel }) {
+  const { t } = useTranslation()
   const lowestPrice = hotel.rooms?.[0]?.basePrice
+  const [imgError, setImgError] = useState(false)
 
   return (
     <Link to={`/hotel/${hotel.id}`}
       className="group bg-white rounded-2xl overflow-hidden border shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5 block">
       {/* Image */}
       <div className="relative h-48 overflow-hidden bg-muted">
-        {hotel.images?.[0] ? (
+        {hotel.images?.[0] && !imgError ? (
           <img src={hotel.images[0]} alt={hotel.name}
+            onError={() => setImgError(true)}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand/20 to-brand/5">
@@ -68,7 +73,7 @@ export default function HotelCard({ hotel }) {
                 <p className="text-xs text-muted-foreground">/ malam</p>
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">Hubungi kami</p>
+              <p className="text-sm text-muted-foreground">{t('hotel.contactUs')}</p>
             )}
           </div>
           <span className="px-3 py-1.5 bg-brand text-white text-xs font-semibold rounded-lg group-hover:bg-brand-700 transition-colors">

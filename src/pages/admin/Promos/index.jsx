@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { promoApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { useForm } from 'react-hook-form'
 import { formatRupiah, formatDateShort } from '@/utils'
-import { Plus, Tag, Zap, Edit2, Trash2, X, Save } from 'lucide-react'
+import { Plus, Tag, Zap, Edit2, Trash2, X, Save, ToggleLeft, ToggleRight } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
 
 const TYPE_ICONS  = { voucher: Tag, flash_sale: Zap, loyalty: '⭐' }
 const TYPE_COLORS = {
@@ -21,11 +22,15 @@ export default function AdminPromos() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-promos'],
-    queryFn : () => promoApi.getActive().then(r => r.data.data),
+    queryFn : () => promoApi.getAll().then(r => r.data.data),
   })
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm()
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm({
+    defaultValues: { type: 'voucher', discountType: 'percent', discountValue: 0, minPurchase: 0 }
+  })
   const discountType = watch('discountType')
+  const startDate    = watch('startDate')
+  const endDate      = watch('endDate')
 
   const saveMutation = useMutation({
     mutationFn: (d) => editing ? promoApi.update(editing.id, d) : promoApi.create(d),
@@ -39,7 +44,22 @@ export default function AdminPromos() {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => promoApi.remove(id),
-    onSuccess : () => { qc.invalidateQueries(['admin-promos']); toast({ title: 'Promo dinonaktifkan.' }) },
+    onSuccess : () => { qc.invalidateQueries(['admin-promos']); toast({ title: 'Promo dihapus.' }) },
+    onError   : (e) => toast({ title: 'Gagal hapus', description: e?.response?.data?.message, variant: 'destructive' }),
+  })
+
+  const handleDelete = (promo) => {
+    if (!window.confirm(`Hapus promo "${promo.name}"? Tindakan ini tidak bisa dibatalkan.`)) return
+    deleteMutation.mutate(promo.id)
+  }
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, isActive }) => promoApi.update(id, { isActive }),
+    onSuccess : (_, { isActive }) => {
+      qc.invalidateQueries(['admin-promos'])
+      toast({ title: isActive ? 'Promo diaktifkan.' : 'Promo dinonaktifkan.' })
+    },
+    onError: (e) => toast({ title: 'Gagal', description: e?.response?.data?.message, variant: 'destructive' }),
   })
 
   const openEdit = (promo) => {
@@ -75,7 +95,7 @@ export default function AdminPromos() {
           : data?.map(promo => {
               const Icon = TYPE_ICONS[promo.type]
               return (
-                <div key={promo.id} className="bg-white border rounded-2xl p-5 shadow-card hover:shadow-card-hover transition-shadow">
+                <div key={promo.id} className={`bg-white border rounded-2xl p-5 shadow-card hover:shadow-card-hover transition-shadow ${!promo.isActive ? 'opacity-60' : ''}`}>
                   <div className="flex items-start justify-between mb-3">
                     <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold ${TYPE_COLORS[promo.type]}`}>
                       {typeof Icon === 'string' ? Icon : Icon && <Icon className="w-3.5 h-3.5" />}
@@ -86,8 +106,9 @@ export default function AdminPromos() {
                         className="p-1.5 rounded-lg hover:bg-muted transition-colors">
                         <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
                       </button>
-                      <button onClick={() => deleteMutation.mutate(promo.id)}
-                        className="p-1.5 rounded-lg hover:bg-red-50 transition-colors">
+                      <button onClick={() => handleDelete(promo)}
+                        disabled={deleteMutation.isPending}
+                        className="p-1.5 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50">
                         <Trash2 className="w-3.5 h-3.5 text-red-500" />
                       </button>
                     </div>
@@ -137,6 +158,22 @@ export default function AdminPromos() {
                       </div>
                     </div>
                   )}
+
+                  {/* Active toggle */}
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t">
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${promo.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                      {promo.isActive ? 'Aktif' : 'Nonaktif'}
+                    </span>
+                    <button
+                      onClick={() => toggleMutation.mutate({ id: promo.id, isActive: !promo.isActive })}
+                      disabled={toggleMutation.isPending}
+                      title={promo.isActive ? 'Nonaktifkan promo' : 'Aktifkan promo'}
+                      className="disabled:opacity-50 transition-opacity">
+                      {promo.isActive
+                        ? <ToggleRight className="w-8 h-8 text-green-500" />
+                        : <ToggleLeft  className="w-8 h-8 text-gray-400" />}
+                    </button>
+                  </div>
                 </div>
               )
             })
@@ -210,13 +247,23 @@ export default function AdminPromos() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Tanggal Mulai</label>
-                  <input type="date" {...register('startDate')}
-                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                  <div className="relative w-full px-3 py-2.5 border rounded-xl text-sm focus-within:ring-2 focus-within:ring-brand/50 cursor-pointer">
+                    <span className="block text-foreground pointer-events-none">
+                      {startDate ? format(parseISO(startDate), 'dd/MM/yyyy') : <span className="text-muted-foreground">DD/MM/YYYY</span>}
+                    </span>
+                    <input type="date" {...register('startDate')}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Tanggal Berakhir</label>
-                  <input type="date" {...register('endDate')}
-                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                  <div className="relative w-full px-3 py-2.5 border rounded-xl text-sm focus-within:ring-2 focus-within:ring-brand/50 cursor-pointer">
+                    <span className="block text-foreground pointer-events-none">
+                      {endDate ? format(parseISO(endDate), 'dd/MM/yyyy') : <span className="text-muted-foreground">DD/MM/YYYY</span>}
+                    </span>
+                    <input type="date" {...register('endDate')}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" />
+                  </div>
                 </div>
               </div>
 

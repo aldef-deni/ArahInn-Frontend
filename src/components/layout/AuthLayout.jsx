@@ -1,21 +1,31 @@
 import { Outlet, Link } from 'react-router-dom'
-import { Hotel } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { ArrowLeft } from 'lucide-react'
 
 export default function AuthLayout() {
+  const { i18n } = useTranslation()
+
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* Left: Form */}
       <div className="flex flex-col justify-center px-6 py-12 lg:px-16 bg-white">
         <div className="mx-auto w-full max-w-sm">
           <Link to="/" className="flex items-center gap-2 mb-10 group">
-            <div className="w-9 h-9 rounded-xl bg-brand flex items-center justify-center shadow-brand/30 shadow-md">
-              <Hotel className="w-5 h-5 text-white" />
-            </div>
+            <img src="/logo.png" alt="Arahinn" className="h-10 w-auto" />
             <span className="font-display font-bold text-2xl text-brand-800">
               ARAHINN
             </span>
           </Link>
           <Outlet />
+
+          {/* Back to Home */}
+          <div className="mt-8 pt-6 border-t border-muted">
+            <Link to="/"
+              className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-brand-700 transition-colors group">
+              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+              {i18n.language === 'id' ? 'Kembali ke Beranda' : 'Back to Home'}
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -26,7 +36,7 @@ export default function AuthLayout() {
         />
         <div className="relative h-full flex flex-col justify-center items-center text-white px-12 text-center">
           <div className="w-24 h-24 rounded-3xl bg-white/20 flex items-center justify-center mb-8 shadow-2xl">
-            <Hotel className="w-14 h-14" />
+            <img src="/logo.png" alt="Arahinn" className="w-20 h-20 object-contain" />
           </div>
           <h2 className="font-display text-4xl font-bold mb-4 leading-tight">
             Temukan Penginapan<br />Impian Anda

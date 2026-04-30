@@ -6,14 +6,16 @@ import { authApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import { useTranslation } from 'react-i18next'
-import { Eye, EyeOff, Mail, Lock, User, Phone, UserPlus } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, User, Phone, UserPlus, CheckCircle2, X } from 'lucide-react'
 
 export default function Register() {
   const { t }     = useTranslation()
   const navigate  = useNavigate()
   const setAuth   = useAuthStore(s => s.setAuth)
   const { toast } = useToast()
-  const [showPass, setShowPass] = useState(false)
+  const [showPass,    setShowPass]    = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [registeredEmail, setEmail]   = useState('')
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm()
   const password = watch('password')
@@ -23,11 +25,13 @@ export default function Register() {
     onSuccess : (r) => {
       const { user, accessToken, refreshToken } = r.data.data
       setAuth(user, accessToken, refreshToken)
-      toast({ title: 'Selamat datang! 🎉', description: 'Akun berhasil dibuat.' })
-      navigate('/')
+      setEmail(user.email)
+      setShowSuccess(true)
     },
     onError: (e) => toast({ title: 'Registrasi gagal', description: e?.response?.data?.message || 'Coba lagi.', variant: 'destructive' }),
   })
+
+  const handleClose = () => { setShowSuccess(false); navigate('/') }
 
   const onSubmit = ({ confirmPassword, ...d }) => mutation.mutate(d)
 
@@ -38,6 +42,42 @@ export default function Register() {
   ]
 
   return (
+    <>
+    {/* Success popup */}
+    {showSuccess && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-fade-in">
+          <div className="flex justify-end px-5 pt-4">
+            <button onClick={handleClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+              <X className="w-5 h-5 text-slate-400" />
+            </button>
+          </div>
+          <div className="px-8 pb-8 text-center space-y-4">
+            <div className="flex justify-center">
+              <CheckCircle2 className="w-16 h-16 text-emerald-500" />
+            </div>
+            <div>
+              <h3 className="font-display text-xl font-bold text-slate-900">
+                Terima kasih sudah mendaftar di Arahinn.com!
+              </h3>
+              <p className="mt-1 text-sm text-slate-500">Akun Anda berhasil dibuat.</p>
+            </div>
+            <div className="bg-blue-50 rounded-xl px-5 py-4 text-left space-y-1.5">
+              <p className="text-sm font-semibold text-blue-800">Verifikasi Email</p>
+              <p className="text-sm text-blue-700 leading-relaxed">
+                Kami telah mengirimkan email sambutan ke <span className="font-semibold">{registeredEmail}</span>.
+                Silakan cek kotak masuk Anda (termasuk folder <em>Spam</em>) untuk mengkonfirmasi akun.
+              </p>
+            </div>
+            <button onClick={handleClose}
+              className="w-full py-3 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 transition-colors shadow-sm">
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
     <div className="animate-fade-in">
       <h2 className="font-display text-3xl font-bold mb-2">{t('auth.register')}</h2>
       <p className="text-muted-foreground mb-8">{t('auth.haveAccount')}{' '}
@@ -65,8 +105,8 @@ export default function Register() {
           <label className="block text-sm font-medium mb-1.5">{t('auth.password')} <span className="text-red-500">*</span></label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input type={showPass ? 'text' : 'password'} placeholder="Minimal 8 karakter"
-              {...register('password', { required: 'Password wajib diisi', minLength: { value: 8, message: 'Minimal 8 karakter' } })}
+            <input type={showPass ? 'text' : 'password'} placeholder="Minimal 6 karakter"
+              {...register('password', { required: 'Password wajib diisi', minLength: { value: 6, message: 'Minimal 6 karakter' } })}
               className="w-full pl-10 pr-10 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand" />
             <button type="button" onClick={() => setShowPass(!showPass)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
@@ -103,5 +143,6 @@ export default function Register() {
         </p>
       </form>
     </div>
+    </>
   )
 }

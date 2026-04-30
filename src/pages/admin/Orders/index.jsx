@@ -1,20 +1,56 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { bookingApi } from '@/services/index'
+import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah, formatDateShort, statusBadgeClass, statusLabel } from '@/utils'
-import { Search, Filter, Download, RefreshCw } from 'lucide-react'
+import { Download, CheckCircle2, X, AlertTriangle } from 'lucide-react'
 
 const STATUSES = ['','pending','paid','issued','canceled','refunded','rescheduled']
 
+// ── Confirm approve dialog ────────────────────────────────
+function ApproveConfirm({ order, onClose, onConfirm, isLoading }) {
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+          <CheckCircle2 className="w-7 h-7 text-emerald-600" />
+        </div>
+        <h3 className="text-lg font-bold text-slate-900 mb-1">Konfirmasi Pesanan?</h3>
+        <p className="text-sm text-slate-500 mb-1">
+          Kode booking: <span className="font-mono font-bold text-brand">{order.bookingCode}</span>
+        </p>
+        <p className="text-sm text-slate-500 mb-1">{order.guestName || order.user?.name}</p>
+        <p className="text-xs text-slate-400 mb-6">
+          Status akan berubah ke <strong className="text-emerald-600">Issued</strong>.
+          Email konfirmasi + poin loyalitas akan dikirim otomatis ke tamu.
+        </p>
+        <div className="flex gap-3">
+          <button onClick={onClose}
+            className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">
+            Batal
+          </button>
+          <button onClick={onConfirm} disabled={isLoading}
+            className="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-colors">
+            {isLoading ? 'Memproses...' : 'Ya, Konfirmasi'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminOrders() {
+  const { user }  = useAuthStore()
   const { toast } = useToast()
   const qc        = useQueryClient()
-  const [search, setSearch]   = useState('')
-  const [status, setStatus]   = useState('')
-  const [dateFrom, setFrom]   = useState('')
-  const [dateTo, setTo]       = useState('')
-  const [page, setPage]       = useState(1)
+  const isSuperAdmin = user?.role === 'superadmin'
+
+  const [status, setStatus]         = useState('')
+  const [dateFrom, setFrom]         = useState('')
+  const [dateTo, setTo]             = useState('')
+  const [page, setPage]             = useState(1)
+  const [approveTarget, setApprove] = useState(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-orders', status, dateFrom, dateTo, page],
@@ -29,6 +65,17 @@ export default function AdminOrders() {
   const cancelMutation = useMutation({
     mutationFn: (id) => bookingApi.cancel(id),
     onSuccess : () => { qc.invalidateQueries(['admin-orders']); toast({ title: 'Booking dibatalkan.' }) },
+    onError   : (e) => toast({ title: 'Gagal membatalkan', description: e?.response?.data?.message, variant: 'destructive' }),
+  })
+
+  const approveMutation = useMutation({
+    mutationFn: (id) => bookingApi.updateStatus(id, { status: 'issued' }),
+    onSuccess : () => {
+      qc.invalidateQueries(['admin-orders'])
+      toast({ title: 'Pesanan dikonfirmasi.', description: 'Email & poin loyalitas telah dikirim ke tamu.' })
+      setApprove(null)
+    },
+    onError: (e) => toast({ title: 'Gagal konfirmasi', description: e?.response?.data?.message, variant: 'destructive' }),
   })
 
   const exportCSV = () => {
@@ -105,12 +152,25 @@ export default function AdminOrders() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        {['pending','paid'].includes(order.status) && (
-                          <button onClick={() => cancelMutation.mutate(order.id)}
-                            className="px-3 py-1.5 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
-                            Batalkan
-                          </button>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          {/* Approve — superadmin only, for pending/paid */}
+                          {isSuperAdmin && ['pending','paid'].includes(order.status) && (
+                            <button onClick={() => setApprove(order)}
+                              className="flex items-center gap-1 px-3 py-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors font-medium whitespace-nowrap">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              Konfirmasi
+                            </button>
+                          )}
+                          {/* Cancel */}
+                          {['pending','paid'].includes(order.status) && (
+                            <button onClick={() => cancelMutation.mutate(order.id)}
+                              disabled={cancelMutation.isPending}
+                              className="flex items-center gap-1 px-3 py-1.5 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors whitespace-nowrap">
+                              <X className="w-3.5 h-3.5" />
+                              Batalkan
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -132,6 +192,16 @@ export default function AdminOrders() {
               }`}>{p}</button>
           ))}
         </div>
+      )}
+
+      {/* Approve confirm dialog */}
+      {approveTarget && (
+        <ApproveConfirm
+          order={approveTarget}
+          onClose={() => setApprove(null)}
+          onConfirm={() => approveMutation.mutate(approveTarget.id)}
+          isLoading={approveMutation.isPending}
+        />
       )}
     </div>
   )

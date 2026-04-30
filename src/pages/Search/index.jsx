@@ -75,10 +75,10 @@ export default function SearchPage() {
             className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand" />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">Tamu</label>
+          <label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">{t('search.guests')}</label>
           <select value={form.guests} onChange={e => setForm({...form, guests: e.target.value})}
             className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand bg-white">
-            {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} Tamu</option>)}
+            {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} {t('search.guestUnit')}</option>)}
           </select>
         </div>
         <div className="flex items-end gap-2">

@@ -1,7 +1,8 @@
 {
   "nav": {
     "home": "Home", "search": "Search Hotels", "orders": "My Orders",
-    "profile": "Profile", "login": "Sign In", "register": "Register", "logout": "Sign Out", "admin": "Admin Panel"
+    "profile": "Profile", "login": "Sign In", "register": "Register", "logout": "Sign Out", "admin": "Admin Panel",
+    "logoutSuccess": "Signed out successfully.", "logoutBye": "See you soon!"
   },
   "hero": {
     "title": "Find Your Dream Stay",
@@ -10,13 +11,13 @@
   },
   "search": {
     "destination": "City / Destination", "checkin": "Check-in", "checkout": "Check-out",
-    "guests": "Guests", "search": "Search", "results": "Search Results",
+    "guests": "Guests", "guestUnit": "Guest", "search": "Search", "results": "Search Results",
     "noResults": "No hotels found.", "filter": "Filter", "sortBy": "Sort By"
   },
   "hotel": {
     "perNight": "/ night", "available": "Available", "unavailable": "Unavailable",
     "facilities": "Facilities", "rooms": "Rooms", "reviews": "Reviews", "book": "Book Now",
-    "stars": "stars", "checkAvail": "Check Availability"
+    "stars": "stars", "checkAvail": "Check Availability", "contactUs": "Contact us"
   },
   "booking": {
     "summary": "Booking Summary", "guestInfo": "Guest Information", "promo": "Promo Code",
@@ -36,10 +37,47 @@
   "auth": {
     "login": "Sign In", "register": "Register", "email": "Email", "password": "Password",
     "name": "Full Name", "phone": "Phone Number", "forgot": "Forgot Password?",
-    "orWith": "or sign in with", "haveAccount": "Already have an account?", "noAccount": "Don't have an account?"
+    "orWith": "or sign in with", "haveAccount": "Already have an account?", "noAccount": "Don't have an account?",
+    "welcome": "Welcome, {{name}}! 👋"
   },
   "profile": {
     "title": "My Profile", "edit": "Edit Profile", "loyalty": "My Points", "save": "Save"
+  },
+  "footer": {
+    "services": "Services", "help": "Help", "followUs": "Follow Us",
+    "contactUs": "Contact Us", "copyright": "All rights reserved.",
+    "searchHotel": "Search Hotels", "flashSale": "Flash Sale",
+    "specialPromo": "Special Promos", "loyaltyProgram": "Loyalty Program",
+    "helpCenter": "Help Center", "terms": "Terms & Conditions",
+    "privacy": "Privacy Policy", "contactLink": "Contact Us",
+    "description": "ArahInn is an integrated platform that makes it easy to plan your trip and meet your daily needs. From accommodation bookings and transportation tickets to other supporting services — all designed to deliver a practical, safe, and trusted experience. With competitive prices and curated options, ArahInn is your reliable partner every step of the way."
+  },
+  "home": {
+    "hotelsAvailable": "500+ hotels available today",
+    "popular": "Popular",
+    "flashSaleOff": "Up to {{value}}% OFF · Limited time!",
+    "claimNow": "Claim Now →",
+    "featuredHotels": "Featured Hotels",
+    "featuredSubtitle": "Most popular properties this week",
+    "viewAll": "View All",
+    "whyTitle": "Why Choose ArahInn?",
+    "whySubtitle": "We prioritize your comfort and trust",
+    "instantBooking": "Instant Booking",
+    "instantBookingDesc": "Instant confirmation in seconds",
+    "securePay": "Secure Payment",
+    "securePayDesc": "256-bit encryption for every transaction",
+    "cs247": "24/7 Support",
+    "cs247Desc": "Our team is ready to help anytime",
+    "bestPrice": "Best Price Guarantee",
+    "bestPriceDesc": "We match the best prices for you",
+    "promoTitle": "Promos & Campaigns",
+    "promoSubtitle": "Limited-time offers — don't miss out!",
+    "promoUntil": "Valid until",
+    "promoMinPurchase": "Min. purchase",
+    "promoQuota": "Remaining",
+    "promoCopyCode": "Copy code",
+    "promoCopied": "Copied!",
+    "promoShop": "Book Now"
   },
   "common": {
     "loading": "Loading...", "error": "Something went wrong", "retry": "Try again",

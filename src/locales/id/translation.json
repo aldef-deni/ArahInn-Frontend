@@ -1,7 +1,8 @@
 {
   "nav": {
     "home": "Beranda", "search": "Cari Hotel", "orders": "Pesanan",
-    "profile": "Profil", "login": "Masuk", "register": "Daftar", "logout": "Keluar", "admin": "Panel Admin"
+    "profile": "Profil", "login": "Masuk", "register": "Daftar", "logout": "Keluar", "admin": "Panel Admin",
+    "logoutSuccess": "Berhasil keluar.", "logoutBye": "Sampai jumpa!"
   },
   "hero": {
     "title": "Temukan Penginapan Impian Anda",
@@ -10,13 +11,13 @@
   },
   "search": {
     "destination": "Kota / Tujuan", "checkin": "Check-in", "checkout": "Check-out",
-    "guests": "Tamu", "search": "Cari", "results": "Hasil Pencarian",
+    "guests": "Tamu", "guestUnit": "Tamu", "search": "Cari", "results": "Hasil Pencarian",
     "noResults": "Tidak ada hotel ditemukan.", "filter": "Filter", "sortBy": "Urutkan"
   },
   "hotel": {
     "perNight": "/ malam", "available": "Tersedia", "unavailable": "Tidak Tersedia",
     "facilities": "Fasilitas", "rooms": "Kamar", "reviews": "Ulasan", "book": "Pesan Sekarang",
-    "stars": "bintang", "checkAvail": "Cek Ketersediaan"
+    "stars": "bintang", "checkAvail": "Cek Ketersediaan", "contactUs": "Hubungi kami"
   },
   "booking": {
     "summary": "Ringkasan Booking", "guestInfo": "Data Tamu", "promo": "Kode Promo",
@@ -36,10 +37,47 @@
   "auth": {
     "login": "Masuk", "register": "Daftar", "email": "Email", "password": "Password",
     "name": "Nama Lengkap", "phone": "Nomor Telepon", "forgot": "Lupa Password?",
-    "orWith": "atau masuk dengan", "haveAccount": "Sudah punya akun?", "noAccount": "Belum punya akun?"
+    "orWith": "atau masuk dengan", "haveAccount": "Sudah punya akun?", "noAccount": "Belum punya akun?",
+    "welcome": "Selamat datang, {{name}}! 👋"
   },
   "profile": {
     "title": "Profil Saya", "edit": "Edit Profil", "loyalty": "Poin Saya", "save": "Simpan"
+  },
+  "footer": {
+    "services": "Layanan", "help": "Bantuan", "followUs": "Ikuti Kami",
+    "contactUs": "Hubungi Kami", "copyright": "Semua hak dilindungi.",
+    "searchHotel": "Cari Hotel", "flashSale": "Flash Sale",
+    "specialPromo": "Promo Spesial", "loyaltyProgram": "Loyalty Program",
+    "helpCenter": "Pusat Bantuan", "terms": "Syarat & Ketentuan",
+    "privacy": "Kebijakan Privasi", "contactLink": "Hubungi Kami",
+    "description": "ArahInn hadir sebagai platform terpadu yang memudahkan Anda dalam merencanakan perjalanan sekaligus memenuhi berbagai kebutuhan harian. Mulai dari pemesanan akomodasi, tiket transportasi, hingga layanan penunjang lainnya, semua dirancang untuk memberikan pengalaman yang praktis, aman, dan terpercaya. Dengan harga kompetitif dan pilihan yang telah dikurasi, ArahInn menjadi partner terpercaya dalam setiap perjalanan Anda."
+  },
+  "home": {
+    "hotelsAvailable": "500+ hotel tersedia hari ini",
+    "popular": "Populer",
+    "flashSaleOff": "Hingga {{value}}% OFF · Berlaku terbatas!",
+    "claimNow": "Klaim Sekarang →",
+    "featuredHotels": "Hotel Pilihan",
+    "featuredSubtitle": "Properti terpopuler minggu ini",
+    "viewAll": "Lihat Semua",
+    "whyTitle": "Kenapa Pilih ArahInn?",
+    "whySubtitle": "Kami mengutamakan kenyamanan dan kepercayaan Anda",
+    "instantBooking": "Booking Instan",
+    "instantBookingDesc": "Konfirmasi langsung dalam hitungan detik",
+    "securePay": "Bayar Aman",
+    "securePayDesc": "Enkripsi 256-bit untuk setiap transaksi",
+    "cs247": "CS 24/7",
+    "cs247Desc": "Tim kami siap membantu kapan saja",
+    "bestPrice": "Harga Terjamin",
+    "bestPriceDesc": "Kami cocokkan harga terbaik untuk Anda",
+    "promoTitle": "Promo & Campaign",
+    "promoSubtitle": "Penawaran terbatas, jangan sampai terlewat!",
+    "promoUntil": "Berlaku hingga",
+    "promoMinPurchase": "Min. pembelian",
+    "promoQuota": "Tersisa",
+    "promoCopyCode": "Salin kode",
+    "promoCopied": "Tersalin!",
+    "promoShop": "Pesan Sekarang"
   },
   "common": {
     "loading": "Memuat...", "error": "Terjadi kesalahan", "retry": "Coba lagi",
