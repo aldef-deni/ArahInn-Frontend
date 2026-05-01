@@ -18,6 +18,7 @@ export const hotelApi = {
 
   // Owner
   myHotel   : ()       => api.get('/hotels/my-hotel'),
+  myHotels  : ()       => api.get('/hotels/my-hotels'),
 
   // Owner / Admin
   create    : (data)   => api.post('/hotels', data, multipartConfig),

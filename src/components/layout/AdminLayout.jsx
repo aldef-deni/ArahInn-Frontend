@@ -5,9 +5,10 @@ import { authApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import {
   LayoutDashboard, Hotel, ShoppingBag, BarChart2,
-  Users, UserCog, Tag, LogOut, Menu, X, Bell, User
+  Users, UserCog, Tag, LogOut, Menu, X, User
 } from 'lucide-react'
 import { cn, roleLabel } from '@/utils'
+import NotificationBell from '@/components/ui/NotificationBell'
 
 const navItems = [
   { to: '/admin',                      label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -131,10 +132,7 @@ export default function AdminLayout() {
             <p className="text-xs text-muted-foreground">Panel Manajemen OTA System</p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-xl hover:bg-muted transition-colors">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
-            </button>
+            <NotificationBell />
           </div>
         </header>
 

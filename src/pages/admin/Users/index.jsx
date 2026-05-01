@@ -235,15 +235,18 @@ function UserTable({ users, isLoading, me, isSuperAdmin, toggleMutation, onEdit,
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-slate-50 border-b border-slate-200">
-            {['Pengguna', 'Email', 'Role', 'Status', 'Bergabung', 'Aksi'].map(h => (
+            {['Pengguna', 'Email', 'Role', 'Status', 'Bergabung'].map(h => (
               <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
             ))}
+            {isSuperAdmin && (
+              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Aksi</th>
+            )}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
           {isLoading
             ? Array(5).fill(0).map((_, i) => (
-                <tr key={i}>{Array(6).fill(0).map((_, j) => (
+                <tr key={i}>{Array(isSuperAdmin ? 6 : 5).fill(0).map((_, j) => (
                   <td key={j} className="px-4 py-3.5"><div className="skeleton h-4 rounded-lg" /></td>
                 ))}</tr>
               ))
@@ -290,22 +293,22 @@ function UserTable({ users, isLoading, me, isSuperAdmin, toggleMutation, onEdit,
                     <td className="px-4 py-3.5 text-slate-400 text-xs whitespace-nowrap">
                       {u.createdAt ? new Date(u.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '–'}
                     </td>
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-1">
-                        {isSuperAdmin && (
+                    {isSuperAdmin && (
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-1">
                           <button onClick={() => onEdit(u)} title="Edit"
                             className="p-1.5 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors">
                             <Pencil className="w-4 h-4" />
                           </button>
-                        )}
-                        {isSuperAdmin && !isSelf && (
-                          <button onClick={() => onDelete(u)} title="Hapus"
-                            className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
+                          {!isSelf && (
+                            <button onClick={() => onDelete(u)} title="Hapus"
+                              className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 )
               })

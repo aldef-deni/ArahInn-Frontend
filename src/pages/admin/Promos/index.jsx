@@ -1,11 +1,10 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { promoApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { useForm } from 'react-hook-form'
 import { formatRupiah, formatDateShort } from '@/utils'
 import { Plus, Tag, Zap, Edit2, Trash2, X, Save, ToggleLeft, ToggleRight } from 'lucide-react'
-import { format, parseISO } from 'date-fns'
 
 const TYPE_ICONS  = { voucher: Tag, flash_sale: Zap, loyalty: '⭐' }
 const TYPE_COLORS = {
@@ -29,8 +28,6 @@ export default function AdminPromos() {
     defaultValues: { type: 'voucher', discountType: 'percent', discountValue: 0, minPurchase: 0 }
   })
   const discountType = watch('discountType')
-  const startDate    = watch('startDate')
-  const endDate      = watch('endDate')
 
   const saveMutation = useMutation({
     mutationFn: (d) => editing ? promoApi.update(editing.id, d) : promoApi.create(d),
@@ -246,24 +243,14 @@ export default function AdminPromos() {
                     className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">Tanggal Mulai</label>
-                  <div className="relative w-full px-3 py-2.5 border rounded-xl text-sm focus-within:ring-2 focus-within:ring-brand/50 cursor-pointer">
-                    <span className="block text-foreground pointer-events-none">
-                      {startDate ? format(parseISO(startDate), 'dd/MM/yyyy') : <span className="text-muted-foreground">DD/MM/YYYY</span>}
-                    </span>
-                    <input type="date" {...register('startDate')}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" />
-                  </div>
+                  <label className="block text-sm font-medium mb-1.5">Tanggal Mulai <span className="text-muted-foreground font-normal">(opsional)</span></label>
+                  <input type="date" {...register('startDate')}
+                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">Tanggal Berakhir</label>
-                  <div className="relative w-full px-3 py-2.5 border rounded-xl text-sm focus-within:ring-2 focus-within:ring-brand/50 cursor-pointer">
-                    <span className="block text-foreground pointer-events-none">
-                      {endDate ? format(parseISO(endDate), 'dd/MM/yyyy') : <span className="text-muted-foreground">DD/MM/YYYY</span>}
-                    </span>
-                    <input type="date" {...register('endDate')}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" />
-                  </div>
+                  <label className="block text-sm font-medium mb-1.5">Tanggal Berakhir <span className="text-muted-foreground font-normal">(opsional)</span></label>
+                  <input type="date" {...register('endDate')}
+                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
                 </div>
               </div>
 

@@ -119,15 +119,18 @@ export default function AdminOrders() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40">
               <tr>
-                {['Kode Booking','Tamu','Hotel','Kamar','Check-in','Check-out','Total','Status','Aksi'].map(h => (
+                {['Kode Booking','Tamu','Hotel','Kamar','Check-in','Check-out','Total','Status'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
+                {isSuperAdmin && (
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">Aksi</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y">
               {isLoading
                 ? Array(8).fill(0).map((_, i) => (
-                    <tr key={i}>{Array(9).fill(0).map((_, j) => <td key={j} className="px-4 py-3"><div className="skeleton h-4 rounded" /></td>)}</tr>
+                    <tr key={i}>{Array(isSuperAdmin ? 9 : 8).fill(0).map((_, j) => <td key={j} className="px-4 py-3"><div className="skeleton h-4 rounded" /></td>)}</tr>
                   ))
                 : data?.data?.map(order => (
                     <tr key={order.id} className="hover:bg-muted/20 transition-colors">
@@ -151,27 +154,27 @@ export default function AdminOrders() {
                           {statusLabel(order.status)}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
-                          {/* Approve — superadmin only, for pending/paid */}
-                          {isSuperAdmin && ['pending','paid'].includes(order.status) && (
-                            <button onClick={() => setApprove(order)}
-                              className="flex items-center gap-1 px-3 py-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors font-medium whitespace-nowrap">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              Konfirmasi
-                            </button>
-                          )}
-                          {/* Cancel */}
-                          {['pending','paid'].includes(order.status) && (
-                            <button onClick={() => cancelMutation.mutate(order.id)}
-                              disabled={cancelMutation.isPending}
-                              className="flex items-center gap-1 px-3 py-1.5 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors whitespace-nowrap">
-                              <X className="w-3.5 h-3.5" />
-                              Batalkan
-                            </button>
-                          )}
-                        </div>
-                      </td>
+                      {isSuperAdmin && (
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            {['pending','paid'].includes(order.status) && (
+                              <button onClick={() => setApprove(order)}
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors font-medium whitespace-nowrap">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Konfirmasi
+                              </button>
+                            )}
+                            {['pending','paid'].includes(order.status) && (
+                              <button onClick={() => cancelMutation.mutate(order.id)}
+                                disabled={cancelMutation.isPending}
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors whitespace-nowrap">
+                                <X className="w-3.5 h-3.5" />
+                                Batalkan
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
             </tbody>

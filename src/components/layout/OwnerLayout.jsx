@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { authApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
@@ -8,10 +8,12 @@ import { hotelApi } from '@/services/hotelApi'
 import { chatApi } from '@/services/index'
 import {
   Home, Building2, Image, CalendarDays, Tag, ShoppingBag, BarChart2,
-  ChevronDown, LogOut, Bell, ExternalLink, MapPin, Languages, Sparkles,
-  BedDouble, ClipboardList, ShieldCheck, MessageSquare
+  ChevronDown, LogOut, ExternalLink, MapPin, Languages, Sparkles,
+  BedDouble, ClipboardList, ShieldCheck, MessageSquare, PlusCircle,
+  CheckCircle2, Clock, XCircle, ChevronRight
 } from 'lucide-react'
 import { cn } from '@/utils'
+import NotificationBell from '@/components/ui/NotificationBell'
 
 const PAGE_META = {
   '/owner': {
@@ -33,6 +35,10 @@ const PAGE_META = {
   '/owner/properti/fasilitas': {
     title: 'Fasilitas dan Layanan',
     subtitle: 'Pilih fasilitas yang tersedia agar tamu lebih mudah menemukan properti Anda.',
+  },
+  '/owner/daftar-hotel': {
+    title: 'Daftarkan Hotel Baru',
+    subtitle: 'Isi informasi dasar properti. Status akan Pending hingga disetujui Superadmin.',
   },
   '/owner/harga': {
     title: 'Harga dan Ketersediaan',
@@ -88,20 +94,49 @@ const MENU_SECTIONS = [
   },
 ]
 
+const STATUS_META = {
+  approved : { label: 'Aktif',    cls: 'bg-emerald-100 text-emerald-700', icon: CheckCircle2 },
+  pending  : { label: 'Pending',  cls: 'bg-amber-100 text-amber-700',     icon: Clock        },
+  blocked  : { label: 'Diblokir', cls: 'bg-red-100 text-red-600',         icon: XCircle      },
+}
+
 export default function OwnerLayout() {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
   const { toast } = useToast()
-  const [propertiOpen, setPropertiOpen] = useState(
-    location.pathname.startsWith('/owner/properti')
-  )
+  const [propertiOpen, setPropertiOpen]   = useState(location.pathname.startsWith('/owner/properti'))
+  const [switcherOpen, setSwitcherOpen]   = useState(false)
+  const [pendingModal, setPendingModal]   = useState(null) // hotel object or null
+  const switcherRef                       = useRef(null)
 
-  const { data: hotel } = useQuery({
-    queryKey: ['owner-my-hotel'],
-    queryFn: () => hotelApi.myHotel().then(r => r.data?.data),
-    enabled: !!user?.id,
+  const [selectedHotelId, setSelectedHotelId] = useState(() => {
+    const saved = localStorage.getItem('owner_selected_hotel_id')
+    return saved ? Number(saved) : null
   })
+
+  const { data: allHotels } = useQuery({
+    queryKey: ['owner-my-hotels'],
+    queryFn : () => hotelApi.myHotels().then(r => r.data?.data || []),
+    enabled : !!user?.id,
+  })
+
+  const hotel = useMemo(() => {
+    if (!allHotels?.length) return null
+    return allHotels.find(h => h.id === selectedHotelId) || allHotels[0]
+  }, [allHotels, selectedHotelId])
+
+  useEffect(() => {
+    if (hotel?.id) localStorage.setItem('owner_selected_hotel_id', hotel.id)
+  }, [hotel?.id])
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (switcherRef.current && !switcherRef.current.contains(e.target)) setSwitcherOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   const { data: chatRooms } = useQuery({
     queryKey: ['owner-chat-rooms'],
@@ -144,22 +179,102 @@ export default function OwnerLayout() {
           </Link>
         </div>
 
-        <div className="border-b border-slate-200 px-7 py-5">
-          <div className="rounded-3xl bg-slate-50 p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
-                <Building2 className="h-6 w-6" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-slate-900">{hotel?.name || 'Memuat properti...'}</p>
-                <p className="mt-1 text-xs font-medium uppercase tracking-[0.18em] text-slate-400">{propertyCode}</p>
-                <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
-                  <MapPin className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{hotel?.city || 'Lokasi belum tersedia'}</span>
-                </p>
+        <div className="border-b border-slate-200 px-4 py-4" ref={switcherRef}>
+          {/* Hotel switcher button */}
+          <button
+            onClick={() => setSwitcherOpen(o => !o)}
+            className={cn(
+              'w-full rounded-2xl p-3.5 flex items-center gap-3 transition-all text-left',
+              switcherOpen ? 'bg-blue-50 ring-2 ring-blue-200' : 'bg-slate-50 hover:bg-slate-100'
+            )}
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100 text-blue-700 shrink-0">
+              <Building2 className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-slate-900 leading-tight">
+                {hotel?.name || 'Memuat properti...'}
+              </p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                {hotel?.status && (() => {
+                  const s = STATUS_META[hotel.status] || STATUS_META.pending
+                  return (
+                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${s.cls}`}>
+                      <s.icon className="w-2.5 h-2.5" /> {s.label}
+                    </span>
+                  )
+                })()}
+                {allHotels?.length > 1 && (
+                  <span className="text-[10px] text-slate-400">{allHotels.length} properti</span>
+                )}
               </div>
             </div>
-          </div>
+            <ChevronDown className={cn('h-4 w-4 text-slate-400 shrink-0 transition-transform', switcherOpen && 'rotate-180')} />
+          </button>
+
+          {/* Dropdown panel */}
+          {switcherOpen && (
+            <div className="mt-2 rounded-2xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+              <p className="px-4 pt-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">Properti Anda</p>
+              <div className="max-h-64 overflow-y-auto">
+                {allHotels?.map(h => {
+                  const s       = STATUS_META[h.status] || STATUS_META.pending
+                  const active  = h.id === hotel?.id
+                  const isPending = h.status === 'pending'
+                  return (
+                    <button key={h.id}
+                      onClick={() => {
+                        if (isPending) {
+                          setSwitcherOpen(false)
+                          setPendingModal(h)
+                        } else {
+                          setSelectedHotelId(h.id)
+                          setSwitcherOpen(false)
+                        }
+                      }}
+                      className={cn(
+                        'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors',
+                        active     ? 'bg-blue-50'   : '',
+                        isPending  ? 'opacity-70 hover:bg-amber-50' : 'hover:bg-slate-50'
+                      )}
+                    >
+                      <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm overflow-hidden',
+                        active    ? 'bg-blue-100 text-blue-700'  :
+                        isPending ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500')}>
+                        {h.images?.[0]
+                          ? <img src={h.images[0]} alt="" className="w-full h-full object-cover" />
+                          : <Building2 className="w-4 h-4" />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className={cn('text-sm font-semibold truncate',
+                          active    ? 'text-blue-700'  :
+                          isPending ? 'text-amber-700' : 'text-slate-800')}>
+                          {h.name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="flex items-center gap-1 text-xs text-slate-400">
+                            <MapPin className="w-3 h-3" /> {h.city}
+                          </span>
+                          <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${s.cls}`}>
+                            <s.icon className="w-2.5 h-2.5" /> {s.label}
+                          </span>
+                        </div>
+                      </div>
+                      {active && !isPending && <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" />}
+                      {isPending && <Clock className="w-4 h-4 text-amber-400 shrink-0" />}
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="border-t border-slate-100 p-2">
+                <Link to="/owner/daftar-hotel"
+                  onClick={() => setSwitcherOpen(false)}
+                  className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-blue-600 hover:bg-blue-50 transition-colors">
+                  <PlusCircle className="w-4 h-4" /> Daftarkan Hotel Baru
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
 
         <nav className="custom-scroll flex-1 overflow-y-auto px-4 py-5">
@@ -203,6 +318,20 @@ export default function OwnerLayout() {
                             {item.label}
                           </Link>
                         ))}
+                        <div className="pt-1 mt-1 border-t border-slate-200/70">
+                          <Link
+                            to="/owner/daftar-hotel"
+                            className={cn(
+                              'flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-colors font-medium',
+                              location.pathname === '/owner/daftar-hotel'
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'text-blue-600 hover:bg-blue-50'
+                            )}
+                          >
+                            <PlusCircle className="h-4 w-4 shrink-0" />
+                            Daftarkan Hotel Baru
+                          </Link>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -304,10 +433,7 @@ export default function OwnerLayout() {
                   <Languages className="h-4 w-4" />
                   Bahasa ID
                 </button>
-                <button className="relative rounded-full border border-slate-200 p-3 text-slate-500 transition-colors hover:bg-slate-50">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-amber-400 ring-2 ring-white" />
-                </button>
+                <NotificationBell />
               </div>
             </div>
 
@@ -328,10 +454,59 @@ export default function OwnerLayout() {
 
         <main className="px-5 py-6 md:px-8 xl:px-10">
           <div className="page-enter">
-            <Outlet context={{ hotel }} />
+            <Outlet context={{ hotel, allHotels, setSelectedHotelId }} />
           </div>
         </main>
       </div>
+
+      {/* ── Pending Hotel Modal ───────────────────────────── */}
+      {pendingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setPendingModal(null)}
+          />
+          {/* Card */}
+          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-fade-in">
+            {/* Top amber strip */}
+            <div className="bg-gradient-to-br from-amber-400 to-orange-400 px-6 pt-8 pb-10 text-center">
+              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
+                <Clock className="h-8 w-8 text-white" />
+              </div>
+              <h2 className="text-lg font-bold text-white">Menunggu Persetujuan</h2>
+            </div>
+
+            {/* Wave divider */}
+            <div className="-mt-4 h-4 bg-white rounded-t-[2rem]" />
+
+            {/* Body */}
+            <div className="px-6 pb-6 -mt-1 text-center">
+              <p className="text-base font-semibold text-slate-800 mb-1">{pendingModal.name}</p>
+              <p className="text-sm text-slate-500 mb-1">{pendingModal.city}</p>
+              <p className="text-sm text-slate-600 leading-relaxed mt-3">
+                Properti ini sedang dalam proses review oleh{' '}
+                <span className="font-semibold text-amber-600">Manajemen ArahInn</span>.
+                Anda akan mendapat notifikasi setelah properti disetujui.
+              </p>
+
+              <div className="mt-5 rounded-2xl bg-amber-50 border border-amber-100 px-4 py-3 text-xs text-amber-700 text-left space-y-1">
+                <p className="font-semibold">Yang terjadi selanjutnya:</p>
+                <p>• Tim kami akan memverifikasi data properti Anda</p>
+                <p>• Proses review biasanya 1–3 hari kerja</p>
+                <p>• Notifikasi dikirim saat status berubah</p>
+              </div>
+
+              <button
+                onClick={() => setPendingModal(null)}
+                className="mt-5 w-full rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold py-3 transition-colors"
+              >
+                Mengerti
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

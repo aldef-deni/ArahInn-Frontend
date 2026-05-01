@@ -197,19 +197,29 @@ export default function PropertiFasilitas() {
   const [activeSection, setActiveSection] = useState(FACILITY_SECTIONS[0].key)
 
   useEffect(() => {
-    if (hotel?.facilities) {
+    if (Array.isArray(hotel?.facilities)) {
       setSelected(hotel.facilities)
     }
-  }, [hotel])
+  }, [hotel?.id, hotel?.facilities])
 
   const mutation = useMutation({
     mutationFn: () => hotelApi.update(hotel.id, { facilities: selected }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['owner-my-hotel'] })
+      qc.invalidateQueries({ queryKey: ['owner-my-hotels'] })
       toast({ title: 'Fasilitas berhasil diperbarui.' })
     },
     onError: (error) => toast({ title: handleApiError(error), variant: 'destructive' }),
   })
+
+  if (!hotel) return (
+    <div className="flex flex-col items-center justify-center py-24 text-slate-400">
+      <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+        <Info className="w-7 h-7 text-slate-300" />
+      </div>
+      <p className="text-base font-semibold text-slate-500">Properti tidak ditemukan</p>
+      <p className="text-sm mt-1">Pastikan Anda sudah mendaftarkan dan memilih properti.</p>
+    </div>
+  )
 
   const currentSection = useMemo(
     () => FACILITY_SECTIONS.find(section => section.key === activeSection) || FACILITY_SECTIONS[0],

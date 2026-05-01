@@ -45,6 +45,7 @@ import OwnerPromo        from '@/pages/owner/Promo'
 import OwnerPesanan      from '@/pages/owner/Pesanan'
 import OwnerLaporan      from '@/pages/owner/Laporan'
 import OwnerChat         from '@/pages/owner/Chat'
+import OwnerDaftarHotel  from '@/pages/owner/Properti/DaftarHotel'
 
 // Guards
 function PrivateRoute({ children }) {
@@ -131,6 +132,7 @@ export default function App() {
           <Route path="pesanan"            element={<OwnerPesanan />} />
           <Route path="laporan"            element={<OwnerLaporan />} />
           <Route path="chat"               element={<OwnerChat />} />
+          <Route path="daftar-hotel"       element={<OwnerDaftarHotel />} />
         </Route>
 
         <Route path="*" element={<Navigate to={extranetMode ? '/owner' : '/'} replace />} />

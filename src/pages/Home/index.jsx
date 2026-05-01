@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
@@ -7,21 +7,56 @@ import { promoApi } from '@/services/index'
 import { formatRupiah, formatDateShort } from '@/utils'
 import {
   Search, MapPin, Calendar, Users, ArrowRight,
-  Zap, Shield, Headphones, Award, TrendingUp, Tag, Copy, Check
+  Zap, Shield, Headphones, Award, TrendingUp, Tag, Copy, Check, Clock
 } from 'lucide-react'
 import { format, addDays, parseISO } from 'date-fns'
 import HotelCard from '@/components/hotel/HotelCard'
 
 const PROMO_STYLES = {
-  flash_sale : { grad: 'from-orange-500 to-red-500',   sub: 'text-orange-100',  btnText: 'text-orange-600', icon: Zap  },
-  voucher    : { grad: 'from-blue-500 to-indigo-600',  sub: 'text-blue-100',    btnText: 'text-blue-600',   icon: Tag  },
-  loyalty    : { grad: 'from-purple-500 to-violet-600',sub: 'text-purple-100',  btnText: 'text-purple-600', icon: Award},
+  flash_sale : { grad: 'from-orange-500 to-red-500',    sub: 'text-orange-100', icon: Zap,   iconBg: 'bg-white/20' },
+  voucher    : { grad: 'from-blue-500 to-indigo-600',   sub: 'text-blue-100',   icon: Tag,   iconBg: 'bg-white/20' },
+  loyalty    : { grad: 'from-purple-500 to-violet-600', sub: 'text-purple-100', icon: Award, iconBg: 'bg-white/20' },
+}
+
+function useCountdown(endDate) {
+  const [timeLeft, setTimeLeft] = useState(null)
+  useEffect(() => {
+    if (!endDate) return
+    const target = new Date(endDate)
+    const tick = () => {
+      const diff = target - new Date()
+      if (diff <= 0) { setTimeLeft(null); return }
+      setTimeLeft({
+        d: Math.floor(diff / 86400000),
+        h: Math.floor((diff % 86400000) / 3600000),
+        m: Math.floor((diff % 3600000) / 60000),
+        s: Math.floor((diff % 60000) / 1000),
+      })
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [endDate])
+  return timeLeft
+}
+
+function CountdownBox({ value, label }) {
+  return (
+    <div className="flex flex-col items-center">
+      <div className="bg-white/20 backdrop-blur-sm rounded-lg w-10 h-10 flex items-center justify-center">
+        <span className="text-white font-black text-base leading-none">{String(value).padStart(2, '0')}</span>
+      </div>
+      <span className="text-white/60 text-[10px] mt-1 font-medium">{label}</span>
+    </div>
+  )
 }
 
 function PromoCard({ promo, onShop, t }) {
   const [copied, setCopied] = useState(false)
-  const style = PROMO_STYLES[promo.type] || PROMO_STYLES.voucher
-  const Icon  = style.icon
+  const style    = PROMO_STYLES[promo.type] || PROMO_STYLES.voucher
+  const Icon     = style.icon
+  const countdown = useCountdown(promo.endDate)
+  const usedPct  = promo.quota > 0 ? Math.min(100, ((promo.usedCount || 0) / promo.quota) * 100) : 0
 
   const copyCode = () => {
     navigator.clipboard.writeText(promo.code)
@@ -34,54 +69,65 @@ function PromoCard({ promo, onShop, t }) {
     : `${formatRupiah(promo.discountValue)} OFF`
 
   return (
-    <div className={`relative rounded-2xl overflow-hidden bg-gradient-to-r ${style.grad} shadow-lg flex items-stretch`}>
-      {/* Left icon strip */}
-      <div className="flex items-center justify-center px-6 bg-black/10 shrink-0">
-        <Icon className="w-8 h-8 text-white" />
-      </div>
+    <div className={`relative rounded-2xl overflow-hidden bg-gradient-to-r ${style.grad} shadow-md hover:shadow-lg transition-shadow`}>
+      <div className="flex items-center gap-0 p-5 lg:p-6">
 
-      {/* dashed divider */}
-      <div className="w-px border-l-2 border-dashed border-white/25 my-4 shrink-0" />
-
-      {/* Center info */}
-      <div className="flex-1 px-5 py-4 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-white font-bold text-base leading-tight">{promo.name}</span>
-          <span className={`text-[10px] px-2 py-0.5 rounded-full bg-white/20 text-white font-medium capitalize shrink-0`}>
-            {promo.type.replace('_', ' ')}
-          </span>
+        {/* Icon */}
+        <div className={`w-12 h-12 rounded-xl ${style.iconBg} flex items-center justify-center shrink-0 mr-4`}>
+          <Icon className="w-6 h-6 text-white" />
         </div>
 
-        <div className={`flex flex-wrap gap-x-4 gap-y-0.5 text-xs ${style.sub} mb-2`}>
-          {promo.minPurchase > 0 && <span>{t('home.promoMinPurchase')} {formatRupiah(promo.minPurchase)}</span>}
-          {promo.endDate      &&    <span>{t('home.promoUntil')} {formatDateShort(promo.endDate)}</span>}
-          {promo.quota        &&    <span>{t('home.promoQuota')} {Math.max(0, promo.quota - (promo.usedCount || 0))} / {promo.quota}</span>}
-        </div>
+        {/* Dashed divider */}
+        <div className="border-l-2 border-dashed border-white/25 self-stretch mx-4 shrink-0" />
 
-        {promo.code && (
-          <button onClick={copyCode}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/15 hover:bg-white/25 transition-colors">
-            <span className="font-mono font-bold text-sm tracking-widest text-white">{promo.code}</span>
-            {copied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5 text-white/70" />}
-            <span className={`text-xs ${style.sub}`}>{copied ? t('home.promoCopied') : t('home.promoCopyCode')}</span>
-          </button>
-        )}
-
-        {promo.quota > 0 && (
-          <div className="h-1 bg-white/20 rounded-full overflow-hidden mt-2.5 max-w-xs">
-            <div className="h-full bg-white/60 rounded-full transition-all"
-              style={{ width: `${Math.min(100, ((promo.usedCount || 0) / promo.quota) * 100)}%` }} />
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-white font-bold text-base leading-snug">{promo.name}</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 text-white font-medium capitalize shrink-0">
+              {promo.type.replace('_', ' ')}
+            </span>
           </div>
-        )}
-      </div>
 
-      {/* Right: discount + CTA */}
-      <div className="flex flex-col items-center justify-center gap-2 px-6 bg-black/10 shrink-0">
-        <span className="text-white font-black text-2xl whitespace-nowrap">{discountLabel}</span>
-        <button onClick={onShop}
-          className={`px-5 py-1.5 rounded-xl bg-white font-semibold text-xs hover:opacity-90 transition-opacity ${style.btnText}`}>
-          {t('home.promoShop')}
-        </button>
+          <div className={`flex flex-wrap gap-x-4 gap-y-0.5 text-xs ${style.sub} mb-2.5`}>
+            {promo.minPurchase > 0 && <span>{t('home.promoMinPurchase')} {formatRupiah(promo.minPurchase)}</span>}
+            {promo.endDate         && <span>{t('home.promoUntil')} {formatDateShort(promo.endDate)}</span>}
+            {promo.quota           && <span>{t('home.promoQuota')} {Math.max(0, promo.quota - (promo.usedCount || 0))} / {promo.quota}</span>}
+          </div>
+
+          {promo.code && (
+            <button onClick={copyCode}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors">
+              <span className="font-mono font-bold text-sm tracking-widest text-white">{promo.code}</span>
+              {copied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5 text-white/60" />}
+              <span className={`text-xs ${style.sub}`}>{copied ? t('home.promoCopied') : t('home.promoCopyCode')}</span>
+            </button>
+          )}
+
+          {promo.quota > 0 && (
+            <div className="h-1 bg-white/20 rounded-full overflow-hidden mt-2.5 max-w-xs">
+              <div className="h-full bg-white/60 rounded-full transition-all" style={{ width: `${usedPct}%` }} />
+            </div>
+          )}
+        </div>
+
+        {/* Right: countdown + discount + CTA */}
+        <div className="flex flex-col items-center gap-3 pl-6 border-l border-white/20 shrink-0 ml-4">
+          {countdown && (
+            <div className="flex items-end gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-white/60 mb-2.5 shrink-0" />
+              {countdown.d > 0 && <CountdownBox value={countdown.d} label="hari" />}
+              <CountdownBox value={countdown.h} label="jam" />
+              <CountdownBox value={countdown.m} label="min" />
+              <CountdownBox value={countdown.s} label="dtk" />
+            </div>
+          )}
+          <span className="text-white font-black text-2xl whitespace-nowrap leading-none">{discountLabel}</span>
+          <button onClick={onShop}
+            className="px-6 py-2 rounded-xl bg-white font-semibold text-xs hover:opacity-90 transition-opacity text-gray-700 whitespace-nowrap">
+            {t('home.promoShop')}
+          </button>
+        </div>
       </div>
     </div>
   )

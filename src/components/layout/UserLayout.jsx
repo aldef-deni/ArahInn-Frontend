@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/utils'
 import ChatWidget from '@/components/chat/ChatWidget'
+import NotificationBell from '@/components/ui/NotificationBell'
 
 const PENGELOLA_ROLES = ['superadmin', 'admin', 'owner', 'finance']
 
@@ -84,6 +85,9 @@ export default function UserLayout() {
 
           {/* Right actions */}
           <div className="flex items-center gap-1 md:gap-2">
+
+            {/* Notification bell — only for logged-in users */}
+            {token && <NotificationBell />}
 
             {/* Language toggle — icon only on mobile */}
             <button onClick={toggleLang}

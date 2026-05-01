@@ -42,6 +42,7 @@ export default {
         'fade-in'       : { from: { opacity: '0', transform: 'translateY(10px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
         'slide-in-right': { from: { transform: 'translateX(100%)' }, to: { transform: 'translateX(0)' } },
         shimmer         : { '0%': { backgroundPosition: '-200% 0' }, '100%': { backgroundPosition: '200% 0' } },
+        wiggle          : { '0%,100%': { transform: 'rotate(0deg)' }, '20%': { transform: 'rotate(-15deg)' }, '40%': { transform: 'rotate(15deg)' }, '60%': { transform: 'rotate(-10deg)' }, '80%': { transform: 'rotate(10deg)' } },
       },
       animation: {
         'accordion-down' : 'accordion-down 0.2s ease-out',
@@ -49,6 +50,7 @@ export default {
         'fade-in'        : 'fade-in 0.4s ease-out',
         'slide-in-right' : 'slide-in-right 0.3s ease-out',
         shimmer          : 'shimmer 1.5s infinite linear',
+        wiggle           : 'wiggle 1s ease-in-out',
       },
       boxShadow: {
         'card'  : '0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06)',
