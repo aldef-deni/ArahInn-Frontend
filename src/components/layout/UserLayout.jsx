@@ -7,11 +7,18 @@ import { useToast } from '@/hooks/use-toast'
 import {
   Hotel, Search, List, User, LogOut, Menu, X,
   ChevronDown, Globe, Settings, LayoutDashboard,
-  Phone, Mail, Smartphone,
+  Phone, Mail, Smartphone, Building2,
 } from 'lucide-react'
 import { cn } from '@/utils'
+import {
+  getManagementPortalUrl,
+  getOwnerPortalUrl,
+  isManagementRole,
+  isOwnerRole,
+} from '@/utils/isExtranet'
 import ChatWidget from '@/components/chat/ChatWidget'
 import NotificationBell from '@/components/ui/NotificationBell'
+import queryClient from '@/lib/queryClient'
 
 const PENGELOLA_ROLES = ['superadmin', 'admin', 'owner', 'finance']
 
@@ -25,10 +32,16 @@ export default function UserLayout() {
   const [dropOpen, setDropOpen] = useState(false)
 
   const isPengelola = user && PENGELOLA_ROLES.includes(user.role)
+  const managementHref = isOwnerRole(user?.role)
+    ? getOwnerPortalUrl('/owner')
+    : isManagementRole(user?.role)
+      ? getManagementPortalUrl('/admin')
+      : getManagementPortalUrl('/login')
 
   const handleLogout = async () => {
     try { await authApi.logout() } catch {}
     logout()
+    queryClient.clear()
     navigate('/login')
     toast({ title: t('nav.logoutSuccess'), description: t('nav.logoutBye') })
   }
@@ -40,8 +53,9 @@ export default function UserLayout() {
   }
 
   const navLinks = [
-    { to: '/',       label: t('nav.home'),    icon: Hotel },
-    { to: '/search', label: t('nav.search'),  icon: Search },
+    { to: '/',          label: t('nav.home'),    icon: Hotel },
+    { to: '/search',    label: t('nav.search'),  icon: Search },
+    { to: '/properti',  label: 'Properti',       icon: Building2 },
     ...(token ? [
       { to: '/orders',  label: t('nav.orders'),  icon: List },
       { to: '/profile', label: t('nav.profile'), icon: User },
@@ -59,11 +73,7 @@ export default function UserLayout() {
 
           {/* Logo — centered on mobile, left on desktop */}
           <Link to="/" className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 flex items-center gap-2 shrink-0">
-            <img src="/logo.png" alt="Arahinn" className="h-8 md:h-12 w-auto" />
-            <span className="font-display font-bold text-brand-800">
-              <span className="md:hidden text-base tracking-wide">ARAHINN</span>
-              <span className="hidden md:inline text-xl">ArahInn<span className="text-brand">.com</span></span>
-            </span>
+            <img src="/logo-arahin.png" alt="Arahinn" className="h-8 md:h-12 w-auto" />
           </Link>
 
           {/* Desktop nav */}
@@ -115,15 +125,15 @@ export default function UserLayout() {
                       <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                     </div>
                     {user?.role === 'owner' ? (
-                      <Link to="/owner" onClick={() => setDropOpen(false)}
+                      <a href={managementHref} onClick={() => setDropOpen(false)}
                         className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-muted transition-colors text-brand-700 font-medium">
                         <LayoutDashboard className="w-4 h-4" /> Extranet
-                      </Link>
+                      </a>
                     ) : isAdmin() && (
-                      <Link to="/admin" onClick={() => setDropOpen(false)}
+                      <a href={managementHref} onClick={() => setDropOpen(false)}
                         className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-muted transition-colors text-brand-700 font-medium">
                         <LayoutDashboard className="w-4 h-4" /> {t('nav.admin')}
-                      </Link>
+                      </a>
                     )}
                     <Link to="/profile" onClick={() => setDropOpen(false)}
                       className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-muted transition-colors">
@@ -143,7 +153,7 @@ export default function UserLayout() {
                   {t('nav.login')}
                 </Link>
                 <Link to="/register"
-                  className="px-4 py-2 rounded-xl bg-brand text-white text-sm font-semibold hover:bg-brand-700 transition-colors shadow-brand/30 shadow-sm">
+                  className="px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition-colors shadow-sm">
                   {t('nav.register')}
                 </Link>
               </div>
@@ -191,18 +201,18 @@ export default function UserLayout() {
               ))}
 
               {token && user?.role === 'owner' && (
-                <Link to="/owner" onClick={() => setMenuOpen(false)}
+                <a href={managementHref} onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-brand-700 hover:bg-brand/10 transition-colors">
                   <LayoutDashboard className="w-4 h-4 shrink-0" />
                   Extranet
-                </Link>
+                </a>
               )}
               {token && isAdmin() && user?.role !== 'owner' && (
-                <Link to="/admin" onClick={() => setMenuOpen(false)}
+                <a href={managementHref} onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-brand-700 hover:bg-brand/10 transition-colors">
                   <LayoutDashboard className="w-4 h-4 shrink-0" />
                   {t('nav.admin')}
-                </Link>
+                </a>
               )}
             </div>
 
@@ -243,19 +253,94 @@ export default function UserLayout() {
         <Outlet />
       </main>
 
+      {/* ── App & Newsletter Banner ──────────────────────── */}
+      {false && !isPengelola && (
+        <section className="relative overflow-hidden">
+          {/* Background */}
+          <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('/hotel02.jpg')" }} />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0d2137]/95 via-[#0f2744]/90 to-[#0d2137]/80" />
+
+          <div className="relative container py-12 lg:py-16">
+            <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+
+              {/* Phone mockup */}
+              <div className="hidden lg:flex shrink-0 items-end justify-center w-44 h-72">
+                <div className="w-full h-full bg-white/10 border-2 border-white/20 rounded-[2rem] flex flex-col items-center justify-center gap-3 shadow-2xl backdrop-blur-sm">
+                  <Smartphone className="w-12 h-12 text-white/50" />
+                  <span className="text-white/40 text-xs font-medium">ArahInn App</span>
+                </div>
+              </div>
+
+              <div className="flex-1 flex flex-col md:flex-row gap-10 md:gap-14">
+
+                {/* Newsletter */}
+                <div className="flex-1">
+                  <h3 className="text-white font-bold text-xl lg:text-2xl leading-snug mb-5">
+                    Dapatkan info terbaru seputar tips perjalanan, rekomendasi, serta promo.
+                  </h3>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="relative flex-1">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input type="email" placeholder="Alamat emailmu"
+                        className="w-full pl-9 pr-4 py-3 rounded-xl text-sm bg-white text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-400/50" />
+                    </div>
+                    <button className="px-5 py-3 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl transition-colors whitespace-nowrap shadow-sm">
+                      Berlangganan Newsletter
+                    </button>
+                  </div>
+                </div>
+
+                {/* App download */}
+                <div className="flex-1">
+                  <p className="text-white font-bold text-xl lg:text-2xl leading-snug mb-5">
+                    Semua pesanan dalam genggaman, selalu siap jalan-jalan.{' '}
+                    <span className="text-orange-400">Pakai ArahInn App.</span>
+                  </p>
+                  <div className="flex items-center gap-4">
+                    {/* QR placeholder */}
+                    <div className="w-16 h-16 bg-white rounded-xl p-1.5 shrink-0">
+                      <div className="w-full h-full bg-slate-100 rounded-lg grid grid-cols-5 gap-px p-1">
+                        {Array(25).fill(0).map((_, i) => (
+                          <div key={i} className={`rounded-[1px] ${[0,1,2,5,7,10,12,14,17,19,22,23,24].includes(i) ? 'bg-slate-800' : 'bg-white'}`} />
+                        ))}
+                      </div>
+                    </div>
+                    {/* Store badges */}
+                    <div className="flex flex-col gap-2">
+                      <a href="#" className="flex items-center gap-2.5 px-4 py-2 bg-black/80 hover:bg-black text-white rounded-xl transition-colors shadow-sm border border-white/10">
+                        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.76c.3.17.64.24.99.2l11.94-11.95L12.38 9.3 3.18 23.76zm16.49-10.69L16.8 11.4l-3.28 3.28 3.28 3.28 2.89-1.69c.82-.48.82-1.72-.02-2.2zM3.03.25C2.7.62 2.5 1.16 2.5 1.85v20.29c0 .69.2 1.23.53 1.6l.07.07L14.05 12.8v-.27L3.1.18l-.07.07zm9.35 9.05l2.72 2.71-2.72 2.72L9.66 12.3l2.72-2.99z"/></svg>
+                        <div className="leading-tight text-left">
+                          <p className="text-[9px] text-slate-300">GET IT ON</p>
+                          <p className="text-xs font-semibold">Google Play</p>
+                        </div>
+                      </a>
+                      <a href="#" className="flex items-center gap-2.5 px-4 py-2 bg-black/80 hover:bg-black text-white rounded-xl transition-colors shadow-sm border border-white/10">
+                        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.42c1.42.07 2.41.74 3.24.8 1.23-.24 2.41-.94 3.72-.84 1.58.13 2.77.71 3.56 1.86-3.25 1.94-2.49 5.89.48 7.03-.57 1.44-1.31 2.88-3 3.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+                        <div className="leading-tight text-left">
+                          <p className="text-[9px] text-slate-300">Download on the</p>
+                          <p className="text-xs font-semibold">App Store</p>
+                        </div>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── Footer ───────────────────────────────────────── */}
-      {!isPengelola && <footer className="bg-white border-t border-slate-200 mt-16">
+      {!isPengelola && <footer className="bg-white border-t border-slate-200">
         {/* Main grid */}
         <div className="container py-12 flex flex-col md:flex-row gap-10">
           <div className="md:w-[520px] shrink-0">
             <div className="flex items-center gap-2 mb-4">
-              <img src="/logo.png" alt="Arahinn" className="h-10 w-auto" />
-              <span className="font-display font-bold text-xl text-brand-800">
-                ArahInn<span className="text-brand">.com</span>
-              </span>
+              <img src="/logo-arahin.png" alt="Arahinn" className="h-10 w-auto" />
             </div>
             <p className="text-slate-500 text-sm leading-relaxed text-justify">
-              {t('footer.description')}
+              ArahInn.com hadir sebagai platform terpadu yang memudahkan Anda dalam merencanakan perjalanan sekaligus memenuhi berbagai kebutuhan harian. Mulai dari pemesanan akomodasi, tiket transportasi, hingga layanan penunjang lainnya, semua dirancang untuk memberikan pengalaman yang praktis, aman, dan terpercaya. Dengan harga kompetitif dan pilihan yang telah dikurasi, ArahInn menjadi partner terpercaya dalam setiap perjalanan Anda.
             </p>
           </div>
           <div className="md:ml-auto flex flex-col sm:flex-row gap-12 lg:gap-16">

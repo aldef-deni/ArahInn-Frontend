@@ -4,8 +4,18 @@ import { useAuthStore } from '@/store/authStore'
 import { authApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { useTranslation } from 'react-i18next'
+import {
+  getCustomerPortalUrl,
+  getManagementPortalUrl,
+  getOwnerPortalUrl,
+  isManagementPortal,
+  isManagementRole,
+  isOwnerPortal,
+  isOwnerRole,
+} from '@/utils/isExtranet'
 
-const PENGELOLA_ROLES = ['superadmin', 'admin', 'finance']
+const managementMode = isManagementPortal()
+const ownerMode = isOwnerPortal()
 
 export default function AuthCallback() {
   const [searchParams] = useSearchParams()
@@ -31,7 +41,43 @@ export default function AuthCallback() {
         const user = r.data?.data ?? r.data
         setAuth(user, token, null)
         toast({ title: t('auth.welcome', { name: user.name }) })
-        navigate(PENGELOLA_ROLES.includes(user.role) ? '/admin' : '/', { replace: true })
+        if (managementMode) {
+          if (isManagementRole(user.role)) {
+            navigate('/admin', { replace: true })
+            return
+          }
+          if (isOwnerRole(user.role)) {
+            window.location.replace(getOwnerPortalUrl('/owner'))
+            return
+          }
+          window.location.replace(getCustomerPortalUrl())
+          return
+        }
+
+        if (ownerMode) {
+          if (isOwnerRole(user.role)) {
+            navigate('/owner', { replace: true })
+            return
+          }
+          if (isManagementRole(user.role)) {
+            window.location.replace(getManagementPortalUrl('/admin'))
+            return
+          }
+          window.location.replace(getCustomerPortalUrl())
+          return
+        }
+
+        if (isManagementRole(user.role)) {
+          window.location.replace(getManagementPortalUrl('/admin'))
+          return
+        }
+
+        if (isOwnerRole(user.role)) {
+          window.location.replace(getOwnerPortalUrl('/owner'))
+          return
+        }
+
+        navigate('/', { replace: true })
       })
       .catch(() => {
         setAuth(null, null, null)

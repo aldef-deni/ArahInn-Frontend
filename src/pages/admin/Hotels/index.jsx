@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { adminApi, userApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
+import { getImageUrl } from '@/utils'
 import {
   Plus, Search, Star, MapPin, Eye, Pencil, Trash2, X, Save,
   Building2, CheckCircle2, XCircle, Tag, ChevronLeft, ChevronRight,
@@ -77,8 +78,8 @@ function HotelFormDrawer({ hotel, onClose }) {
   const saveMutation = useMutation({
     mutationFn: (d) => hotel ? adminApi.updateHotel(hotel.id, d) : adminApi.createHotel(d),
     onSuccess : () => {
-      qc.invalidateQueries(['admin-hotels'])
-      qc.invalidateQueries(['pending-hotels'])
+      qc.invalidateQueries({ queryKey: ['admin-hotels'] })
+      qc.invalidateQueries({ queryKey: ['pending-hotels'] })
       toast({ title: hotel ? 'Hotel berhasil diperbarui.' : 'Hotel berhasil ditambahkan.' })
       onClose()
     },
@@ -293,7 +294,7 @@ function HotelFormDrawer({ hotel, onClose }) {
                 {/* Existing images */}
                 {existingImages.map(url => (
                   <div key={url} className="relative group aspect-video rounded-xl overflow-hidden bg-slate-100">
-                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <img src={getImageUrl(url)} alt="" className="w-full h-full object-cover" />
                     <button type="button" onClick={() => removeExisting(url)}
                       className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow">
                       <X className="w-2.5 h-2.5" />
@@ -360,7 +361,7 @@ function DeleteConfirm({ hotel, onClose }) {
   const deleteMutation = useMutation({
     mutationFn: () => adminApi.deleteHotel(hotel.id),
     onSuccess : () => {
-      qc.invalidateQueries(['admin-hotels'])
+      qc.invalidateQueries({ queryKey: ['admin-hotels'] })
       toast({ title: `Hotel "${hotel.name}" berhasil dihapus.` })
       onClose()
     },
@@ -422,13 +423,13 @@ export default function AdminHotels() {
 
   const approveMutation = useMutation({
     mutationFn: (id) => adminApi.approveHotel(id),
-    onSuccess : () => { qc.invalidateQueries(['admin-hotels']); qc.invalidateQueries(['pending-hotels']); toast({ title: 'Hotel disetujui.' }) },
+    onSuccess : () => { qc.invalidateQueries({ queryKey: ['admin-hotels'] }); qc.invalidateQueries({ queryKey: ['pending-hotels'] }); toast({ title: 'Hotel disetujui.' }) },
     onError   : () => toast({ title: 'Gagal menyetujui.', variant: 'destructive' }),
   })
 
   const blockMutation = useMutation({
     mutationFn: (id) => adminApi.blockHotel(id),
-    onSuccess : () => { qc.invalidateQueries(['admin-hotels']); toast({ title: 'Hotel diblokir.' }) },
+    onSuccess : () => { qc.invalidateQueries({ queryKey: ['admin-hotels'] }); toast({ title: 'Hotel diblokir.' }) },
     onError   : () => toast({ title: 'Gagal memblokir.', variant: 'destructive' }),
   })
 
@@ -513,7 +514,7 @@ export default function AdminHotels() {
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 shrink-0">
                             {hotel.images?.[0]
-                              ? <img src={hotel.images[0]} alt="" className="w-full h-full object-cover" />
+                              ? <img src={getImageUrl(hotel.images[0])} alt="" className="w-full h-full object-cover" />
                               : <div className="w-full h-full flex items-center justify-center text-xl">🏨</div>}
                           </div>
                           <div className="min-w-0">

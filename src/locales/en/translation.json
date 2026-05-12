@@ -7,17 +7,41 @@
   "hero": {
     "title": "Find Your Dream Stay",
     "subtitle": "From 5-star hotels to exclusive villas — all available at the best prices.",
-    "cta": "Search Now"
+    "cta": "Search Now",
+    "categoryTitle": "Beautiful Choices to Explore Indonesia",
+    "catHotel": "Hotel &\nApartment",
+    "catGuestHouse": "Guest House\n& Boarding",
+    "catVilla": "Villa, Resort\n& Glamping"
   },
   "search": {
     "destination": "City / Destination", "checkin": "Check-in", "checkout": "Check-out",
     "guests": "Guests", "guestUnit": "Guest", "search": "Search", "results": "Search Results",
-    "noResults": "No hotels found.", "filter": "Filter", "sortBy": "Sort By"
+    "noResults": "No hotels found.", "filter": "Filter", "sortBy": "Sort By",
+    "sortByLabel": "Sort By",
+    "sortPopular": "Most Popular",
+    "sortPriceAsc": "Lowest Price",
+    "sortPriceDesc": "Highest Price",
+    "sortRating": "Highest Rating",
+    "priceRange": "Price Range",
+    "pricePerNight": "Room price per night",
+    "popularFilter": "Popular Filters",
+    "facilitiesFilter": "Facilities",
+    "searching": "Searching...",
+    "hotelsCount": "Hotels",
+    "noResultsHint": "Try adjusting your filters or destination",
+    "reset": "Reset"
   },
   "hotel": {
     "perNight": "/ night", "available": "Available", "unavailable": "Unavailable",
     "facilities": "Facilities", "rooms": "Rooms", "reviews": "Reviews", "book": "Book Now",
-    "stars": "stars", "checkAvail": "Check Availability", "contactUs": "Contact us"
+    "stars": "stars", "checkAvail": "Check Availability", "contactUs": "Contact us",
+    "bestPriceClass": "Best price in its class",
+    "viewMore": "View More",
+    "moreItems": "+{{count}} more",
+    "roomsLeft": "{{count}} Rooms Left",
+    "includeTax": "Taxes & Fees Included",
+    "startFrom": "Starting from",
+    "viewDetail": "View →"
   },
   "booking": {
     "summary": "Booking Summary", "guestInfo": "Guest Information", "promo": "Promo Code",
@@ -78,6 +102,17 @@
     "promoCopyCode": "Copy code",
     "promoCopied": "Copied!",
     "promoShop": "Book Now"
+  },
+  "countdown": {
+    "days": "days", "hours": "hrs", "minutes": "min", "seconds": "sec"
+  },
+  "facilities": {
+    "ac": "Air Conditioning", "wifi": "WiFi", "parking": "Parking", "pool": "Swimming Pool",
+    "gym": "Gym", "spa": "Spa", "restaurant": "Restaurant", "bathtub": "Bathtub",
+    "no_smoking": "Non-Smoking", "playground": "Children's Playground",
+    "hot_water": "Hot Water", "minibar": "Minibar", "balcony": "Balcony",
+    "kitchen": "Kitchen", "living_room": "Living Room", "extra_bed": "Extra Bed",
+    "jacuzzi": "Jacuzzi", "tv": "TV"
   },
   "common": {
     "loading": "Loading...", "error": "Something went wrong", "retry": "Try again",

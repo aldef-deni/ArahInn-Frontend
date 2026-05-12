@@ -92,7 +92,7 @@
         rgba(30, 80, 180, 0.55) 70%,
         rgba(30, 80, 180, 0.35) 100%
       ),
-      url('https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1920&q=85')
+      url('/hotel02.jpg')
       center / cover no-repeat;
   }
 

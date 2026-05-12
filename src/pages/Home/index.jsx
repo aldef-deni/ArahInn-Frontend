@@ -4,10 +4,12 @@ import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
 import { promoApi } from '@/services/index'
-import { formatRupiah, formatDateShort } from '@/utils'
+import { propertyApi } from '@/services/propertyApi'
+import { formatRupiah, formatDateShort, getImageUrl } from '@/utils'
 import {
   Search, MapPin, Calendar, Users, ArrowRight,
-  Zap, Shield, Headphones, Award, TrendingUp, Tag, Copy, Check, Clock
+  Zap, Shield, Headphones, Award, TrendingUp, Tag, Copy, Check, Clock, Building2,
+  ChevronDown, Wallet,
 } from 'lucide-react'
 import { format, addDays, parseISO } from 'date-fns'
 import HotelCard from '@/components/hotel/HotelCard'
@@ -116,10 +118,10 @@ function PromoCard({ promo, onShop, t }) {
           {countdown && (
             <div className="flex items-end gap-1.5">
               <Clock className="w-3.5 h-3.5 text-white/60 mb-2.5 shrink-0" />
-              {countdown.d > 0 && <CountdownBox value={countdown.d} label="hari" />}
-              <CountdownBox value={countdown.h} label="jam" />
-              <CountdownBox value={countdown.m} label="min" />
-              <CountdownBox value={countdown.s} label="dtk" />
+              {countdown.d > 0 && <CountdownBox value={countdown.d} label={t('countdown.days')} />}
+              <CountdownBox value={countdown.h} label={t('countdown.hours')} />
+              <CountdownBox value={countdown.m} label={t('countdown.minutes')} />
+              <CountdownBox value={countdown.s} label={t('countdown.seconds')} />
             </div>
           )}
           <span className="text-white font-black text-2xl whitespace-nowrap leading-none">{discountLabel}</span>
@@ -141,7 +143,7 @@ export default function Home() {
   const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd')
 
   const [form, setForm] = useState({
-    city: '', checkIn: today, checkOut: tomorrow, guests: 2
+    q: '', category: '', checkIn: today, checkOut: tomorrow, guests: 2
   })
 
   const { data: featured } = useQuery({
@@ -154,13 +156,49 @@ export default function Home() {
     queryFn : () => promoApi.getActive().then(r => r.data?.data),
   })
 
+  const { data: featuredProperties } = useQuery({
+    queryKey: ['home-properties'],
+    queryFn : () => propertyApi.search({ limit: 4, status: 'approved' }).then(r => r.data),
+  })
+
+  const [propForm, setPropForm] = useState({ listingType: '', location: '', category: '', priceRange: '' })
+  const [propImgErr, setPropImgErr] = useState({})
+  const [activePropCat, setActivePropCat] = useState(null)
+
   const handleSearch = (e) => {
     e.preventDefault()
-    const params = new URLSearchParams(form)
+    const params = new URLSearchParams()
+    if (form.q)        params.set('q', form.q)
+    if (form.category) params.set('category', form.category)
+    params.set('checkIn',  form.checkIn)
+    params.set('checkOut', form.checkOut)
+    params.set('guests',   form.guests)
     navigate(`/search?${params}`)
   }
 
+  const handlePropertySearch = () => {
+    const params = new URLSearchParams()
+    if (propForm.location)  params.set('city', propForm.location)
+    if (propForm.category)  params.set('category', propForm.category)
+    if (propForm.priceRange) params.set('maxPrice', propForm.priceRange)
+    params.set('listingType', propForm.listingType)
+    navigate(`/properti?${params}`)
+  }
+
+  const PROP_CATEGORIES = ['Hotel', 'Apartemen', 'Kosan', 'Guest House', 'Villa', 'Resort']
+
   const popularCities = ['Jakarta','Bali','Yogyakarta','Surabaya','Bandung','Lombok']
+
+  const ACCOMMODATION_TYPES = [
+    { value: '',             label: 'Semua Tipe' },
+    { value: 'Hotel',        label: 'Hotel' },
+    { value: 'Villa',        label: 'Villa' },
+    { value: 'Kosan',        label: 'Kosan' },
+    { value: 'Apartment',    label: 'Apartemen' },
+    { value: 'Guest House',  label: 'Guest House' },
+    { value: 'Resort',       label: 'Resort' },
+    { value: 'Glamping',     label: 'Glamping' },
+  ]
 
   const features = [
     { icon: Zap,        title: t('home.instantBooking'),  desc: t('home.instantBookingDesc') },
@@ -176,17 +214,29 @@ export default function Home() {
         <div className="absolute inset-0 opacity-10"
           style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}
         />
-        <div className="container relative py-14 lg:py-20">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 text-white/90 text-sm font-medium mb-6 backdrop-blur-sm border border-white/20">
-              <TrendingUp className="w-4 h-4" /> {t('home.hotelsAvailable')}
+        <div className="container relative py-12 lg:py-16 flex flex-col gap-12 lg:gap-16">
+
+          {/* Kategori */}
+          <div className="text-center">
+            <h2 className="font-display text-2xl lg:text-3xl font-bold text-white mb-6">
+              {t('hero.categoryTitle')}
+            </h2>
+            <div className="flex flex-wrap justify-center gap-4">
+              {[
+                { labelKey: 'hero.catHotel',      img: '/hotel-kategori.png', cats: 'Hotel,Apartment'          },
+                { labelKey: 'hero.catGuestHouse',  img: '/kosan-kategori.png', cats: 'Guest House,Kosan'        },
+                { labelKey: 'hero.catVilla',       img: '/villa-kategori.png', cats: 'Villa,Resort,Glamping'    },
+              ].map(({ labelKey, img, cats }) => (
+                <button
+                  key={cats}
+                  onClick={() => navigate(`/search?categories=${encodeURIComponent(cats)}&checkIn=${today}&checkOut=${tomorrow}&guests=2`)}
+                  className="group flex flex-col items-center justify-center gap-3 w-36 h-36 rounded-2xl bg-white/15 hover:bg-orange-500 border border-white/25 hover:border-orange-400 backdrop-blur-sm transition-all duration-200"
+                >
+                  <img src={img} alt={cats} className="w-12 h-12 object-contain" />
+                  <span className="text-white text-xs font-semibold leading-snug text-center whitespace-pre-line">{t(labelKey)}</span>
+                </button>
+              ))}
             </div>
-            <h1 className="font-display text-4xl lg:text-6xl font-bold text-white leading-tight mb-4">
-              {t('hero.title')}
-            </h1>
-            <p className="text-blue-200 text-lg lg:text-xl mb-10 max-w-lg leading-relaxed">
-              {t('hero.subtitle')}
-            </p>
           </div>
 
           {/* Search box — glass / Traveloka style */}
@@ -194,17 +244,34 @@ export default function Home() {
             <form onSubmit={handleSearch}
               className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-white/15">
 
-              {/* Destination */}
+              {/* Destination / Hotel Name */}
               <div className="flex-[2] flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-colors cursor-text">
                 <MapPin className="w-5 h-5 text-white/50 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">{t('search.destination')}</p>
+                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">KOTA / NAMA HOTEL</p>
                   <input
-                    value={form.city}
-                    onChange={e => setForm({...form, city: e.target.value})}
-                    placeholder="Jakarta, Bali..."
+                    value={form.q}
+                    onChange={e => setForm({...form, q: e.target.value})}
+                    placeholder="Jakarta, Bali, nama hotel..."
                     className="w-full bg-transparent text-white placeholder:text-white/35 text-sm font-medium focus:outline-none"
                   />
+                </div>
+              </div>
+
+              {/* Accommodation Type */}
+              <div className="flex-[1.2] flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-colors">
+                <Building2 className="w-5 h-5 text-white/50 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">TIPE AKOMODASI</p>
+                  <select
+                    value={form.category}
+                    onChange={e => setForm({...form, category: e.target.value})}
+                    className="w-full bg-transparent text-sm font-medium focus:outline-none [color-scheme:dark] cursor-pointer text-white"
+                  >
+                    {ACCOMMODATION_TYPES.map(t => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -257,7 +324,7 @@ export default function Home() {
               {/* Search button */}
               <div className="flex items-center px-4 py-4 lg:pl-3">
                 <button type="submit"
-                  className="w-full lg:w-auto px-7 py-3.5 bg-brand text-white rounded-xl font-bold hover:bg-brand-700 transition-colors shadow-lg flex items-center justify-center gap-2 whitespace-nowrap text-sm">
+                  className="w-full lg:w-auto px-7 py-3.5 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 transition-colors shadow-lg flex items-center justify-center gap-2 whitespace-nowrap text-sm">
                   <Search className="w-4 h-4" />
                   {t('hero.cta')}
                 </button>
@@ -317,6 +384,174 @@ export default function Home() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* ── Property Section ─────────────────────────────── */}
+      <section className="bg-blue-50 py-14">
+        <div className="container">
+
+          {/* Search card */}
+          <div className="bg-gradient-to-r from-[#1a56db] to-[#2563eb] rounded-2xl p-5 mb-8 shadow-xl">
+            {/* Tabs */}
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setPropForm(p => ({ ...p, listingType: 'sell' }))}
+                className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${
+                  propForm.listingType === 'sell'
+                    ? 'bg-orange-500 text-white shadow-md'
+                    : 'bg-white/20 text-white border border-white/30 hover:bg-white/30'
+                }`}>
+                Jual Property
+              </button>
+              <button
+                onClick={() => setPropForm(p => ({ ...p, listingType: 'rent' }))}
+                className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${
+                  propForm.listingType === 'rent'
+                    ? 'bg-orange-500 text-white shadow-md'
+                    : 'bg-white/20 text-white border border-white/30 hover:bg-white/30'
+                }`}>
+                Beli
+              </button>
+            </div>
+
+            {/* Search bar */}
+            <div className="bg-white rounded-xl flex flex-col lg:flex-row items-stretch overflow-hidden shadow-sm">
+              {/* Location */}
+              <div className="flex items-center gap-3 px-4 py-3 flex-[2] border-b lg:border-b-0 lg:border-r border-slate-100">
+                <MapPin className="w-4 h-4 text-blue-400 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-slate-400 mb-0.5">Cari lokasi property</p>
+                  <input
+                    value={propForm.location}
+                    onChange={e => setPropForm(p => ({ ...p, location: e.target.value }))}
+                    placeholder="Masukan Lokasi Property"
+                    className="w-full text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Category */}
+              <div className="flex items-center gap-2 px-4 py-3 flex-[2] border-b lg:border-b-0 lg:border-r border-slate-100">
+                <Building2 className="w-4 h-4 text-blue-400 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-slate-400 mb-0.5">Jenis Property</p>
+                  <select
+                    value={propForm.category}
+                    onChange={e => setPropForm(p => ({ ...p, category: e.target.value }))}
+                    className="w-full text-sm text-slate-700 focus:outline-none bg-transparent cursor-pointer">
+                    <option value="">Semua Jenis</option>
+                    {PROP_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+              </div>
+
+              {/* Price Range */}
+              <div className="flex items-center gap-2 px-4 py-3 flex-[2] border-b lg:border-b-0 lg:border-r border-slate-100">
+                <Wallet className="w-4 h-4 text-blue-400 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-slate-400 mb-0.5">Range Harga</p>
+                  <input
+                    value={propForm.priceRange}
+                    onChange={e => setPropForm(p => ({ ...p, priceRange: e.target.value }))}
+                    placeholder="Masukan range harga"
+                    className="w-full text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Search button */}
+              <button
+                onClick={handlePropertySearch}
+                className="flex items-center justify-center px-5 py-3 bg-orange-500 hover:bg-orange-600 text-white transition-colors shrink-0">
+                <Search className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Title */}
+          <h2 className="font-display text-2xl lg:text-3xl font-bold text-slate-900 mb-5">
+            Property dengan harga terbaik untuk investasimu!
+          </h2>
+
+          {/* Category pills */}
+          <div className="flex flex-wrap gap-2 mb-7">
+            {[
+              { label: '🏨 Hotel & Apartemen',       cats: ['Hotel','Apartment'] },
+              { label: '🏠 Guest House & Kosan',      cats: ['Guest House','Kosan'] },
+              { label: '🌴 Villa, Resort & Glamping', cats: ['Villa','Resort','Glamping'] },
+              { label: '🏡 Hunian Keluarga',          cats: [] },
+            ].map((g) => (
+              <button key={g.label}
+                onClick={() => {
+                  setActivePropCat(g.label)
+                  navigate(`/properti?categories=${encodeURIComponent(g.cats.join(','))}`)
+                }}
+                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all border ${
+                  activePropCat === g.label
+                    ? 'bg-orange-500 text-white border-orange-500'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-orange-400 hover:text-orange-500'
+                }`}>
+                {g.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Property grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {featuredProperties?.data?.map(listing => {
+              const img = listing.images?.[0]
+              return (
+                <div key={listing.id}
+                  onClick={() => navigate(`/properti/${listing.id}`)}
+                  className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-lg transition-all cursor-pointer group">
+                  <div className="relative h-44 bg-slate-100 overflow-hidden">
+                    {img && !propImgErr[img] ? (
+                      <img src={getImageUrl(img)} alt={listing.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={() => setPropImgErr(p => ({ ...p, [img]: true }))} />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+                        <Building2 className="w-10 h-10 text-slate-300" />
+                      </div>
+                    )}
+                    <span className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      {listing.category}
+                    </span>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-bold text-slate-900 text-sm leading-snug line-clamp-2 mb-1">{listing.title}</h3>
+                    <div className="flex items-center gap-1 text-xs text-slate-500 mb-2">
+                      <MapPin className="w-3 h-3 text-orange-400 shrink-0" />
+                      <span className="truncate">{listing.city}</span>
+                    </div>
+                    <p className="text-xs text-slate-500">Start : <span className="text-orange-500 font-bold">{formatRupiah(listing.price)}</span></p>
+                  </div>
+                </div>
+              )
+            })}
+            {!featuredProperties && Array(4).fill(0).map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl overflow-hidden border border-slate-100">
+                <div className="skeleton h-44" />
+                <div className="p-4 space-y-2">
+                  <div className="skeleton h-4 w-3/4 rounded" />
+                  <div className="skeleton h-3 w-1/2 rounded" />
+                  <div className="skeleton h-4 w-1/3 rounded mt-1" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── App Banner ───────────────────────────────────── */}
+      <section className="container py-8">
+        <a href="/register" className="block rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow mx-auto" style={{ maxWidth: '80%' }}>
+          <img
+            src="/app-banner.png"
+            alt="New User Special Treats – ArahInn App"
+            className="w-full h-auto object-cover"
+          />
+        </a>
       </section>
 
       {/* ── Features ──────────────────────────────────────── */}

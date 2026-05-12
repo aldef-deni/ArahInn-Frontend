@@ -7,17 +7,41 @@
   "hero": {
     "title": "Temukan Penginapan Impian Anda",
     "subtitle": "Dari hotel bintang 5 hingga villa eksklusif — semua tersedia dengan harga terbaik.",
-    "cta": "Cari Sekarang"
+    "cta": "Cari Sekarang",
+    "categoryTitle": "Pilihan Indah Jelajahi Indonesia",
+    "catHotel": "Hotel &\nApartemen",
+    "catGuestHouse": "Guest House\n& Kosan",
+    "catVilla": "Villa, Resort\n& Glamping"
   },
   "search": {
     "destination": "Kota / Tujuan", "checkin": "Check-in", "checkout": "Check-out",
     "guests": "Tamu", "guestUnit": "Tamu", "search": "Cari", "results": "Hasil Pencarian",
-    "noResults": "Tidak ada hotel ditemukan.", "filter": "Filter", "sortBy": "Urutkan"
+    "noResults": "Tidak ada hotel ditemukan.", "filter": "Filter", "sortBy": "Urutkan",
+    "sortByLabel": "Urutkan Berdasarkan",
+    "sortPopular": "Popularitas Tertinggi",
+    "sortPriceAsc": "Harga Terendah",
+    "sortPriceDesc": "Harga Tertinggi",
+    "sortRating": "Rating Tertinggi",
+    "priceRange": "Range Harga",
+    "pricePerNight": "Harga kamar per malam",
+    "popularFilter": "Filter Populer",
+    "facilitiesFilter": "Fasilitas",
+    "searching": "Mencari...",
+    "hotelsCount": "Hotel",
+    "noResultsHint": "Coba ubah filter atau kota tujuan",
+    "reset": "Reset"
   },
   "hotel": {
     "perNight": "/ malam", "available": "Tersedia", "unavailable": "Tidak Tersedia",
     "facilities": "Fasilitas", "rooms": "Kamar", "reviews": "Ulasan", "book": "Pesan Sekarang",
-    "stars": "bintang", "checkAvail": "Cek Ketersediaan", "contactUs": "Hubungi kami"
+    "stars": "bintang", "checkAvail": "Cek Ketersediaan", "contactUs": "Hubungi kami",
+    "bestPriceClass": "Harga terbaik di kelasnya",
+    "viewMore": "Lihat Lainnya",
+    "moreItems": "+{{count}} lainnya",
+    "roomsLeft": "Sisa {{count}} Kamar",
+    "includeTax": "Termasuk Biaya Pajak",
+    "startFrom": "Mulai dari",
+    "viewDetail": "Lihat →"
   },
   "booking": {
     "summary": "Ringkasan Booking", "guestInfo": "Data Tamu", "promo": "Kode Promo",
@@ -60,7 +84,7 @@
     "featuredHotels": "Hotel Pilihan",
     "featuredSubtitle": "Properti terpopuler minggu ini",
     "viewAll": "Lihat Semua",
-    "whyTitle": "Kenapa Pilih ArahInn?",
+    "whyTitle": "Kenapa Pilih ArahInn.com?",
     "whySubtitle": "Kami mengutamakan kenyamanan dan kepercayaan Anda",
     "instantBooking": "Booking Instan",
     "instantBookingDesc": "Konfirmasi langsung dalam hitungan detik",
@@ -78,6 +102,17 @@
     "promoCopyCode": "Salin kode",
     "promoCopied": "Tersalin!",
     "promoShop": "Pesan Sekarang"
+  },
+  "countdown": {
+    "days": "hari", "hours": "jam", "minutes": "min", "seconds": "dtk"
+  },
+  "facilities": {
+    "ac": "AC", "wifi": "WiFi", "parking": "Parkir", "pool": "Kolam Renang",
+    "gym": "Gym", "spa": "Spa", "restaurant": "Restoran", "bathtub": "Bathtub",
+    "no_smoking": "Bebas Asap Rokok", "playground": "Taman Bermain Anak",
+    "hot_water": "Air Panas", "minibar": "Minibar", "balcony": "Balkon",
+    "kitchen": "Dapur", "living_room": "Ruang Tamu", "extra_bed": "Kasur Tambahan",
+    "jacuzzi": "Jacuzzi", "tv": "TV"
   },
   "common": {
     "loading": "Memuat...", "error": "Terjadi kesalahan", "retry": "Coba lagi",

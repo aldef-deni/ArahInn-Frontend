@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { adminApi } from '@/services/index'
-import { formatRupiah, formatDateTime, statusBadgeClass, statusLabel } from '@/utils'
+import { formatRupiah, statusBadgeClass, statusLabel } from '@/utils'
 import {
   Users, Hotel, ShoppingBag, TrendingUp,
   ArrowUpRight, ArrowDownRight, Clock, CheckCircle
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, BarChart, Bar
+  Tooltip, ResponsiveContainer, BarChart, Bar, Cell,
 } from 'recharts'
 
 function StatCard({ title, value, sub, icon: Icon, color = 'blue', trend }) {
@@ -61,8 +61,11 @@ export default function Dashboard() {
     </div>
   )
 
-  const summary = data?.summary || {}
-  const byStatus = data?.bookingsByStatus || {}
+  const summary  = data?.summary || {}
+  const trends = summary?.trends || {}
+  const byStatus = data?.bookingsByStatus ?? data?.bookings_by_status ?? {}
+  const hotelCount = summary.activeHotels ?? summary.totalHotels ?? 0
+  const pendingHotels = summary.pendingHotels ?? 0
 
   const statusData = [
     { name: 'Menunggu', value: byStatus.pending  || 0, color: '#f59e0b' },
@@ -75,10 +78,38 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={TrendingUp} title="Total Pendapatan"   value={formatRupiah(summary.totalRevenue)}     sub={`Bulan ini: ${formatRupiah(summary.revenueThisMonth)}`}   color="green"  trend={12} />
-        <StatCard icon={ShoppingBag} title="Total Booking"    value={summary.totalBookings?.toLocaleString()} sub={`Bulan ini: ${summary.bookingsThisMonth}`}                color="blue"   trend={8}  />
-        <StatCard icon={Users}       title="Total Pengguna"   value={summary.totalUsers?.toLocaleString()}    sub="Terdaftar"                                                color="purple" />
-        <StatCard icon={Hotel}       title="Hotel Aktif"      value={summary.activeHotels?.toLocaleString()}  sub={`${summary.pendingBookings || 0} booking menunggu`}       color="orange" />
+        <StatCard
+          icon={TrendingUp}
+          title="Total Pendapatan"
+          value={formatRupiah(summary.totalRevenue)}
+          sub={`Bulan ini: ${formatRupiah(summary.revenueThisMonth)}`}
+          color="green"
+          trend={trends.revenue}
+        />
+        <StatCard
+          icon={ShoppingBag}
+          title="Total Booking"
+          value={summary.totalBookings?.toLocaleString() || '0'}
+          sub={`Bulan ini: ${summary.bookingsThisMonth || 0}`}
+          color="blue"
+          trend={trends.bookings}
+        />
+        <StatCard
+          icon={Users}
+          title="Total Pengguna"
+          value={summary.totalUsers?.toLocaleString() || '0'}
+          sub="Terdaftar"
+          color="purple"
+          trend={trends.users}
+        />
+        <StatCard
+          icon={Hotel}
+          title="Hotel Aktif"
+          value={hotelCount.toLocaleString()}
+          sub={`${pendingHotels} hotel menunggu persetujuan`}
+          color="orange"
+          trend={trends.hotels}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -117,7 +148,7 @@ export default function Dashboard() {
               <Tooltip />
               <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                 {statusData.map((s, i) => (
-                  <rect key={i} fill={s.color} />
+                  <Cell key={i} fill={s.color} />
                 ))}
               </Bar>
             </BarChart>
@@ -156,7 +187,7 @@ export default function Dashboard() {
                 <tr key={b.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 font-mono text-xs font-semibold text-brand">{b.bookingCode}</td>
                   <td className="px-4 py-3 font-medium whitespace-nowrap">{b.guestName}</td>
-                  <td className="px-4 py-3 text-muted-foreground max-w-[150px] truncate">{b.hotel?.name}</td>
+                  <td className="px-4 py-3 text-muted-foreground max-w-[150px] truncate">{b.hotel?.name || '-'}</td>
                   <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{new Date(b.checkIn).toLocaleDateString('id-ID')}</td>
                   <td className="px-4 py-3 font-semibold whitespace-nowrap">{formatRupiah(b.totalPrice)}</td>
                   <td className="px-4 py-3">

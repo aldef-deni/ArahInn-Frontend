@@ -22,7 +22,7 @@ export default function OwnerHarga() {
   const mutation = useMutation({
     mutationFn: (d) => hotelApi.updateRoom(hotel.id, editing.id, d),
     onSuccess : () => {
-      qc.invalidateQueries(['owner-rooms'])
+      qc.invalidateQueries({ queryKey: ['owner-rooms'] })
       setEditing(null)
       toast({ title: 'Harga berhasil diperbarui.' })
     },

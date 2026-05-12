@@ -1,9 +1,12 @@
 import { Outlet, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft } from 'lucide-react'
+import { getCustomerPortalUrl, isExtranet } from '@/utils/isExtranet'
 
 export default function AuthLayout() {
   const { i18n } = useTranslation()
+  const managementMode = isExtranet()
+  const homeHref = managementMode ? getCustomerPortalUrl() : '/'
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
@@ -11,20 +14,19 @@ export default function AuthLayout() {
       <div className="flex flex-col justify-center px-6 py-12 lg:px-16 bg-white">
         <div className="mx-auto w-full max-w-sm">
           <Link to="/" className="flex items-center gap-2 mb-10 group">
-            <img src="/logo.png" alt="Arahinn" className="h-10 w-auto" />
-            <span className="font-display font-bold text-2xl text-brand-800">
-              ARAHINN
-            </span>
+            <img src="/logo-arahin.png" alt="Arahinn" className="h-10 w-auto" />
           </Link>
           <Outlet />
 
           {/* Back to Home */}
           <div className="mt-8 pt-6 border-t border-muted">
-            <Link to="/"
+            <a href={homeHref}
               className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-brand-700 transition-colors group">
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-              {i18n.language === 'id' ? 'Kembali ke Beranda' : 'Back to Home'}
-            </Link>
+              {i18n.language === 'id'
+                ? managementMode ? 'Kembali ke Arahinn.com' : 'Kembali ke Beranda'
+                : managementMode ? 'Back to Arahinn.com' : 'Back to Home'}
+            </a>
           </div>
         </div>
       </div>
@@ -36,7 +38,7 @@ export default function AuthLayout() {
         />
         <div className="relative h-full flex flex-col justify-center items-center text-white px-12 text-center">
           <div className="w-24 h-24 rounded-3xl bg-white/20 flex items-center justify-center mb-8 shadow-2xl">
-            <img src="/logo.png" alt="Arahinn" className="w-20 h-20 object-contain" />
+            <img src="/logo-arahin.png" alt="Arahinn" className="w-20 h-20 object-contain" />
           </div>
           <h2 className="font-display text-4xl font-bold mb-4 leading-tight">
             Temukan Penginapan<br />Impian Anda

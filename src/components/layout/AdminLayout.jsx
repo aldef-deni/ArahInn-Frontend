@@ -5,19 +5,60 @@ import { authApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import {
   LayoutDashboard, Hotel, ShoppingBag, BarChart2,
-  Users, UserCog, Tag, LogOut, Menu, X, User
+  Users, UserCog, Tag, LogOut, Menu, X, User,
+  FileText, CreditCard, Building2, Megaphone, ChevronDown, MessageSquare,
+  CalendarDays,
 } from 'lucide-react'
 import { cn, roleLabel } from '@/utils'
 import NotificationBell from '@/components/ui/NotificationBell'
+import queryClient from '@/lib/queryClient'
 
-const navItems = [
-  { to: '/admin',                      label: 'Dashboard', icon: LayoutDashboard, exact: true },
-  { to: '/admin/hotels',               label: 'Hotel',     icon: Hotel },
-  { to: '/admin/orders',               label: 'Pesanan',   icon: ShoppingBag },
-  { to: '/admin/reports',              label: 'Laporan',   icon: BarChart2 },
-  { to: '/admin/users',                label: 'Pengelola', icon: UserCog },
-  { to: '/admin/users?section=pengguna', label: 'Pengguna',  icon: Users },
-  { to: '/admin/promos',               label: 'Promo',     icon: Tag },
+const NAV_ADMIN = [
+  { to: '/admin',                        label: 'Dashboard',        icon: LayoutDashboard, exact: true },
+  { to: '/admin/hotels',                 label: 'Hotel',            icon: Hotel },
+  { to: '/admin/orders',                 label: 'Pesanan',          icon: ShoppingBag },
+  { to: '/admin/reports',                label: 'Laporan',          icon: BarChart2 },
+  { to: '/admin/users',                  label: 'Pengelola',        icon: UserCog },
+  { to: '/admin/owners',                 label: 'Owner Akomodasi',  icon: Building2 },
+  { to: '/admin/mm-handler',             label: 'MM Handler',       icon: UserCog },
+  { to: '/admin/users?section=pengguna', label: 'Pengguna',         icon: Users },
+  {
+    type: 'group',
+    label: 'Promo & Campaign',
+    icon: Tag,
+    children: [
+      { to: '/admin/promos',    label: 'Promo',    icon: Tag },
+      { to: '/admin/campaigns', label: 'Campaign', icon: Megaphone },
+    ],
+  },
+  { to: '/admin/property-approval', label: 'Jual - Beli Properti',    icon: Building2 },
+  { to: '/admin/reviews',           label: 'Review Tamu',            icon: MessageSquare },
+  { to: '/admin/harga',             label: 'Harga & Ketersediaan',   icon: CalendarDays },
+]
+
+const NAV_MARKET_MANAGER = [
+  { to: '/admin',               label: 'Dashboard',           icon: LayoutDashboard, exact: true },
+  { to: '/admin/owners',        label: 'Owner Akomodasi',     icon: Building2 },
+  { to: '/admin/hotels',        label: 'Hotel',               icon: Hotel },
+  { to: '/admin/orders',        label: 'Pesanan',             icon: ShoppingBag },
+  { to: '/admin/reports',       label: 'Laporan',             icon: BarChart2 },
+  {
+    type: 'group',
+    label: 'Promo & Campaign',
+    icon: Tag,
+    children: [
+      { to: '/admin/promos',    label: 'Promo',    icon: Tag },
+      { to: '/admin/campaigns', label: 'Campaign', icon: Megaphone },
+    ],
+  },
+  { to: '/admin/property-approval', label: 'Jual - Beli Properti', icon: Building2 },
+]
+
+const NAV_FINANCE = [
+  { to: '/admin',                     label: 'Dashboard',     icon: LayoutDashboard, exact: true },
+  { to: '/admin/orders',              label: 'Transaksi',     icon: CreditCard },
+  { to: '/admin/reports',             label: 'Lap. Keuangan', icon: BarChart2 },
+  { to: '/admin/finance/invoices',    label: 'Invoice',       icon: FileText },
 ]
 
 export default function AdminLayout() {
@@ -27,9 +68,19 @@ export default function AdminLayout() {
   const { toast }        = useToast()
   const [collapsed, setCollapsed] = useState(false)
 
+  const isFinance       = user?.role === 'finance'
+  const isMarketManager = user?.role === 'admin'
+  const navItems        = isFinance ? NAV_FINANCE : isMarketManager ? NAV_MARKET_MANAGER : NAV_ADMIN
+
+  const promoRoutes = ['/admin/promos', '/admin/campaigns']
+  const [promoOpen, setPromoOpen] = useState(() =>
+    promoRoutes.some(p => location.pathname.startsWith(p))
+  )
+
   const handleLogout = async () => {
     try { await authApi.logout() } catch {}
     logout()
+    queryClient.clear()
     navigate('/login')
     toast({ title: 'Berhasil keluar.' })
   }
@@ -60,10 +111,7 @@ export default function AdminLayout() {
       )}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 h-16 border-b border-white/10">
-          <img src="/logo.png" alt="Arahinn" className={cn('w-auto shrink-0', collapsed ? 'h-7' : 'h-8')} />
-          {!collapsed && (
-            <span className="font-display font-bold text-lg tracking-wide">ARAHINN</span>
-          )}
+          <img src="/logo-arahin.png" alt="Arahinn" className={cn('w-auto shrink-0', collapsed ? 'h-7' : 'h-8')} />
           <button onClick={() => setCollapsed(!collapsed)}
             className="ml-auto p-1 rounded-lg hover:bg-white/10 transition-colors shrink-0">
             {collapsed ? <Menu className="w-4 h-4" /> : <X className="w-4 h-4" />}
@@ -72,19 +120,63 @@ export default function AdminLayout() {
 
         {/* Nav */}
         <nav className="flex-1 py-4 space-y-1 px-2 overflow-y-auto custom-scroll">
-          {navItems.map(({ to, label, icon: Icon, exact }, idx) => (
-            <Link key={idx} to={to}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
-                isActive(to, exact)
-                  ? 'bg-white/20 text-white shadow-sm'
-                  : 'text-blue-200 hover:bg-white/10 hover:text-white'
-              )}
-              title={collapsed ? label : undefined}>
-              <Icon className="w-5 h-5 shrink-0" />
-              {!collapsed && label}
-            </Link>
-          ))}
+          {navItems.map((item, idx) => {
+            if (item.type === 'group') {
+              const GroupIcon = item.icon
+              const groupActive = item.children.some(c => isActive(c.to, c.exact))
+              return (
+                <div key={idx}>
+                  <button
+                    onClick={() => setPromoOpen(o => !o)}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
+                      groupActive
+                        ? 'bg-white/20 text-white shadow-sm'
+                        : 'text-blue-200 hover:bg-white/10 hover:text-white'
+                    )}
+                    title={collapsed ? item.label : undefined}>
+                    <GroupIcon className="w-5 h-5 shrink-0" />
+                    {!collapsed && (
+                      <>
+                        <span className="flex-1 text-left">{item.label}</span>
+                        <ChevronDown className={cn('w-4 h-4 transition-transform', promoOpen && 'rotate-180')} />
+                      </>
+                    )}
+                  </button>
+                  {promoOpen && !collapsed && (
+                    <div className="mt-1 ml-4 space-y-1 border-l border-white/10 pl-3">
+                      {item.children.map(({ to, label, icon: ChildIcon }, cidx) => (
+                        <Link key={cidx} to={to}
+                          className={cn(
+                            'flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all',
+                            isActive(to)
+                              ? 'bg-white/20 text-white shadow-sm'
+                              : 'text-blue-200 hover:bg-white/10 hover:text-white'
+                          )}>
+                          <ChildIcon className="w-4 h-4 shrink-0" />
+                          {label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+            const { to, label, icon: Icon, exact } = item
+            return (
+              <Link key={idx} to={to}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
+                  isActive(to, exact)
+                    ? 'bg-white/20 text-white shadow-sm'
+                    : 'text-blue-200 hover:bg-white/10 hover:text-white'
+                )}
+                title={collapsed ? label : undefined}>
+                <Icon className="w-5 h-5 shrink-0" />
+                {!collapsed && label}
+              </Link>
+            )
+          })}
         </nav>
 
         {/* User info */}
@@ -127,9 +219,15 @@ export default function AdminLayout() {
         <header className="sticky top-0 z-40 h-16 bg-white border-b flex items-center justify-between px-6 shadow-sm">
           <div>
             <h1 className="text-lg font-semibold text-foreground">
-              {navItems.find(n => isActive(n.to, n.exact))?.label || 'Admin'}
+              {navItems.reduce((found, item) => {
+                if (found) return found
+                if (item.type === 'group') return item.children.find(c => isActive(c.to, c.exact))?.label || null
+                return isActive(item.to, item.exact) ? item.label : null
+              }, null) || 'Dashboard'}
             </h1>
-            <p className="text-xs text-muted-foreground">Panel Manajemen OTA System</p>
+            <p className="text-xs text-muted-foreground">
+              {isFinance ? 'Finance & Keuangan' : 'Panel Manajemen OTA System'}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <NotificationBell />

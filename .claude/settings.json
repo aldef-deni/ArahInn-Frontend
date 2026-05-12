@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\ade zulham\\\\Downloads\\\\arahinn\\\\files\\\\ota-backend\\\\app\\\\Http\\\\Controllers\" -Recurse -File -Filter \"*.php\")",
+      "Bash(Select-Object FullName)",
+      "Read(//c/Users/ade zulham/Downloads/arahinn/files/ota-frontend-react/**)",
+      "Bash(xargs grep -l -i \"campaign\")",
+      "Bash(ssh ckgiyjjt@iix1531 \"which php && php -r 'echo PHP_VERSION;' && ls /usr/local/bin/composer* 2>/dev/null || ls /usr/bin/composer* 2>/dev/null || find / -name 'composer' -type f 2>/dev/null | head -5\")",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\ade zulham\\\\Downloads\\\\arahinn\\\\files\\\\ota-backend\\\\database\\\\migrations\" | ForEach-Object { $_.Name })",
+      "Bash(openssl genrsa *)",
+      "Bash(openssl rsa *)",
+      "WebFetch(domain:developers.doku.com)"
+    ]
+  }
+}

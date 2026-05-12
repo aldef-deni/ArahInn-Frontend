@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { userApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
+import { getImageUrl } from '@/utils'
 import {
   Search, Plus, Pencil, Trash2,
   X, Save, User, Mail, Phone, Lock, Shield, AlertTriangle,
@@ -12,11 +13,11 @@ import {
 } from 'lucide-react'
 
 // ── Constants ────────────────────────────────────────────────────────────
-const PENGELOLA_ROLES = ['superadmin', 'admin', 'owner', 'finance']
+const PENGELOLA_ROLES = ['superadmin', 'admin', 'finance']
 
 const ROLE_META = {
   superadmin    : { label: 'Super Admin',    cls: 'bg-red-100    text-red-700'    },
-  admin         : { label: 'Admin OTA',      cls: 'bg-purple-100 text-purple-700' },
+  admin         : { label: 'Market Manager', cls: 'bg-purple-100 text-purple-700' },
   owner         : { label: 'Hotel Owner',    cls: 'bg-blue-100   text-blue-700'   },
   finance       : { label: 'Finance Staff',  cls: 'bg-green-100  text-green-700'  },
   admin_property: { label: 'Admin Property', cls: 'bg-indigo-100 text-indigo-700' },
@@ -44,8 +45,8 @@ function UserFormDrawer({ user: editUser, defaultRole = 'user', roleOptions, onC
   const saveMutation = useMutation({
     mutationFn: (d) => editUser ? userApi.adminUpdate(editUser.id, d) : userApi.create(d),
     onSuccess: () => {
-      qc.invalidateQueries(['admin-users-pengelola'])
-      qc.invalidateQueries(['admin-users-pengguna'])
+      qc.invalidateQueries({ queryKey: ['admin-users-pengelola'] })
+      qc.invalidateQueries({ queryKey: ['admin-users-pengguna'] })
       toast({ title: editUser ? 'Pengguna berhasil diperbarui.' : 'Pengguna berhasil ditambahkan.' })
       onClose()
     },
@@ -184,8 +185,8 @@ function DeleteUserConfirm({ user: targetUser, onClose }) {
   const deleteMutation = useMutation({
     mutationFn: () => userApi.delete(targetUser.id),
     onSuccess : () => {
-      qc.invalidateQueries(['admin-users-pengelola'])
-      qc.invalidateQueries(['admin-users-pengguna'])
+      qc.invalidateQueries({ queryKey: ['admin-users-pengelola'] })
+      qc.invalidateQueries({ queryKey: ['admin-users-pengguna'] })
       toast({ title: `Pengguna "${targetUser.name}" berhasil dihapus.` })
       onClose()
     },
@@ -260,7 +261,7 @@ function UserTable({ users, isLoading, me, isSuperAdmin, toggleMutation, onEdit,
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-brand/10 flex items-center justify-center text-brand font-bold text-sm shrink-0 overflow-hidden">
-                          {u.avatar ? <img src={u.avatar} alt="" className="w-9 h-9 object-cover" /> : u.name?.[0]?.toUpperCase()}
+                          {u.avatar ? <img src={getImageUrl(u.avatar)} alt="" className="w-9 h-9 object-cover" /> : u.name?.[0]?.toUpperCase()}
                         </div>
                         <div>
                           <p className="font-semibold text-slate-900 whitespace-nowrap">{u.name}</p>
@@ -399,14 +400,14 @@ export default function AdminUsers() {
   const toggleMutation = useMutation({
     mutationFn: (id) => userApi.toggleStatus(id),
     onSuccess : () => {
-      qc.invalidateQueries(['admin-users-pengelola'])
-      qc.invalidateQueries(['admin-users-pengguna'])
+      qc.invalidateQueries({ queryKey: ['admin-users-pengelola'] })
+      qc.invalidateQueries({ queryKey: ['admin-users-pengguna'] })
       toast({ title: 'Status pengguna diperbarui.' })
     },
     onError: () => toast({ title: 'Gagal memperbarui status.', variant: 'destructive' }),
   })
 
-  const pengelolaUsers = pData?.data || []
+  const pengelolaUsers = (pData?.data || []).filter(u => getRole(u) !== 'owner')
   const penggunaUsers  = uData?.data || []
 
   return (
@@ -482,12 +483,6 @@ export default function AdminUsers() {
               className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand" />
           </div>
 
-          {isSuperAdmin && (
-            <button onClick={() => setDrawer({ user: null, roleOptions: ['user'], defaultRole: 'user' })}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-colors shadow-sm">
-              <Plus className="w-4 h-4" /> Tambah Pengguna
-            </button>
-          )}
         </div>
 
         <UserTable

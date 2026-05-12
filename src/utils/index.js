@@ -44,7 +44,7 @@ export const roleLabel = (role) => ({
   superadmin    : 'Super Admin',
   owner         : 'Pemilik Hotel',
   admin_property: 'Admin Properti',
-  admin         : 'Admin',
+  admin         : 'Market Manager',
   finance       : 'Keuangan',
   user          : 'Pengguna',
 }[role] || role)
@@ -54,3 +54,14 @@ export const generateBookingCode = () =>
 
 export const truncate = (str, n = 80) =>
   str?.length > n ? str.slice(0, n) + '...' : str
+
+export function getImageUrl(path) {
+  if (!path) return null
+  // Handle object format {path: "...", category: "..."} stored by the hotel registration endpoint
+  if (typeof path === 'object') return getImageUrl(path.path ?? null)
+  if (typeof path !== 'string') return null
+  if (/^(https?:\/\/|blob:|data:)/.test(path)) return path
+  const apiUrl = import.meta.env.VITE_API_URL || ''
+  const base = apiUrl.replace(/\/api(\/v\d+)?\/?$/, '').replace(/\/$/, '')
+  return `${base}/${path.replace(/^\//, '')}`
+}

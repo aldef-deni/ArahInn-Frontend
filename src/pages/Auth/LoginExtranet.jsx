@@ -6,12 +6,23 @@ import { authApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import { Eye, EyeOff, Mail, Lock, LogIn } from 'lucide-react'
+import {
+  getCustomerPortalUrl,
+  getManagementPortalUrl,
+  getOwnerPortalUrl,
+  isManagementPortal,
+  isManagementRole,
+  isOwnerPortal,
+  isOwnerRole,
+} from '@/utils/isExtranet'
 
 export default function LoginExtranet() {
   const navigate  = useNavigate()
   const setAuth   = useAuthStore(s => s.setAuth)
   const { toast } = useToast()
   const [showPass, setShowPass] = useState(false)
+  const managementMode = isManagementPortal()
+  const ownerMode = isOwnerPortal()
 
   const { register, handleSubmit, formState: { errors } } = useForm()
 
@@ -19,17 +30,55 @@ export default function LoginExtranet() {
     mutationFn: (d) => authApi.login(d),
     onSuccess: (r) => {
       const { user, accessToken, refreshToken } = r.data.data
-      if (user.role !== 'owner') {
+      if (managementMode && !isManagementRole(user.role)) {
+        if (isOwnerRole(user.role)) {
+          toast({
+            title: 'Gunakan portal Extranet',
+            description: 'Akun owner properti harus login melalui extranet.arahinn.com.',
+            variant: 'destructive',
+          })
+          setTimeout(() => {
+            window.location.href = getOwnerPortalUrl('/owner')
+          }, 1200)
+          return
+        }
         toast({
           title: 'Akses ditolak',
-          description: 'Akun ini bukan akun Owner. Gunakan portal utama arahinn.com.',
+          description: 'Akun ini bukan akun pengelola. Gunakan portal utama arahinn.com.',
           variant: 'destructive',
         })
+        setTimeout(() => {
+          window.location.href = getCustomerPortalUrl()
+        }, 1200)
         return
       }
+
+      if (ownerMode && !isOwnerRole(user.role)) {
+        if (isManagementRole(user.role)) {
+          toast({
+            title: 'Gunakan portal Kelola',
+            description: 'Akun pengelola harus login melalui kelola.arahinn.com.',
+            variant: 'destructive',
+          })
+          setTimeout(() => {
+            window.location.href = getManagementPortalUrl('/admin')
+          }, 1200)
+          return
+        }
+        toast({
+          title: 'Akses ditolak',
+          description: 'Akun ini bukan akun owner properti. Gunakan portal utama arahinn.com.',
+          variant: 'destructive',
+        })
+        setTimeout(() => {
+          window.location.href = getCustomerPortalUrl()
+        }, 1200)
+        return
+      }
+
       setAuth(user, accessToken, refreshToken)
       toast({ title: `Selamat datang, ${user.name}!` })
-      navigate('/owner')
+      navigate(isOwnerRole(user.role) ? '/owner' : '/admin')
     },
     onError: (e) => toast({
       title: 'Login gagal',
@@ -85,7 +134,7 @@ export default function LoginExtranet() {
 
       <p className="mt-8 pt-6 border-t border-muted text-center text-xs text-muted-foreground">
         Bukan pengelola properti?{' '}
-        <a href="https://arahinn.com" className="text-brand hover:underline font-medium">
+        <a href={getCustomerPortalUrl()} className="text-brand hover:underline font-medium">
           Kembali ke Arahinn.com
         </a>
       </p>

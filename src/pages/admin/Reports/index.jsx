@@ -1,36 +1,121 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { adminApi } from '@/services/index'
 import { formatRupiah, formatDateShort } from '@/utils'
-import { BarChart2, TrendingUp, Download, Calendar } from 'lucide-react'
+import {
+  BarChart2, TrendingUp, Download, Calendar,
+  Building2, User, ChevronDown, X,
+} from 'lucide-react'
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer, Legend
+  CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
+import { cn } from '@/utils'
+
+// ── compact select component ──────────────────────────
+function FilterSelect({ label, icon: Icon, value, onChange, options, placeholder }) {
+  return (
+    <div className="relative">
+      <div className={cn(
+        'flex items-center gap-1.5 px-3 py-2 border rounded-xl text-sm transition-all cursor-pointer bg-white',
+        value ? 'border-brand/50 ring-1 ring-brand/20 bg-brand/5' : 'border-slate-200 hover:border-slate-300'
+      )}>
+        <Icon className={cn('w-4 h-4 shrink-0', value ? 'text-brand-600' : 'text-slate-400')} />
+        <select
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          className="appearance-none bg-transparent outline-none text-sm pr-5 max-w-[180px] truncate cursor-pointer"
+        >
+          <option value="">{placeholder}</option>
+          {options.map(o => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        {value ? (
+          <button
+            type="button"
+            onClick={e => { e.stopPropagation(); onChange('') }}
+            className="shrink-0 p-0.5 rounded-full hover:bg-slate-200 transition-colors">
+            <X className="w-3 h-3 text-slate-500" />
+          </button>
+        ) : (
+          <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 pointer-events-none" />
+        )}
+      </div>
+    </div>
+  )
+}
 
 export default function AdminReports() {
-  const [tab, setTab]   = useState('revenue')
-  const today           = new Date().toISOString().split('T')[0]
-  const firstOfMonth    = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
-  const [from, setFrom] = useState(firstOfMonth)
-  const [to, setTo]     = useState(today)
+  const [tab,     setTab]     = useState('revenue')
+  const today          = new Date().toISOString().split('T')[0]
+  const firstOfMonth   = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
+  const [from,    setFrom]    = useState(firstOfMonth)
+  const [to,      setTo]      = useState(today)
+  const [hotelId, setHotelId] = useState('')
+  const [ownerId, setOwnerId] = useState('')
 
+  // ── fetch hotels (includes owner data via with('owner')) ──
+  const { data: hotelsRaw } = useQuery({
+    queryKey: ['report-hotels-list'],
+    queryFn : () => adminApi.hotels({ limit: 500 })
+      .then(r => r.data?.data || []),
+    staleTime: 5 * 60 * 1000,
+  })
+
+  // ── derive filter options ────────────────────────────────
+  // extract unique owners from hotels data (owner is already eager-loaded)
+  const ownerOptions = useMemo(() => {
+    const map = new Map()
+    ;(hotelsRaw || []).forEach(h => {
+      const id   = h.owner?.id
+      const name = h.owner?.name
+      if (id && name && !map.has(id)) map.set(id, name)
+    })
+    return Array.from(map.entries()).map(([id, name]) => ({ value: String(id), label: name }))
+  }, [hotelsRaw])
+
+  const hotelOptions = useMemo(() => {
+    const list = hotelsRaw || []
+    const filtered = ownerId
+      ? list.filter(h => String(h.owner?.id) === String(ownerId))
+      : list
+    return filtered.map(h => ({ value: String(h.id), label: h.name }))
+  }, [hotelsRaw, ownerId])
+
+  // Reset hotel when owner changes
+  const handleOwnerChange = (val) => {
+    setOwnerId(val)
+    setHotelId('')
+  }
+
+  // ── shared query params ─────────────────────────────
+  const params = {
+    from,
+    to,
+    ...(hotelId && { hotel_id: hotelId }),
+    ...(ownerId && { owner_id: ownerId }),
+  }
+
+  // ── report queries ──────────────────────────────────
   const { data: revenue, isLoading: revLoading } = useQuery({
-    queryKey: ['report-revenue', from, to],
-    queryFn : () => adminApi.revenue({ from, to }).then(r => r.data.data),
+    queryKey: ['report-revenue', params],
+    queryFn : () => adminApi.revenue(params).then(r => r.data.data),
     enabled : tab === 'revenue',
   })
 
   const { data: canceled } = useQuery({
-    queryKey: ['report-canceled', from, to],
-    queryFn : () => adminApi.canceled({ from, to }).then(r => r.data.data),
+    queryKey: ['report-canceled', params],
+    queryFn : () => adminApi.canceled(params).then(r => r.data.data),
     enabled : tab === 'canceled',
   })
 
   const exportCSV = (rows, name) => {
     const csv  = rows.join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
-    Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `${name}.csv` }).click()
+    Object.assign(document.createElement('a'), {
+      href: URL.createObjectURL(blob), download: `${name}.csv`,
+    }).click()
   }
 
   const tabs = [
@@ -38,38 +123,87 @@ export default function AdminReports() {
     { id: 'canceled', label: 'Pembatalan' },
   ]
 
+  const activeFilters = [
+    hotelId && `Properti: ${hotelOptions.find(o => o.value === hotelId)?.label || hotelId}`,
+    ownerId && `Owner: ${ownerOptions.find(o => o.value === ownerId)?.label || ownerId}`,
+  ].filter(Boolean)
+
   return (
     <div className="space-y-6">
+
       {/* Header controls */}
-      <div className="bg-white border rounded-2xl p-4 shadow-card flex flex-wrap gap-3 items-center">
-        <div className="flex gap-1 bg-muted p-1 rounded-xl">
-          {tabs.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                tab === t.id ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
-              }`}>{t.label}</button>
-          ))}
+      <div className="bg-white border rounded-2xl p-4 shadow-card space-y-3">
+        {/* Row 1: tabs + date range */}
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="flex gap-1 bg-muted p-1 rounded-xl">
+            {tabs.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  tab === t.id ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                }`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 ml-auto">
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+            <input type="date" value={from} onChange={e => setFrom(e.target.value)}
+              className="px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+            <span className="text-muted-foreground">–</span>
+            <input type="date" value={to} onChange={e => setTo(e.target.value)}
+              className="px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+          </div>
         </div>
-        <div className="flex items-center gap-2 ml-auto">
-          <Calendar className="w-4 h-4 text-muted-foreground" />
-          <input type="date" value={from} onChange={e => setFrom(e.target.value)}
-            className="px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
-          <span className="text-muted-foreground">–</span>
-          <input type="date" value={to} onChange={e => setTo(e.target.value)}
-            className="px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+
+        {/* Row 2: property + owner filters */}
+        <div className="flex flex-wrap items-center gap-3 pt-1 border-t border-slate-100">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Filter:</span>
+
+          <FilterSelect
+            label="Properti"
+            icon={Building2}
+            value={hotelId}
+            onChange={setHotelId}
+            options={hotelOptions}
+            placeholder="Semua Properti"
+          />
+
+          <FilterSelect
+            label="Owner Properti"
+            icon={User}
+            value={ownerId}
+            onChange={handleOwnerChange}
+            options={ownerOptions}
+            placeholder="Semua Owner"
+          />
+
+          {activeFilters.length > 0 && (
+            <div className="flex items-center gap-2 ml-auto flex-wrap">
+              {activeFilters.map(f => (
+                <span key={f} className="px-2.5 py-1 bg-brand/10 text-brand-700 rounded-full text-xs font-semibold">
+                  {f}
+                </span>
+              ))}
+              <button
+                onClick={() => { setHotelId(''); setOwnerId('') }}
+                className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-full text-xs font-semibold hover:bg-slate-200 transition-colors flex items-center gap-1">
+                <X className="w-3 h-3" /> Reset filter
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Revenue report */}
+      {/* ── Revenue report ── */}
       {tab === 'revenue' && (
         <div className="space-y-6">
-          {/* KPI cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { label: 'Total Pendapatan',   value: formatRupiah(revenue?.totalRevenue || 0),      icon: '💰' },
-              { label: 'Jumlah Transaksi',   value: (revenue?.totalTransactions || 0).toLocaleString(), icon: '🧾' },
-              { label: 'Rata-rata / Transaksi', value: revenue?.totalTransactions
-                ? formatRupiah((revenue.totalRevenue || 0) / revenue.totalTransactions) : 'Rp 0', icon: '📊' },
+              { label: 'Total Pendapatan',      value: formatRupiah(revenue?.totalRevenue || 0),             icon: '💰' },
+              { label: 'Jumlah Transaksi',       value: (revenue?.totalTransactions || 0).toLocaleString(), icon: '🧾' },
+              { label: 'Rata-rata / Transaksi',  value: revenue?.totalTransactions
+                  ? formatRupiah((revenue.totalRevenue || 0) / revenue.totalTransactions)
+                  : 'Rp 0',                                                                                  icon: '📊' },
             ].map(({ label, value, icon }) => (
               <div key={label} className="bg-white border rounded-2xl p-5 shadow-card">
                 <p className="text-2xl mb-3">{icon}</p>
@@ -79,10 +213,14 @@ export default function AdminReports() {
             ))}
           </div>
 
-          {/* Chart */}
           <div className="bg-white border rounded-2xl p-5 shadow-card">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-semibold">Grafik Pendapatan Harian</h2>
+              <div>
+                <h2 className="font-semibold">Grafik Pendapatan Harian</h2>
+                {activeFilters.length > 0 && (
+                  <p className="text-xs text-slate-400 mt-0.5">Difilter: {activeFilters.join(' · ')}</p>
+                )}
+              </div>
               <button onClick={() => exportCSV(
                 ['Tanggal,Jumlah Transaksi,Total Pendapatan',
                 ...(revenue?.daily?.map(d => `${d.date},${d.count},${d.amount}`) || [])],
@@ -111,11 +249,12 @@ export default function AdminReports() {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-56 flex items-center justify-center text-muted-foreground text-sm">Tidak ada data untuk periode ini.</div>
+              <div className="h-56 flex items-center justify-center text-muted-foreground text-sm">
+                Tidak ada data untuk periode dan filter ini.
+              </div>
             )}
           </div>
 
-          {/* Transaction table */}
           {revenue?.transactions?.length > 0 && (
             <div className="bg-white border rounded-2xl shadow-card overflow-hidden">
               <div className="px-5 py-4 border-b font-semibold text-sm">Daftar Transaksi</div>
@@ -147,13 +286,13 @@ export default function AdminReports() {
         </div>
       )}
 
-      {/* Canceled report */}
+      {/* ── Canceled report ── */}
       {tab === 'canceled' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { label: 'Total Dibatalkan', value: canceled?.totalCanceled || 0, icon: '❌' },
-              { label: 'Total Direfund',   value: canceled?.totalRefunded  || 0, icon: '↩️' },
+              { label: 'Total Dibatalkan',  value: canceled?.totalCanceled || 0,          icon: '❌' },
+              { label: 'Total Direfund',    value: canceled?.totalRefunded  || 0,          icon: '↩️' },
               { label: 'Pendapatan Hilang', value: formatRupiah(canceled?.lostRevenue || 0), icon: '📉' },
             ].map(({ label, value, icon }) => (
               <div key={label} className="bg-white border rounded-2xl p-5 shadow-card">

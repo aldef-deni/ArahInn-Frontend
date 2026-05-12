@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { userApi, promoApi, bookingApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
-import { formatRupiah, formatDateShort, statusBadgeClass, statusLabel } from '@/utils'
+import { formatRupiah, formatDateShort, statusBadgeClass, statusLabel, getImageUrl } from '@/utils'
 import {
   User, Mail, Phone, Lock, Star, Camera, Save,
   Eye, EyeOff, ShoppingBag, Calendar, ChevronRight,
@@ -20,7 +20,7 @@ function Avatar({ user, size = 'md' }) {
   return (
     <div className={`${dim} overflow-hidden bg-brand/10 flex items-center justify-center shrink-0`}>
       {user?.avatar && !err
-        ? <img src={user.avatar} alt="" className="w-full h-full object-cover" onError={() => setErr(true)} />
+        ? <img src={getImageUrl(user.avatar)} alt="" className="w-full h-full object-cover" onError={() => setErr(true)} />
         : <span className="font-bold text-brand-600">{user?.name?.[0]?.toUpperCase()}</span>}
     </div>
   )
@@ -48,7 +48,7 @@ function SectionAccount({ user, updateUser }) {
 
   const profileMutation = useMutation({
     mutationFn: (d) => userApi.update(d),
-    onSuccess : (r) => { updateUser(r.data.data); toast({ title: 'Profil berhasil diperbarui.' }); qc.invalidateQueries(['profile']) },
+    onSuccess : (r) => { updateUser(r.data.data); toast({ title: 'Profil berhasil diperbarui.' }); qc.invalidateQueries({ queryKey: ['profile'] }) },
     onError   : () => toast({ title: 'Gagal memperbarui profil.', variant: 'destructive' }),
   })
 
@@ -204,8 +204,16 @@ function SectionOrders() {
 
   const cancelMutation = useMutation({
     mutationFn: (id) => bookingApi.cancel(id),
-    onSuccess : () => { qc.invalidateQueries(['my-orders']); toast({ title: 'Booking dibatalkan.' }) },
-    onError   : (e) => toast({ title: 'Gagal membatalkan', description: e?.response?.data?.message, variant: 'destructive' }),
+    onSuccess : () => {
+      qc.invalidateQueries({ queryKey: ['my-orders'] })
+      toast({ title: 'Booking dibatalkan.' })
+    },
+    onError: (e) => {
+      // Refresh list regardless so stale status gets corrected
+      qc.invalidateQueries({ queryKey: ['my-orders'] })
+      const msg = e?.response?.data?.message || 'Gagal membatalkan booking.'
+      toast({ title: 'Gagal membatalkan', description: msg, variant: 'destructive' })
+    },
   })
 
   return (
@@ -251,7 +259,7 @@ function SectionOrders() {
                       <div className="flex gap-4">
                         <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 shrink-0">
                           {order.hotel?.images?.[0]
-                            ? <img src={order.hotel.images[0]} alt="" className="w-full h-full object-cover" />
+                            ? <img src={getImageUrl(order.hotel.images[0])} alt="" className="w-full h-full object-cover" />
                             : <div className="w-full h-full flex items-center justify-center text-2xl">🏨</div>}
                         </div>
                         <div>

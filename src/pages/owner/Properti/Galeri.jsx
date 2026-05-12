@@ -3,9 +3,9 @@ import { useOutletContext } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
 import { useToast } from '@/hooks/use-toast'
-import { cn } from '@/utils'
+import { cn, getImageUrl } from '@/utils'
 import {
-  BedDouble, ImageIcon, Plus, Save, Trash2, UploadCloud, X,
+  BedDouble, ImageIcon, Plus, Save, Trash2, UploadCloud, X, Info,
 } from 'lucide-react'
 
 function RoomSelector({ room, active, onClick }) {
@@ -43,7 +43,7 @@ function ExistingImageCard({ src, index, onRemove }) {
     <div className="group relative overflow-hidden rounded-[24px] border border-slate-200 bg-white">
       <div className="aspect-[4/3] overflow-hidden">
         <img
-          src={src}
+          src={getImageUrl(src)}
           alt={`Foto kamar ${index + 1}`}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
@@ -104,6 +104,16 @@ export default function PropertiGaleri() {
   const [existingImages, setExistingImages] = useState([])
   const [newImages, setNewImages] = useState([])
 
+  if (!hotel) return (
+    <div className="flex flex-col items-center justify-center py-24 text-slate-400">
+      <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+        <Info className="w-7 h-7 text-slate-300" />
+      </div>
+      <p className="text-base font-semibold text-slate-500">Properti tidak ditemukan</p>
+      <p className="text-sm mt-1">Pastikan Anda sudah mendaftarkan properti terlebih dahulu.</p>
+    </div>
+  )
+
   useEffect(() => {
     if (!rooms?.length) return
 
@@ -111,7 +121,9 @@ export default function PropertiGaleri() {
     const nextRoom = hasActiveRoom ? rooms.find(room => room.id === activeRoomId) : rooms[0]
 
     setActiveRoomId(nextRoom.id)
-    setExistingImages(nextRoom.images || [])
+    setExistingImages(
+      (nextRoom.images || []).map(img => (typeof img === 'object' ? img?.path : img)).filter(Boolean)
+    )
     setNewImages(previous => {
       previous.forEach(item => URL.revokeObjectURL(item.previewUrl))
       return []
@@ -144,7 +156,7 @@ export default function PropertiGaleri() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['owner-rooms', hotel?.id] })
-      qc.invalidateQueries({ queryKey: ['owner-my-hotel'] })
+      qc.invalidateQueries({ queryKey: ['owner-my-hotels'] })
       toast({ title: 'Galeri kamar berhasil diperbarui.' })
       setNewImages(previous => {
         previous.forEach(item => URL.revokeObjectURL(item.previewUrl))
@@ -156,7 +168,9 @@ export default function PropertiGaleri() {
 
   const handleRoomChange = (room) => {
     setActiveRoomId(room.id)
-    setExistingImages(room.images || [])
+    setExistingImages(
+      (room.images || []).map(img => (typeof img === 'object' ? img?.path : img)).filter(Boolean)
+    )
     setNewImages(previous => {
       previous.forEach(item => URL.revokeObjectURL(item.previewUrl))
       return []

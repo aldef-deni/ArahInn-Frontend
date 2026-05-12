@@ -6,7 +6,20 @@ import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
 import { Plus, Pencil, Trash2, X, BedDouble } from 'lucide-react'
 
-const ROOM_TYPES = ['standard','superior','deluxe','suite','villa','family']
+const ROOM_TYPES = [
+  { value: 'single_room',      label: 'Single Room'           },
+  { value: 'standard',         label: 'Standard'              },
+  { value: 'superior',         label: 'Superior'              },
+  { value: 'deluxe',           label: 'Deluxe'                },
+  { value: 'family',           label: 'Family'                },
+  { value: 'suite',            label: 'Suite'                 },
+  { value: 'apartment_studio', label: 'Apartment - Studio'    },
+  { value: 'apartment_2br',    label: 'Apartment - 2 Bedroom' },
+  { value: 'apartment_3br',    label: 'Apartment - 3 Bedroom' },
+  { value: 'villa',            label: 'Villa'                 },
+]
+
+const roomTypeLabel = (val) => ROOM_TYPES.find(t => t.value === val)?.label ?? val
 const FACILITIES = ['ac','tv','wifi','minibar','bathtub','jacuzzi','balcony','kitchen','living_room','extra_bed']
 
 const emptyForm = { name: '', type: 'standard', base_price: '', max_guests: 2, total_units: 1, facilities: [] }
@@ -27,19 +40,19 @@ export default function PropertiUnit() {
 
   const addMutation = useMutation({
     mutationFn: (d) => hotelApi.addRoom(hotel.id, d),
-    onSuccess : () => { qc.invalidateQueries(['owner-rooms']); closeModal(); toast({ title: 'Kamar ditambahkan.' }) },
+    onSuccess : () => { qc.invalidateQueries({ queryKey: ['owner-rooms'] }); closeModal(); toast({ title: 'Kamar ditambahkan.' }) },
     onError   : () => toast({ title: 'Gagal menyimpan.', variant: 'destructive' }),
   })
 
   const editMutation = useMutation({
     mutationFn: (d) => hotelApi.updateRoom(hotel.id, editing.id, d),
-    onSuccess : () => { qc.invalidateQueries(['owner-rooms']); closeModal(); toast({ title: 'Kamar diperbarui.' }) },
+    onSuccess : () => { qc.invalidateQueries({ queryKey: ['owner-rooms'] }); closeModal(); toast({ title: 'Kamar diperbarui.' }) },
     onError   : () => toast({ title: 'Gagal menyimpan.', variant: 'destructive' }),
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id) => hotelApi.deleteRoom(hotel.id, id),
-    onSuccess : () => { qc.invalidateQueries(['owner-rooms']); toast({ title: 'Kamar dihapus.' }) },
+    onSuccess : () => { qc.invalidateQueries({ queryKey: ['owner-rooms'] }); toast({ title: 'Kamar dihapus.' }) },
     onError   : () => toast({ title: 'Gagal menghapus.', variant: 'destructive' }),
   })
 
@@ -50,6 +63,14 @@ export default function PropertiUnit() {
 
   const handleSubmit = () => editing ? editMutation.mutate(form) : addMutation.mutate(form)
   const isPending    = addMutation.isPending || editMutation.isPending
+
+  if (!hotel) return (
+    <div className="flex flex-col items-center justify-center py-24 text-slate-400">
+      <BedDouble className="w-10 h-10 mb-3 opacity-30" />
+      <p className="text-sm font-semibold text-slate-500">Properti tidak ditemukan</p>
+      <p className="text-sm mt-1">Pastikan Anda sudah mendaftarkan properti terlebih dahulu.</p>
+    </div>
+  )
 
   return (
     <div className="space-y-4">
@@ -83,7 +104,7 @@ export default function PropertiUnit() {
                   <tr key={r.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-medium">{r.name}</td>
                     <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-xs font-medium capitalize">{r.type}</span>
+                      <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-xs font-medium">{roomTypeLabel(r.type)}</span>
                     </td>
                     <td className="px-4 py-3 font-semibold text-slate-900">{formatRupiah(r.basePrice)}</td>
                     <td className="px-4 py-3 text-slate-500">{r.maxGuests} tamu</td>
@@ -134,7 +155,7 @@ export default function PropertiUnit() {
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">Tipe</label>
                   <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}
                     className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/30">
-                    {ROOM_TYPES.map(t => <option key={t} value={t} className="capitalize">{t}</option>)}
+                    {ROOM_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
                 </div>
                 <div>

@@ -23,6 +23,9 @@ export const promoApi = {
   getActive   : ()     => api.get('/promos/active'),
   flashSales  : ()     => api.get('/promos/flash-sales'),
   validate    : (d)    => api.post('/promos/validate', d),
+  myPromos    : ()     => api.get('/promos/my'),
+  platform    : ()     => api.get('/promos/platform'),
+  ownersList  : ()     => api.get('/promos/owners-list'),
   create      : (d)    => api.post('/promos', d),
   update      : (id,d) => api.put(`/promos/${id}`, d),
   remove      : (id)   => api.delete(`/promos/${id}`),
@@ -72,6 +75,29 @@ export const userApi = {
   create       : (d)      => api.post('/users', d),
   adminUpdate  : (id, d)  => api.put(`/users/${id}`, d),
   delete       : (id)     => api.delete(`/users/${id}`),
+}
+
+export const campaignApi = {
+  getAll   : ()      => api.get('/admin/campaigns'),
+  myList   : ()      => api.get('/campaigns/my'),
+  forHotel : (id)    => api.get(`/hotels/${id}/campaigns`),
+  create   : (d)     => api.post('/admin/campaigns', d),
+  update   : (id, d) => api.put(`/admin/campaigns/${id}`, d),
+  remove   : (id)    => api.delete(`/admin/campaigns/${id}`),
+}
+
+export const ownerApi = {
+  dashboard: (p) => api.get('/owner/dashboard', { params: p }),
+}
+
+export const mmApi = {
+  myMM : () => api.get('/owner/market-manager'),
+}
+
+export const mmHandlerApi = {
+  listMMs   : ()           => api.get('/admin/mm-handler'),
+  getOwners : (mmId)       => api.get(`/admin/mm-handler/${mmId}/owners`),
+  setOwners : (mmId, d)    => api.post(`/admin/mm-handler/${mmId}/owners`, d),
 }
 
 export const chatApi = {

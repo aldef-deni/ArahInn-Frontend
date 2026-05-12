@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Star, MapPin, Wifi, Car, Waves } from 'lucide-react'
-import { formatRupiah } from '@/utils'
+import { formatRupiah, getImageUrl } from '@/utils'
 import { useTranslation } from 'react-i18next'
 
 const facilityIcons = { wifi: Wifi, parking: Car, pool: Waves }
-const facilityLabels = { wifi: 'WiFi', parking: 'Parkir', pool: 'Kolam', gym: 'Gym', spa: 'Spa', restaurant: 'Resto' }
 
 export default function HotelCard({ hotel }) {
   const { t } = useTranslation()
@@ -18,7 +17,7 @@ export default function HotelCard({ hotel }) {
       {/* Image */}
       <div className="relative h-48 overflow-hidden bg-muted">
         {hotel.images?.[0] && !imgError ? (
-          <img src={hotel.images[0]} alt={hotel.name}
+          <img src={getImageUrl(hotel.images[0])} alt={hotel.name}
             onError={() => setImgError(true)}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
@@ -52,7 +51,7 @@ export default function HotelCard({ hotel }) {
           <div className="flex flex-wrap gap-1.5 mt-3">
             {hotel.facilities.slice(0, 4).map(f => (
               <span key={f} className="px-2 py-0.5 bg-muted text-xs rounded-full text-muted-foreground">
-                {facilityLabels[f] || f}
+                {t(`facilities.${f}`, { defaultValue: f })}
               </span>
             ))}
             {hotel.facilities.length > 4 && (
@@ -68,16 +67,16 @@ export default function HotelCard({ hotel }) {
           <div>
             {lowestPrice ? (
               <>
-                <p className="text-xs text-muted-foreground">Mulai dari</p>
+                <p className="text-xs text-muted-foreground">{t('hotel.startFrom')}</p>
                 <p className="price-tag text-lg">{formatRupiah(lowestPrice)}</p>
-                <p className="text-xs text-muted-foreground">/ malam</p>
+                <p className="text-xs text-muted-foreground">{t('hotel.perNight')}</p>
               </>
             ) : (
               <p className="text-sm text-muted-foreground">{t('hotel.contactUs')}</p>
             )}
           </div>
           <span className="px-3 py-1.5 bg-brand text-white text-xs font-semibold rounded-lg group-hover:bg-brand-700 transition-colors">
-            Lihat →
+            {t('hotel.viewDetail')}
           </span>
         </div>
       </div>

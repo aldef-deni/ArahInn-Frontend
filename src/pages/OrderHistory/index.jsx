@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { bookingApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
-import { formatRupiah, formatDateShort, statusBadgeClass, statusLabel } from '@/utils'
-import { ShoppingBag, Calendar, Hotel, Tag, ChevronRight, RefreshCw, XCircle } from 'lucide-react'
+import { formatRupiah, formatDateShort, statusBadgeClass, statusLabel, getImageUrl } from '@/utils'
+import { ShoppingBag, Calendar, ChevronRight, XCircle } from 'lucide-react'
 
 const TABS = [
   { value: '',          label: 'Semua' },
@@ -27,11 +27,15 @@ export default function OrderHistory() {
 
   const cancelMutation = useMutation({
     mutationFn: (id) => bookingApi.cancel(id),
-    onSuccess : () => {
-      qc.invalidateQueries(['my-orders'])
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['my-orders'] })
       toast({ title: 'Booking dibatalkan.' })
     },
-    onError: (e) => toast({ title: 'Gagal membatalkan', description: e?.response?.data?.message, variant: 'destructive' }),
+    onError: (e) => {
+      qc.invalidateQueries({ queryKey: ['my-orders'] })
+      const msg = e?.response?.data?.message || 'Gagal membatalkan booking.'
+      toast({ title: 'Gagal membatalkan', description: msg, variant: 'destructive' })
+    },
   })
 
   return (
@@ -91,7 +95,7 @@ export default function OrderHistory() {
                       <div className="flex gap-4">
                         <div className="w-16 h-16 rounded-xl overflow-hidden bg-muted shrink-0">
                           {order.hotel?.images?.[0]
-                            ? <img src={order.hotel.images[0]} alt="" className="w-full h-full object-cover" />
+                            ? <img src={getImageUrl(order.hotel.images[0])} alt="" className="w-full h-full object-cover" />
                             : <div className="w-full h-full flex items-center justify-center text-2xl">🏨</div>}
                         </div>
                         <div>
@@ -110,7 +114,7 @@ export default function OrderHistory() {
                     </div>
 
                     <div className="flex gap-2 mt-4 pt-4 border-t">
-                      <button onClick={() => navigate(`/booking/${order.id}`)}
+                      <button onClick={() => navigate(`/orders/${order.id}`)}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2 border rounded-xl text-sm font-medium hover:bg-muted transition-colors">
                         Detail <ChevronRight className="w-4 h-4" />
                       </button>
@@ -126,12 +130,6 @@ export default function OrderHistory() {
                             <XCircle className="w-4 h-4" />
                           </button>
                         </>
-                      )}
-                      {order.status === 'issued' && (
-                        <button onClick={() => navigate(`/payment/${order.id}`)}
-                          className="flex items-center gap-1.5 px-4 py-2 border rounded-xl text-sm hover:bg-muted transition-colors">
-                          <RefreshCw className="w-4 h-4" /> Jadwal Ulang
-                        </button>
                       )}
                     </div>
                   </div>

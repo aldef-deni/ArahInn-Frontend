@@ -5,10 +5,10 @@ const isPlainObject = (value) =>
   Object.prototype.toString.call(value) === '[object Object]'
 
 const toSnakeKey = (key) =>
-  key.replace(/([A-Z])/g, '_$1').toLowerCase()
+  typeof key === 'string' ? key.replace(/([A-Z])/g, '_$1').toLowerCase() : key
 
 const toCamelKey = (key) =>
-  key.replace(/_([a-z])/g, (_, char) => char.toUpperCase())
+  typeof key === 'string' ? key.replace(/_([a-z])/g, (_, char) => char.toUpperCase()) : key
 
 const convertKeysDeep = (value, keyConverter) => {
   if (Array.isArray(value)) {

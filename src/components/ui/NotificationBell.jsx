@@ -5,16 +5,19 @@ import { useAuthStore } from '@/store/authStore'
 import { notificationApi } from '@/services/notificationApi'
 import {
   Bell, BellRing, CheckCheck, X,
-  ShoppingBag, Hotel, CreditCard, Ban, Star,
+  ShoppingBag, Hotel, CreditCard, Ban, Star, Building2,
 } from 'lucide-react'
 
 const TYPE_META = {
-  booking_new      : { icon: ShoppingBag, color: 'text-blue-500',    bg: 'bg-blue-50'    },
-  booking_canceled : { icon: Ban,         color: 'text-red-500',     bg: 'bg-red-50'     },
-  booking_paid     : { icon: CreditCard,  color: 'text-green-500',   bg: 'bg-green-50'   },
-  hotel_new        : { icon: Hotel,       color: 'text-amber-500',   bg: 'bg-amber-50'   },
-  hotel_approved   : { icon: Star,        color: 'text-emerald-500', bg: 'bg-emerald-50' },
-  hotel_blocked    : { icon: Ban,         color: 'text-red-500',     bg: 'bg-red-50'     },
+  booking_new       : { icon: ShoppingBag, color: 'text-blue-500',    bg: 'bg-blue-50'    },
+  booking_canceled  : { icon: Ban,         color: 'text-red-500',     bg: 'bg-red-50'     },
+  booking_paid      : { icon: CreditCard,  color: 'text-green-500',   bg: 'bg-green-50'   },
+  hotel_new         : { icon: Hotel,       color: 'text-amber-500',   bg: 'bg-amber-50'   },
+  hotel_approved    : { icon: Star,        color: 'text-emerald-500', bg: 'bg-emerald-50' },
+  hotel_blocked     : { icon: Ban,         color: 'text-red-500',     bg: 'bg-red-50'     },
+  property_new      : { icon: Building2,   color: 'text-blue-500',    bg: 'bg-blue-50'    },
+  property_approved : { icon: Building2,   color: 'text-emerald-500', bg: 'bg-emerald-50' },
+  property_rejected : { icon: Building2,   color: 'text-red-500',     bg: 'bg-red-50'     },
 }
 
 const DEFAULT_META = { icon: Bell, color: 'text-slate-500', bg: 'bg-slate-50' }
@@ -38,6 +41,11 @@ function resolveRoute(type, role) {
     case 'hotel_approved':
     case 'hotel_blocked':
       return '/owner/properti'
+    case 'property_new':
+      return '/admin/property-approval'
+    case 'property_approved':
+    case 'property_rejected':
+      return '/owner/jual-properti'
     default:
       return null
   }

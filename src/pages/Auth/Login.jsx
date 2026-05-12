@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import { useTranslation } from 'react-i18next'
 import { Eye, EyeOff, Mail, Lock, LogIn } from 'lucide-react'
+import { isManagementRole, isOwnerRole } from '@/utils/isExtranet'
 
 export default function Login() {
   const { t }      = useTranslation()
@@ -21,18 +22,27 @@ export default function Login() {
     mutationFn: (d) => authApi.login(d),
     onSuccess : (r) => {
       const { user, accessToken, refreshToken } = r.data.data
-      if (user.role === 'owner') {
+      if (isManagementRole(user.role)) {
         toast({
-          title: 'Gunakan portal Extranet',
-          description: 'Akun Owner harus login melalui extranet.arahinn.com',
+          title: 'Login gagal',
+          description: 'Akun superadmin, market manager, dan finance tidak bisa login dari staging.arahinn.com.',
           variant: 'destructive',
         })
-        setTimeout(() => { window.location.href = 'https://extranet.arahinn.com/login' }, 1500)
+        setAuth(null, null, null)
+        return
+      }
+      if (isOwnerRole(user.role)) {
+        toast({
+          title: 'Login gagal',
+          description: 'Akun owner properti tidak bisa login dari staging.arahinn.com.',
+          variant: 'destructive',
+        })
+        setAuth(null, null, null)
         return
       }
       setAuth(user, accessToken, refreshToken)
       toast({ title: t('auth.welcome', { name: user.name }) })
-      navigate(user.role !== 'user' ? '/admin' : '/dashboard')
+      navigate('/dashboard')
     },
     onError: (e) => toast({ title: 'Login gagal', description: e?.response?.data?.message || 'Email atau password salah.', variant: 'destructive' }),
   })
@@ -103,4 +113,3 @@ export default function Login() {
     </div>
   )
 }
-

@@ -2,11 +2,62 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { promoApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
-import { formatRupiah } from '@/utils'
-import { Plus, Tag, X, Trash2 } from 'lucide-react'
+import { formatRupiah, formatDateShort } from '@/utils'
+import { Plus, Tag, X, Trash2, Zap, Award, Copy, Check, ShieldCheck } from 'lucide-react'
+
+const TYPE_STYLES = {
+  flash_sale : { grad: 'from-orange-500 to-red-500',    sub: 'text-orange-100', icon: Zap,   iconBg: 'bg-white/20' },
+  voucher    : { grad: 'from-blue-500 to-indigo-600',   sub: 'text-blue-100',   icon: Tag,   iconBg: 'bg-white/20' },
+  loyalty    : { grad: 'from-purple-500 to-violet-600', sub: 'text-purple-100', icon: Award, iconBg: 'bg-white/20' },
+}
+
+function PlatformPromoCard({ promo }) {
+  const [copied, setCopied] = useState(false)
+  const style = TYPE_STYLES[promo.type] || TYPE_STYLES.voucher
+  const Icon  = style.icon
+  const discountLabel = promo.discountType === 'percent'
+    ? `${promo.discountValue}% OFF`
+    : `${formatRupiah(promo.discountValue)} OFF`
+
+  const copyCode = () => {
+    navigator.clipboard.writeText(promo.code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className={`relative rounded-2xl overflow-hidden bg-gradient-to-r ${style.grad} shadow-md`}>
+      <div className="absolute top-3 right-3">
+        <span className="flex items-center gap-1 px-2 py-0.5 bg-white/20 rounded-full text-[10px] text-white font-semibold">
+          <ShieldCheck className="w-3 h-3" /> Platform
+        </span>
+      </div>
+      <div className="p-5 flex items-center gap-4">
+        <div className={`w-11 h-11 rounded-xl ${style.iconBg} flex items-center justify-center shrink-0`}>
+          <Icon className="w-5 h-5 text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-white font-bold text-sm leading-snug">{promo.name}</p>
+          <p className={`text-xs ${style.sub} mt-0.5`}>
+            {promo.minPurchase > 0 && `Min. ${formatRupiah(promo.minPurchase)} · `}
+            {promo.endDate && `s/d ${formatDateShort(promo.endDate)}`}
+          </p>
+          {promo.code && (
+            <button onClick={copyCode}
+              className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/15 hover:bg-white/25 rounded-lg transition-colors">
+              <span className="font-mono text-xs font-bold text-white tracking-widest">{promo.code}</span>
+              {copied ? <Check className="w-3 h-3 text-white" /> : <Copy className="w-3 h-3 text-white/60" />}
+            </button>
+          )}
+        </div>
+        <span className="text-white font-black text-xl shrink-0">{discountLabel}</span>
+      </div>
+    </div>
+  )
+}
 
 const emptyForm = {
-  code: '', name: '', discount_type: 'percent', discount_value: '',
+  code: '', name: '', type: 'voucher', discount_type: 'percent', discount_value: '',
   min_purchase: '', quota: '', start_date: '', end_date: '',
 }
 
@@ -16,38 +67,81 @@ export default function OwnerPromo() {
   const [modal, setModal] = useState(false)
   const [form, setForm]   = useState(emptyForm)
 
-  const { data: promos, isLoading } = useQuery({
-    queryKey: ['owner-promos'],
-    queryFn : () => promoApi.getActive().then(r => r.data?.data || []),
+  const { data: platformPromos = [], isLoading: loadingPlatform } = useQuery({
+    queryKey: ['platform-promos'],
+    queryFn : () => promoApi.platform().then(r => r.data?.data || []),
+  })
+
+  const { data: ownerPromos = [], isLoading: loadingOwner } = useQuery({
+    queryKey: ['my-promos'],
+    queryFn : () => promoApi.myPromos().then(r => r.data?.data || []),
   })
 
   const createMutation = useMutation({
     mutationFn: (d) => promoApi.create(d),
-    onSuccess : () => { qc.invalidateQueries(['owner-promos']); setModal(false); setForm(emptyForm); toast({ title: 'Promo berhasil dibuat.' }) },
-    onError   : () => toast({ title: 'Gagal membuat promo.', variant: 'destructive' }),
+    onSuccess : () => {
+      qc.invalidateQueries({ queryKey: ['my-promos'] })
+      setModal(false)
+      setForm(emptyForm)
+      toast({ title: 'Promo berhasil dibuat.' })
+    },
+    onError: () => toast({ title: 'Gagal membuat promo.', variant: 'destructive' }),
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id) => promoApi.remove(id),
-    onSuccess : () => { qc.invalidateQueries(['owner-promos']); toast({ title: 'Promo dihapus.' }) },
+    onSuccess : () => { qc.invalidateQueries({ queryKey: ['my-promos'] }); toast({ title: 'Promo dihapus.' }) },
     onError   : () => toast({ title: 'Gagal menghapus.', variant: 'destructive' }),
   })
 
   const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }))
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <button onClick={() => setModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-700 transition-colors shadow-sm">
-          <Plus className="w-4 h-4" /> Buat Promo
-        </button>
+    <div className="space-y-8">
+
+      {/* ── Promo dari Platform ── */}
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <ShieldCheck className="w-4 h-4 text-blue-600" />
+          <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Promo dari Platform Arahinn</h2>
+        </div>
+
+        {loadingPlatform ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {Array(2).fill(0).map((_, i) => <div key={i} className="skeleton h-28 rounded-2xl" />)}
+          </div>
+        ) : platformPromos.length > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {platformPromos.map(p => <PlatformPromoCard key={p.id} promo={p} />)}
+          </div>
+        ) : (
+          <div className="py-10 text-center bg-white rounded-2xl border border-slate-200">
+            <Tag className="w-10 h-10 text-slate-200 mx-auto mb-2" />
+            <p className="text-sm text-slate-400">Belum ada promo aktif dari platform.</p>
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {isLoading
-          ? Array(3).fill(0).map((_, i) => <div key={i} className="skeleton h-36 rounded-xl" />)
-          : promos?.map(p => (
+      {/* ── Promo Hotel Saya ── */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Tag className="w-4 h-4 text-orange-500" />
+            <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Promo Hotel Saya</h2>
+          </div>
+          <button onClick={() => setModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-700 transition-colors shadow-sm">
+            <Plus className="w-4 h-4" /> Buat Promo
+          </button>
+        </div>
+
+        {loadingOwner ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array(3).fill(0).map((_, i) => <div key={i} className="skeleton h-36 rounded-xl" />)}
+          </div>
+        ) : ownerPromos.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {ownerPromos.map(p => (
               <div key={p.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center">
@@ -65,20 +159,26 @@ export default function OwnerPromo() {
                 )}
                 <p className="font-semibold text-slate-900 text-sm line-clamp-2">{p.name}</p>
                 <p className="text-xs text-slate-400 mt-1">
-                  Diskon {p.discountType === 'percent' ? `${p.discountValue}%` : formatRupiah(p.discountValue)}
+                  Diskon {p.discountType === 'percent'
+                    ? `${p.discountValue}%`
+                    : formatRupiah(p.discountValue)}
                 </p>
                 <p className="text-xs text-slate-300 mt-2">
-                  s/d {new Date(p.endDate).toLocaleDateString('id-ID')} · Sisa {p.quota - p.usedCount} kuota
+                  {p.endDate && `s/d ${new Date(p.endDate).toLocaleDateString('id-ID')}`}
+                  {(p.quota != null) && ` · Sisa ${p.quota - (p.usedCount ?? 0)} kuota`}
                 </p>
               </div>
-            ))
-        }
-        {!isLoading && !promos?.length && (
-          <div className="col-span-3 py-14 text-center text-slate-400 text-sm">Belum ada promo aktif.</div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-10 text-center bg-white rounded-2xl border border-slate-200">
+            <Tag className="w-10 h-10 text-slate-200 mx-auto mb-2" />
+            <p className="text-sm text-slate-400">Belum ada promo hotel. Buat promo pertama Anda.</p>
+          </div>
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal Buat Promo */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
@@ -93,6 +193,14 @@ export default function OwnerPromo() {
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5">Nama Promo</label>
                 <input value={form.name} onChange={f('name')}
                   className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Tipe Promo</label>
+                <select value={form.type} onChange={f('type')}
+                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/30">
+                  <option value="voucher">Voucher</option>
+                  <option value="flash_sale">Flash Sale</option>
+                </select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5">Kode Voucher (opsional)</label>

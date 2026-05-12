@@ -4,7 +4,7 @@ import { promoApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { useForm } from 'react-hook-form'
 import { formatRupiah, formatDateShort } from '@/utils'
-import { Plus, Tag, Zap, Edit2, Trash2, X, Save, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Plus, Tag, Zap, Edit2, Trash2, X, Save, ToggleLeft, ToggleRight, Users, User } from 'lucide-react'
 
 const TYPE_ICONS  = { voucher: Tag, flash_sale: Zap, loyalty: '⭐' }
 const TYPE_COLORS = {
@@ -24,15 +24,36 @@ export default function AdminPromos() {
     queryFn : () => promoApi.getAll().then(r => r.data.data),
   })
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm({
-    defaultValues: { type: 'voucher', discountType: 'percent', discountValue: 0, minPurchase: 0 }
+  const { data: ownersList } = useQuery({
+    queryKey: ['promo-owners-list'],
+    queryFn : () => promoApi.ownersList().then(r => r.data.data),
+  })
+
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm({
+    defaultValues: { type: 'voucher', discountType: 'percent', discountValue: 0, minPurchase: 0, ownerScope: 'all', ownerId: '' }
   })
   const discountType = watch('discountType')
+  const ownerScope   = watch('ownerScope')
 
   const saveMutation = useMutation({
-    mutationFn: (d) => editing ? promoApi.update(editing.id, d) : promoApi.create(d),
+    mutationFn: (d) => {
+      const payload = {
+        name          : d.name,
+        code          : d.code || undefined,
+        type          : d.type,
+        discount_type : d.discountType,
+        discount_value: d.discountValue,
+        min_purchase  : d.minPurchase || 0,
+        max_discount  : d.maxDiscount || undefined,
+        quota         : d.quota || undefined,
+        start_date    : d.startDate || undefined,
+        end_date      : d.endDate || undefined,
+        owner_id      : d.ownerScope === 'specific' ? (d.ownerId || null) : null,
+      }
+      return editing ? promoApi.update(editing.id, payload) : promoApi.create(payload)
+    },
     onSuccess : () => {
-      qc.invalidateQueries(['admin-promos'])
+      qc.invalidateQueries({ queryKey: ['admin-promos'] })
       toast({ title: editing ? 'Promo diperbarui.' : 'Promo berhasil dibuat.' })
       setShowForm(false); setEditing(null); reset()
     },
@@ -41,7 +62,7 @@ export default function AdminPromos() {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => promoApi.remove(id),
-    onSuccess : () => { qc.invalidateQueries(['admin-promos']); toast({ title: 'Promo dihapus.' }) },
+    onSuccess : () => { qc.invalidateQueries({ queryKey: ['admin-promos'] }); toast({ title: 'Promo dihapus.' }) },
     onError   : (e) => toast({ title: 'Gagal hapus', description: e?.response?.data?.message, variant: 'destructive' }),
   })
 
@@ -51,9 +72,9 @@ export default function AdminPromos() {
   }
 
   const toggleMutation = useMutation({
-    mutationFn: ({ id, isActive }) => promoApi.update(id, { isActive }),
+    mutationFn: ({ id, isActive }) => promoApi.update(id, { is_active: isActive }),
     onSuccess : (_, { isActive }) => {
-      qc.invalidateQueries(['admin-promos'])
+      qc.invalidateQueries({ queryKey: ['admin-promos'] })
       toast({ title: isActive ? 'Promo diaktifkan.' : 'Promo dinonaktifkan.' })
     },
     onError: (e) => toast({ title: 'Gagal', description: e?.response?.data?.message, variant: 'destructive' }),
@@ -62,10 +83,18 @@ export default function AdminPromos() {
   const openEdit = (promo) => {
     setEditing(promo); setShowForm(true)
     reset({
-      name: promo.name, code: promo.code, type: promo.type,
-      discountType: promo.discountType, discountValue: promo.discountValue,
-      minPurchase: promo.minPurchase, maxDiscount: promo.maxDiscount,
-      quota: promo.quota, startDate: promo.startDate?.slice(0, 10), endDate: promo.endDate?.slice(0, 10),
+      name         : promo.name,
+      code         : promo.code,
+      type         : promo.type,
+      discountType : promo.discountType,
+      discountValue: promo.discountValue,
+      minPurchase  : promo.minPurchase,
+      maxDiscount  : promo.maxDiscount,
+      quota        : promo.quota,
+      startDate    : promo.startDate?.slice(0, 10),
+      endDate      : promo.endDate?.slice(0, 10),
+      ownerScope   : promo.ownerId ? 'specific' : 'all',
+      ownerId      : promo.ownerId ? String(promo.ownerId) : '',
     })
   }
 
@@ -112,6 +141,11 @@ export default function AdminPromos() {
                   </div>
 
                   <h3 className="font-semibold text-base mb-1 line-clamp-1">{promo.name}</h3>
+
+                  {/* Owner badge */}
+                  <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold mb-2 ${promo.owner ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
+                    {promo.owner ? <><User className="w-3 h-3" />{promo.owner.name}</> : <><Users className="w-3 h-3" />Semua Owner</>}
+                  </div>
 
                   {promo.code && (
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-muted rounded-lg font-mono text-xs font-bold text-foreground mb-3">
@@ -252,6 +286,36 @@ export default function AdminPromos() {
                   <input type="date" {...register('endDate')}
                     className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
                 </div>
+              </div>
+
+              {/* Owner scope */}
+              <div className="col-span-2 border border-slate-200 rounded-xl p-4 space-y-3 bg-slate-50">
+                <p className="text-sm font-semibold text-slate-700">Target Owner</p>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" value="all" {...register('ownerScope')}
+                      className="w-4 h-4 text-brand cursor-pointer" />
+                    <span className="text-sm text-slate-700 flex items-center gap-1.5">
+                      <Users className="w-4 h-4 text-slate-400" /> Semua Owner
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" value="specific" {...register('ownerScope')}
+                      className="w-4 h-4 text-brand cursor-pointer" />
+                    <span className="text-sm text-slate-700 flex items-center gap-1.5">
+                      <User className="w-4 h-4 text-slate-400" /> Owner Tertentu
+                    </span>
+                  </label>
+                </div>
+                {ownerScope === 'specific' && (
+                  <select {...register('ownerId')}
+                    className="w-full px-3 py-2.5 border rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/50">
+                    <option value="">-- Pilih Owner --</option>
+                    {ownersList?.map(o => (
+                      <option key={o.id} value={o.id}>{o.name} ({o.email})</option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div className="flex gap-3 pt-2">

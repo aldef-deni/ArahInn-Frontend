@@ -45,8 +45,8 @@ export default function OwnerChat() {
     mutationFn: (msg) => chatApi.send(activeRoom, { message: msg }),
     onSuccess : () => {
       setText('')
-      qc.invalidateQueries(['owner-chat-messages', activeRoom])
-      qc.invalidateQueries(['owner-chat-rooms'])
+      qc.invalidateQueries({ queryKey: ['owner-chat-messages', activeRoom] })
+      qc.invalidateQueries({ queryKey: ['owner-chat-rooms'] })
     },
     onError: () => toast({ title: 'Gagal mengirim pesan.', variant: 'destructive' }),
   })

@@ -5,15 +5,18 @@ import { authApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { useQuery } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
-import { chatApi } from '@/services/index'
+import { chatApi, mmApi } from '@/services/index'
 import {
   Home, Building2, Image, CalendarDays, Tag, ShoppingBag, BarChart2,
   ChevronDown, LogOut, ExternalLink, MapPin, Languages, Sparkles,
   BedDouble, ClipboardList, ShieldCheck, MessageSquare, PlusCircle,
-  CheckCircle2, Clock, XCircle, ChevronRight
+  CheckCircle2, Clock, XCircle, ChevronRight, DollarSign, Megaphone,
+  X, Mail, Phone, User, Layers, RefreshCw, Receipt, Activity,
+  Calendar, Users, Star,
 } from 'lucide-react'
-import { cn } from '@/utils'
+import { cn, getImageUrl } from '@/utils'
 import NotificationBell from '@/components/ui/NotificationBell'
+import queryClient from '@/lib/queryClient'
 
 const PAGE_META = {
   '/owner': {
@@ -36,17 +39,53 @@ const PAGE_META = {
     title: 'Fasilitas dan Layanan',
     subtitle: 'Pilih fasilitas yang tersedia agar tamu lebih mudah menemukan properti Anda.',
   },
-  '/owner/daftar-hotel': {
+  '/daftar-hotel-baru': {
     title: 'Daftarkan Hotel Baru',
     subtitle: 'Isi informasi dasar properti. Status akan Pending hingga disetujui Superadmin.',
+  },
+  '/owner/jual-properti': {
+    title: 'Jual Properti',
+    subtitle: 'Daftarkan properti Anda untuk dijual atau disewakan melalui platform ArahInn.',
   },
   '/owner/harga': {
     title: 'Harga dan Ketersediaan',
     subtitle: 'Atur harga dasar dan optimalkan ketersediaan kamar.',
   },
+  '/owner/harga/pricing-model': {
+    title: 'Pricing Model',
+    subtitle: 'Pilih model penghitungan harga yang sesuai dengan properti Anda.',
+  },
+  '/owner/harga/rate-plan': {
+    title: 'Rate Plan',
+    subtitle: 'Kelola paket harga dan kebijakan pembatalan.',
+  },
+  '/owner/harga/harga-anak': {
+    title: 'Kebijakan & Harga untuk Anak',
+    subtitle: 'Atur ketentuan dan diskon khusus untuk tamu anak-anak.',
+  },
+  '/owner/harga/atur': {
+    title: 'Atur Harga & Ketersediaan',
+    subtitle: 'Kelola harga dan ketersediaan kamar per tanggal secara langsung.',
+  },
+  '/owner/harga/bulk-update': {
+    title: 'Bulk Update',
+    subtitle: 'Perbarui harga dan ketersediaan untuk beberapa kamar sekaligus.',
+  },
+  '/owner/harga/biaya-tambahan': {
+    title: 'Biaya Tambahan',
+    subtitle: 'Konfigurasi biaya ekstra yang dikenakan di luar harga kamar.',
+  },
+  '/owner/harga/ketersediaan-now': {
+    title: 'Ketersediaan Now',
+    subtitle: 'Kontrol ketersediaan kamar secara real-time untuk hari ini.',
+  },
   '/owner/promo': {
-    title: 'Promo dan Campaign',
-    subtitle: 'Buat penawaran untuk menjaga permintaan tetap aktif.',
+    title: 'Promo',
+    subtitle: 'Promo platform dari Arahinn dan promo hotel Anda.',
+  },
+  '/owner/campaign': {
+    title: 'Campaign',
+    subtitle: 'Kampanye marketing yang sedang berjalan dari platform Arahinn.',
   },
   '/owner/pesanan': {
     title: 'Pesanan',
@@ -68,6 +107,8 @@ const MENU_SECTIONS = [
   {
     title: 'Properti',
     collapsible: true,
+    key: 'properti',
+    buttonLabel: 'Pengaturan Properti',
     icon: Building2,
     base: '/owner/properti',
     items: [
@@ -76,20 +117,44 @@ const MENU_SECTIONS = [
       { to: '/owner/properti/galeri', label: 'Galeri Foto', icon: Image },
       { to: '/owner/properti/fasilitas', label: 'Fasilitas & Layanan', icon: Sparkles },
     ],
+    footerLink: { to: '/daftar-hotel-baru', label: 'Daftarkan Hotel Baru', icon: PlusCircle, external: true },
+  },
+  {
+    title: 'Harga',
+    collapsible: true,
+    key: 'harga',
+    buttonLabel: 'Harga & Ketersediaan',
+    icon: CalendarDays,
+    base: '/owner/harga',
+    items: [
+      { to: '/owner/harga/pricing-model',    label: 'Pricing Model',         icon: Layers      },
+      { to: '/owner/harga/rate-plan',        label: 'Rate Plan',             icon: Tag         },
+      { to: '/owner/harga/harga-anak',       label: 'Kebijakan Harga Anak',  icon: Users       },
+      { to: '/owner/harga/atur',             label: 'Atur Harga & Tersedia', icon: Calendar    },
+      { to: '/owner/harga/bulk-update',      label: 'Bulk Update',           icon: RefreshCw   },
+      { to: '/owner/harga/biaya-tambahan',   label: 'Biaya Tambahan',        icon: Receipt     },
+      { to: '/owner/harga/ketersediaan-now', label: 'Ketersediaan Now',      icon: Activity    },
+    ],
   },
   {
     title: 'Komersial',
     items: [
-      { to: '/owner/harga',   label: 'Harga & Ketersediaan', icon: CalendarDays },
-      { to: '/owner/promo',   label: 'Promo & Campaign',     icon: Tag },
-      { to: '/owner/pesanan', label: 'Pesanan',               icon: ShoppingBag },
-      { to: '/owner/laporan', label: 'Laporan',               icon: BarChart2 },
+      { to: '/owner/promo',    label: 'Promo',    icon: Tag },
+      { to: '/owner/campaign', label: 'Campaign', icon: Megaphone },
+      { to: '/owner/pesanan',  label: 'Pesanan',  icon: ShoppingBag },
+      { to: '/owner/laporan',  label: 'Laporan',  icon: BarChart2 },
     ],
   },
   {
     title: 'Komunikasi',
     items: [
       { to: '/owner/chat', label: 'Pesan Tamu', icon: MessageSquare },
+    ],
+  },
+  {
+    title: 'Jual Properti',
+    items: [
+      { to: '/owner/jual-properti', label: 'Jual Properti', icon: DollarSign },
     ],
   },
 ]
@@ -105,10 +170,31 @@ export default function OwnerLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { toast } = useToast()
-  const [propertiOpen, setPropertiOpen]   = useState(location.pathname.startsWith('/owner/properti'))
+  const [sectionsOpen, setSectionsOpen]   = useState(() => ({
+    properti: true,
+    harga: true,
+  }))
+  const toggleSection = (key) => setSectionsOpen(s => ({ ...s, [key]: !s[key] }))
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/owner/harga')) {
+      setSectionsOpen(s => ({ ...s, harga: true }))
+    }
+    if (location.pathname.startsWith('/owner/properti')) {
+      setSectionsOpen(s => ({ ...s, properti: true }))
+    }
+  }, [location.pathname])
   const [switcherOpen, setSwitcherOpen]   = useState(false)
-  const [pendingModal, setPendingModal]   = useState(null) // hotel object or null
+  const [pendingModal, setPendingModal]   = useState(null)
+  const [mmOpen,       setMmOpen]         = useState(false)
   const switcherRef                       = useRef(null)
+
+  const { data: mmData, isLoading: mmLoading } = useQuery({
+    queryKey: ['owner-my-mm'],
+    queryFn : () => mmApi.myMM().then(r => r.data?.data),
+    enabled : !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  })
 
   const [selectedHotelId, setSelectedHotelId] = useState(() => {
     const saved = localStorage.getItem('owner_selected_hotel_id')
@@ -119,6 +205,7 @@ export default function OwnerLayout() {
     queryKey: ['owner-my-hotels'],
     queryFn : () => hotelApi.myHotels().then(r => r.data?.data || []),
     enabled : !!user?.id,
+    staleTime: 0,
   })
 
   const hotel = useMemo(() => {
@@ -141,7 +228,7 @@ export default function OwnerLayout() {
   const { data: chatRooms } = useQuery({
     queryKey: ['owner-chat-rooms'],
     queryFn: () => chatApi.ownerRooms().then(r => r.data?.data || []),
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!hotel?.id,
     refetchInterval: 15000,
   })
   const totalUnread = chatRooms?.reduce((sum, r) => sum + (r.unreadCount || 0), 0) || 0
@@ -159,6 +246,8 @@ export default function OwnerLayout() {
   const handleLogout = async () => {
     try { await authApi.logout() } catch {}
     logout()
+    localStorage.removeItem('owner_selected_hotel_id')
+    queryClient.clear()
     navigate('/login')
     toast({ title: 'Berhasil keluar.' })
   }
@@ -171,11 +260,7 @@ export default function OwnerLayout() {
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[280px] border-r border-slate-200 bg-white xl:flex xl:flex-col">
         <div className="border-b border-slate-200 px-7 py-6">
           <Link to="/owner" className="flex items-center gap-3">
-            <img src="/logo.png" alt="Arahinn" className="h-10 w-auto" />
-            <div className="leading-tight">
-              <p className="font-display text-xl font-bold tracking-tight text-slate-900">ARAHINN</p>
-              <p className="text-sm font-medium text-slate-500">Extranet Owner</p>
-            </div>
+            <img src="/logo-arahin.png" alt="Arahinn" className="h-10 w-auto" />
           </Link>
         </div>
 
@@ -242,7 +327,7 @@ export default function OwnerLayout() {
                         active    ? 'bg-blue-100 text-blue-700'  :
                         isPending ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500')}>
                         {h.images?.[0]
-                          ? <img src={h.images[0]} alt="" className="w-full h-full object-cover" />
+                          ? <img src={getImageUrl(h.images[0])} alt="" className="w-full h-full object-cover" />
                           : <Building2 className="w-4 h-4" />}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -267,11 +352,15 @@ export default function OwnerLayout() {
                 })}
               </div>
               <div className="border-t border-slate-100 p-2">
-                <Link to="/owner/daftar-hotel"
+                <a
+                  href="/daftar-hotel-baru"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={() => setSwitcherOpen(false)}
-                  className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-blue-600 hover:bg-blue-50 transition-colors">
+                  className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-blue-600 hover:bg-blue-50 transition-colors"
+                >
                   <PlusCircle className="w-4 h-4" /> Daftarkan Hotel Baru
-                </Link>
+                </a>
               </div>
             </div>
           )}
@@ -288,7 +377,7 @@ export default function OwnerLayout() {
                 {section.collapsible ? (
                   <div className="rounded-3xl bg-slate-50/80 p-2">
                     <button
-                      onClick={() => setPropertiOpen(open => !open)}
+                      onClick={() => toggleSection(section.key)}
                       className={cn(
                         'flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold transition-colors',
                         location.pathname.startsWith(section.base)
@@ -297,11 +386,11 @@ export default function OwnerLayout() {
                       )}
                     >
                       <section.icon className="h-4.5 w-4.5 shrink-0" />
-                      <span className="flex-1 text-left">Pengaturan Properti</span>
-                      <ChevronDown className={cn('h-4 w-4 text-slate-400 transition-transform', propertiOpen && 'rotate-180')} />
+                      <span className="flex-1 text-left">{section.buttonLabel}</span>
+                      <ChevronDown className={cn('h-4 w-4 text-slate-400 transition-transform', sectionsOpen[section.key] && 'rotate-180')} />
                     </button>
 
-                    {propertiOpen && (
+                    {sectionsOpen[section.key] && (
                       <div className="mt-2 space-y-1 px-1 pb-1">
                         {section.items.map(item => (
                           <Link
@@ -318,20 +407,34 @@ export default function OwnerLayout() {
                             {item.label}
                           </Link>
                         ))}
-                        <div className="pt-1 mt-1 border-t border-slate-200/70">
-                          <Link
-                            to="/owner/daftar-hotel"
-                            className={cn(
-                              'flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-colors font-medium',
-                              location.pathname === '/owner/daftar-hotel'
-                                ? 'bg-blue-600 text-white shadow-sm'
-                                : 'text-blue-600 hover:bg-blue-50'
+                        {section.footerLink && (
+                          <div className="pt-1 mt-1 border-t border-slate-200/70">
+                            {section.footerLink.external ? (
+                              <a
+                                href={section.footerLink.to}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-colors font-medium text-blue-600 hover:bg-blue-50"
+                              >
+                                <section.footerLink.icon className="h-4 w-4 shrink-0" />
+                                {section.footerLink.label}
+                              </a>
+                            ) : (
+                              <Link
+                                to={section.footerLink.to}
+                                className={cn(
+                                  'flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-colors font-medium',
+                                  location.pathname === section.footerLink.to
+                                    ? 'bg-blue-600 text-white shadow-sm'
+                                    : 'text-blue-600 hover:bg-blue-50'
+                                )}
+                              >
+                                <section.footerLink.icon className="h-4 w-4 shrink-0" />
+                                {section.footerLink.label}
+                              </Link>
                             )}
-                          >
-                            <PlusCircle className="h-4 w-4 shrink-0" />
-                            Daftarkan Hotel Baru
-                          </Link>
-                        </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -412,6 +515,26 @@ export default function OwnerLayout() {
                   <h1 className="mt-1 truncate text-2xl font-bold tracking-tight text-slate-900">
                     {hotel?.name || 'Kelola Properti Anda'}
                   </h1>
+                  {(() => {
+                    const stars = parseInt(hotel?.starRating, 10)
+                    if (!stars || stars < 1) return null
+                    return (
+                      <div className="mt-1.5 flex items-center gap-0.5">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className={cn(
+                              'h-4 w-4 shrink-0',
+                              i < stars
+                                ? 'fill-amber-400 text-amber-400'
+                                : 'fill-slate-200 text-slate-200'
+                            )}
+                          />
+                        ))}
+                        <span className="ml-1.5 text-xs font-semibold text-amber-600">{stars} Bintang</span>
+                      </div>
+                    )
+                  })()}
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
                     <span className="font-medium text-slate-700">{propertyCode}</span>
                     <span className="flex items-center gap-1.5">
@@ -426,7 +549,9 @@ export default function OwnerLayout() {
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
-                <button className="rounded-full bg-blue-50 px-5 py-3 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100">
+                <button
+                  onClick={() => setMmOpen(true)}
+                  className="rounded-full bg-blue-50 px-5 py-3 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100">
                   Hubungi Market Manager
                 </button>
                 <button className="flex items-center gap-2 rounded-full border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
@@ -458,6 +583,112 @@ export default function OwnerLayout() {
           </div>
         </main>
       </div>
+
+      {/* ── Market Manager Contact Popup ─────────────────── */}
+      {mmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMmOpen(false)} />
+          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-fade-in">
+            {/* Header gradient */}
+            <div className="bg-gradient-to-br from-blue-600 to-indigo-600 px-6 pt-8 pb-10 text-center">
+              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full overflow-hidden ring-4 ring-white/30">
+                {mmData?.avatar
+                  ? <img src={getImageUrl(mmData.avatar)} alt={mmData.name} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full bg-white/20 flex items-center justify-center">
+                      {mmData?.name
+                        ? <span className="text-2xl font-bold text-white">{mmData.name[0].toUpperCase()}</span>
+                        : <User className="h-8 w-8 text-white" />
+                      }
+                    </div>
+                }
+              </div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-blue-200 mb-1">Market Manager Anda</p>
+              <h2 className="text-xl font-bold text-white">
+                {mmLoading ? 'Memuat...' : mmData?.name || 'Belum ditugaskan'}
+              </h2>
+            </div>
+
+            <div className="-mt-4 h-4 bg-white rounded-t-[2rem]" />
+
+            <div className="px-6 pb-6 -mt-1">
+              {mmLoading ? (
+                <div className="space-y-3 py-4">
+                  <div className="h-10 bg-slate-100 animate-pulse rounded-2xl" />
+                  <div className="h-10 bg-slate-100 animate-pulse rounded-2xl" />
+                </div>
+              ) : !mmData ? (
+                <div className="text-center py-4">
+                  <p className="text-sm text-slate-500">
+                    Belum ada Market Manager yang terhubung dengan Anda
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Email */}
+                  <a
+                    href={`mailto:${mmData.email}`}
+                    className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-blue-50 transition-colors group"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0 group-hover:bg-blue-200 transition-colors">
+                      <Mail className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-slate-400 font-medium">Email</p>
+                      <p className="text-sm font-semibold text-slate-800 truncate">{mmData.email}</p>
+                    </div>
+                  </a>
+
+                  {/* WhatsApp */}
+                  {mmData.phone ? (
+                    <a
+                      href={`https://wa.me/${mmData.phone.replace(/\D/g, '').replace(/^0/, '62')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 hover:bg-emerald-50 transition-colors group"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0 group-hover:bg-emerald-200 transition-colors">
+                        <Phone className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs text-slate-400 font-medium">WhatsApp</p>
+                        <p className="text-sm font-semibold text-slate-800">{mmData.phone}</p>
+                      </div>
+                      <span className="text-xs font-semibold text-emerald-600 bg-emerald-100 px-2.5 py-1 rounded-full shrink-0">
+                        Chat
+                      </span>
+                    </a>
+                  ) : (
+                    <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50">
+                      <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                        <Phone className="w-5 h-5 text-slate-400" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 font-medium">WhatsApp</p>
+                        <p className="text-sm text-slate-400">Nomor belum tersedia</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <button
+                onClick={() => setMmOpen(false)}
+                className="mt-5 w-full rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold py-3 transition-colors"
+              >
+                Tutup
+              </button>
+            </div>
+
+            {/* Close button */}
+            <button
+              onClick={() => setMmOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+            >
+              <X className="w-4 h-4 text-white" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Pending Hotel Modal ───────────────────────────── */}
       {pendingModal && (
