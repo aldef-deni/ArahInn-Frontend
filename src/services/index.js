@@ -116,3 +116,22 @@ export const authApi = {
   reset       : (d)    => api.post('/auth/reset-password', d),
   me          : ()     => api.get('/auth/me'),
 }
+
+export const interiorApi = {
+  submit      : (d)    => api.post('/interior-inquiries', d),
+  getAll      : (p)    => api.get('/interior-inquiries', { params: p }),
+  updateStatus: (id,d) => api.put(`/interior-inquiries/${id}/status`, d),
+}
+
+export const interiorDesignApi = {
+  // public — gallery (approved only, no auth required)
+  publicList  : ()      => api.get('/interior-designs'),
+  // admin CRUD
+  adminList   : ()      => api.get('/admin/interior-designs'),
+  create      : (fd)    => api.post('/admin/interior-designs', fd, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  update      : (id,fd) => api.post(`/admin/interior-designs/${id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  remove      : (id)    => api.delete(`/admin/interior-designs/${id}`),
+  // superadmin approval
+  approve     : (id)    => api.post(`/admin/interior-designs/${id}/approve`),
+  reject      : (id)    => api.post(`/admin/interior-designs/${id}/reject`),
+}

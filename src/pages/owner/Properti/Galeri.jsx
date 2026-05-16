@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
 import { useToast } from '@/hooks/use-toast'
 import { cn, getImageUrl } from '@/utils'
+import { validateImageFiles } from '@/utils/imageValidation'
 import {
   BedDouble, ImageIcon, Plus, Save, Trash2, UploadCloud, X, Info,
 } from 'lucide-react'
@@ -177,19 +178,24 @@ export default function PropertiGaleri() {
     })
   }
 
-  const handleFileSelect = (event) => {
+  const handleFileSelect = async (event) => {
     const files = Array.from(event.target.files || [])
+    event.target.value = ''
     if (!files.length) return
+
+    const { validFiles, errors } = await validateImageFiles(files)
+    if (errors.length) {
+      toast({ title: 'Beberapa foto ditolak', description: errors.join('\n'), variant: 'destructive' })
+    }
+    if (!validFiles.length) return
 
     setNewImages(previous => [
       ...previous,
-      ...files.map(file => ({
+      ...validFiles.map(file => ({
         file,
         previewUrl: URL.createObjectURL(file),
       })),
     ])
-
-    event.target.value = ''
   }
 
   const removeExistingImage = (src) => {
@@ -260,6 +266,7 @@ export default function PropertiGaleri() {
                       {activeRoom.type} - {activeRoom.maxGuests} tamu - {activeRoom.totalUnits} unit
                     </p>
                   )}
+                  <p className="mt-2 text-xs text-slate-400">Min. resolusi 1024 px · maks. 5 MB per file.</p>
                 </div>
 
                 <div className="flex flex-wrap gap-3">

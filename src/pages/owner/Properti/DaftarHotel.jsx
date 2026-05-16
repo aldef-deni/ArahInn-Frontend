@@ -10,6 +10,7 @@ import {
   ArrowLeft, Send, Save, Plus, Info, Copy, AlertCircle, ImageIcon, X, Star, Upload,
 } from 'lucide-react'
 import { cn } from '@/utils'
+import { validateImageFiles } from '@/utils/imageValidation'
 import MapEmbed from '@/components/ui/MapEmbed'
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -58,7 +59,7 @@ const FACILITY_GROUPS = [
       'AC', 'Antar/Jemput Bandara (biaya tambahan)', 'Bebas rokok',
       'Fitness', 'Kolam Renang', 'Layanan kamar 24 jam',
       'Layanan laundry/dry cleaning', 'Lemari es', 'Lift',
-      'NIB Terdaftar', 'Parkir (gratis)', 'Penitipan bagasi',
+      'Parkir (gratis)', 'Penitipan bagasi',
       'Resepsionis 24 jam', 'Restoran', 'Shower',
       'Televisi', 'WiFi Gratis',
     ],
@@ -66,7 +67,7 @@ const FACILITY_GROUPS = [
   {
     label: 'Kamar & Kenyamanan',
     items: [
-      'Brankas', 'Hair dryer', 'Kamar mandi dalam', 'Kursi tamu',
+      'Brankas', 'Kamar mandi dalam', 'Kursi tamu',
       'Meja kerja', 'Pengering rambut', 'Sarapan tersedia',
       'Setrika', 'Sofa', 'Tempat tidur ekstra',
     ],
@@ -116,7 +117,7 @@ const INIT = {
   photo_groups: [{ id: 1, category: '', files: [], mainIdx: null }],
   // Step 8
   gender_policy: null, marriage_book: null, deposit_required: null,
-  all_ages_allowed: null, breakfast_available: null,
+  all_ages_allowed: null, min_age: null, breakfast_available: null,
   breakfast_start_hour: '06', breakfast_start_minute: '00',
   breakfast_end_hour: '10',   breakfast_end_minute: '00',
   smoking_allowed: null, alcohol_allowed: null, pets_allowed: null,
@@ -984,6 +985,7 @@ function PhotoThumb({ file, isMain, onSetMain, onRemove }) {
 
 // ── Step 7: Foto Properti ──────────────────────────────────────────────────
 function Step7Foto({ form, setForm }) {
+  const { toast } = useToast()
   const MIN_PHOTOS = 4
   const totalPhotos = (form.photo_groups || []).reduce((s, g) => s + (g.files?.length || 0), 0)
 
@@ -1001,11 +1003,16 @@ function Step7Foto({ form, setForm }) {
     }))
   }
 
-  const addFiles = (id, newFiles) => {
+  const addFiles = async (id, newFiles) => {
+    const { validFiles, errors } = await validateImageFiles(newFiles)
+    if (errors.length) {
+      toast({ title: 'Beberapa foto ditolak', description: errors.join('\n'), variant: 'destructive' })
+    }
+    if (!validFiles.length) return
     setForm(p => ({
       ...p,
       photo_groups: p.photo_groups.map(g =>
-        g.id === id ? { ...g, files: [...(g.files || []), ...Array.from(newFiles)] } : g
+        g.id === id ? { ...g, files: [...(g.files || []), ...validFiles] } : g
       ),
     }))
   }
@@ -1047,6 +1054,7 @@ function Step7Foto({ form, setForm }) {
         {[
           `Upload minimal ${MIN_PHOTOS} foto`,
           'Pilih 1 foto sebagai foto utama',
+          'Min. resolusi 1024 px · maks. 5 MB per file.',
           'Klik ikon bintang pada foto untuk mengatur foto utama.',
           'Untuk proses upload yang lebih cepat, tambahkan lebih dari 1 foto dalam sekali upload.',
         ].map((txt, i) => (
@@ -1139,19 +1147,19 @@ function Step7Foto({ form, setForm }) {
 const KEBIJAKAN_QUESTIONS = [
   {
     key: 'gender_policy',
-    label: 'Apakah kamu hanya menerima jenis kelamin tertentu?',
+    label: 'Apakah Anda hanya menerima jenis kelamin tertentu?',
     options: [
       { value: 'hanya_wanita', label: 'Hanya Wanita' },
       { value: 'hanya_pria',   label: 'Hanya Pria' },
       { value: 'keduanya',     label: 'Keduanya' },
     ],
   },
-  { key: 'marriage_book',       label: 'Apakah kamu mewajibkan buku nikah untuk tamu berpasangan?' },
+  { key: 'marriage_book',       label: 'Apakah Anda mewajibkan buku nikah untuk tamu berpasangan?' },
   { key: 'deposit_required',    label: 'Apakah tamu perlu membayar deposit?' },
   { key: 'all_ages_allowed',    label: 'Apakah Anda mengizinkan semua umur?' },
   { key: 'breakfast_available', label: 'Apakah sarapan tersedia?' },
   { key: 'smoking_allowed',     label: 'Apakah tamu diperbolehkan merokok di properti?' },
-  { key: 'alcohol_allowed',     label: 'Apakah kamu memperbolehkan minuman beralkohol?' },
+  { key: 'alcohol_allowed',     label: 'Apakah Anda memperbolehkan minuman beralkohol?' },
   { key: 'pets_allowed',        label: 'Apakah tamu boleh membawa hewan peliharaan?' },
 ]
 
@@ -1213,9 +1221,31 @@ function Step8Kebijakan({ form, setForm }) {
             <RadioGroup
               name={q.key}
               value={form[q.key]}
-              onChange={v => set(q.key, v)}
+              onChange={v => {
+                set(q.key, v)
+                if (q.key === 'all_ages_allowed' && v === true) set('min_age', null)
+              }}
               options={q.options ?? YES_NO}
             />
+
+            {/* Minimum age input */}
+            {q.key === 'all_ages_allowed' && form.all_ages_allowed === false && (
+              <div className="mt-4">
+                <label className="block text-xs font-medium text-slate-500 mb-2">Umur minimum tamu (tahun)</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="99"
+                  placeholder="cth. 18"
+                  value={form.min_age ?? ''}
+                  onChange={e => {
+                    const v = e.target.value
+                    set('min_age', v === '' ? null : Math.max(1, Math.min(99, parseInt(v, 10) || 1)))
+                  }}
+                  className="w-40 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                />
+              </div>
+            )}
 
             {/* Breakfast time range */}
             {q.key === 'breakfast_available' && form.breakfast_available === true && (
@@ -1246,7 +1276,9 @@ function Step8Kebijakan({ form, setForm }) {
 // ── Step 9: Detail Kamar ───────────────────────────────────────────────────
 const ROOM_TYPES = [
   'Standard Room', 'Superior Room', 'Deluxe Room', 'Junior Suite',
-  'Suite', 'Family Room', 'Executive Room', 'Connecting Room', 'Dormitory', 'Lainnya',
+  'Suite', 'Family Room', 'Executive Room', 'Connecting Room', 'Dormitory',
+  'Studio', '2 Bedroom', '3 Bedroom',
+  'Lainnya',
 ]
 const BED_TYPES  = ['Single Bed', 'Twin Bed', 'Double Bed', 'Queen Bed', 'King Bed', 'Sofa Bed', 'Bunk Bed']
 const BED_COUNTS = ['1', '2', '3', '4', '5']
@@ -1273,6 +1305,7 @@ const ROOM_FACILITY_GROUPS = [
 const ROOM_PHOTO_CATS = ['Kamar Tidur', 'Kamar Mandi', 'Dapur', 'Ruang Tamu', 'Pemandangan', 'Lainnya']
 
 function RoomForm({ room, onChange, onRemove, index, showErrors }) {
+  const { toast } = useToast()
   const [openTambah,    setOpenTambah]    = useState(true)
   const [openFasilitas, setOpenFasilitas] = useState(false)
   const [openFoto,      setOpenFoto]      = useState(false)
@@ -1303,12 +1336,19 @@ function RoomForm({ room, onChange, onRemove, index, showErrors }) {
   const updatePhotoCategory = (pgId, category) => onChange({
     ...room, photo_groups: room.photo_groups.map(g => g.id === pgId ? { ...g, category } : g),
   })
-  const addPhotos = (pgId, newFiles) => onChange({
-    ...room,
-    photo_groups: room.photo_groups.map(g =>
-      g.id === pgId ? { ...g, files: [...(g.files || []), ...Array.from(newFiles)] } : g
-    ),
-  })
+  const addPhotos = async (pgId, newFiles) => {
+    const { validFiles, errors } = await validateImageFiles(newFiles)
+    if (errors.length) {
+      toast({ title: 'Beberapa foto ditolak', description: errors.join('\n'), variant: 'destructive' })
+    }
+    if (!validFiles.length) return
+    onChange({
+      ...room,
+      photo_groups: room.photo_groups.map(g =>
+        g.id === pgId ? { ...g, files: [...(g.files || []), ...validFiles] } : g
+      ),
+    })
+  }
   const removePhoto = (pgId, fileIdx) => onChange({
     ...room,
     photo_groups: room.photo_groups.map(g => {
@@ -1564,6 +1604,7 @@ function RoomForm({ room, onChange, onRemove, index, showErrors }) {
         <div className="pt-3">
           <ul className="space-y-1 mb-5">
             {['Upload minimal 1 foto', 'Pilih 1 foto sebagai foto utama',
+              'Min. resolusi 1024 px · maks. 5 MB per file.',
               'Geser dan letakkan foto untuk mengatur urutannya.',
               'Untuk proses upload yang lebih cepat, kami sarankan untuk menambah lebih dari 1 foto dalam sekali upload.',
             ].map((txt, i) => (
@@ -1838,12 +1879,6 @@ function Step11Pembayaran({ form, setForm }) {
       label: 'Transfer Bank',
       desc: 'Pencairan langsung ke rekening bank Anda',
       icon: '🏦',
-    },
-    {
-      value: 'vcc',
-      label: 'Kartu Kredit Virtual',
-      desc: 'ArahInn membayar menggunakan Virtual Credit Card (VCC)',
-      icon: '💳',
     },
   ]
 
@@ -2247,6 +2282,7 @@ function Step6Review({ form, setForm, user, setStep }) {
       key: 'kebijakan_umum', label: 'Kebijakan Umum', editable: true, stepNum: 8,
       rows: [
         { label: 'Jenis kelamin',     value: form.gender_policy === 'hanya_wanita' ? 'Hanya Wanita' : form.gender_policy === 'hanya_pria' ? 'Hanya Pria' : form.gender_policy === 'keduanya' ? 'Keduanya' : '–' },
+        { label: 'Umur tamu',         value: form.all_ages_allowed === true ? 'Semua umur' : form.all_ages_allowed === false ? (form.min_age ? `Min. ${form.min_age} tahun` : 'Ada batas (belum diisi)') : '–' },
         { label: 'Sarapan',           value: form.breakfast_available === true ? `Ya (${form.breakfast_start_hour}:${form.breakfast_start_minute} – ${form.breakfast_end_hour}:${form.breakfast_end_minute})` : form.breakfast_available === false ? 'Tidak' : '–' },
         { label: 'Merokok',           value: form.smoking_allowed === true ? 'Ya' : form.smoking_allowed === false ? 'Tidak' : '–' },
         { label: 'Hewan peliharaan',  value: form.pets_allowed === true ? 'Ya' : form.pets_allowed === false ? 'Tidak' : '–' },
@@ -2469,7 +2505,7 @@ export default function DaftarHotel() {
         'nitku_number','nitku_name',
         'registration_source',
         // kebijakan step 8
-        'gender_policy','marriage_book','deposit_required','all_ages_allowed',
+        'gender_policy','marriage_book','deposit_required','all_ages_allowed','min_age',
         'breakfast_available',
         'breakfast_start_hour','breakfast_start_minute',
         'breakfast_end_hour','breakfast_end_minute',

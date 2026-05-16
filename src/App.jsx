@@ -20,6 +20,7 @@ import OrderDetail from '@/pages/OrderDetail'
 import Profile from '@/pages/Profile'
 import PropertyMarket from '@/pages/PropertyMarket'
 import PropertyDetail from '@/pages/PropertyDetail'
+import InteriorPage from '@/pages/Interior'
 
 // Auth Pages
 import Login from '@/pages/Auth/Login'
@@ -85,6 +86,8 @@ import OwnerLaporan from '@/pages/owner/Laporan'
 import OwnerChat from '@/pages/owner/Chat'
 import OwnerDaftarHotel from '@/pages/owner/Properti/DaftarHotel'
 import OwnerDaftarHotelPage from '@/pages/owner/Properti/DaftarHotelPage'
+import AdminInterior from '@/pages/admin/Interior'
+import DesignInteriorDashboard from '@/pages/admin/Interior/Dashboard'
 
 function ExternalRedirect({ to }) {
   useEffect(() => {
@@ -92,6 +95,18 @@ function ExternalRedirect({ to }) {
   }, [to])
 
   return null
+}
+
+function DashboardSwitch() {
+  const role = useAuthStore(s => s.user?.role)
+  if (role === 'design_interior') return <DesignInteriorDashboard />
+  return <Dashboard />
+}
+
+function BlockRoles({ roles = [], children }) {
+  const role = useAuthStore(s => s.user?.role)
+  if (roles.includes(role)) return <Navigate to="/admin" replace />
+  return children
 }
 
 // Guards
@@ -103,7 +118,7 @@ function PrivateRoute({ children }) {
 function AdminRoute({ children, roles = [] }) {
   const { token, user } = useAuthStore()
   if (!token) return <Navigate to="/login" replace />
-  const adminRoles = ['superadmin', 'admin', 'admin_property', 'finance']
+  const adminRoles = ['superadmin', 'admin', 'admin_property', 'finance', 'design_interior']
   if (!adminRoles.includes(user?.role)) {
     if (user?.role === 'owner') return <ExternalRedirect to={getOwnerPortalUrl('/owner')} />
     if (user?.role === 'user') return <ExternalRedirect to={getCustomerPortalUrl()} />
@@ -177,6 +192,7 @@ export default function App() {
             <Route path="/hotel/:id" element={<HotelDetail />} />
             <Route path="/properti" element={<PropertyMarket />} />
             <Route path="/properti/:id" element={<PropertyDetail />} />
+            <Route path="/interior" element={<InteriorPage />} />
             <Route path="/checkout/:roomId" element={<PrivateRoute><Checkout /></PrivateRoute>} />
             <Route path="/payment/:bookingId" element={<PrivateRoute><Payment /></PrivateRoute>} />
             <Route path="/orders" element={<PrivateRoute><OrderHistory /></PrivateRoute>} />
@@ -196,19 +212,21 @@ export default function App() {
         <Route path="/auth/callback" element={<AuthCallback />} />
 
         <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
-          <Route index element={<Dashboard />} />
-          <Route path="hotels" element={<AdminHotels />} />
-          <Route path="orders" element={<AdminOrders />} />
-          <Route path="reports" element={<AdminReports />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="promos" element={<AdminPromos />} />
-          <Route path="campaigns" element={<AdminCampaigns />} />
-          <Route path="finance/invoices" element={<FinanceInvoices />} />
-          <Route path="owners" element={<AdminOwners />} />
-          <Route path="mm-handler" element={<AdminMMHandler />} />
-          <Route path="property-approval" element={<AdminPropertyApproval />} />
-          <Route path="reviews" element={<AdminReviews />} />
-          <Route path="harga" element={<AdminHarga />}>
+          <Route index element={<DashboardSwitch />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="hotels" element={<BlockRoles roles={['design_interior']}><AdminHotels /></BlockRoles>} />
+          <Route path="orders" element={<BlockRoles roles={['design_interior']}><AdminOrders /></BlockRoles>} />
+          <Route path="reports" element={<BlockRoles roles={['design_interior']}><AdminReports /></BlockRoles>} />
+          <Route path="users" element={<BlockRoles roles={['design_interior']}><AdminUsers /></BlockRoles>} />
+          <Route path="promos" element={<BlockRoles roles={['design_interior']}><AdminPromos /></BlockRoles>} />
+          <Route path="campaigns" element={<BlockRoles roles={['design_interior']}><AdminCampaigns /></BlockRoles>} />
+          <Route path="finance/invoices" element={<BlockRoles roles={['design_interior']}><FinanceInvoices /></BlockRoles>} />
+          <Route path="owners" element={<BlockRoles roles={['design_interior']}><AdminOwners /></BlockRoles>} />
+          <Route path="mm-handler" element={<BlockRoles roles={['design_interior']}><AdminMMHandler /></BlockRoles>} />
+          <Route path="property-approval" element={<BlockRoles roles={['design_interior']}><AdminPropertyApproval /></BlockRoles>} />
+          <Route path="reviews" element={<BlockRoles roles={['design_interior']}><AdminReviews /></BlockRoles>} />
+          <Route path="interior" element={<AdminInterior />} />
+          <Route path="harga" element={<BlockRoles roles={['design_interior']}><AdminHarga /></BlockRoles>}>
             <Route index element={<Navigate to="pricing-model" replace />} />
             <Route path="pricing-model" element={<OwnerHargaPricingModel />} />
             <Route path="rate-plan" element={<OwnerHargaRatePlan />} />
@@ -224,6 +242,7 @@ export default function App() {
 
         <Route path="/owner" element={<OwnerRoute><OwnerLayout /></OwnerRoute>}>
           <Route index element={<OwnerDashboard />} />
+          <Route path="profile" element={<Profile />} />
           <Route path="properti" element={<OwnerPropertiDetail />} />
           <Route path="properti/unit" element={<OwnerPropertiUnit />} />
           <Route path="properti/galeri" element={<OwnerPropertiGaleri />} />

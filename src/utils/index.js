@@ -41,12 +41,13 @@ export const statusLabel = (status) => ({
 }[status] || status)
 
 export const roleLabel = (role) => ({
-  superadmin    : 'Super Admin',
-  owner         : 'Pemilik Hotel',
-  admin_property: 'Admin Properti',
-  admin         : 'Market Manager',
-  finance       : 'Keuangan',
-  user          : 'Pengguna',
+  superadmin     : 'Super Admin',
+  owner          : 'Pemilik Hotel',
+  admin_property : 'Admin Properti',
+  admin          : 'Market Manager',
+  finance        : 'Keuangan',
+  design_interior: 'Design Interior',
+  user           : 'Pengguna',
 }[role] || role)
 
 export const generateBookingCode = () =>

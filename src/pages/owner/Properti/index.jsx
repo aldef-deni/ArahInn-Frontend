@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
 import { useToast } from '@/hooks/use-toast'
 import { getImageUrl } from '@/utils'
+import { validateImageFiles } from '@/utils/imageValidation'
 import { Save, MapPin, Star, UploadCloud, X, ImageIcon, Crown } from 'lucide-react'
 
 const STARS = [1, 2, 3, 4, 5]
@@ -79,19 +80,24 @@ export default function PropertiDetail() {
     }
   }
 
-  const handleFileSelect = (e) => {
+  const handleFileSelect = async (e) => {
     const files = Array.from(e.target.files || [])
+    e.target.value = ''
     if (!files.length) return
     const total = existingImages.length + newImages.length + files.length
     if (total > MAX_IMAGES) {
       toast({ title: `Maksimal ${MAX_IMAGES} foto`, variant: 'destructive' })
       return
     }
+    const { validFiles, errors } = await validateImageFiles(files)
+    if (errors.length) {
+      toast({ title: 'Beberapa foto ditolak', description: errors.join('\n'), variant: 'destructive' })
+    }
+    if (!validFiles.length) return
     setNewImages(prev => [
       ...prev,
-      ...files.map(file => ({ file, previewUrl: URL.createObjectURL(file) })),
+      ...validFiles.map(file => ({ file, previewUrl: URL.createObjectURL(file) })),
     ])
-    e.target.value = ''
   }
 
   const removeExisting = (url) => setExistingImages(prev => prev.filter(u => u !== url))
@@ -166,6 +172,7 @@ export default function PropertiDetail() {
             <p className="text-xs text-slate-400 mt-0.5">
               Foto pertama akan jadi thumbnail utama di halaman pencarian. Maks {MAX_IMAGES} foto.
             </p>
+            <p className="text-xs text-slate-400 mt-0.5">Min. resolusi 1024 px · maks. 5 MB per file.</p>
           </div>
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
             totalPhotos >= MAX_IMAGES ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-500'

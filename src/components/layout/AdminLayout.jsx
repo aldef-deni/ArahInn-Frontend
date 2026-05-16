@@ -7,9 +7,9 @@ import {
   LayoutDashboard, Hotel, ShoppingBag, BarChart2,
   Users, UserCog, Tag, LogOut, Menu, X, User,
   FileText, CreditCard, Building2, Megaphone, ChevronDown, MessageSquare,
-  CalendarDays,
+  CalendarDays, Sofa,
 } from 'lucide-react'
-import { cn, roleLabel } from '@/utils'
+import { cn, roleLabel, getImageUrl } from '@/utils'
 import NotificationBell from '@/components/ui/NotificationBell'
 import queryClient from '@/lib/queryClient'
 
@@ -34,6 +34,7 @@ const NAV_ADMIN = [
   { to: '/admin/property-approval', label: 'Jual - Beli Properti',    icon: Building2 },
   { to: '/admin/reviews',           label: 'Review Tamu',            icon: MessageSquare },
   { to: '/admin/harga',             label: 'Harga & Ketersediaan',   icon: CalendarDays },
+  { to: '/admin/interior',          label: 'Design Interior',         icon: Sofa },
 ]
 
 const NAV_MARKET_MANAGER = [
@@ -61,6 +62,11 @@ const NAV_FINANCE = [
   { to: '/admin/finance/invoices',    label: 'Invoice',       icon: FileText },
 ]
 
+const NAV_DESIGN_INTERIOR = [
+  { to: '/admin',          label: 'Dashboard',       icon: LayoutDashboard, exact: true },
+  { to: '/admin/interior', label: 'Design Interior', icon: Sofa },
+]
+
 export default function AdminLayout() {
   const { user, logout } = useAuthStore()
   const navigate         = useNavigate()
@@ -68,9 +74,13 @@ export default function AdminLayout() {
   const { toast }        = useToast()
   const [collapsed, setCollapsed] = useState(false)
 
-  const isFinance       = user?.role === 'finance'
-  const isMarketManager = user?.role === 'admin'
-  const navItems        = isFinance ? NAV_FINANCE : isMarketManager ? NAV_MARKET_MANAGER : NAV_ADMIN
+  const isFinance         = user?.role === 'finance'
+  const isMarketManager   = user?.role === 'admin'
+  const isDesignInterior  = user?.role === 'design_interior'
+  const navItems          = isDesignInterior ? NAV_DESIGN_INTERIOR
+                          : isFinance        ? NAV_FINANCE
+                          : isMarketManager  ? NAV_MARKET_MANAGER
+                          : NAV_ADMIN
 
   const promoRoutes = ['/admin/promos', '/admin/campaigns']
   const [promoOpen, setPromoOpen] = useState(() =>
@@ -182,8 +192,10 @@ export default function AdminLayout() {
         {/* User info */}
         <div className="p-3 border-t border-white/10">
           <div className={cn('flex items-center gap-3', collapsed && 'justify-center')}>
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold shrink-0">
-              {user?.name?.[0]?.toUpperCase()}
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden">
+              {user?.avatar
+                ? <img key={user.avatar} src={getImageUrl(user.avatar)} alt={user.name} className="h-full w-full object-cover" />
+                : user?.name?.[0]?.toUpperCase()}
             </div>
             {!collapsed && (
               <div className="flex-1 min-w-0">
@@ -192,7 +204,7 @@ export default function AdminLayout() {
               </div>
             )}
           </div>
-          <Link to="/profile"
+          <Link to="/admin/profile"
             className={cn(
               'mt-2 w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-blue-200 hover:bg-white/10 hover:text-white transition-colors',
               collapsed && 'justify-center'
@@ -226,7 +238,7 @@ export default function AdminLayout() {
               }, null) || 'Dashboard'}
             </h1>
             <p className="text-xs text-muted-foreground">
-              {isFinance ? 'Finance & Keuangan' : 'Panel Manajemen OTA System'}
+              {isDesignInterior ? 'Panel Design Interior' : isFinance ? 'Finance & Keuangan' : 'Panel Manajemen OTA System'}
             </p>
           </div>
           <div className="flex items-center gap-3">

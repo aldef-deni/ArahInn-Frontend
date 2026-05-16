@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { propertyApi } from '@/services/propertyApi'
 import { formatRupiah, getImageUrl } from '@/utils'
+import { validateImageFiles } from '@/utils/imageValidation'
 import { useToast } from '@/hooks/use-toast'
 import {
   Building2, CheckCircle2, XCircle, Clock, Eye,
@@ -46,10 +47,17 @@ function PropertyFormDrawer({ onClose }) {
       : [...p.facilities, fac],
   }))
 
-  const onFileChange = (e) => {
+  const onFileChange = async (e) => {
     const files = Array.from(e.target.files || [])
-    setNewImages(prev => [...prev, ...files])
-    files.forEach(file => {
+    e.target.value = ''
+    if (!files.length) return
+    const { validFiles, errors } = await validateImageFiles(files)
+    if (errors.length) {
+      toast({ title: 'Beberapa foto ditolak', description: errors.join('\n'), variant: 'destructive' })
+    }
+    if (!validFiles.length) return
+    setNewImages(prev => [...prev, ...validFiles])
+    validFiles.forEach(file => {
       const reader = new FileReader()
       reader.onload = (ev) => setPreviews(prev => [...prev, ev.target.result])
       reader.readAsDataURL(file)
@@ -225,7 +233,8 @@ function PropertyFormDrawer({ onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Foto Properti</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Foto Properti</label>
+            <p className="text-xs text-slate-400 mb-2">Min. resolusi 1024 px · maks. 5 MB per file.</p>
             {previews.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-3">
                 {previews.map((src, i) => (

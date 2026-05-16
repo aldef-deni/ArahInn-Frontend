@@ -9,7 +9,14 @@
       "PowerShell(Get-ChildItem \"c:\\\\Users\\\\ade zulham\\\\Downloads\\\\arahinn\\\\files\\\\ota-backend\\\\database\\\\migrations\" | ForEach-Object { $_.Name })",
       "Bash(openssl genrsa *)",
       "Bash(openssl rsa *)",
-      "WebFetch(domain:developers.doku.com)"
+      "WebFetch(domain:developers.doku.com)",
+      "Bash(ls \"c:\\\\Users\\\\ade zulham\\\\Downloads\\\\arahinn\\\\files\")",
+      "Read(//c/Users/ade zulham/Downloads/arahinn/files/**)",
+      "Bash(npm install *)",
+      "Bash(npx expo *)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\ade zulham\\Downloads\\arahinn\\files\\mobile-apps"
     ]
   }
 }

@@ -13,15 +13,16 @@ import {
 } from 'lucide-react'
 
 // ── Constants ────────────────────────────────────────────────────────────
-const PENGELOLA_ROLES = ['superadmin', 'admin', 'finance']
+const PENGELOLA_ROLES = ['superadmin', 'admin', 'finance', 'design_interior']
 
 const ROLE_META = {
-  superadmin    : { label: 'Super Admin',    cls: 'bg-red-100    text-red-700'    },
-  admin         : { label: 'Market Manager', cls: 'bg-purple-100 text-purple-700' },
-  owner         : { label: 'Hotel Owner',    cls: 'bg-blue-100   text-blue-700'   },
-  finance       : { label: 'Finance Staff',  cls: 'bg-green-100  text-green-700'  },
-  admin_property: { label: 'Admin Property', cls: 'bg-indigo-100 text-indigo-700' },
-  user          : { label: 'User',           cls: 'bg-slate-100  text-slate-600'  },
+  superadmin     : { label: 'Super Admin',     cls: 'bg-red-100    text-red-700'    },
+  admin          : { label: 'Market Manager',  cls: 'bg-purple-100 text-purple-700' },
+  owner          : { label: 'Hotel Owner',     cls: 'bg-blue-100   text-blue-700'   },
+  finance        : { label: 'Finance Staff',   cls: 'bg-green-100  text-green-700'  },
+  admin_property : { label: 'Admin Property',  cls: 'bg-indigo-100 text-indigo-700' },
+  design_interior: { label: 'Design Interior', cls: 'bg-orange-100 text-orange-700' },
+  user           : { label: 'User',            cls: 'bg-slate-100  text-slate-600'  },
 }
 
 const getRole = (u) => u?.roles?.[0]?.name || u?.role || 'user'

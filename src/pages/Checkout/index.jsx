@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { hotelApi } from '@/services/hotelApi'
 import { bookingApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
@@ -9,6 +10,7 @@ import { formatRupiah, diffDays, getImageUrl } from '@/utils'
 import { Tag, ChevronLeft, User, Phone, Mail } from 'lucide-react'
 
 export default function Checkout() {
+  const { t } = useTranslation()
   const { roomId } = useParams()
   const [sp] = useSearchParams()
   const navigate = useNavigate()
@@ -55,8 +57,8 @@ export default function Checkout() {
     },
     onError: (e) =>
       toast({
-        title: 'Gagal',
-        description: e?.response?.data?.message || 'Kode promo tidak valid.',
+        title: t('common.error'),
+        description: e?.response?.data?.message || t('checkout.promoFailed'),
         variant: 'destructive',
       }),
   })
@@ -79,7 +81,7 @@ export default function Checkout() {
     onSuccess: (r) => navigate(`/payment/${r.data.data.booking.id}`),
     onError: (e) =>
       toast({
-        title: 'Gagal membuat booking',
+        title: t('checkout.bookingFailed'),
         description: e?.response?.data?.message,
         variant: 'destructive',
       }),
@@ -93,38 +95,38 @@ export default function Checkout() {
         onClick={() => navigate(-1)}
         className="mb-6 flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
-        <ChevronLeft className="h-4 w-4" /> Kembali
+        <ChevronLeft className="h-4 w-4" /> {t('common.back')}
       </button>
-      <h1 className="mb-8 font-display text-2xl font-bold">Lengkapi Data Pemesanan</h1>
+      <h1 className="mb-8 font-display text-2xl font-bold">{t('checkout.title')}</h1>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <div className="rounded-2xl border bg-white p-6 shadow-card">
             <h2 className="mb-5 flex items-center gap-2 text-base font-semibold">
-              <User className="h-5 w-5 text-brand" /> Data Tamu
+              <User className="h-5 w-5 text-brand" /> {t('checkout.guestInfo')}
             </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {[
                 {
                   key: 'guestName',
-                  label: 'Nama Lengkap',
+                  label: t('checkout.fullName'),
                   icon: User,
                   type: 'text',
-                  placeholder: 'Masukkan nama lengkap',
+                  placeholder: t('checkout.fullNamePh'),
                 },
                 {
                   key: 'guestEmail',
-                  label: 'Email',
+                  label: t('checkout.email'),
                   icon: Mail,
                   type: 'email',
-                  placeholder: 'email@contoh.com',
+                  placeholder: t('checkout.emailPh'),
                 },
                 {
                   key: 'guestPhone',
-                  label: 'No. Telepon',
+                  label: t('checkout.phone'),
                   icon: Phone,
                   type: 'tel',
-                  placeholder: '08xxxxxxxxxx',
+                  placeholder: t('checkout.phonePh'),
                 },
               ].map(({ key, label, icon: Icon, type, placeholder }) => (
                 <div key={key} className={key === 'guestName' ? 'sm:col-span-2' : ''}>
@@ -144,12 +146,12 @@ export default function Checkout() {
                 </div>
               ))}
               <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-sm font-medium">Catatan (opsional)</label>
+                <label className="mb-1.5 block text-sm font-medium">{t('checkout.notes')} ({t('common.optional')})</label>
                 <textarea
                   value={form.notes}
                   onChange={e => setForm({ ...form, notes: e.target.value })}
                   rows={3}
-                  placeholder="Permintaan khusus, waktu tiba, dll..."
+                  placeholder={t('checkout.notesPh')}
                   className="w-full resize-none rounded-xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/50"
                 />
               </div>
@@ -158,13 +160,13 @@ export default function Checkout() {
 
           <div className="rounded-2xl border bg-white p-6 shadow-card">
             <h2 className="mb-5 flex items-center gap-2 text-base font-semibold">
-              <Tag className="h-5 w-5 text-brand" /> Kode Promo
+              <Tag className="h-5 w-5 text-brand" /> {t('checkout.promoCode')}
             </h2>
             <div className="flex gap-3">
               <input
                 value={form.promoCode}
                 onChange={e => setForm({ ...form, promoCode: e.target.value })}
-                placeholder="Masukkan kode promo..."
+                placeholder={t('checkout.promoPh')}
                 className="flex-1 rounded-xl border px-4 py-2.5 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-brand/50"
               />
               <button
@@ -172,12 +174,12 @@ export default function Checkout() {
                 disabled={!form.promoCode || calcMutation.isPending}
                 className="rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
               >
-                {calcMutation.isPending ? '...' : 'Gunakan'}
+                {calcMutation.isPending ? '...' : t('checkout.apply')}
               </button>
             </div>
             {promoApplied && pricing?.promoDiscount > 0 && (
               <div className="mt-3 rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-sm text-green-700">
-                Promo berhasil diterapkan - hemat {formatRupiah(pricing.promoDiscount)}
+                {t('checkout.promoSuccess', { amount: formatRupiah(pricing.promoDiscount) })}
               </div>
             )}
           </div>
@@ -185,7 +187,7 @@ export default function Checkout() {
 
         <div className="space-y-4">
           <div className="sticky top-24 rounded-2xl border bg-white p-5 shadow-card">
-            <h2 className="mb-4 text-base font-semibold">Ringkasan Pesanan</h2>
+            <h2 className="mb-4 text-base font-semibold">{t('checkout.summary')}</h2>
 
             {hotel && (
               <div className="mb-4 flex gap-3 border-b pb-4">
@@ -200,10 +202,10 @@ export default function Checkout() {
                   <p className="line-clamp-1 text-sm font-semibold">{hotel.name}</p>
                   <p className="text-xs text-muted-foreground">{room?.name} - {room?.type}</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {checkIn} sampai {checkOut} - {nights} malam
+                    {checkIn} {t('checkout.until')} {checkOut} - {nights} {t('checkout.nights')}
                   </p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {guests} tamu - {roomCount} kamar
+                    {guests} {t('checkout.guests')} - {roomCount} {t('checkout.rooms')}
                   </p>
                 </div>
               </div>
@@ -212,27 +214,27 @@ export default function Checkout() {
             {pricing ? (
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Harga Hotel</span>
+                  <span className="text-muted-foreground">{t('checkout.hotelPrice')}</span>
                   <span>{formatRupiah(pricing.basePrice)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">PPN & Others</span>
+                  <span className="text-muted-foreground">{t('checkout.taxOthers')}</span>
                   <span>{formatRupiah((pricing.markupAmount || 0) + (pricing.taxAmount || 0) + (pricing.priceSuffix || 0))}</span>
                 </div>
                 {pricing.promoDiscount > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Diskon Promo</span>
+                    <span className="text-muted-foreground">{t('checkout.promoDiscount')}</span>
                     <span className="font-medium text-green-600">- {formatRupiah(pricing.promoDiscount)}</span>
                   </div>
                 )}
                 {pricing.loyaltyDiscount > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Diskon Poin</span>
+                    <span className="text-muted-foreground">{t('checkout.pointDiscount')}</span>
                     <span className="font-medium text-green-600">- {formatRupiah(pricing.loyaltyDiscount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between border-t pt-3 text-base font-bold">
-                  <span>Total</span>
+                  <span>{t('checkout.total')}</span>
                   <span className="price-tag">{formatRupiah(pricing.totalPrice)}</span>
                 </div>
               </div>
@@ -240,7 +242,7 @@ export default function Checkout() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between gap-3">
                   <span className="text-muted-foreground">
-                    {formatRupiah(room.basePrice)} x {nights} malam x {roomCount} kamar
+                    {t('checkout.perRoomNight', { price: formatRupiah(room.basePrice), nights, rooms: roomCount })}
                   </span>
                   <span>{formatRupiah(room.basePrice * nights * roomCount)}</span>
                 </div>
@@ -248,7 +250,7 @@ export default function Checkout() {
                   onClick={() => calcMutation.mutate()}
                   className="mt-2 w-full rounded-lg border border-brand/30 py-2 text-xs text-brand transition-colors hover:bg-brand/5"
                 >
-                  Hitung harga detail
+                  {t('checkout.calcDetail')}
                 </button>
               </div>
             )}
@@ -258,11 +260,11 @@ export default function Checkout() {
               disabled={!form.guestName || !form.guestEmail || bookMutation.isPending}
               className="mt-5 w-full rounded-xl bg-brand py-3 font-bold text-white shadow-brand/30 shadow-md transition-colors hover:bg-brand-700 disabled:opacity-50"
             >
-              {bookMutation.isPending ? 'Memproses...' : 'Lanjutkan Pembayaran'}
+              {bookMutation.isPending ? t('checkout.processing') : t('checkout.proceedPayment')}
             </button>
 
             <p className="mt-3 text-center text-xs text-muted-foreground">
-              Dengan melanjutkan, Anda menyetujui syarat & ketentuan kami.
+              {t('checkout.agreement')}
             </p>
           </div>
         </div>

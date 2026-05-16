@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { adminApi, userApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { getImageUrl } from '@/utils'
+import { validateImageFiles } from '@/utils/imageValidation'
 import {
   Plus, Search, Star, MapPin, Eye, Pencil, Trash2, X, Save,
   Building2, CheckCircle2, XCircle, Tag, ChevronLeft, ChevronRight,
@@ -117,20 +118,33 @@ function HotelFormDrawer({ hotel, onClose }) {
     }
   }
 
-  const handleImageSelect = (e) => {
+  const handleImageSelect = async (e) => {
     const allowed = ['jpg', 'jpeg', 'png', 'webp']
     const files   = Array.from(e.target.files || [])
-    const valid   = files.filter(f => {
+    e.target.value = ''
+    if (!files.length) return
+
+    const extErrors = []
+    const extOk = files.filter(f => {
       const ext = f.name.split('.').pop().toLowerCase()
-      if (!allowed.includes(ext)) return false
-      if (f.size > 10 * 1024 * 1024) return false
+      if (!allowed.includes(ext)) {
+        extErrors.push(`${f.name}: format harus .jpg .jpeg .png .webp`)
+        return false
+      }
       return true
     })
+
+    const { validFiles, errors } = await validateImageFiles(extOk)
+    const allErrors = [...extErrors, ...errors]
+    if (allErrors.length) {
+      toast({ title: 'Beberapa foto ditolak', description: allErrors.join('\n'), variant: 'destructive' })
+    }
+    if (!validFiles.length) return
+
     const remaining = 10 - existingImages.length - newFiles.length
-    const accepted  = valid.slice(0, remaining)
+    const accepted  = validFiles.slice(0, remaining)
     setNewFiles(p => [...p, ...accepted])
     setNewPreviews(p => [...p, ...accepted.map(f => URL.createObjectURL(f))])
-    e.target.value = ''
   }
 
   const removeExisting = (url) => setExistingImages(p => p.filter(u => u !== url))
@@ -286,7 +300,7 @@ function HotelFormDrawer({ hotel, onClose }) {
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-slate-700">Gambar Hotel</label>
                 <span className="text-xs text-slate-400">
-                  {existingImages.length + newFiles.length}/10 foto · .jpg .jpeg .png .webp · maks 10 MB
+                  {existingImages.length + newFiles.length}/10 foto · .jpg .jpeg .png .webp · min. 1024 px · maks 5 MB
                 </span>
               </div>
 

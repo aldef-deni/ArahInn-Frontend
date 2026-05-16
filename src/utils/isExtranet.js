@@ -1,4 +1,4 @@
-const MANAGEMENT_ROLES = ['superadmin', 'admin', 'admin_property', 'finance']
+const MANAGEMENT_ROLES = ['superadmin', 'admin', 'admin_property', 'finance', 'design_interior']
 const OWNER_ROLES = ['owner']
 
 export const isManagementPortal = () => {

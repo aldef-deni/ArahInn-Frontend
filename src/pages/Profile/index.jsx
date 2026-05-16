@@ -6,11 +6,13 @@ import { userApi, promoApi, bookingApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah, formatDateShort, statusBadgeClass, statusLabel, getImageUrl } from '@/utils'
+import { validateImageFile, MIN_AVATAR_RESOLUTION_PX } from '@/utils/imageValidation'
+import { prepareAvatarFile } from '@/utils/avatarPrep'
 import {
   User, Mail, Phone, Lock, Star, Camera, Save,
   Eye, EyeOff, ShoppingBag, Calendar, ChevronRight,
   XCircle, RefreshCw, Shield, Heart, MessageSquare,
-  CreditCard, BadgeCheck, CheckCircle2,
+  CreditCard, BadgeCheck, CheckCircle2, Loader2,
 } from 'lucide-react'
 
 // ── Avatar with fallback ──────────────────────────────────
@@ -58,7 +60,7 @@ function SectionAccount({ user, updateUser }) {
     onError   : (e) => toast({ title: 'Gagal upload foto', description: e?.response?.data?.message || 'Terjadi kesalahan.', variant: 'destructive' }),
   })
 
-  const handleAvatarChange = (file) => {
+  const handleAvatarChange = async (file) => {
     if (!file) return
     const allowed = ['jpg', 'jpeg', 'png']
     const ext = file.name.split('.').pop().toLowerCase()
@@ -66,11 +68,17 @@ function SectionAccount({ user, updateUser }) {
       toast({ title: 'Format tidak didukung', description: 'Hanya file .jpg, .jpeg, dan .png yang diizinkan.', variant: 'destructive' })
       return
     }
-    if (file.size > 10 * 1024 * 1024) {
-      toast({ title: 'File terlalu besar', description: 'Ukuran file maksimal 10 MB.', variant: 'destructive' })
+    const result = await validateImageFile(file, { minResolution: MIN_AVATAR_RESOLUTION_PX })
+    if (!result.valid) {
+      toast({ title: 'Foto avatar ditolak', description: result.error, variant: 'destructive' })
       return
     }
-    avatarMutation.mutate(file)
+    try {
+      const prepared = await prepareAvatarFile(file, { size: 512, quality: 0.85 })
+      avatarMutation.mutate(prepared)
+    } catch (e) {
+      toast({ title: 'Gagal memproses foto', description: e?.message || 'Terjadi kesalahan.', variant: 'destructive' })
+    }
   }
 
   return (
@@ -85,10 +93,15 @@ function SectionAccount({ user, updateUser }) {
         <div className="flex items-center gap-5">
           <div className="relative shrink-0">
             <Avatar key={user?.avatar || 'default'} user={user} size="lg" />
-            <label className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-brand text-white flex items-center justify-center cursor-pointer hover:bg-brand-700 transition-colors shadow-sm">
+            {avatarMutation.isPending && (
+              <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center">
+                <Loader2 className="w-6 h-6 text-white animate-spin" />
+              </div>
+            )}
+            <label className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-brand text-white flex items-center justify-center transition-colors shadow-sm ${avatarMutation.isPending ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer hover:bg-brand-700'}`}>
               <Camera className="w-3.5 h-3.5" />
-              <input type="file" accept=".jpg,.jpeg,.png" className="hidden"
-                onChange={e => handleAvatarChange(e.target.files[0])} />
+              <input type="file" accept=".jpg,.jpeg,.png" className="hidden" disabled={avatarMutation.isPending}
+                onChange={e => { handleAvatarChange(e.target.files[0]); e.target.value = '' }} />
             </label>
           </div>
           <div>
@@ -98,6 +111,7 @@ function SectionAccount({ user, updateUser }) {
             </div>
             <p className="text-sm text-slate-500">{user?.email}</p>
             <p className="text-xs text-slate-400 mt-1 capitalize">{user?.role?.replace('_', ' ')}</p>
+            <p className="text-xs text-slate-400 mt-1">Foto avatar: min. resolusi 256 px · maks. 5 MB.</p>
           </div>
         </div>
       </div>
@@ -400,7 +414,7 @@ const MENU_PENGELOLA = [
   { id: 'security', label: 'Keamanan',  icon: Shield },
 ]
 
-const PENGELOLA_ROLES = ['superadmin', 'admin', 'owner', 'finance', 'admin_property']
+const PENGELOLA_ROLES = ['superadmin', 'admin', 'owner', 'finance', 'admin_property', 'design_interior']
 
 export default function Profile() {
   const { user, updateUser } = useAuthStore()

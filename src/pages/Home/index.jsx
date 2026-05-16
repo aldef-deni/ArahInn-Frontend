@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { format, addDays, parseISO } from 'date-fns'
 import HotelCard from '@/components/hotel/HotelCard'
+import InteriorPenawaran from '@/components/InteriorPenawaran'
 
 const PROMO_STYLES = {
   flash_sale : { grad: 'from-orange-500 to-red-500',    sub: 'text-orange-100', icon: Zap,   iconBg: 'bg-white/20' },
@@ -540,6 +541,19 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Furnish & Design Interior ─────────────────────── */}
+      <section className="bg-orange-50 py-14">
+        <div className="container">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full mb-3">
+            ✨ Layanan Premium
+          </div>
+          <h2 className="font-display text-2xl lg:text-3xl font-bold text-slate-900 mb-5">
+            Furnish & Design Interior
+          </h2>
+          <InteriorPenawaran noCard />
         </div>
       </section>
 

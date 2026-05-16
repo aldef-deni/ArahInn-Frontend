@@ -18,13 +18,14 @@ export const useAuthStore = create(
         set({ user: null, token: null, refreshToken: null }),
 
       isAdmin: () => {
-        const adminRoles = ['superadmin','admin','admin_property','finance','owner']
+        const adminRoles = ['superadmin','admin','admin_property','finance','design_interior','owner']
         return adminRoles.includes(get().user?.role)
       },
 
-      isSuperAdmin: () => get().user?.role === 'superadmin',
-      isOwner     : () => get().user?.role === 'owner',
-      isFinance   : () => get().user?.role === 'finance',
+      isSuperAdmin    : () => get().user?.role === 'superadmin',
+      isOwner         : () => get().user?.role === 'owner',
+      isFinance       : () => get().user?.role === 'finance',
+      isDesignInterior: () => get().user?.role === 'design_interior',
     }),
     { name: 'ota-auth' }
   )
