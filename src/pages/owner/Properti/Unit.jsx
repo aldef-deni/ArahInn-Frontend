@@ -5,6 +5,7 @@ import { hotelApi } from '@/services/hotelApi'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
 import { Plus, Pencil, Trash2, X, BedDouble } from 'lucide-react'
+import PriceInput from '@/components/ui/PriceInput'
 
 const ROOM_TYPES = [
   { value: 'single_room',      label: 'Single Room'           },
@@ -159,9 +160,12 @@ export default function PropertiUnit() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Harga / Malam (Rp)</label>
-                  <input type="number" value={form.base_price} onChange={e => setForm(p => ({ ...p, base_price: e.target.value }))}
-                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand" />
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">Harga / Malam</label>
+                  <PriceInput
+                    value={form.base_price}
+                    onChange={v => setForm(p => ({ ...p, base_price: v }))}
+                    suffix="/malam"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">Kapasitas Tamu</label>

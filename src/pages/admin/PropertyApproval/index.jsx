@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { propertyApi } from '@/services/propertyApi'
 import { formatRupiah, getImageUrl } from '@/utils'
 import { validateImageFiles } from '@/utils/imageValidation'
+import PriceInput from '@/components/ui/PriceInput'
 import { useToast } from '@/hooks/use-toast'
 import {
   Building2, CheckCircle2, XCircle, Clock, Eye,
@@ -140,9 +141,12 @@ function PropertyFormDrawer({ onClose }) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Harga (Rp) *</label>
-            <input type="number" value={form.price} onChange={f('price')}
-              placeholder="Contoh: 2500000000" className={inputCls} />
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Harga <span className="text-red-500">*</span></label>
+            <PriceInput
+              value={form.price}
+              onChange={v => setForm(p => ({ ...p, price: v }))}
+              placeholder="Contoh: 2.500.000.000"
+            />
             <label className="flex items-center gap-2 mt-2 cursor-pointer">
               <input type="checkbox" checked={form.priceNegotiable} onChange={f('priceNegotiable')}
                 className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" />

@@ -4,6 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
 import { RefreshCw } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import PriceInput from '@/components/ui/PriceInput'
 
 const DAY_LABELS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
 
@@ -139,12 +140,11 @@ export default function BulkUpdate() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Harga Baru</label>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400 font-medium shrink-0">Rp</span>
-                <input type="number" value={form.newPrice} onChange={e => upd('newPrice', e.target.value)}
-                  placeholder="Kosongkan jika tidak diubah"
-                  className="flex-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
-              </div>
+              <PriceInput
+                value={form.newPrice}
+                onChange={v => upd('newPrice', v)}
+                placeholder="Kosongkan jika tidak diubah"
+              />
             </div>
             <div>
               <label className="text-sm font-semibold text-slate-700 mb-1.5 block">Status Ketersediaan</label>

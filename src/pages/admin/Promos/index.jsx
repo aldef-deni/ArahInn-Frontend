@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useForm } from 'react-hook-form'
 import { formatRupiah, formatDateShort } from '@/utils'
 import { Plus, Tag, Zap, Edit2, Trash2, X, Save, ToggleLeft, ToggleRight, Users, User } from 'lucide-react'
+import PriceInput from '@/components/ui/PriceInput'
 
 const TYPE_ICONS  = { voucher: Tag, flash_sale: Zap, loyalty: '⭐' }
 const TYPE_COLORS = {
@@ -263,13 +264,19 @@ export default function AdminPromos() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Min. Pembelian</label>
-                  <input type="number" {...register('minPurchase')} placeholder="0"
-                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                  <PriceInput
+                    value={watch('minPurchase')}
+                    onChange={v => setValue('minPurchase', v)}
+                    placeholder="0"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">Maks. Diskon (Rp)</label>
-                  <input type="number" {...register('maxDiscount')} placeholder="Tidak terbatas"
-                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                  <label className="block text-sm font-medium mb-1.5">Maks. Diskon</label>
+                  <PriceInput
+                    value={watch('maxDiscount')}
+                    onChange={v => setValue('maxDiscount', v)}
+                    placeholder="Tidak terbatas"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Kuota</label>

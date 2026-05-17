@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Star, MapPin, Wifi, Car, Waves } from 'lucide-react'
-import { formatRupiah, getImageUrl } from '@/utils'
+import { formatRupiah, getImageUrl, hotelDetailUrl } from '@/utils'
 import { useTranslation } from 'react-i18next'
 
 const facilityIcons = { wifi: Wifi, parking: Car, pool: Waves }
@@ -12,7 +12,7 @@ export default function HotelCard({ hotel }) {
   const [imgError, setImgError] = useState(false)
 
   return (
-    <Link to={`/hotel/${hotel.id}`}
+    <Link to={hotelDetailUrl(hotel)}
       className="group bg-white rounded-2xl overflow-hidden border shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-0.5 block">
       {/* Image */}
       <div className="relative h-48 overflow-hidden bg-muted">

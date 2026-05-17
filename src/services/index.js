@@ -101,10 +101,13 @@ export const mmHandlerApi = {
 }
 
 export const chatApi = {
-  ownerRooms  : ()       => api.get('/chat/owner-rooms'),
-  createRoom  : (d)      => api.post('/chat/rooms', d),
-  messages    : (id)     => api.get(`/chat/rooms/${id}/messages`),
-  send        : (id, d)  => api.post(`/chat/rooms/${id}/messages`, d),
+  ownerRooms       : ()       => api.get('/chat/owner-rooms'),
+  createRoom       : (d)      => api.post('/chat/rooms', d),
+  messages         : (id)     => api.get(`/chat/rooms/${id}/messages`),
+  send             : (id, d)  => api.post(`/chat/rooms/${id}/messages`, d),
+  // Support chat (customer ↔ Arahinn CS)
+  supportMyRoom    : ()       => api.get('/chat/support/my-room'),
+  supportAdminList : (p)      => api.get('/chat/support/rooms', { params: p }),
 }
 
 export const authApi = {

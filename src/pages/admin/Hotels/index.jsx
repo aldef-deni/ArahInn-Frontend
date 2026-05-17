@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { adminApi, userApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
-import { getImageUrl } from '@/utils'
+import { getImageUrl, hotelDetailUrl } from '@/utils'
+import { getCustomerPortalUrl } from '@/utils/isExtranet'
 import { validateImageFiles } from '@/utils/imageValidation'
 import {
   Plus, Search, Star, MapPin, Eye, Pencil, Trash2, X, Save,
@@ -586,7 +587,7 @@ export default function AdminHotels() {
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-1">
                           {/* View */}
-                          <a href={`/hotel/${hotel.id}`} target="_blank" rel="noreferrer"
+                          <a href={`${getCustomerPortalUrl()}${hotelDetailUrl(hotel)}`} target="_blank" rel="noreferrer"
                             className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
                             title="Lihat di website">
                             <Eye className="w-4 h-4" />

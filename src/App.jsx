@@ -87,6 +87,7 @@ import OwnerChat from '@/pages/owner/Chat'
 import OwnerDaftarHotel from '@/pages/owner/Properti/DaftarHotel'
 import OwnerDaftarHotelPage from '@/pages/owner/Properti/DaftarHotelPage'
 import AdminInterior from '@/pages/admin/Interior'
+import AdminCustomerChat from '@/pages/admin/CustomerChat'
 import DesignInteriorDashboard from '@/pages/admin/Interior/Dashboard'
 
 function ExternalRedirect({ to }) {
@@ -199,6 +200,8 @@ export default function App() {
             <Route path="/orders/:id" element={<PrivateRoute><OrderDetail /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
             <Route path="/dashboard" element={<PrivateRoute><OrderHistory /></PrivateRoute>} />
+            {/* SEO-friendly hotel detail URL: /<kategori>/<slug> — placed LAST so static routes win */}
+            <Route path="/:category/:slug" element={<HotelDetail />} />
           </Route>
         )}
 
@@ -226,6 +229,7 @@ export default function App() {
           <Route path="property-approval" element={<BlockRoles roles={['design_interior']}><AdminPropertyApproval /></BlockRoles>} />
           <Route path="reviews" element={<BlockRoles roles={['design_interior']}><AdminReviews /></BlockRoles>} />
           <Route path="interior" element={<AdminInterior />} />
+          <Route path="customer-chat" element={<BlockRoles roles={['design_interior']}><AdminCustomerChat /></BlockRoles>} />
           <Route path="harga" element={<BlockRoles roles={['design_interior']}><AdminHarga /></BlockRoles>}>
             <Route index element={<Navigate to="pricing-model" replace />} />
             <Route path="pricing-model" element={<OwnerHargaPricingModel />} />

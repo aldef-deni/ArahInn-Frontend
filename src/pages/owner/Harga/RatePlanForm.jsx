@@ -5,6 +5,7 @@ import { hotelApi } from '@/services/hotelApi'
 import { useToast } from '@/hooks/use-toast'
 import { ChevronUp, Info, AlertCircle, Loader2 } from 'lucide-react'
 import { cn } from '@/utils'
+import PriceInput from '@/components/ui/PriceInput'
 
 /* ─── Collapsible section ─── */
 function Section({ title, children, defaultOpen = true }) {

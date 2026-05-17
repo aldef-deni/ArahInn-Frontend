@@ -2,7 +2,18 @@
   "permissions": {
     "allow": [
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\ade zulham\\\\Downloads\\\\arahinn\\\\files\\\\ota-frontend-react\\\\ota-frontend\\\\src\" -Recurse -Directory)",
-      "Bash(Select-Object -ExpandProperty FullName)"
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Read(//c/arahinn-mobile/**)",
+      "PowerShell($env:JAVA_HOME='C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr'; Set-Location 'C:\\\\arahinn-mobile\\\\android'; .\\\\gradlew assembleRelease 2>&1 | Tee-Object -FilePath 'C:\\\\arahinn-mobile\\\\release-build.log')",
+      "PowerShell(Set-Location 'C:\\\\arahinn-mobile\\\\assets'; Copy-Item 'logo1.png' 'icon.png' -Force; Copy-Item 'logo1.png' 'adaptive-icon.png' -Force; Copy-Item 'logo1.png' 'favicon.png' -Force; Get-ChildItem | Where-Object { $_.Name -in 'icon.png','adaptive-icon.png','favicon.png','logo1.png' } | Format-Table Name, Length -AutoSize)",
+      "Bash(grep -n \"use App\\\\\\\\\\\\\\\\Models\\\\\\\\\\\\\\\\Hotel\\\\|use App\\\\\\\\\\\\\\\\Models\\\\\\\\\\\\\\\\Hotel;\" \"C:/Users/ade zulham/Downloads/arahinn/files/ota-backend/app/Http/Controllers/Admin/HotelManageController.php\")"
+    ],
+    "additionalDirectories": [
+      "C:\\arahinn-mobile\\app\\(tabs)",
+      "C:\\arahinn-mobile\\src\\utils",
+      "C:\\arahinn-mobile\\app",
+      "C:\\arahinn-mobile\\src\\store",
+      "C:\\arahinn-mobile\\src\\hooks"
     ]
   }
 }

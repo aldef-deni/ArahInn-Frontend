@@ -16,7 +16,7 @@ import {
   isManagementRole,
   isOwnerRole,
 } from '@/utils/isExtranet'
-import ChatWidget from '@/components/chat/ChatWidget'
+import SupportChatWidget from '@/components/chat/SupportChatWidget'
 import NotificationBell from '@/components/ui/NotificationBell'
 import queryClient from '@/lib/queryClient'
 
@@ -55,8 +55,8 @@ export default function UserLayout() {
   const navLinks = [
     { to: '/',          label: t('nav.home'),    icon: Hotel },
     { to: '/search',    label: t('nav.search'),  icon: Search },
-    { to: '/properti',  label: 'Properti',       icon: Building2 },
-    { to: '/interior',  label: 'Design Interior', icon: Sofa },
+    { to: '/properti',  label: t('nav.properti'), icon: Building2 },
+    { to: '/interior',  label: t('nav.interior'), icon: Sofa },
     ...(token ? [
       { to: '/orders',  label: t('nav.orders'),  icon: List },
       { to: '/profile', label: t('nav.profile'), icon: User },
@@ -463,8 +463,8 @@ export default function UserLayout() {
         </div>
       </footer>}
 
-      {/* LiveChat Widget */}
-      {token && <ChatWidget />}
+      {/* Live Chat Widget — customer ke CS Arahinn */}
+      <SupportChatWidget />
 
       {/* Dropdown backdrop */}
       {dropOpen && <div className="fixed inset-0 z-40" onClick={() => setDropOpen(false)} />}

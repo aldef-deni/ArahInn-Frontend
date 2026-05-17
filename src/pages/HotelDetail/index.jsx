@@ -326,7 +326,9 @@ function BookingModal({
 }
 
 export default function HotelDetail() {
-  const { id } = useParams()
+  // Route bisa /hotel/:id (legacy) atau /:category/:slug (SEO-friendly)
+  const { id, slug } = useParams()
+  const hotelKey = id ?? slug
   const navigate = useNavigate()
   const { token } = useAuthStore()
 
@@ -339,24 +341,28 @@ export default function HotelDetail() {
   const [bookingRoom, setBookingRoom] = useState(null)
 
   const { data: hotel, isLoading } = useQuery({
-    queryKey: ['hotel', id],
-    queryFn: () => hotelApi.getById(id).then(r => r.data.data),
+    queryKey: ['hotel', hotelKey],
+    queryFn: () => hotelApi.getById(hotelKey).then(r => r.data.data),
   })
 
+  const resolvedId = hotel?.id
+
   const { data: reviewData } = useQuery({
-    queryKey: ['hotel-reviews', id],
-    queryFn: () => reviewApi.byHotel(id).then(r => r.data?.data),
+    queryKey: ['hotel-reviews', resolvedId],
+    queryFn: () => reviewApi.byHotel(resolvedId).then(r => r.data?.data),
+    enabled: !!resolvedId,
   })
 
   const { data: campaigns = [] } = useQuery({
-    queryKey: ['hotel-campaigns', id],
-    queryFn: () => campaignApi.forHotel(id).then(r => r.data?.data || []),
+    queryKey: ['hotel-campaigns', resolvedId],
+    queryFn: () => campaignApi.forHotel(resolvedId).then(r => r.data?.data || []),
+    enabled: !!resolvedId,
   })
 
   const { data: availData } = useQuery({
-    queryKey: ['avail', id, dates],
-    queryFn: () => hotelApi.checkAvail(id, dates).then(r => r.data.data),
-    enabled: !!dates.checkIn && !!dates.checkOut,
+    queryKey: ['avail', resolvedId, dates],
+    queryFn: () => hotelApi.checkAvail(resolvedId, dates).then(r => r.data.data),
+    enabled: !!resolvedId && !!dates.checkIn && !!dates.checkOut,
   })
 
   const nights = diffDays(dates.checkIn, dates.checkOut)
@@ -370,7 +376,7 @@ export default function HotelDetail() {
     setDates({ checkIn, checkOut })
     setGuests(nextGuests)
     navigate(
-      `/checkout/${bookingRoom.id}?hotelId=${id}&checkIn=${checkIn}&checkOut=${checkOut}&guests=${nextGuests}&roomCount=${roomCount}`
+      `/checkout/${bookingRoom.id}?hotelId=${resolvedId}&checkIn=${checkIn}&checkOut=${checkOut}&guests=${nextGuests}&roomCount=${roomCount}`
     )
     setBookingRoom(null)
   }

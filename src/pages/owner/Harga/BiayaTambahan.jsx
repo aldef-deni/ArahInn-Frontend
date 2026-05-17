@@ -5,6 +5,7 @@ import { hotelApi } from '@/services/hotelApi'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
 import { Plus, Pencil, Trash2, X, Save, Receipt } from 'lucide-react'
+import PriceInput from '@/components/ui/PriceInput'
 
 const PER_LABEL = { night: '/malam', stay: '/menginap', person: '/orang' }
 
@@ -58,8 +59,11 @@ function FeeForm({ fee, hotelId, onClose }) {
               <label className="text-xs font-semibold text-slate-600 mb-1 block">
                 {form.type === 'percent' ? 'Persentase (%)' : 'Jumlah (Rp)'}
               </label>
-              <input type="number" value={form.amount} onChange={e => upd('amount', +e.target.value)}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
+              {form.type === 'percent'
+                ? <input type="number" value={form.amount} onChange={e => upd('amount', +e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
+                : <PriceInput value={form.amount} onChange={v => upd('amount', v || 0)} />
+              }
             </div>
           </div>
           <div>

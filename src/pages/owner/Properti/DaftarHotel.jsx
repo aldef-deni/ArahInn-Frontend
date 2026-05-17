@@ -12,6 +12,7 @@ import {
 import { cn } from '@/utils'
 import { validateImageFiles } from '@/utils/imageValidation'
 import MapEmbed from '@/components/ui/MapEmbed'
+import PriceInput from '@/components/ui/PriceInput'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const GUEST_TYPES = [
@@ -1451,15 +1452,13 @@ function RoomForm({ room, onChange, onRemove, index, showErrors }) {
             <p className="text-xs text-slate-400 mb-2">
               Atur harga minimal kamar. Saat Anda mengatur rate plan, itu harus sama dengan lebih besar dari Price Threshold.
             </p>
-            <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden w-fit">
-              <span className="px-3 py-2.5 bg-slate-50 border-r border-slate-200 text-sm text-slate-500 font-medium">IDR</span>
-              <input
-                type="number" min="0"
-                value={room.price_threshold}
-                onChange={e => set('price_threshold', e.target.value)}
-                className="px-3 py-2.5 text-sm focus:outline-none w-40"
-              />
-            </div>
+            <PriceInput
+              value={room.price_threshold}
+              onChange={v => set('price_threshold', v)}
+              prefix="IDR"
+              className="w-fit"
+              inputClassName="w-44"
+            />
           </div>
 
           {/* Maksimum Okupansi */}

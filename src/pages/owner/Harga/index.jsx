@@ -5,6 +5,7 @@ import { hotelApi } from '@/services/hotelApi'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
 import { Pencil, X, Save, BedDouble } from 'lucide-react'
+import PriceInput from '@/components/ui/PriceInput'
 
 export default function OwnerHarga() {
   const { hotel }  = useOutletContext()
@@ -62,12 +63,12 @@ export default function OwnerHarga() {
 
                   {editing?.id === r.id ? (
                     <div className="flex items-center gap-2">
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">Rp</span>
-                        <input type="number" value={price} onChange={e => setPrice(e.target.value)}
-                          className="pl-8 pr-3 py-2 border border-brand rounded-xl text-sm w-36 focus:outline-none focus:ring-2 focus:ring-brand/30"
-                          autoFocus />
-                      </div>
+                      <PriceInput
+                        value={price}
+                        onChange={setPrice}
+                        className="w-44"
+                        autoFocus
+                      />
                       <button onClick={() => mutation.mutate({ base_price: +price })} disabled={mutation.isPending}
                         className="p-2 rounded-xl bg-brand text-white hover:bg-brand-700 transition-colors disabled:opacity-50">
                         <Save className="w-4 h-4" />

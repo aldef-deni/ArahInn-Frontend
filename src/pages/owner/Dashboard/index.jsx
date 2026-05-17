@@ -4,9 +4,10 @@ import { ownerApi } from '@/services/index'
 import { formatRupiah, statusBadgeClass, statusLabel, getImageUrl } from '@/utils'
 import { TrendingUp, ShoppingBag, BedDouble, Clock, ArrowUpRight, Star, Loader2 } from 'lucide-react'
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, BarChart, Bar, Cell,
 } from 'recharts'
+import RevenueChart from '@/components/owner/RevenueChart'
 
 function StatCard({ icon: Icon, label, value, sub, color = 'blue' }) {
   const colors = {
@@ -129,28 +130,21 @@ export default function OwnerDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue chart */}
         <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-          <h2 className="font-semibold text-slate-900 mb-5">Pendapatan Bulan Ini</h2>
-          {dailyRevenue.length > 0 ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={dailyRevenue}>
-                <defs>
-                  <linearGradient id="ownerGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#2563eb" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={d => d?.slice(5)} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${(v/1e6).toFixed(0)}jt`} />
-                <Tooltip formatter={v => formatRupiah(v)} labelFormatter={l => `Tgl: ${l}`} />
-                <Area type="monotone" dataKey="amount" stroke="#2563eb" strokeWidth={2} fill="url(#ownerGrad)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-48 flex items-center justify-center text-slate-400 text-sm">
-              Belum ada transaksi bulan ini.
+          <div className="flex items-start justify-between mb-5">
+            <div>
+              <h2 className="font-semibold text-slate-900">Pendapatan Bulan Ini</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Akumulasi per hari dari booking sukses</p>
             </div>
-          )}
+            <p className="text-sm font-bold text-blue-600">{formatRupiah(summary.revenueThisMonth || 0)}</p>
+          </div>
+          <RevenueChart
+            data={dailyRevenue}
+            xKey="date"
+            yKey="amount"
+            labelPrefix="Tanggal"
+            xFormatter={d => d?.slice(5)}
+            height={220}
+          />
         </div>
 
         {/* Status breakdown */}

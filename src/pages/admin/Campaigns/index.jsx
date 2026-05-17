@@ -8,6 +8,7 @@ import {
   MousePointerClick, Eye,
 } from 'lucide-react'
 import { promoApi, campaignApi } from '@/services/index'
+import PriceInput from '@/components/ui/PriceInput'
 
 
 const TYPE_META = {
@@ -166,9 +167,12 @@ function CampaignFormDrawer({ campaign, onSave, onClose, isSaving }) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Budget (Rp)</label>
-            <input type="number" value={form.budget} onChange={f('budget')}
-              placeholder="0 = tidak ada budget" className={inputCls} />
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Budget</label>
+            <PriceInput
+              value={form.budget}
+              onChange={v => setForm(p => ({ ...p, budget: v }))}
+              placeholder="0 = tidak ada budget"
+            />
           </div>
 
           <div>

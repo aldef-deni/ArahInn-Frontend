@@ -56,6 +56,8 @@ export const generateBookingCode = () =>
 export const truncate = (str, n = 80) =>
   str?.length > n ? str.slice(0, n) + '...' : str
 
+export { slugify, categorySlug, hotelDetailUrl } from './slugify'
+
 export function getImageUrl(path) {
   if (!path) return null
   // Handle object format {path: "...", category: "..."} stored by the hotel registration endpoint

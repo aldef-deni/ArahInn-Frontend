@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
 import { useToast } from '@/hooks/use-toast'
 import { Users, Save } from 'lucide-react'
+import PriceInput from '@/components/ui/PriceInput'
 
 const DEFAULT_POLICY = {
   freeUnderAge: 5,
@@ -121,13 +122,12 @@ export default function HargaAnak() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-700 mb-1.5 block">Biaya extra bed</label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-400 font-medium">Rp</span>
-                    <input type="number" min={0} value={form.extraBedCharge} onChange={e => upd('extraBedCharge', +e.target.value)}
-                      placeholder="0"
-                      className="w-32 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
-                    <span className="text-sm text-slate-500">/malam</span>
-                  </div>
+                  <PriceInput
+                    value={form.extraBedCharge}
+                    onChange={v => upd('extraBedCharge', v || 0)}
+                    suffix="/malam"
+                    className="w-64"
+                  />
                 </div>
               </div>
             </div>

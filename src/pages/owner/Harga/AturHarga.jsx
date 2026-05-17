@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
 import { ChevronLeft, ChevronRight, BedDouble, X, Save } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import PriceInput from '@/components/ui/PriceInput'
 
 const DAYS   = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
 const MONTHS = ['Januari','Februari','Maret','April','Mei','Juni',
@@ -211,11 +212,10 @@ export default function AturHarga() {
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-slate-600 mb-1 block">Harga per Malam</label>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400 font-medium">Rp</span>
-                  <input type="number" value={editing.price} onChange={e => setEditing(v => ({ ...v, price: +e.target.value }))}
-                    className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
-                </div>
+                <PriceInput
+                  value={editing.price}
+                  onChange={v => setEditing(prev => ({ ...prev, price: v || 0 }))}
+                />
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600 mb-2 block">Status Ketersediaan</label>

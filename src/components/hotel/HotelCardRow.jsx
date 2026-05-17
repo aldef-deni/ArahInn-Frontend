@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Star, MapPin, ThumbsUp, ChevronRight } from 'lucide-react'
-import { formatRupiah, getImageUrl } from '@/utils'
+import { formatRupiah, getImageUrl, hotelDetailUrl } from '@/utils'
 import { useTranslation } from 'react-i18next'
 
 const CATEGORY_COLORS = {
@@ -23,7 +23,7 @@ export default function HotelCardRow({ hotel }) {
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex">
 
       {/* ── Image ── */}
-      <Link to={`/hotel/${hotel.id}`} className="relative w-44 shrink-0 block group">
+      <Link to={hotelDetailUrl(hotel)} className="relative w-44 shrink-0 block group">
         {hotel.images?.[0] && !imgError ? (
           <img
             src={getImageUrl(hotel.images[0])}
@@ -46,7 +46,7 @@ export default function HotelCardRow({ hotel }) {
 
         {/* Middle — info */}
         <div className="flex-1 min-w-0 space-y-2">
-          <Link to={`/hotel/${hotel.id}`}>
+          <Link to={hotelDetailUrl(hotel)}>
             <h3 className="font-bold text-base text-slate-900 hover:text-brand transition-colors line-clamp-2 leading-snug">
               {hotel.name}
             </h3>
@@ -110,7 +110,7 @@ export default function HotelCardRow({ hotel }) {
           </div>
 
           <Link
-            to={`/hotel/${hotel.id}`}
+            to={hotelDetailUrl(hotel)}
             className="mt-3 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl transition-colors whitespace-nowrap shadow-sm"
           >
             {t('hotel.book')}

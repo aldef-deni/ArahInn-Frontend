@@ -4,6 +4,7 @@ import { promoApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah, formatDateShort } from '@/utils'
 import { Plus, Tag, X, Trash2, Zap, Award, Copy, Check, ShieldCheck } from 'lucide-react'
+import PriceInput from '@/components/ui/PriceInput'
 
 const TYPE_STYLES = {
   flash_sale : { grad: 'from-orange-500 to-red-500',    sub: 'text-orange-100', icon: Zap,   iconBg: 'bg-white/20' },
@@ -223,8 +224,10 @@ export default function OwnerPromo() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">Min. Pembelian</label>
-                  <input type="number" value={form.min_purchase} onChange={f('min_purchase')}
-                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand" />
+                  <PriceInput
+                    value={form.min_purchase}
+                    onChange={v => setForm(p => ({ ...p, min_purchase: v }))}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">Kuota</label>
