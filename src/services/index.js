@@ -119,6 +119,10 @@ export const chatApi = {
   // Support chat (customer ↔ Arahinn CS)
   supportMyRoom    : ()       => api.get('/chat/support/my-room'),
   supportAdminList : (p)      => api.get('/chat/support/rooms', { params: p }),
+  // Inquiry chat (customer ↔ Owner penginapan, pra-booking)
+  inquiryRoom      : (hotelId)=> api.post('/chat/inquiry', { hotel_id: hotelId }),
+  myInquiries      : ()       => api.get('/chat/inquiry/my-rooms'),
+  ownerInquiries   : ()       => api.get('/chat/owner-inquiries'),
 }
 
 export const authApi = {

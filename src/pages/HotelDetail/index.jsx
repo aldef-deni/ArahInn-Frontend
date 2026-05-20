@@ -34,6 +34,7 @@ import {
 } from 'lucide-react'
 import MapEmbed from '@/components/ui/MapEmbed'
 import ReviewForm from '@/components/ReviewForm'
+import InquiryChatModal from '@/components/chat/InquiryChatModal'
 
 const facilityIcons = {
   wifi: Wifi,
@@ -669,6 +670,7 @@ export default function HotelDetail() {
   const [sidebarRoomId, setSidebarRoomId] = useState(null)
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [galleryIdx, setGalleryIdx] = useState(0)
+  const [inquiryOpen, setInquiryOpen] = useState(false)
 
   // Scroll ke atas setiap kali masuk halaman detail / ganti hotel
   useEffect(() => {
@@ -1087,6 +1089,17 @@ export default function HotelDetail() {
 
           <aside className="space-y-5">
             <div className="sticky top-24 rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!token) return navigate('/login')
+                  setInquiryOpen(true)
+                }}
+                className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-orange-500 px-5 py-3 text-sm font-semibold text-orange-600 transition-colors hover:bg-orange-50"
+              >
+                <MessageSquare className="h-4 w-4" />
+                Chat Penginapan
+              </button>
               <div className="rounded-[24px] bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_55%,#f8fafc_100%)] p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -1335,6 +1348,13 @@ export default function HotelDetail() {
         startIdx={galleryIdx}
         hotelName={hotel.name}
         onClose={() => setGalleryOpen(false)}
+      />
+
+      <InquiryChatModal
+        open={inquiryOpen}
+        hotelId={hotel.id}
+        hotelName={hotel.name}
+        onClose={() => setInquiryOpen(false)}
       />
     </div>
   )

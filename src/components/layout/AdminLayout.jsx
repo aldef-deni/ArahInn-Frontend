@@ -1,7 +1,8 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '@/store/authStore'
-import { authApi } from '@/services/index'
+import { authApi, chatApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import {
   LayoutDashboard, Hotel, ShoppingBag, BarChart2,
@@ -87,6 +88,16 @@ export default function AdminLayout() {
   const [promoOpen, setPromoOpen] = useState(() =>
     promoRoutes.some(p => location.pathname.startsWith(p))
   )
+
+  // Hitung unread support chat untuk badge di menu "Live Chat Customer"
+  const canSeeSupportChat = !isFinance && !isDesignInterior
+  const { data: supportRooms } = useQuery({
+    queryKey: ['admin-support-rooms'],
+    queryFn : () => chatApi.supportAdminList({ limit: 100 }).then(r => r.data?.data || []),
+    enabled : canSeeSupportChat,
+    refetchInterval: 15000,
+  })
+  const supportUnread = supportRooms?.reduce((s, r) => s + Number(r.unreadCount || 0), 0) || 0
 
   const handleLogout = async () => {
     try { await authApi.logout() } catch {}
@@ -174,17 +185,34 @@ export default function AdminLayout() {
               )
             }
             const { to, label, icon: Icon, exact } = item
+            const showChatBadge = to === '/admin/customer-chat' && supportUnread > 0
             return (
               <Link key={idx} to={to}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all relative',
                   isActive(to, exact)
                     ? 'bg-white/20 text-white shadow-sm'
                     : 'text-blue-200 hover:bg-white/10 hover:text-white'
                 )}
                 title={collapsed ? label : undefined}>
-                <Icon className="w-5 h-5 shrink-0" />
-                {!collapsed && label}
+                <span className="relative shrink-0">
+                  <Icon className="w-5 h-5" />
+                  {showChatBadge && collapsed && (
+                    <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 flex items-center justify-center bg-red-500 text-white text-[9px] font-bold rounded-full leading-none">
+                      {supportUnread > 99 ? '99+' : supportUnread}
+                    </span>
+                  )}
+                </span>
+                {!collapsed && (
+                  <>
+                    <span className="flex-1">{label}</span>
+                    {showChatBadge && (
+                      <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
+                        {supportUnread > 99 ? '99+' : supportUnread}
+                      </span>
+                    )}
+                  </>
+                )}
               </Link>
             )
           })}

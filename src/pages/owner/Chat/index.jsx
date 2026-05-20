@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { chatApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
-import { Send, MessageSquare, User } from 'lucide-react'
+import { Send, MessageSquare, User, Calendar, HelpCircle } from 'lucide-react'
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -23,14 +23,29 @@ export default function OwnerChat() {
   const qc          = useQueryClient()
   const [text, setText]         = useState('')
   const [activeRoom, setActive] = useState(searchParams.get('room') || null)
+  const [tab, setTab]           = useState(searchParams.get('tab') || 'booking') // 'booking' | 'inquiry'
   const bottomRef   = useRef(null)
 
-  // List chat rooms
-  const { data: rooms, isLoading: loadingRooms } = useQuery({
+  // List chat rooms — booking tab (selalu di-fetch agar badge unread tetap update)
+  const { data: bookingRooms, isLoading: loadingBooking } = useQuery({
     queryKey: ['owner-chat-rooms'],
     queryFn : () => chatApi.ownerRooms().then(r => r.data?.data || []),
     refetchInterval: 8000,
   })
+
+  // List chat rooms — inquiry tab (selalu di-fetch agar badge unread tetap update)
+  const { data: inquiryRooms, isLoading: loadingInquiry } = useQuery({
+    queryKey: ['owner-chat-inquiries'],
+    queryFn : () => chatApi.ownerInquiries().then(r => r.data?.data || []),
+    refetchInterval: 8000,
+  })
+
+  const rooms       = tab === 'inquiry' ? inquiryRooms  : bookingRooms
+  const loadingRooms= tab === 'inquiry' ? loadingInquiry: loadingBooking
+
+  // Badge unread per tab
+  const unreadBooking = bookingRooms?.reduce((s, r) => s + Number(r.unreadCount || 0), 0) || 0
+  const unreadInquiry = inquiryRooms?.reduce((s, r) => s + Number(r.unreadCount || 0), 0) || 0
 
   // Messages for active room
   const { data: messages, isLoading: loadingMsgs } = useQuery({
@@ -47,9 +62,16 @@ export default function OwnerChat() {
       setText('')
       qc.invalidateQueries({ queryKey: ['owner-chat-messages', activeRoom] })
       qc.invalidateQueries({ queryKey: ['owner-chat-rooms'] })
+      qc.invalidateQueries({ queryKey: ['owner-chat-inquiries'] })
     },
     onError: () => toast({ title: 'Gagal mengirim pesan.', variant: 'destructive' }),
   })
+
+  const switchTab = (next) => {
+    setTab(next)
+    setActive(null)
+    setSearchParams({ tab: next })
+  }
 
   const handleSend = () => {
     const msg = text.trim()
@@ -76,6 +98,42 @@ export default function OwnerChat() {
         <div className="px-4 py-4 border-b border-slate-100">
           <p className="font-semibold text-slate-900 text-sm">Pesan Tamu</p>
           <p className="text-xs text-slate-400 mt-0.5">{rooms?.length || 0} percakapan</p>
+        </div>
+
+        {/* Tab switcher: Booking | Inquiry */}
+        <div className="flex border-b border-slate-100 bg-slate-50/50">
+          <button
+            onClick={() => switchTab('booking')}
+            className={`relative flex-1 px-3 py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+              tab === 'booking'
+                ? 'text-orange-600 border-b-2 border-orange-500 bg-white'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Booking</span>
+            {unreadBooking > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
+                {unreadBooking > 99 ? '99+' : unreadBooking}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => switchTab('inquiry')}
+            className={`relative flex-1 px-3 py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+              tab === 'inquiry'
+                ? 'text-orange-600 border-b-2 border-orange-500 bg-white'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+            <span>Inquiry</span>
+            {unreadInquiry > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
+                {unreadInquiry > 99 ? '99+' : unreadInquiry}
+              </span>
+            )}
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -111,7 +169,9 @@ export default function OwnerChat() {
                               {room.user?.name || 'Tamu'}
                             </p>
                             <p className="text-xs text-slate-400 truncate">
-                              {room.booking?.bookingCode || `Booking #${room.bookingId}`}
+                              {tab === 'inquiry'
+                                ? (room.hotel?.name || 'Tanya penginapan')
+                                : (room.booking?.bookingCode || `Booking #${room.bookingId}`)}
                             </p>
                           </div>
                         </div>
@@ -149,9 +209,11 @@ export default function OwnerChat() {
             <div>
               <p className="font-semibold text-slate-900 text-sm">{activeRoomData?.user?.name || 'Tamu'}</p>
               <p className="text-xs text-slate-400">
-                {activeRoomData?.booking?.bookingCode
-                  ? `Booking ${activeRoomData.booking.bookingCode}`
-                  : activeRoomData?.user?.email}
+                {tab === 'inquiry'
+                  ? (activeRoomData?.hotel?.name ? `Tanya: ${activeRoomData.hotel.name}` : activeRoomData?.user?.email)
+                  : (activeRoomData?.booking?.bookingCode
+                      ? `Booking ${activeRoomData.booking.bookingCode}`
+                      : activeRoomData?.user?.email)}
               </p>
             </div>
           </div>

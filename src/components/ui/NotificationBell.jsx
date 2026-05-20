@@ -6,46 +6,135 @@ import { notificationApi } from '@/services/notificationApi'
 import {
   Bell, BellRing, CheckCheck, X,
   ShoppingBag, Hotel, CreditCard, Ban, Star, Building2,
+  MessageSquare, Wallet, RotateCcw, Clock, CalendarCheck, ThumbsUp, ThumbsDown, Tag,
 } from 'lucide-react'
 
 const TYPE_META = {
-  booking_new       : { icon: ShoppingBag, color: 'text-blue-500',    bg: 'bg-blue-50'    },
-  booking_canceled  : { icon: Ban,         color: 'text-red-500',     bg: 'bg-red-50'     },
-  booking_paid      : { icon: CreditCard,  color: 'text-green-500',   bg: 'bg-green-50'   },
-  hotel_new         : { icon: Hotel,       color: 'text-amber-500',   bg: 'bg-amber-50'   },
-  hotel_approved    : { icon: Star,        color: 'text-emerald-500', bg: 'bg-emerald-50' },
-  hotel_blocked     : { icon: Ban,         color: 'text-red-500',     bg: 'bg-red-50'     },
-  property_new      : { icon: Building2,   color: 'text-blue-500',    bg: 'bg-blue-50'    },
-  property_approved : { icon: Building2,   color: 'text-emerald-500', bg: 'bg-emerald-50' },
-  property_rejected : { icon: Building2,   color: 'text-red-500',     bg: 'bg-red-50'     },
+  // Booking
+  booking_new              : { icon: ShoppingBag,    color: 'text-blue-500',    bg: 'bg-blue-50'    },
+  booking_paid             : { icon: CreditCard,     color: 'text-green-500',   bg: 'bg-green-50'   },
+  booking_canceled         : { icon: Ban,            color: 'text-red-500',     bg: 'bg-red-50'     },
+  booking_rescheduled      : { icon: RotateCcw,      color: 'text-blue-500',    bg: 'bg-blue-50'    },
+  booking_completed        : { icon: CalendarCheck,  color: 'text-emerald-500', bg: 'bg-emerald-50' },
+  booking_reminder_checkin : { icon: Clock,          color: 'text-amber-500',   bg: 'bg-amber-50'   },
+  booking_refund_request   : { icon: Wallet,         color: 'text-red-500',     bg: 'bg-red-50'     },
+  booking_refunded         : { icon: Wallet,         color: 'text-emerald-500', bg: 'bg-emerald-50' },
+  // Payment
+  payment_pending          : { icon: CreditCard,     color: 'text-amber-500',   bg: 'bg-amber-50'   },
+  payment_expired          : { icon: CreditCard,     color: 'text-red-500',     bg: 'bg-red-50'     },
+  // Chat
+  chat_message             : { icon: MessageSquare,  color: 'text-orange-500',  bg: 'bg-orange-50'  },
+  inquiry_new              : { icon: MessageSquare,  color: 'text-orange-500',  bg: 'bg-orange-50'  },
+  // Hotel / Property
+  hotel_new                : { icon: Hotel,          color: 'text-amber-500',   bg: 'bg-amber-50'   },
+  hotel_approved           : { icon: Star,           color: 'text-emerald-500', bg: 'bg-emerald-50' },
+  hotel_blocked            : { icon: Ban,            color: 'text-red-500',     bg: 'bg-red-50'     },
+  property_listing_new     : { icon: Building2,      color: 'text-blue-500',    bg: 'bg-blue-50'    },
+  property_listing_approved: { icon: Building2,      color: 'text-emerald-500', bg: 'bg-emerald-50' },
+  property_listing_rejected: { icon: Building2,      color: 'text-red-500',     bg: 'bg-red-50'     },
+  // Review
+  review_pending           : { icon: Star,           color: 'text-amber-500',   bg: 'bg-amber-50'   },
+  review_new               : { icon: Star,           color: 'text-amber-500',   bg: 'bg-amber-50'   },
+  review_approved          : { icon: ThumbsUp,       color: 'text-emerald-500', bg: 'bg-emerald-50' },
+  review_rejected          : { icon: ThumbsDown,     color: 'text-red-500',     bg: 'bg-red-50'     },
+  review_invitation        : { icon: Star,           color: 'text-orange-500',  bg: 'bg-orange-50'  },
+  // Promo
+  promo_new                : { icon: Tag,            color: 'text-pink-500',    bg: 'bg-pink-50'    },
 }
 
 const DEFAULT_META = { icon: Bell, color: 'text-slate-500', bg: 'bg-slate-50' }
 
-// Routing berdasarkan tipe notifikasi + role
-function resolveRoute(type, role) {
+/**
+ * Route resolver: terima (type, role, data) → kembalikan path tujuan.
+ * Sengaja per-role agar UX cocok dengan layout/menu masing-masing.
+ */
+function resolveRoute(type, role, data) {
+  const d = data || {}
+  const bookingId  = d.booking_id  ?? d.bookingId
+  const hotelId    = d.hotel_id    ?? d.hotelId
+  const propertyId = d.property_id ?? d.propertyId
+  const reviewId   = d.review_id   ?? d.reviewId
+  const promoId    = d.promo_id    ?? d.promoId
+  const targetType = d.target_type
+  const targetId   = d.target_id
+
   const adminRoles = ['superadmin', 'admin', 'finance']
   const isAdmin    = adminRoles.includes(role)
+  const isOwner    = role === 'owner'
 
   switch (type) {
+    // ── Booking ──────────────────────────────────────────────
     case 'booking_new':
     case 'booking_canceled':
-      if (isAdmin)        return '/admin/orders'
-      if (role === 'owner') return '/owner/pesanan'
-      return '/orders'
     case 'booking_paid':
-      if (role === 'owner') return '/owner/pesanan'
-      return '/orders'
+    case 'booking_rescheduled':
+    case 'booking_completed':
+    case 'booking_reminder_checkin':
+      if (isAdmin) return '/admin/orders'
+      if (isOwner) return '/owner/pesanan'
+      return bookingId ? `/orders/${bookingId}` : '/orders'
+
+    // ── Refund ───────────────────────────────────────────────
+    case 'booking_refund_request':
+      if (isAdmin) return '/admin/finance/invoices'
+      return '/admin/orders'
+    case 'booking_refunded':
+      return bookingId ? `/orders/${bookingId}` : '/orders'
+
+    // ── Payment ──────────────────────────────────────────────
+    case 'payment_pending':
+    case 'payment_expired':
+      return bookingId ? `/payment/${bookingId}` : '/orders'
+
+    // ── Chat / Inquiry ───────────────────────────────────────
+    case 'chat_message':
+    case 'inquiry_new': {
+      const channel = d.channel
+      if (isOwner) return '/owner/chat'
+      if (isAdmin && channel === 'support') return '/admin/customer-chat'
+      if (isAdmin) return '/admin/customer-chat'
+      // Customer: arahkan ke hotel terkait kalau inquiry, atau ke order kalau booking
+      if (channel === 'inquiry' && hotelId) return `/hotel/${hotelId}`
+      if (bookingId) return `/orders/${bookingId}`
+      return null
+    }
+
+    // ── Hotel ────────────────────────────────────────────────
     case 'hotel_new':
       return '/admin/hotels'
     case 'hotel_approved':
     case 'hotel_blocked':
       return '/owner/properti'
-    case 'property_new':
+
+    // ── Property listing ─────────────────────────────────────
+    case 'property_listing_new':
       return '/admin/property-approval'
-    case 'property_approved':
-    case 'property_rejected':
+    case 'property_listing_approved':
+    case 'property_listing_rejected':
       return '/owner/jual-properti'
+
+    // ── Review ───────────────────────────────────────────────
+    case 'review_pending':
+      return '/admin/reviews'
+    case 'review_new':
+      // Owner ingin lihat ulasan di hotel/properti miliknya
+      if (targetType === 'hotel' && targetId)    return `/hotel/${targetId}`
+      if (targetType === 'property' && targetId) return `/properti/${targetId}`
+      return '/owner/properti'
+    case 'review_approved':
+    case 'review_rejected':
+      // Customer: lihat review tampil → arahkan ke target
+      if (targetType === 'hotel' && targetId)    return `/hotel/${targetId}`
+      if (targetType === 'property' && targetId) return `/properti/${targetId}`
+      return '/orders'
+    case 'review_invitation':
+      // Customer diundang review → arahkan ke order
+      return bookingId ? `/orders/${bookingId}` : '/orders'
+
+    // ── Promo ────────────────────────────────────────────────
+    case 'promo_new':
+      return promoId ? `/promo` : '/promo'
+
     default:
       return null
   }
@@ -111,7 +200,7 @@ export default function NotificationBell() {
   const handleItemClick = useCallback((notif) => {
     if (!notif.readAt) markRead.mutate(notif.id)
 
-    const route = resolveRoute(notif.type, user?.role)
+    const route = resolveRoute(notif.type, user?.role, notif.data)
     if (route) {
       setOpen(false)
       navigate(route)
@@ -188,7 +277,7 @@ export default function NotificationBell() {
             {!isLoading && notifications.map((notif) => {
               const meta      = TYPE_META[notif.type] ?? DEFAULT_META
               const Icon      = meta.icon
-              const hasRoute  = !!resolveRoute(notif.type, user?.role)
+              const hasRoute  = !!resolveRoute(notif.type, user?.role, notif.data)
               return (
                 <button
                   key={notif.id}

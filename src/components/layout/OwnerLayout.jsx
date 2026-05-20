@@ -231,7 +231,15 @@ export default function OwnerLayout() {
     enabled: !!user?.id && !!hotel?.id,
     refetchInterval: 15000,
   })
-  const totalUnread = chatRooms?.reduce((sum, r) => sum + (r.unreadCount || 0), 0) || 0
+  const { data: inquiryRooms } = useQuery({
+    queryKey: ['owner-chat-inquiries'],
+    queryFn: () => chatApi.ownerInquiries().then(r => r.data?.data || []),
+    enabled: !!user?.id && !!hotel?.id,
+    refetchInterval: 15000,
+  })
+  const unreadBooking = chatRooms?.reduce((sum, r) => sum + Number(r.unreadCount || 0), 0) || 0
+  const unreadInquiry = inquiryRooms?.reduce((sum, r) => sum + Number(r.unreadCount || 0), 0) || 0
+  const totalUnread   = unreadBooking + unreadInquiry
 
   const pageMeta = PAGE_META[location.pathname] || {
     title: 'Extranet Owner',

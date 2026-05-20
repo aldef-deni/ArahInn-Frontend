@@ -74,7 +74,7 @@ export default function SupportChatWidget() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-5 z-40 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full shadow-lg shadow-blue-500/40 transition-all hover:-translate-y-0.5"
+          className="fixed bottom-5 right-5 z-40 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-full shadow-lg shadow-orange-500/40 transition-all hover:-translate-y-0.5"
         >
           <MessageCircle className="w-5 h-5" />
           <span className="font-semibold text-sm">Live Chat</span>
