@@ -2,7 +2,10 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { propertyApi } from '@/services/propertyApi'
+import { reviewApi } from '@/services/reviewApi'
 import { formatRupiah, getImageUrl } from '@/utils'
+import { formatDistanceToNow } from 'date-fns'
+import { id as idLocale } from 'date-fns/locale'
 import {
   ArrowLeft,
   Bath,
@@ -16,10 +19,14 @@ import {
   Mail,
   MapPin,
   Maximize2,
+  MessageSquare,
   Phone,
   ShieldCheck,
   Sparkles,
+  Star,
 } from 'lucide-react'
+import ReviewForm from '@/components/ReviewForm'
+import MapEmbed from '@/components/ui/MapEmbed'
 
 const CERT_LABELS = { SHM: 'SHM', HGB: 'HGB', Strata: 'Strata Title', Lainnya: 'Lainnya' }
 
@@ -47,6 +54,14 @@ export default function PropertyDetail() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['property-detail', id],
     queryFn: () => propertyApi.getById(id).then(r => r.data?.data),
+  })
+
+  const resolvedId = data?.id
+
+  const { data: reviewData } = useQuery({
+    queryKey: ['property-reviews', resolvedId],
+    queryFn: () => reviewApi.byProperty(resolvedId).then(r => r.data?.data),
+    enabled: !!resolvedId,
   })
 
   if (isLoading) {
@@ -296,12 +311,11 @@ export default function PropertyDetail() {
               </div>
 
               <div className="overflow-hidden rounded-[26px] border border-slate-200">
-                <iframe
-                  title="Lokasi properti"
-                  src={`https://www.google.com/maps?q=${encodeURIComponent([data.address, data.city, data.province].filter(Boolean).join(', '))}&output=embed`}
-                  className="h-[320px] w-full border-0"
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
+                <MapEmbed
+                  query={[data.address, data.city, data.province, 'Indonesia'].filter(Boolean).join(', ')}
+                  lat={data.latitude ? parseFloat(data.latitude) : undefined}
+                  lng={data.longitude ? parseFloat(data.longitude) : undefined}
+                  height={320}
                 />
               </div>
             </section>
@@ -328,6 +342,74 @@ export default function PropertyDetail() {
                 </div>
               </section>
             ) : null}
+
+            <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Ulasan</p>
+                  <h2 className="mt-2 text-2xl font-bold text-slate-900">Pendapat tentang properti ini</h2>
+                </div>
+                {reviewData?.average_rating ? (
+                  <div className="rounded-2xl bg-blue-50 px-4 py-3 text-right">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-500">Skor rata-rata</p>
+                    <p className="mt-1 text-sm font-bold text-blue-700">
+                      {Number(reviewData.average_rating).toFixed(1)} / 5
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+
+              {reviewData?.reviews?.length ? (
+                <div className="mt-5 space-y-4">
+                  {reviewData.reviews.map(review => (
+                    <div key={review.id} className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-sm font-bold text-blue-700">
+                          {review.user?.name?.[0]?.toUpperCase() || 'T'}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-sm font-semibold text-slate-900">{review.user?.name || 'Tamu'}</p>
+                            <span className="text-xs text-slate-400">
+                              {review.created_at
+                                ? formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: idLocale })
+                                : ''}
+                            </span>
+                          </div>
+                          <div className="mt-2 flex items-center gap-1">
+                            {Array.from({ length: 5 }, (_, index) => (
+                              <Star
+                                key={index}
+                                className={`h-3.5 w-3.5 ${
+                                  index < review.rating ? 'fill-amber-400 text-amber-400' : 'fill-slate-200 text-slate-200'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <p className="mt-3 text-sm leading-7 text-slate-600">{review.comment}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-5 rounded-[26px] border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center">
+                  <MessageSquare className="mx-auto h-10 w-10 text-slate-300" />
+                  <p className="mt-3 text-sm font-medium text-slate-600">Belum ada ulasan untuk properti ini.</p>
+                  <p className="mt-1 text-sm text-slate-500">Jadilah yang pertama membagikan pendapat Anda.</p>
+                </div>
+              )}
+
+              {resolvedId && (
+                <div className="mt-6">
+                  <ReviewForm
+                    targetType="property"
+                    targetId={resolvedId}
+                    invalidateKey={['property-reviews', resolvedId]}
+                  />
+                </div>
+              )}
+            </section>
           </div>
 
           <aside className="space-y-5">

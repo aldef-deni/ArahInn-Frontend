@@ -4,8 +4,9 @@ import { promoApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { useForm } from 'react-hook-form'
 import { formatRupiah, formatDateShort } from '@/utils'
-import { Plus, Tag, Zap, Edit2, Trash2, X, Save, ToggleLeft, ToggleRight, Users, User } from 'lucide-react'
+import { Plus, Tag, Zap, Edit2, Trash2, X, Save, ToggleLeft, ToggleRight, Users, User, Image as ImageIcon, Upload } from 'lucide-react'
 import PriceInput from '@/components/ui/PriceInput'
+import { getImageUrl } from '@/utils'
 
 const TYPE_ICONS  = { voucher: Tag, flash_sale: Zap, loyalty: '⭐' }
 const TYPE_COLORS = {
@@ -19,6 +20,8 @@ export default function AdminPromos() {
   const qc        = useQueryClient()
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing]   = useState(null)
+  const [imageFile, setImageFile]     = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-promos'],
@@ -38,10 +41,11 @@ export default function AdminPromos() {
 
   const saveMutation = useMutation({
     mutationFn: (d) => {
-      const payload = {
+      const fields = {
         name          : d.name,
         code          : d.code || undefined,
         type          : d.type,
+        description   : d.description || undefined,
         discount_type : d.discountType,
         discount_value: d.discountValue,
         min_purchase  : d.minPurchase || 0,
@@ -51,15 +55,36 @@ export default function AdminPromos() {
         end_date      : d.endDate || undefined,
         owner_id      : d.ownerScope === 'specific' ? (d.ownerId || null) : null,
       }
-      return editing ? promoApi.update(editing.id, payload) : promoApi.create(payload)
+
+      // Kalau ada image baru → kirim sebagai FormData
+      if (imageFile) {
+        const fd = new FormData()
+        Object.entries(fields).forEach(([k, v]) => {
+          if (v !== undefined && v !== null && v !== '') fd.append(k, v)
+        })
+        fd.append('image', imageFile)
+        return editing ? promoApi.update(editing.id, fd) : promoApi.create(fd)
+      }
+
+      return editing ? promoApi.update(editing.id, fields) : promoApi.create(fields)
     },
     onSuccess : () => {
       qc.invalidateQueries({ queryKey: ['admin-promos'] })
       toast({ title: editing ? 'Promo diperbarui.' : 'Promo berhasil dibuat.' })
       setShowForm(false); setEditing(null); reset()
+      setImageFile(null); setImagePreview(null)
     },
     onError: (e) => toast({ title: 'Gagal', description: e?.response?.data?.message, variant: 'destructive' }),
   })
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImageFile(file)
+    const reader = new FileReader()
+    reader.onloadend = () => setImagePreview(reader.result)
+    reader.readAsDataURL(file)
+  }
 
   const deleteMutation = useMutation({
     mutationFn: (id) => promoApi.remove(id),
@@ -83,10 +108,13 @@ export default function AdminPromos() {
 
   const openEdit = (promo) => {
     setEditing(promo); setShowForm(true)
+    setImageFile(null)
+    setImagePreview(promo.image ? getImageUrl(promo.image) : null)
     reset({
       name         : promo.name,
       code         : promo.code,
       type         : promo.type,
+      description  : promo.description ?? '',
       discountType : promo.discountType,
       discountValue: promo.discountValue,
       minPurchase  : promo.minPurchase,
@@ -99,7 +127,10 @@ export default function AdminPromos() {
     })
   }
 
-  const onClose = () => { setShowForm(false); setEditing(null); reset() }
+  const onClose = () => {
+    setShowForm(false); setEditing(null); reset()
+    setImageFile(null); setImagePreview(null)
+  }
 
   return (
     <div className="space-y-6">
@@ -230,11 +261,41 @@ export default function AdminPromos() {
             </div>
 
             <form onSubmit={handleSubmit(d => saveMutation.mutate(d))} className="p-6 space-y-4">
+              {/* Image flyer */}
+              <div>
+                <label className="block text-sm font-medium mb-1.5">
+                  Flyer Image <span className="text-muted-foreground font-normal">(rekomendasi 1200×600px)</span>
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="w-32 h-20 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0">
+                    {imagePreview ? (
+                      <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="w-6 h-6 text-slate-300" />
+                    )}
+                  </div>
+                  <label className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 border rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 cursor-pointer transition-colors">
+                    <Upload className="w-4 h-4" />
+                    {imagePreview ? 'Ganti Gambar' : 'Pilih Gambar'}
+                    <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp"
+                      onChange={handleImageChange} className="hidden" />
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Promo dengan flyer akan tampil di carousel main website (walaupun belum mulai).
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium mb-1.5">Nama Promo <span className="text-red-500">*</span></label>
                   <input {...register('name', { required: true })}
                     className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-1.5">Deskripsi <span className="text-muted-foreground font-normal">(opsional)</span></label>
+                  <textarea {...register('description')} rows={3} placeholder="Detail promo, syarat & ketentuan, dll..."
+                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50 resize-none" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Tipe</label>

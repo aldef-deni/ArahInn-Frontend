@@ -4,8 +4,28 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
-import { Plus, Pencil, Trash2, X, BedDouble } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, BedDouble, Upload, Image as ImageIcon, AlertCircle } from 'lucide-react'
 import PriceInput from '@/components/ui/PriceInput'
+import { getImageUrl } from '@/utils'
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024 // 5 MB
+const MIN_DIMENSION = 1024 // px
+
+function getImageDimensions(file) {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      resolve({ width: img.naturalWidth, height: img.naturalHeight })
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      resolve({ width: 0, height: 0 })
+    }
+    img.src = url
+  })
+}
 
 const ROOM_TYPES = [
   { value: 'single_room',      label: 'Single Room'           },
@@ -23,7 +43,7 @@ const ROOM_TYPES = [
 const roomTypeLabel = (val) => ROOM_TYPES.find(t => t.value === val)?.label ?? val
 const FACILITIES = ['ac','tv','wifi','minibar','bathtub','jacuzzi','balcony','kitchen','living_room','extra_bed']
 
-const emptyForm = { name: '', type: 'standard', base_price: '', max_guests: 2, total_units: 1, facilities: [] }
+const emptyForm = { name: '', type: 'standard', base_price: '', max_guests: 2, total_units: 1, description: '', facilities: [], existingImages: [], newImages: [] }
 
 export default function PropertiUnit() {
   const { hotel }  = useOutletContext()
@@ -32,6 +52,7 @@ export default function PropertiUnit() {
   const [modal, setModal]   = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm]     = useState(emptyForm)
+  const [imageErrors, setImageErrors] = useState([])  // [{ name, reason }]
 
   const { data: rooms, isLoading } = useQuery({
     queryKey: ['owner-rooms', hotel?.id],
@@ -58,11 +79,117 @@ export default function PropertiUnit() {
   })
 
   const openAdd  = () => { setEditing(null); setForm(emptyForm); setModal(true) }
-  const openEdit = (r) => { setEditing(r); setForm({ name: r.name, type: r.type, base_price: r.basePrice, max_guests: r.maxGuests, total_units: r.totalUnits, facilities: r.facilities || [] }); setModal(true) }
-  const closeModal = () => { setModal(false); setEditing(null) }
+  const openEdit = (r) => {
+    setEditing(r)
+    setForm({
+      name: r.name,
+      type: r.type,
+      base_price: r.basePrice,
+      max_guests: r.maxGuests,
+      total_units: r.totalUnits,
+      description: r.description || '',
+      facilities: r.facilities || [],
+      existingImages: r.images || [],
+      newImages: [],
+    })
+    setModal(true)
+  }
+  const closeModal = () => { setModal(false); setEditing(null); setImageErrors([]) }
   const toggleFacility = (f) => setForm(p => ({ ...p, facilities: p.facilities.includes(f) ? p.facilities.filter(x => x !== f) : [...p.facilities, f] }))
 
-  const handleSubmit = () => editing ? editMutation.mutate(form) : addMutation.mutate(form)
+  const handleImagesChange = async (e) => {
+    const files = Array.from(e.target.files || [])
+    e.target.value = '' // reset segera
+
+    const accepted = []
+    const errors = []
+
+    for (const f of files) {
+      const sizeMB = (f.size / 1024 / 1024).toFixed(2)
+      if (f.size > MAX_IMAGE_BYTES) {
+        errors.push({
+          name: f.name,
+          reason: `Ukuran file ${sizeMB} MB melebihi batas maksimal 5 MB.`,
+        })
+        continue
+      }
+      const { width, height } = await getImageDimensions(f)
+      if (!width || !height) {
+        errors.push({
+          name: f.name,
+          reason: 'File bukan gambar yang valid atau rusak.',
+        })
+        continue
+      }
+      if (width < MIN_DIMENSION || height < MIN_DIMENSION) {
+        errors.push({
+          name: f.name,
+          reason: `Resolusi ${width}×${height}px terlalu kecil. Minimal ${MIN_DIMENSION}×${MIN_DIMENSION}px.`,
+        })
+        continue
+      }
+      accepted.push(f)
+    }
+
+    if (errors.length) {
+      setImageErrors(errors)
+      toast({
+        title: `${errors.length} foto gagal diupload`,
+        description: 'Lihat detail di bawah area upload.',
+        variant: 'destructive',
+      })
+    } else {
+      setImageErrors([])  // bersihkan kalau semua sukses
+    }
+
+    if (accepted.length) {
+      setForm(p => ({ ...p, newImages: [...p.newImages, ...accepted] }))
+    }
+  }
+
+  const removeExistingImage = (idx) =>
+    setForm(p => ({ ...p, existingImages: p.existingImages.filter((_, i) => i !== idx) }))
+
+  const removeNewImage = (idx) =>
+    setForm(p => ({ ...p, newImages: p.newImages.filter((_, i) => i !== idx) }))
+
+  const buildPayload = () => {
+    const hasNewImages    = form.newImages.length > 0
+    const imagesChanged   = editing
+      ? form.existingImages.length !== (editing.images?.length || 0) || hasNewImages
+      : hasNewImages
+
+    if (hasNewImages || imagesChanged) {
+      // Pakai FormData supaya bisa kirim file
+      const fd = new FormData()
+      fd.append('name', form.name)
+      fd.append('type', form.type)
+      fd.append('base_price', form.base_price)
+      fd.append('max_guests', form.max_guests)
+      fd.append('total_units', form.total_units)
+      fd.append('description', form.description || '')
+      ;(form.facilities || []).forEach(f => fd.append('facilities[]', f))
+      ;(form.existingImages || []).forEach(img => fd.append('existing_images[]', typeof img === 'string' ? img : (img?.path || '')))
+      ;(form.newImages || []).forEach(file => fd.append('image_files[]', file))
+      return fd
+    }
+
+    // Tanpa image baru — kirim JSON biasa
+    return {
+      name: form.name,
+      type: form.type,
+      base_price: form.base_price,
+      max_guests: form.max_guests,
+      total_units: form.total_units,
+      description: form.description || '',
+      facilities: form.facilities,
+    }
+  }
+
+  const handleSubmit = () => {
+    const payload = buildPayload()
+    editing ? editMutation.mutate(payload) : addMutation.mutate(payload)
+  }
   const isPending    = addMutation.isPending || editMutation.isPending
 
   if (!hotel) return (
@@ -179,7 +306,128 @@ export default function PropertiUnit() {
                   <input type="number" min={1} value={form.total_units} onChange={e => setForm(p => ({ ...p, total_units: +e.target.value }))}
                     className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand" />
                 </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                    Deskripsi Kamar <span className="font-normal text-slate-400">(opsional)</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    maxLength={1000}
+                    value={form.description}
+                    onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                    placeholder="Ceritakan tentang kamar ini — suasana, view, ukuran, kelebihan, dll."
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand resize-none"
+                  />
+                  <p className="mt-1 text-[10px] text-slate-400 text-right">{(form.description || '').length}/1000</p>
+                </div>
               </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-2">
+                  Foto Kamar
+                  <span className="font-normal text-slate-400"> (min. 1024×1024 px · max 5 MB / foto · bisa pilih banyak)</span>
+                </label>
+
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+                  {/* Existing images */}
+                  {form.existingImages?.map((img, idx) => {
+                    const src = typeof img === 'string' ? getImageUrl(img) : getImageUrl(img?.path)
+                    return (
+                      <div key={`old-${idx}`} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 group">
+                        <img src={src} alt={`foto ${idx + 1}`} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeExistingImage(idx)}
+                          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                          title="Hapus foto"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )
+                  })}
+
+                  {/* New image previews */}
+                  {form.newImages?.map((file, idx) => {
+                    const src = URL.createObjectURL(file)
+                    return (
+                      <div key={`new-${idx}`} className="relative aspect-square rounded-xl overflow-hidden border border-blue-200 bg-blue-50 group">
+                        <img src={src} alt={file.name} className="w-full h-full object-cover" />
+                        <span className="absolute bottom-1 left-1 right-1 px-1.5 py-0.5 bg-blue-600 text-white text-[9px] font-bold rounded-md text-center truncate">
+                          BARU
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeNewImage(idx)}
+                          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                          title="Hapus"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )
+                  })}
+
+                  {/* Upload button (tile) */}
+                  <label className="cursor-pointer aspect-square rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-brand transition-colors flex flex-col items-center justify-center gap-1.5 text-slate-500">
+                    <Upload className="w-5 h-5" />
+                    <span className="text-[10px] font-semibold">Tambah Foto</span>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/webp"
+                      multiple
+                      onChange={handleImagesChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {(form.existingImages?.length || 0) + (form.newImages?.length || 0) === 0 && (
+                  <p className="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5" /> Belum ada foto. Tambahkan minimal 1 foto.
+                  </p>
+                )}
+
+                {/* Danger alert: list file yang ditolak */}
+                {imageErrors.length > 0 && (
+                  <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2 flex-1 min-w-0">
+                        <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                          <AlertCircle className="w-4 h-4 text-red-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-red-900">
+                            {imageErrors.length} foto gagal diupload
+                          </p>
+                          <p className="text-xs text-red-700 mt-0.5">
+                            Foto berikut tidak memenuhi persyaratan minimal 1024×1024 px atau maksimal 5 MB:
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setImageErrors([])}
+                        className="p-1 rounded-lg hover:bg-red-100 text-red-500 transition-colors shrink-0"
+                        title="Tutup"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <ul className="mt-3 space-y-1.5 max-h-32 overflow-y-auto">
+                      {imageErrors.map((err, i) => (
+                        <li key={i} className="flex items-start gap-2 text-xs">
+                          <span className="mt-1 w-1 h-1 rounded-full bg-red-500 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-red-900 truncate">{err.name}</p>
+                            <p className="text-red-700 leading-relaxed">{err.reason}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-2">Fasilitas Kamar</label>
                 <div className="flex flex-wrap gap-2">

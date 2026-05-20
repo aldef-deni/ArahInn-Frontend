@@ -14,6 +14,7 @@ import {
 import { format, addDays, parseISO } from 'date-fns'
 import HotelCard from '@/components/hotel/HotelCard'
 import InteriorPenawaran from '@/components/InteriorPenawaran'
+import PromoFlyerCarousel from '@/components/PromoFlyerCarousel'
 
 const PROMO_STYLES = {
   flash_sale : { grad: 'from-orange-500 to-red-500',    sub: 'text-orange-100', icon: Zap,   iconBg: 'bg-white/20' },
@@ -346,16 +347,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Promos & Campaigns ───────────────────────────── */}
-      {activePromos?.length > 0 && (
-        <section className="container py-10">
-          <div className="flex flex-col gap-3">
-            {activePromos.map(promo => (
-              <PromoCard key={promo.id} promo={promo} t={t} onShop={() => navigate('/search')} />
-            ))}
-          </div>
-        </section>
-      )}
+      {/* ── Promo Flyer Carousel (dari ArahInn) ──────────── */}
+      <PromoFlyerCarousel />
 
       {/* ── Featured Hotels ───────────────────────────────── */}
       <section className="container py-12">

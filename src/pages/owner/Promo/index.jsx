@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { promoApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah, formatDateShort } from '@/utils'
-import { Plus, Tag, X, Trash2, Zap, Award, Copy, Check, ShieldCheck } from 'lucide-react'
+import { Plus, Tag, X, Trash2, Zap, Award, Copy, Check, ShieldCheck, Clock, ToggleLeft, ToggleRight, Heart, HeartOff, CheckCircle2 } from 'lucide-react'
 import PriceInput from '@/components/ui/PriceInput'
 
 const TYPE_STYLES = {
@@ -12,13 +12,22 @@ const TYPE_STYLES = {
   loyalty    : { grad: 'from-purple-500 to-violet-600', sub: 'text-purple-100', icon: Award, iconBg: 'bg-white/20' },
 }
 
-function PlatformPromoCard({ promo }) {
+function PlatformPromoCard({ promo, onToggleFollow, busy }) {
   const [copied, setCopied] = useState(false)
   const style = TYPE_STYLES[promo.type] || TYPE_STYLES.voucher
   const Icon  = style.icon
   const discountLabel = promo.discountType === 'percent'
     ? `${promo.discountValue}% OFF`
     : `${formatRupiah(promo.discountValue)} OFF`
+
+  // Bandingkan di level tanggal lokal (abaikan jam) supaya konsisten
+  // dengan ekspektasi user yang input "tanggal mulai".
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const start = promo.startDate ? new Date(promo.startDate) : null
+  if (start) start.setHours(0, 0, 0, 0)
+  const isUpcoming = !!(start && start > today)
+  const isRunning  = !isUpcoming   // promo sudah mulai (atau tidak ada start_date)
+  const followed   = !!promo.followed
 
   const copyCode = () => {
     navigator.clipboard.writeText(promo.code)
@@ -27,13 +36,22 @@ function PlatformPromoCard({ promo }) {
   }
 
   return (
-    <div className={`relative rounded-2xl overflow-hidden bg-gradient-to-r ${style.grad} shadow-md`}>
-      <div className="absolute top-3 right-3">
+    <div className={`relative rounded-2xl overflow-hidden bg-gradient-to-r ${style.grad} shadow-md ${isUpcoming ? 'opacity-95' : ''}`}>
+      <div className="absolute top-3 right-3 flex items-center gap-1.5">
+        {isUpcoming ? (
+          <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-400 text-amber-900 rounded-full text-[10px] font-bold shadow-sm">
+            <Clock className="w-3 h-3" /> Segera Hadir
+          </span>
+        ) : (
+          <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500 text-white rounded-full text-[10px] font-bold shadow-sm">
+            <CheckCircle2 className="w-3 h-3" /> Sedang Berjalan
+          </span>
+        )}
         <span className="flex items-center gap-1 px-2 py-0.5 bg-white/20 rounded-full text-[10px] text-white font-semibold">
           <ShieldCheck className="w-3 h-3" /> Platform
         </span>
       </div>
-      <div className="p-5 flex items-center gap-4">
+      <div className="p-5 pb-3 flex items-center gap-4">
         <div className={`w-11 h-11 rounded-xl ${style.iconBg} flex items-center justify-center shrink-0`}>
           <Icon className="w-5 h-5 text-white" />
         </div>
@@ -41,7 +59,9 @@ function PlatformPromoCard({ promo }) {
           <p className="text-white font-bold text-sm leading-snug">{promo.name}</p>
           <p className={`text-xs ${style.sub} mt-0.5`}>
             {promo.minPurchase > 0 && `Min. ${formatRupiah(promo.minPurchase)} · `}
-            {promo.endDate && `s/d ${formatDateShort(promo.endDate)}`}
+            {isUpcoming
+              ? `Mulai ${formatDateShort(promo.startDate)}`
+              : promo.endDate && `s/d ${formatDateShort(promo.endDate)}`}
           </p>
           {promo.code && (
             <button onClick={copyCode}
@@ -52,6 +72,28 @@ function PlatformPromoCard({ promo }) {
           )}
         </div>
         <span className="text-white font-black text-xl shrink-0">{discountLabel}</span>
+      </div>
+
+      {/* Footer: tombol Ikuti / Hentikan */}
+      <div className="px-5 pb-4 pt-1 flex items-center justify-between gap-3 border-t border-white/20 mt-1">
+        <p className="text-[11px] text-white/85 leading-tight flex-1">
+          {followed
+            ? 'Promo aktif — diskon otomatis berlaku untuk hotel Anda.'
+            : 'Ikuti promo untuk memberikan diskon otomatis di hotel Anda.'}
+        </p>
+        <button
+          onClick={() => onToggleFollow(promo)}
+          disabled={busy}
+          className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors disabled:opacity-60 ${
+            followed
+              ? 'bg-white/15 text-white hover:bg-white/25 border border-white/30'
+              : 'bg-white text-slate-900 hover:bg-slate-100 shadow'
+          }`}
+        >
+          {followed
+            ? <><HeartOff className="w-3.5 h-3.5" /> Hentikan</>
+            : <><Heart    className="w-3.5 h-3.5" /> Ikuti Promo</>}
+        </button>
       </div>
     </div>
   )
@@ -95,6 +137,24 @@ export default function OwnerPromo() {
     onError   : () => toast({ title: 'Gagal menghapus.', variant: 'destructive' }),
   })
 
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, isActive }) => promoApi.update(id, { is_active: isActive }),
+    onSuccess : (_, { isActive }) => {
+      qc.invalidateQueries({ queryKey: ['my-promos'] })
+      toast({ title: isActive ? 'Promo diaktifkan.' : 'Promo dinonaktifkan.' })
+    },
+    onError: () => toast({ title: 'Gagal mengubah status promo.', variant: 'destructive' }),
+  })
+
+  const followMutation = useMutation({
+    mutationFn: ({ id, follow }) => follow ? promoApi.follow(id) : promoApi.unfollow(id),
+    onSuccess : (r) => {
+      qc.invalidateQueries({ queryKey: ['platform-promos'] })
+      toast({ title: r?.data?.message || 'Status promo diperbarui.' })
+    },
+    onError: () => toast({ title: 'Gagal memperbarui status promo.', variant: 'destructive' }),
+  })
+
   const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }))
 
   return (
@@ -113,7 +173,14 @@ export default function OwnerPromo() {
           </div>
         ) : platformPromos.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {platformPromos.map(p => <PlatformPromoCard key={p.id} promo={p} />)}
+            {platformPromos.map(p => (
+              <PlatformPromoCard
+                key={p.id}
+                promo={p}
+                busy={followMutation.isPending}
+                onToggleFollow={(promo) => followMutation.mutate({ id: promo.id, follow: !promo.followed })}
+              />
+            ))}
           </div>
         ) : (
           <div className="py-10 text-center bg-white rounded-2xl border border-slate-200">
@@ -143,7 +210,7 @@ export default function OwnerPromo() {
         ) : ownerPromos.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {ownerPromos.map(p => (
-              <div key={p.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+              <div key={p.id} className={`bg-white rounded-xl border shadow-sm p-5 transition-all ${p.isActive ? 'border-slate-200' : 'border-slate-200 opacity-60'}`}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center">
                     <Tag className="w-4 h-4 text-orange-500" />
@@ -168,6 +235,23 @@ export default function OwnerPromo() {
                   {p.endDate && `s/d ${new Date(p.endDate).toLocaleDateString('id-ID')}`}
                   {(p.quota != null) && ` · Sisa ${p.quota - (p.usedCount ?? 0)} kuota`}
                 </p>
+
+                {/* Toggle Aktif */}
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
+                  <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${p.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                    {p.isActive ? 'Aktif' : 'Nonaktif'}
+                  </span>
+                  <button
+                    onClick={() => toggleMutation.mutate({ id: p.id, isActive: !p.isActive })}
+                    disabled={toggleMutation.isPending}
+                    title={p.isActive ? 'Nonaktifkan promo' : 'Aktifkan promo'}
+                    className="disabled:opacity-50 transition-opacity"
+                  >
+                    {p.isActive
+                      ? <ToggleRight className="w-8 h-8 text-green-500" />
+                      : <ToggleLeft  className="w-8 h-8 text-slate-300" />}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

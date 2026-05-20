@@ -31,7 +31,9 @@ export const hotelApi = {
   },
   approve   : (id)     => api.post(`/hotels/${id}/approve`),
   block     : (id)     => api.post(`/hotels/${id}/block`),
-  addRoom   : (id, d)  => api.post(`/hotels/${id}/rooms`, d),
+  addRoom   : (id, d)  => isFormData(d)
+    ? api.post(`/hotels/${id}/rooms`, d, multipartConfig)
+    : api.post(`/hotels/${id}/rooms`, d),
   updateRoom: (hId, rId, d) => {
     if (isFormData(d)) {
       if (!d.has('_method')) {

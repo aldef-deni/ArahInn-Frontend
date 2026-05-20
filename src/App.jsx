@@ -21,6 +21,7 @@ import Profile from '@/pages/Profile'
 import PropertyMarket from '@/pages/PropertyMarket'
 import PropertyDetail from '@/pages/PropertyDetail'
 import InteriorPage from '@/pages/Interior'
+import PromoPage from '@/pages/Promo'
 
 // Auth Pages
 import Login from '@/pages/Auth/Login'
@@ -194,6 +195,7 @@ export default function App() {
             <Route path="/properti" element={<PropertyMarket />} />
             <Route path="/properti/:id" element={<PropertyDetail />} />
             <Route path="/interior" element={<InteriorPage />} />
+            <Route path="/promo" element={<PromoPage />} />
             <Route path="/checkout/:roomId" element={<PrivateRoute><Checkout /></PrivateRoute>} />
             <Route path="/payment/:bookingId" element={<PrivateRoute><Payment /></PrivateRoute>} />
             <Route path="/orders" element={<PrivateRoute><OrderHistory /></PrivateRoute>} />

@@ -4,14 +4,13 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { bookingApi, paymentApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
-import { Clock, Copy, CheckCircle, XCircle, Building2 } from 'lucide-react'
+import { Clock, Copy, CheckCircle, XCircle, Building2, X, ArrowLeft, ListOrdered } from 'lucide-react'
 
 const BANKS = [
-  { id: 'bca',     label: 'BCA',     logo: '🏦', color: 'blue' },
-  { id: 'mandiri', label: 'Mandiri', logo: '🏛️', color: 'yellow' },
-  { id: 'bni',     label: 'BNI',     logo: '🏦', color: 'orange' },
-  { id: 'bri',     label: 'BRI',     logo: '🏦', color: 'blue' },
-  { id: 'permata', label: 'Permata', logo: '🏦', color: 'red' },
+  { id: 'bca',     label: 'BCA',     logo: '/banks/bca.png' },
+  { id: 'mandiri', label: 'Mandiri', logo: '/banks/mandiri.png' },
+  { id: 'bri',     label: 'BRI',     logo: '/banks/bri.svg' },
+  { id: 'bsi',     label: 'BSI',     logo: '/banks/bank_bsi.png' },
 ]
 
 function useCountdown(expiresAt) {
@@ -37,6 +36,7 @@ export default function Payment() {
   const [bank, setBank]       = useState('bca')
   const [copied, setCopied]   = useState(false)
   const [vaInfo, setVaInfo]   = useState(null) // { vaNumber, bank, expiredAt }
+  const [showLeaveModal, setShowLeaveModal] = useState(false)
 
   const { data: booking, isLoading } = useQuery({
     queryKey: ['booking-payment', bookingId],
@@ -70,6 +70,36 @@ export default function Payment() {
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+
+  // ── Cegat tombol "Back" browser setelah VA dibuat ────────────────────────
+  // Push history entry palsu sehingga popstate ter-trigger saat user back,
+  // lalu tampilkan modal konfirmasi sebelum benar-benar keluar.
+  useEffect(() => {
+    if (!vaInfo || isPaid) return
+
+    // Push state guard
+    window.history.pushState({ payment_guard: true }, '')
+
+    const onPop = () => {
+      // User tekan back → tahan dengan push state lagi, lalu tampilkan modal
+      window.history.pushState({ payment_guard: true }, '')
+      setShowLeaveModal(true)
+    }
+
+    const onBeforeUnload = (e) => {
+      e.preventDefault()
+      e.returnValue = ''
+      return ''
+    }
+
+    window.addEventListener('popstate', onPop)
+    window.addEventListener('beforeunload', onBeforeUnload)
+
+    return () => {
+      window.removeEventListener('popstate', onPop)
+      window.removeEventListener('beforeunload', onBeforeUnload)
+    }
+  }, [vaInfo, isPaid])
 
   // ── Loading ──────────────────────────────────────────────────────────────
   if (isLoading) return (
@@ -155,7 +185,10 @@ export default function Payment() {
 
           {booking?.promoDiscount > 0 && (
             <div className="flex justify-between text-green-600">
-              <span>Diskon promo</span>
+              <span>
+                Diskon promo
+                {booking?.voucherCode ? ` (${booking.voucherCode})` : ''}
+              </span>
               <span>− {formatRupiah(booking.promoDiscount)}</span>
             </div>
           )}
@@ -166,9 +199,22 @@ export default function Payment() {
             </div>
           )}
 
-          <div className="flex justify-between items-center pt-3 border-t font-bold text-base">
-            <span>Total Tagihan</span>
-            <span className="price-tag text-xl">{formatRupiah(booking?.totalPrice)}</span>
+          <div className="pt-3 border-t">
+            {booking?.promoDiscount > 0 && (
+              <div className="flex justify-between items-center text-xs text-slate-400 line-through mb-1">
+                <span>Total tanpa promo</span>
+                <span>{formatRupiah((parseFloat(booking?.totalPrice) || 0) + (parseFloat(booking?.promoDiscount) || 0))}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center font-bold text-base">
+              <span>Total Tagihan</span>
+              <span className="price-tag text-xl">{formatRupiah(booking?.totalPrice)}</span>
+            </div>
+            {booking?.promoDiscount > 0 && (
+              <p className="mt-1.5 text-[11px] text-orange-600 font-semibold">
+                ✦ Anda hemat {formatRupiah(booking.promoDiscount)} dengan promo
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -180,16 +226,23 @@ export default function Payment() {
             <h2 className="font-semibold mb-4 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-brand" /> Pilih Bank Virtual Account
             </h2>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {BANKS.map(b => (
-                <button key={b.id} onClick={() => setBank(b.id)}
-                  className={`flex flex-col items-center gap-1.5 py-3 px-2 border rounded-xl text-sm transition-all ${
+                <button
+                  key={b.id}
+                  onClick={() => setBank(b.id)}
+                  title={b.label}
+                  className={`group flex items-center justify-center h-20 px-4 bg-white border-2 rounded-2xl transition-all ${
                     bank === b.id
-                      ? 'border-brand bg-brand/5 text-brand-700 font-semibold shadow-sm'
-                      : 'hover:bg-muted hover:border-muted-foreground/30'
-                  }`}>
-                  <span className="text-2xl">{b.logo}</span>
-                  <span className="text-xs font-medium">{b.label}</span>
+                      ? 'border-brand shadow-md ring-2 ring-brand/15'
+                      : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
+                  }`}
+                >
+                  <img
+                    src={b.logo}
+                    alt={b.label}
+                    className="max-h-10 w-auto object-contain transition-transform group-hover:scale-105"
+                  />
                 </button>
               ))}
             </div>
@@ -245,6 +298,63 @@ export default function Payment() {
           <p className="text-xs text-muted-foreground text-center mt-4">
             Halaman ini otomatis diperbarui setelah pembayaran diterima.
           </p>
+        </div>
+      )}
+
+      {/* ── Leave Page Confirmation Modal ── */}
+      {showLeaveModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
+          onClick={() => setShowLeaveModal(false)}
+        >
+          <div
+            className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-6 pt-6 pb-2 flex items-start justify-between gap-4">
+              <h2 className="text-xl font-bold text-slate-900 leading-snug">
+                Anda yakin ingin meninggalkan<br />halaman ini?
+              </h2>
+              <button
+                onClick={() => setShowLeaveModal(false)}
+                className="p-1.5 -m-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Description */}
+            <div className="px-6 py-3">
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Dengan meninggalkan halaman ini, Anda dapat mengubah metode pembayaran atau lihat daftar pembelian.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="px-6 pt-3 pb-6 space-y-2.5">
+              <button
+                onClick={() => {
+                  setShowLeaveModal(false)
+                  setVaInfo(null)  // reset VA → user kembali pilih metode pembayaran
+                }}
+                className="w-full px-5 py-3.5 rounded-2xl text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Ubah metode pembayaran
+              </button>
+              <button
+                onClick={() => {
+                  setShowLeaveModal(false)
+                  navigate('/orders', { replace: true })
+                }}
+                className="w-full px-5 py-3.5 rounded-2xl text-sm font-bold text-white bg-blue-500 hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+              >
+                <ListOrdered className="w-4 h-4" />
+                Lihat Daftar Pembelian
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

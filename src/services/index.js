@@ -26,8 +26,19 @@ export const promoApi = {
   myPromos    : ()     => api.get('/promos/my'),
   platform    : ()     => api.get('/promos/platform'),
   ownersList  : ()     => api.get('/promos/owners-list'),
-  create      : (d)    => api.post('/promos', d),
-  update      : (id,d) => api.put(`/promos/${id}`, d),
+  flyers      : ()     => api.get('/promos/flyers'),
+  follow      : (id)   => api.post(`/promos/${id}/follow`),
+  unfollow    : (id)   => api.delete(`/promos/${id}/follow`),
+  create      : (d)    => d instanceof FormData
+    ? api.post('/promos', d, { headers: { 'Content-Type': 'multipart/form-data' } })
+    : api.post('/promos', d),
+  update      : (id,d) => {
+    if (d instanceof FormData) {
+      d.append('_method', 'PUT')
+      return api.post(`/promos/${id}`, d, { headers: { 'Content-Type': 'multipart/form-data' } })
+    }
+    return api.put(`/promos/${id}`, d)
+  },
   remove      : (id)   => api.delete(`/promos/${id}`),
   loyalty: {
     balance : ()    => api.get('/promos/loyalty/balance'),

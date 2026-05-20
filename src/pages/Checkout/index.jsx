@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -48,6 +48,7 @@ export default function Checkout() {
         roomId,
         checkIn,
         checkOut,
+        roomCount,
         promoCode: form.promoCode,
         usePoints: form.usePoints,
       }),
@@ -71,6 +72,7 @@ export default function Checkout() {
         checkIn,
         checkOut,
         guests: parseInt(guests, 10),
+        roomCount,
         guestName: form.guestName,
         guestEmail: form.guestEmail,
         guestPhone: form.guestPhone,
@@ -88,6 +90,14 @@ export default function Checkout() {
   })
 
   const handleApplyPromo = () => calcMutation.mutate()
+
+  // Auto-calc harga saat halaman pertama dibuka & saat roomCount/tanggal berubah
+  useEffect(() => {
+    if (roomId && checkIn && checkOut) {
+      calcMutation.mutate()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, checkIn, checkOut, roomCount])
 
   return (
     <div className="container max-w-5xl py-8">
@@ -222,9 +232,18 @@ export default function Checkout() {
                   <span>{formatRupiah((pricing.markupAmount || 0) + (pricing.taxAmount || 0) + (pricing.priceSuffix || 0))}</span>
                 </div>
                 {pricing.promoDiscount > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('checkout.promoDiscount')}</span>
-                    <span className="font-medium text-green-600">- {formatRupiah(pricing.promoDiscount)}</span>
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex flex-col">
+                      <span className="text-muted-foreground">
+                        {form.promoCode ? t('checkout.promoDiscount') : 'Diskon promo otomatis'}
+                      </span>
+                      {pricing.promo?.name && !form.promoCode && (
+                        <span className="text-[11px] text-orange-600 font-semibold mt-0.5">
+                          ✦ {pricing.promo.name}
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-medium text-green-600 whitespace-nowrap">- {formatRupiah(pricing.promoDiscount)}</span>
                   </div>
                 )}
                 {pricing.loyaltyDiscount > 0 && (
@@ -233,9 +252,17 @@ export default function Checkout() {
                     <span className="font-medium text-green-600">- {formatRupiah(pricing.loyaltyDiscount)}</span>
                   </div>
                 )}
-                <div className="flex justify-between border-t pt-3 text-base font-bold">
-                  <span>{t('checkout.total')}</span>
-                  <span className="price-tag">{formatRupiah(pricing.totalPrice)}</span>
+                <div className="border-t pt-3">
+                  {pricing.promoDiscount > 0 && (
+                    <div className="flex justify-between text-xs text-slate-400 line-through mb-1">
+                      <span>Total tanpa promo</span>
+                      <span>{formatRupiah(pricing.totalPrice + pricing.promoDiscount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-base font-bold">
+                    <span>{t('checkout.total')}</span>
+                    <span className="price-tag">{formatRupiah(pricing.totalPrice)}</span>
+                  </div>
                 </div>
               </div>
             ) : room && (
