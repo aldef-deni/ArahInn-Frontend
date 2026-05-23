@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext, useNavigate, useParams, useLocation } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
 import { useToast } from '@/hooks/use-toast'
 import { ChevronUp, Info, AlertCircle, Loader2, X } from 'lucide-react'
@@ -130,6 +130,7 @@ export default function RatePlanForm() {
   const location  = useLocation()
   const { id }    = useParams()
   const { toast } = useToast()
+  const qc        = useQueryClient()
 
   const planType = location.state?.planType  // { id, label, minNights }
   const isEdit   = !!id
@@ -213,6 +214,8 @@ export default function RatePlanForm() {
         ? hotelApi.updateRatePlan(hotel.id, id, d)
         : hotelApi.createRatePlan(hotel.id, d),
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['rate-plans', hotel?.id] })
+      qc.invalidateQueries({ queryKey: ['rate-plan-detail', hotel?.id, id] })
       toast({ title: isEdit ? 'Rate plan berhasil diperbarui.' : 'Rate plan berhasil dibuat.' })
       navigate(location.pathname.includes('/admin/') ? '/admin/harga/rate-plan' : '/owner/harga/rate-plan')
     },
@@ -299,18 +302,19 @@ export default function RatePlanForm() {
                   onChange={e => upd('min_nights', +e.target.value)}
                   disabled={form.type === 'mingguan' || form.type === 'bulanan'}
                   className={cn(
-                    'w-full border rounded-xl px-3 py-2.5 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200',
+                    'w-full border rounded-xl px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [appearance:textfield]',
                     (form.type === 'mingguan' || form.type === 'bulanan')
                       ? 'border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed'
                       : 'border-slate-200'
                   )}
                   placeholder="1"
                 />
-                {form.type !== 'mingguan' && form.type !== 'bulanan' && (
+                {form.type !== 'mingguan' && form.type !== 'bulanan' && form.min_nights !== 1 && (
                   <button
                     type="button"
                     onClick={() => upd('min_nights', 1)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    title="Reset ke 1"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors text-base leading-none"
                   >×</button>
                 )}
               </div>
@@ -323,14 +327,17 @@ export default function RatePlanForm() {
                   min={1}
                   value={form.max_nights}
                   onChange={e => upd('max_nights', +e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [appearance:textfield]"
                   placeholder="365"
                 />
-                <button
-                  type="button"
-                  onClick={() => upd('max_nights', 365)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >×</button>
+                {form.max_nights !== 365 && (
+                  <button
+                    type="button"
+                    onClick={() => upd('max_nights', 365)}
+                    title="Reset ke 365"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors text-base leading-none"
+                  >×</button>
+                )}
               </div>
               <span className="text-xs text-slate-500 shrink-0">Maksimum Malam</span>
             </div>
@@ -639,12 +646,12 @@ export default function RatePlanForm() {
       <Section title="Pengaturan untuk Pengguna Tertentu">
         <div className="px-6 py-4 border-b border-slate-100">
           <p className="text-sm text-slate-500">
-            Jika diperlukan, Anda bisa menampilkan rate plan ini hanya kepada pengguna tertentu berdasarkan platform, lokasi, atau tier Tiket Rewards.
+            Jika diperlukan, Anda bisa menampilkan rate plan ini hanya kepada pengguna tertentu berdasarkan platform, lokasi, atau tier Rewards.
           </p>
         </div>
         {[
           { key: 'platform',        label: 'Platform' },
-          { key: 'bilibili_tier',   label: 'Tiket Rewards Tier' },
+          { key: 'bilibili_tier',   label: 'Rewards Tier' },
           { key: 'target_location', label: 'Target Lokasi' },
         ].map(item => (
           <div key={item.key} className="flex items-center justify-between px-6 py-4 border-b border-slate-100 last:border-0">

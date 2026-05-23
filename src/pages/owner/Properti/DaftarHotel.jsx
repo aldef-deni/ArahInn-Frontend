@@ -103,6 +103,7 @@ const INIT = {
   guestTypes: [], category: '',
   // Step 2
   name: '', alias: '', star_rating: null, is_brand_chain: false, currency: '',
+  description: '',
   address: '', postal_code: '', province: '', city: '',
   district: '', village: '', country: 'Indonesia', latitude: '', longitude: '',
   // Step 2 — Informasi Check-in
@@ -338,6 +339,7 @@ function Step1({ form, setForm }) {
 // ── Step 2: Info Umum + Lokasi ─────────────────────────────────────────────
 function Step2({ form, setForm, wilayah }) {
   const [infoOpen, setInfoOpen]     = useState(true)
+  const [descOpen, setDescOpen]       = useState(true)
   const [checkInOpen, setCheckInOpen] = useState(true)
   const [lokasiOpen, setLokasiOpen] = useState(true)
   const { provId, setProvId, kotaId, setKotaId, kecId, setKecId,
@@ -421,6 +423,43 @@ function Step2({ form, setForm, wilayah }) {
                 {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="Deskripsi Properti"
+        subtitle="Ceritakan keunggulan properti Anda — akan tampil di halaman detail akomodasi."
+        open={descOpen}
+        onToggle={() => setDescOpen(o => !o)}
+      >
+        <div className="space-y-3 pt-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Deskripsi Akomodasi <span className="text-red-500">*</span>
+            </label>
+            <p className="text-xs text-slate-500 mb-2">
+              Tulis 2-5 paragraf tentang properti Anda: lokasi strategis, fasilitas unggulan, suasana, dan rekomendasi aktivitas sekitar. Minimal 50 karakter.
+            </p>
+            <textarea
+              value={form.description || ''}
+              onChange={f('description')}
+              rows={7}
+              maxLength={3000}
+              placeholder={'Contoh:\nTerletak strategis di pusat kota, hotel kami menawarkan kenyamanan modern dengan sentuhan tradisional. Hanya 5 menit dari pusat perbelanjaan...\n\nSetiap kamar dilengkapi AC, TV LED 32", Wi-Fi gratis, dan kamar mandi pribadi dengan air panas...'}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-y min-h-[160px]"
+            />
+            <div className="mt-1.5 flex items-center justify-between">
+              <p className={cn(
+                'text-xs',
+                (form.description || '').trim().length < 50 ? 'text-amber-600' : 'text-emerald-600'
+              )}>
+                {(form.description || '').trim().length < 50
+                  ? `Minimal 50 karakter (${(form.description || '').trim().length}/50)`
+                  : `✓ ${(form.description || '').trim().length} karakter`}
+              </p>
+              <p className="text-xs text-slate-400">{(form.description || '').length}/3000</p>
             </div>
           </div>
         </div>
@@ -3045,7 +3084,9 @@ export default function DaftarHotel({ editId: editIdProp } = {}) {
 
   const canNext = () => {
     if (step === 1) return !!form.category
-    if (step === 2) return !!form.name.trim() && !!form.address.trim() && !!form.province && !!form.city
+    if (step === 2) return !!form.name.trim()
+      && (form.description || '').trim().length >= 50
+      && !!form.address.trim() && !!form.province && !!form.city
     if (step === 3) return true
     if (step === 4) return !!form.company_name.trim() && !!form.company_country &&
                            form.check1 && form.check2 && form.check3 && form.check4
