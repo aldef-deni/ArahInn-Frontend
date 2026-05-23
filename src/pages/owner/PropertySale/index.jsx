@@ -358,7 +358,7 @@ function FormDrawer({ listing, onClose }) {
               </div>
             )}
 
-            <input ref={fileRef} type="file" multiple accept="image/*" className="hidden" onChange={onFileChange} />
+            <input ref={fileRef} type="file" multiple accept="image/jpeg,image/jpg,.jpg,.jpeg" className="hidden" onChange={onFileChange} />
             <button type="button" onClick={() => fileRef.current?.click()}
               className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-slate-300 rounded-xl text-sm text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-colors w-full justify-center">
               <Upload className="w-4 h-4" /> Pilih Foto (maks. 10)

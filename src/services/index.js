@@ -8,6 +8,8 @@ export const bookingApi = {
   cancel       : (id)     => api.put(`/bookings/${id}/cancel`),
   reschedule   : (id, d)  => api.put(`/bookings/${id}/reschedule`, d),
   refund       : (id)     => api.post(`/bookings/${id}/refund`),
+  // Download voucher PDF (binary)
+  downloadVoucher: (id)   => api.get(`/bookings/${id}/voucher`, { responseType: 'blob' }),
   getAll       : (p)      => api.get('/bookings', { params: p }),
   updateStatus : (id, d)  => api.put(`/orders/${id}/status`, d),
 }
@@ -71,6 +73,9 @@ export const adminApi = {
   deleteHotel    : (id)     => api.delete(`/admin/hotels/${id}`),
   approveHotel   : (id)     => api.post(`/admin/hotels/${id}/approve`),
   blockHotel     : (id)     => api.post(`/admin/hotels/${id}/block`),
+  // Update komisi platform (markup final = commission_percent + 2% di BE)
+  updateHotelCommission: (id, commissionPercent) =>
+    api.put(`/admin/hotels/${id}/commission`, { commission_percent: commissionPercent }),
 }
 
 export const userApi = {
@@ -113,6 +118,7 @@ export const mmHandlerApi = {
 
 export const chatApi = {
   ownerRooms       : ()       => api.get('/chat/owner-rooms'),
+  myRooms          : ()       => api.get('/chat/rooms'),
   createRoom       : (d)      => api.post('/chat/rooms', d),
   messages         : (id)     => api.get(`/chat/rooms/${id}/messages`),
   send             : (id, d)  => api.post(`/chat/rooms/${id}/messages`, d),
@@ -126,7 +132,8 @@ export const chatApi = {
 }
 
 export const authApi = {
-  register    : (d)    => api.post('/auth/register', d),
+  register      : (d)    => api.post('/auth/register', d),
+  registerOwner : (d)    => api.post('/auth/register-owner', d),
   login       : (d)    => api.post('/auth/login', d),
   logout      : ()     => api.post('/auth/logout'),
   refresh     : (d)    => api.post('/auth/refresh-token', d),

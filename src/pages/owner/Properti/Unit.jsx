@@ -1,5 +1,5 @@
 import { useOutletContext } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
 import { useToast } from '@/hooks/use-toast'
@@ -7,24 +7,33 @@ import { formatRupiah } from '@/utils'
 import { Plus, Pencil, Trash2, X, BedDouble, Upload, Image as ImageIcon, AlertCircle } from 'lucide-react'
 import PriceInput from '@/components/ui/PriceInput'
 import { getImageUrl } from '@/utils'
+import { validateImageFile } from '@/utils/imageValidation'
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024 // 5 MB
-const MIN_DIMENSION = 1024 // px
+// Preview komponen — pakai useEffect agar URL.createObjectURL dipanggil sekali per file
+function NewImagePreview({ file, onRemove }) {
+  const [src, setSrc] = useState('')
+  useEffect(() => {
+    const u = URL.createObjectURL(file)
+    setSrc(u)
+    return () => URL.revokeObjectURL(u)
+  }, [file])
 
-function getImageDimensions(file) {
-  return new Promise((resolve) => {
-    const url = URL.createObjectURL(file)
-    const img = new Image()
-    img.onload = () => {
-      URL.revokeObjectURL(url)
-      resolve({ width: img.naturalWidth, height: img.naturalHeight })
-    }
-    img.onerror = () => {
-      URL.revokeObjectURL(url)
-      resolve({ width: 0, height: 0 })
-    }
-    img.src = url
-  })
+  return (
+    <div className="relative aspect-square rounded-xl overflow-hidden border border-blue-200 bg-blue-50 group">
+      {src && <img src={src} alt={file.name} className="w-full h-full object-cover" />}
+      <span className="absolute bottom-1 left-1 right-1 px-1.5 py-0.5 bg-blue-600 text-white text-[9px] font-bold rounded-md text-center truncate">
+        BARU
+      </span>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+        title="Hapus"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  )
 }
 
 const ROOM_TYPES = [
@@ -105,27 +114,9 @@ export default function PropertiUnit() {
     const errors = []
 
     for (const f of files) {
-      const sizeMB = (f.size / 1024 / 1024).toFixed(2)
-      if (f.size > MAX_IMAGE_BYTES) {
-        errors.push({
-          name: f.name,
-          reason: `Ukuran file ${sizeMB} MB melebihi batas maksimal 5 MB.`,
-        })
-        continue
-      }
-      const { width, height } = await getImageDimensions(f)
-      if (!width || !height) {
-        errors.push({
-          name: f.name,
-          reason: 'File bukan gambar yang valid atau rusak.',
-        })
-        continue
-      }
-      if (width < MIN_DIMENSION || height < MIN_DIMENSION) {
-        errors.push({
-          name: f.name,
-          reason: `Resolusi ${width}×${height}px terlalu kecil. Minimal ${MIN_DIMENSION}×${MIN_DIMENSION}px.`,
-        })
+      const result = await validateImageFile(f)
+      if (!result.valid) {
+        errors.push({ name: f.name, reason: result.error })
         continue
       }
       accepted.push(f)
@@ -135,11 +126,11 @@ export default function PropertiUnit() {
       setImageErrors(errors)
       toast({
         title: `${errors.length} foto gagal diupload`,
-        description: 'Lihat detail di bawah area upload.',
+        description: 'Format JPG/JPEG · Min 800px · Maks 5 MB',
         variant: 'destructive',
       })
     } else {
-      setImageErrors([])  // bersihkan kalau semua sukses
+      setImageErrors([])
     }
 
     if (accepted.length) {
@@ -347,25 +338,13 @@ export default function PropertiUnit() {
                   })}
 
                   {/* New image previews */}
-                  {form.newImages?.map((file, idx) => {
-                    const src = URL.createObjectURL(file)
-                    return (
-                      <div key={`new-${idx}`} className="relative aspect-square rounded-xl overflow-hidden border border-blue-200 bg-blue-50 group">
-                        <img src={src} alt={file.name} className="w-full h-full object-cover" />
-                        <span className="absolute bottom-1 left-1 right-1 px-1.5 py-0.5 bg-blue-600 text-white text-[9px] font-bold rounded-md text-center truncate">
-                          BARU
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeNewImage(idx)}
-                          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
-                          title="Hapus"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )
-                  })}
+                  {form.newImages?.map((file, idx) => (
+                    <NewImagePreview
+                      key={`new-${idx}-${file.name}-${file.size}`}
+                      file={file}
+                      onRemove={() => removeNewImage(idx)}
+                    />
+                  ))}
 
                   {/* Upload button (tile) */}
                   <label className="cursor-pointer aspect-square rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-brand transition-colors flex flex-col items-center justify-center gap-1.5 text-slate-500">
@@ -373,7 +352,7 @@ export default function PropertiUnit() {
                     <span className="text-[10px] font-semibold">Tambah Foto</span>
                     <input
                       type="file"
-                      accept="image/png,image/jpeg,image/jpg,image/webp"
+                      accept="image/jpeg,image/jpg,.jpg,.jpeg"
                       multiple
                       onChange={handleImagesChange}
                       className="hidden"

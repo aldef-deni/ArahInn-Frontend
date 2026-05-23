@@ -9,7 +9,7 @@ import {
   ChevronDown, Globe, Settings, LayoutDashboard,
   Phone, Mail, Smartphone, Building2, Sofa, Tag,
 } from 'lucide-react'
-import { cn } from '@/utils'
+import { cn, getImageUrl } from '@/utils'
 import {
   getManagementPortalUrl,
   getOwnerPortalUrl,
@@ -403,6 +403,67 @@ export default function UserLayout() {
               </li>
             </ul>
           </div>
+          </div>
+        </div>
+
+        {/* Partners & Payment Methods */}
+        <div className="border-t border-slate-100 bg-gradient-to-b from-slate-50/50 to-white">
+          <div className="container py-10 grid md:grid-cols-2 gap-10">
+            {/* Our Partners */}
+            <div>
+              <div className="flex items-center gap-2 mb-5">
+                <span className="h-px flex-1 bg-gradient-to-r from-brand/30 to-transparent" />
+                <h4 className="text-xs font-bold text-brand-800 uppercase tracking-[0.18em]">Our Partners</h4>
+                <span className="h-px flex-1 bg-gradient-to-l from-brand/30 to-transparent" />
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {['AKR.png','BBS.png','Dekorasi.me.png','IMG_20260510_184716.png','RuangSinggah.png'].map(f => (
+                  <div
+                    key={f}
+                    className="group relative h-16 w-28 flex items-center justify-center rounded-xl bg-white border border-slate-200/70 px-3 transition-all duration-300 ease-out hover:border-brand/40 hover:shadow-lg hover:shadow-brand/10 hover:-translate-y-0.5"
+                  >
+                    <img
+                      src={`/our-partners/${f}`}
+                      alt={f.replace(/\.[^.]+$/, '')}
+                      loading="lazy"
+                      className="max-h-10 max-w-full object-contain grayscale opacity-70 transition-all duration-300 ease-out group-hover:grayscale-0 group-hover:opacity-100"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Transaksi Pembayaran */}
+            <div>
+              <div className="flex items-center gap-2 mb-5">
+                <span className="h-px flex-1 bg-gradient-to-r from-amber-400/40 to-transparent" />
+                <h4 className="text-xs font-bold text-brand-800 uppercase tracking-[0.18em]">Transaksi Pembayaran</h4>
+                <span className="h-px flex-1 bg-gradient-to-l from-amber-400/40 to-transparent" />
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {[
+                  { src: '/banks/bca.png',     alt: 'BCA' },
+                  { src: '/banks/mandiri.png', alt: 'Mandiri' },
+                  { src: '/banks/bri.svg',     alt: 'BRI' },
+                  { src: '/banks/bank_bsi.png',alt: 'BSI' },
+                ].map(b => (
+                  <div
+                    key={b.alt}
+                    className="group relative h-16 w-24 flex items-center justify-center rounded-xl bg-white border border-slate-200/70 px-3 transition-all duration-300 ease-out hover:border-amber-400/50 hover:shadow-lg hover:shadow-amber-400/10 hover:-translate-y-0.5"
+                  >
+                    <img
+                      src={b.src}
+                      alt={b.alt}
+                      loading="lazy"
+                      className="max-h-9 max-w-full object-contain transition-transform duration-300 ease-out group-hover:scale-110"
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] text-slate-400 text-center mt-4">
+                Pembayaran aman & terenkripsi via <span className="font-semibold text-slate-500">DOKU Payment Gateway</span>
+              </p>
+            </div>
           </div>
         </div>
 

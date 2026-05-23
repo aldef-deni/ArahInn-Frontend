@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { interiorDesignApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
+import { useToast } from '@/hooks/use-toast'
 import { getImageUrl } from '@/utils'
 import { validateImageFile } from '@/utils/imageValidation'
 import {
@@ -32,6 +33,7 @@ const StatusBadge = ({ status }) => {
 
 export default function AdminInterior() {
   const qc           = useQueryClient()
+  const { toast }    = useToast()
   const isSuperAdmin = useAuthStore(s => s.isSuperAdmin())
   const minRes       = MIN_RES_INTERIOR_PX
 
@@ -67,11 +69,13 @@ export default function AdminInterior() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-interior-designs'] })
       qc.invalidateQueries({ queryKey: ['interior-designs-public'] })
+      toast({ title: editing ? 'Design interior berhasil diperbarui.' : 'Design interior berhasil ditambahkan.' })
       closeModal()
     },
     onError: (err) => {
       const msg = err?.response?.data?.message || 'Gagal menyimpan.'
       setErrors(e => ({ ...e, general: msg }))
+      toast({ title: 'Gagal menyimpan design.', description: msg, variant: 'destructive' })
     },
   })
 
@@ -81,7 +85,9 @@ export default function AdminInterior() {
       qc.invalidateQueries({ queryKey: ['admin-interior-designs'] })
       qc.invalidateQueries({ queryKey: ['interior-designs-public'] })
       setApprovingId(null)
+      toast({ title: 'Design interior disetujui.' })
     },
+    onError: () => toast({ title: 'Gagal menyetujui design.', variant: 'destructive' }),
   })
 
   const rejectMutation = useMutation({
@@ -90,7 +96,9 @@ export default function AdminInterior() {
       qc.invalidateQueries({ queryKey: ['admin-interior-designs'] })
       qc.invalidateQueries({ queryKey: ['interior-designs-public'] })
       setApprovingId(null)
+      toast({ title: 'Design interior ditolak.' })
     },
+    onError: () => toast({ title: 'Gagal menolak design.', variant: 'destructive' }),
   })
 
   const deleteMutation = useMutation({
@@ -99,7 +107,9 @@ export default function AdminInterior() {
       qc.invalidateQueries({ queryKey: ['admin-interior-designs'] })
       qc.invalidateQueries({ queryKey: ['interior-designs-public'] })
       setDeleteId(null)
+      toast({ title: 'Design interior berhasil dihapus.' })
     },
+    onError: () => toast({ title: 'Gagal menghapus design.', variant: 'destructive' }),
   })
 
   // ── Helpers ──────────────────────────────────────────────

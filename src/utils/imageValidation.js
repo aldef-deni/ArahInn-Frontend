@@ -1,8 +1,15 @@
-export const MAX_IMAGE_SIZE_MB = 5
-export const MIN_IMAGE_RESOLUTION_PX = 1024
+// ── Konfigurasi upload image global ─────────────────────────────────────────
+export const MAX_IMAGE_SIZE_MB        = 5
+export const MIN_IMAGE_RESOLUTION_PX  = 800
 export const MIN_AVATAR_RESOLUTION_PX = 256
-export const IMAGE_SPEC_TEXT = `Min. resolusi ${MIN_IMAGE_RESOLUTION_PX} px · maks. ${MAX_IMAGE_SIZE_MB} MB per file.`
-export const AVATAR_SPEC_TEXT = `Min. resolusi ${MIN_AVATAR_RESOLUTION_PX} px · maks. ${MAX_IMAGE_SIZE_MB} MB.`
+
+export const ALLOWED_IMAGE_EXTS  = ['jpg', 'jpeg']
+export const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/jpg', 'image/pjpeg']
+
+export const IMAGE_SPEC_TEXT  = `Format JPG/JPEG, min. ${MIN_IMAGE_RESOLUTION_PX} px, maks. ${MAX_IMAGE_SIZE_MB} MB per file.`
+export const AVATAR_SPEC_TEXT = `Format JPG/JPEG, min. ${MIN_AVATAR_RESOLUTION_PX} px, maks. ${MAX_IMAGE_SIZE_MB} MB.`
+
+const extOf = (name = '') => (name.split('.').pop() || '').toLowerCase()
 
 const getImageDimensions = (file) =>
   new Promise((resolve) => {
@@ -20,15 +27,33 @@ const getImageDimensions = (file) =>
   })
 
 export const validateImageFile = async (file, opts = {}) => {
-  const minPx = opts.minResolution ?? MIN_IMAGE_RESOLUTION_PX
-  const maxMb = opts.maxSizeMb ?? MAX_IMAGE_SIZE_MB
+  const minPx       = opts.minResolution ?? MIN_IMAGE_RESOLUTION_PX
+  const maxMb       = opts.maxSizeMb ?? MAX_IMAGE_SIZE_MB
+  const allowedExts = opts.allowedExts ?? ALLOWED_IMAGE_EXTS
+  const allowedMimes= opts.allowedMimes ?? ALLOWED_IMAGE_MIMES
 
   if (!file) return { valid: false, error: 'File tidak ditemukan.' }
 
-  if (file.size > maxMb * 1024 * 1024) {
-    return { valid: false, error: `${file.name}: ukuran melebihi ${maxMb} MB.` }
+  // 1. Validasi ekstensi
+  const ext  = extOf(file.name)
+  const mime = (file.type || '').toLowerCase()
+  if (!allowedExts.includes(ext) || (mime && !allowedMimes.includes(mime))) {
+    return {
+      valid: false,
+      error: `${file.name}: format harus JPG/JPEG (file Anda: .${ext || 'unknown'}).`,
+    }
   }
 
+  // 2. Validasi ukuran
+  if (file.size > maxMb * 1024 * 1024) {
+    const sizeMb = (file.size / 1024 / 1024).toFixed(1)
+    return {
+      valid: false,
+      error: `${file.name}: ukuran ${sizeMb} MB melebihi batas ${maxMb} MB.`,
+    }
+  }
+
+  // 3. Validasi resolusi
   const dims = await getImageDimensions(file)
   if (!dims) {
     return { valid: false, error: `${file.name}: bukan file gambar yang valid.` }
@@ -41,7 +66,7 @@ export const validateImageFile = async (file, opts = {}) => {
     }
   }
 
-  return { valid: true }
+  return { valid: true, dimensions: dims }
 }
 
 export const validateImageFiles = async (files, opts = {}) => {

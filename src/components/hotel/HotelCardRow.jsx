@@ -16,7 +16,10 @@ const CATEGORY_COLORS = {
 export default function HotelCardRow({ hotel }) {
   const { t } = useTranslation()
   const [imgError, setImgError] = useState(false)
-  const lowestPrice = hotel.rooms?.[0]?.basePrice
+  const lowestPrice     = hotel.rooms?.[0]?.basePrice
+  const discountedPrice = hotel.discountedPrice
+  const appliedPromo    = hotel.appliedPromo
+  const hasPromo        = discountedPrice != null && lowestPrice && discountedPrice < lowestPrice
   const catColor = CATEGORY_COLORS[hotel.category] || 'bg-slate-100 text-slate-600'
 
   return (
@@ -96,7 +99,21 @@ export default function HotelCardRow({ hotel }) {
           <div className="text-right">
             {lowestPrice ? (
               <>
-                <p className="text-xl font-bold text-orange-500">{formatRupiah(lowestPrice)}</p>
+                {hasPromo ? (
+                  <>
+                    <p className="text-xs text-slate-400 line-through leading-tight">{formatRupiah(lowestPrice)}</p>
+                    <p className="text-xl font-bold text-orange-600 leading-tight">{formatRupiah(discountedPrice)}</p>
+                    {appliedPromo && (
+                      <span className="inline-block mt-1 px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-700 text-[10px] font-bold">
+                        {appliedPromo.discountType === 'percent'
+                          ? `${Number(appliedPromo.discountValue)}% OFF`
+                          : `Hemat ${formatRupiah(appliedPromo.discountValue)}`}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-xl font-bold text-orange-500">{formatRupiah(lowestPrice)}</p>
+                )}
                 {hotel.rooms?.[0]?.totalUnits && (
                   <p className="text-xs font-semibold text-red-500 mt-0.5">
                     {t('hotel.roomsLeft', { count: hotel.rooms[0].totalUnits })}

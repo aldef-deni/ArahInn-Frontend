@@ -11,8 +11,8 @@ import { getImageUrl, cn } from '@/utils'
 const SUB_MENUS = [
   { to: '/admin/harga/pricing-model',    label: 'Pricing Model',         icon: Layers    },
   { to: '/admin/harga/rate-plan',        label: 'Rate Plan',             icon: Tag       },
-  { to: '/admin/harga/harga-anak',       label: 'Kebijakan Harga Anak',  icon: Users     },
-  { to: '/admin/harga/atur',             label: 'Atur Harga & Tersedia', icon: Calendar  },
+  { to: '/admin/harga/harga-anak',       label: 'Kebijakan & Harga untuk Anak', icon: Users },
+  { to: '/admin/harga/atur',             label: 'Atur Harga & Ketersediaan', icon: Calendar },
   { to: '/admin/harga/bulk-update',      label: 'Bulk Update',           icon: RefreshCw },
   { to: '/admin/harga/biaya-tambahan',   label: 'Biaya Tambahan',        icon: Receipt   },
   { to: '/admin/harga/ketersediaan-now', label: 'Ketersediaan Now',      icon: Activity  },
@@ -161,7 +161,12 @@ export default function AdminHarga() {
           </div>
 
           {/* Page content */}
-          <div className="flex-1 min-w-0">
+          {/*
+            key={selectedHotel.id} → force remount setiap kali hotel berganti.
+            Tanpa key ini, state lokal di child (mis. selectedRoom, draft, editing)
+            akan persist dari hotel sebelumnya — bikin tampilan tidak sinkron.
+          */}
+          <div className="flex-1 min-w-0" key={selectedHotel.id}>
             <Outlet context={{ hotel: selectedHotel, allHotels: hotels, setSelectedHotelId: () => {} }} />
           </div>
         </div>

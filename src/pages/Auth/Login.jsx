@@ -16,13 +16,18 @@ export default function Login() {
   const { toast }  = useToast()
   const [showPass, setShowPass] = useState(false)
 
-  const { register, handleSubmit, formState: { errors } } = useForm()
+  const { register, handleSubmit, formState: { errors }, setError } = useForm()
 
   const mutation = useMutation({
     mutationFn: (d) => authApi.login(d),
     onSuccess : (r) => {
       const { user, accessToken, refreshToken } = r.data.data
-      if (isManagementRole(user.role)) {
+      const rolesPayload = user.roles || user.role
+      const hasCustomer  = (user.roles || []).includes('user') || user.role === 'user'
+
+      // Multi-role friendly: kalau user juga punya role 'user' (customer),
+      // perbolehkan login dari portal customer meskipun juga punya role lain.
+      if (!hasCustomer && isManagementRole(rolesPayload)) {
         toast({
           title: 'Login gagal',
           description: 'Akun superadmin, market manager, dan finance tidak bisa login dari staging.arahinn.com.',
@@ -31,7 +36,7 @@ export default function Login() {
         setAuth(null, null, null)
         return
       }
-      if (isOwnerRole(user.role)) {
+      if (!hasCustomer && isOwnerRole(rolesPayload)) {
         toast({
           title: 'Login gagal',
           description: 'Akun owner properti tidak bisa login dari staging.arahinn.com.',
@@ -40,11 +45,28 @@ export default function Login() {
         setAuth(null, null, null)
         return
       }
-      setAuth(user, accessToken, refreshToken)
+
+      // Paksa primary role = 'user' supaya UI render mode customer
+      const effectiveUser = { ...user, role: 'user' }
+
+      setAuth(effectiveUser, accessToken, refreshToken)
       toast({ title: t('auth.welcome', { name: user.name }) })
       navigate('/dashboard')
     },
-    onError: (e) => toast({ title: 'Login gagal', description: e?.response?.data?.message || 'Email atau password salah.', variant: 'destructive' }),
+    onError: (e) => {
+      const code = e?.response?.data?.error
+      const msg  = e?.response?.data?.message
+
+      if (code === 'email_not_found') {
+        setError('email', { type: 'server', message: 'Email Anda Salah / belum terdaftar.' })
+        toast({ title: 'Email Anda Salah', description: msg || 'Email belum terdaftar di sistem.', variant: 'destructive' })
+      } else if (code === 'wrong_password') {
+        setError('password', { type: 'server', message: 'Password Anda Salah.' })
+        toast({ title: 'Password Anda Salah', description: msg || 'Periksa kembali password yang Anda masukkan.', variant: 'destructive' })
+      } else {
+        toast({ title: 'Login gagal', description: msg || 'Email atau password salah.', variant: 'destructive' })
+      }
+    },
   })
 
   const onSubmit = (d) => mutation.mutate(d)

@@ -26,6 +26,7 @@ import PromoPage from '@/pages/Promo'
 // Auth Pages
 import Login from '@/pages/Auth/Login'
 import LoginExtranet from '@/pages/Auth/LoginExtranet'
+import RegisterExtranet from '@/pages/Auth/RegisterExtranet'
 import Register from '@/pages/Auth/Register'
 import AuthCallback from '@/pages/Auth/Callback'
 
@@ -209,8 +210,11 @@ export default function App() {
 
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<GuestRoute>{extranetMode ? <LoginExtranet /> : <Login />}</GuestRoute>} />
-          {!extranetMode && (
-            <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
+          {/* Register: owner portal pakai RegisterExtranet, customer pakai Register biasa, management tidak ada */}
+          {(ownerMode || !extranetMode) && (
+            <Route path="/register" element={
+              <GuestRoute>{ownerMode ? <RegisterExtranet /> : <Register />}</GuestRoute>
+            } />
           )}
         </Route>
 
@@ -220,6 +224,8 @@ export default function App() {
           <Route index element={<DashboardSwitch />} />
           <Route path="profile" element={<Profile />} />
           <Route path="hotels" element={<BlockRoles roles={['design_interior']}><AdminHotels /></BlockRoles>} />
+          <Route path="hotels/new-full" element={<BlockRoles roles={['design_interior']}><OwnerDaftarHotel /></BlockRoles>} />
+          <Route path="hotels/:id/edit" element={<BlockRoles roles={['design_interior']}><OwnerDaftarHotel /></BlockRoles>} />
           <Route path="orders" element={<BlockRoles roles={['design_interior']}><AdminOrders /></BlockRoles>} />
           <Route path="reports" element={<BlockRoles roles={['design_interior']}><AdminReports /></BlockRoles>} />
           <Route path="users" element={<BlockRoles roles={['design_interior']}><AdminUsers /></BlockRoles>} />

@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { bookingApi, chatApi } from '@/services/index'
 import { formatRupiah, statusBadgeClass, statusLabel } from '@/utils'
-import { Search, Download, MessageSquare, Filter } from 'lucide-react'
+import { Search, Download, MessageSquare, Filter, FileText, Loader2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 const STATUS_OPTIONS = [
@@ -50,6 +50,39 @@ export default function OwnerPesanan() {
 
   const orders     = data?.data || []
   const pagination = data?.pagination || {}
+
+  // Track booking yang sedang download voucher (loading state)
+  const [downloadingId, setDownloadingId] = useState(null)
+  const VOUCHER_STATUSES = ['paid', 'issued', 'rescheduled']
+
+  const handleDownloadVoucher = async (booking) => {
+    if (!VOUCHER_STATUSES.includes(booking.status)) {
+      toast({
+        title: 'Voucher belum tersedia',
+        description: 'Voucher hanya bisa diunduh setelah booking dibayar.',
+        variant: 'destructive',
+      })
+      return
+    }
+    setDownloadingId(booking.id)
+    try {
+      const res = await bookingApi.downloadVoucher(booking.id)
+      const blob = new Blob([res.data], { type: 'application/pdf' })
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = `E-Voucher-${booking.bookingCode}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      const msg = e?.response?.data?.message || 'Gagal mengunduh voucher.'
+      toast({ title: 'Gagal', description: msg, variant: 'destructive' })
+    } finally {
+      setDownloadingId(null)
+    }
+  }
 
   const handleGo = () => {
     setApplied({ status, dateType, startDate, endDate, search })
@@ -156,7 +189,7 @@ export default function OwnerPesanan() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
-                {['No.','Kode Booking','Tamu','Kamar','Check-in','Check-out','Total','Status','Aksi'].map(h => (
+                {['No.','Kode Booking','Tamu','Kamar','Check-in','Check-out','Total','Status','Voucher Reservasi','Aksi'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -164,7 +197,7 @@ export default function OwnerPesanan() {
             <tbody className="divide-y divide-slate-50">
               {isLoading
                 ? Array(5).fill(0).map((_, i) => (
-                    <tr key={i}>{Array(9).fill(0).map((_, j) => (
+                    <tr key={i}>{Array(10).fill(0).map((_, j) => (
                       <td key={j} className="px-4 py-3"><div className="skeleton h-4 rounded w-16" /></td>
                     ))}</tr>
                   ))
@@ -184,6 +217,24 @@ export default function OwnerPesanan() {
                         <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadgeClass(b.status)}`}>
                           {statusLabel(b.status)}
                         </span>
+                      </td>
+                      {/* Voucher Reservasi */}
+                      <td className="px-4 py-3">
+                        {VOUCHER_STATUSES.includes(b.status) ? (
+                          <button
+                            onClick={() => handleDownloadVoucher(b)}
+                            disabled={downloadingId === b.id}
+                            title="Download voucher reservasi (PDF)"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors text-xs font-semibold disabled:opacity-60"
+                          >
+                            {downloadingId === b.id
+                              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              : <FileText className="w-3.5 h-3.5" />}
+                            {downloadingId === b.id ? 'Memuat...' : 'Download PDF'}
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-300">— belum tersedia</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <button onClick={() => openChatMutation.mutate(b)}

@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
-import { userApi, promoApi, bookingApi } from '@/services/index'
+import { userApi, promoApi, bookingApi, chatApi } from '@/services/index'
+import BookingChatModal from '@/components/chat/BookingChatModal'
 import { reviewApi } from '@/services/reviewApi'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
@@ -219,7 +220,7 @@ const STATUS_TINT = {
   refunded:   { dot: 'bg-slate-400',   chip: 'bg-slate-100 text-slate-600',   label: 'Refund' },
 }
 
-function OrderRow({ order, onDetail, onPay, onCancel, canceling }) {
+function OrderRow({ order, onDetail, onPay, onCancel, onChat, chatUnread = 0, canceling }) {
   const tint = STATUS_TINT[order.status] || STATUS_TINT.pending
   return (
     <div className="group rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 hover:border-blue-200 hover:shadow-sm transition-all">
@@ -258,6 +259,18 @@ function OrderRow({ order, onDetail, onPay, onCancel, canceling }) {
           <p className="text-base sm:text-lg font-black text-slate-900 leading-tight">{formatRupiah(order.totalPrice)}</p>
         </div>
         <div className="flex items-center gap-2">
+          {onChat && (
+            <button onClick={onChat}
+              className="relative inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-sm shadow-blue-200 transition-all">
+              <MessageSquare className="w-3.5 h-3.5" />
+              Chat Penginapan
+              {chatUnread > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center bg-red-500 text-white text-[10px] font-extrabold rounded-full border-2 border-white shadow-sm">
+                  {chatUnread > 99 ? '99+' : chatUnread}
+                </span>
+              )}
+            </button>
+          )}
           <button onClick={onDetail}
             className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 transition-colors">
             Detail
@@ -294,11 +307,26 @@ function SectionOrders() {
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState('')
   const [page, setPage] = useState(1)
+  const [chatBooking, setChatBooking] = useState(null) // { id, hotelId, hotelName, bookingCode } | null
 
   const { data, isLoading } = useQuery({
     queryKey: ['my-orders', activeTab, page],
     queryFn : () => bookingApi.myOrders({ status: activeTab || undefined, page, limit: 6 }).then(r => r.data),
   })
+
+  // Fetch unread chat per booking — polling 15s untuk update real-time
+  const { data: myRooms } = useQuery({
+    queryKey: ['my-chat-rooms'],
+    queryFn : () => chatApi.myRooms().then(r => r.data?.data || []),
+    refetchInterval: 15000,
+  })
+  // Build map: bookingId → unread count (room type=booking atau null)
+  const bookingUnreadMap = {}
+  for (const r of (myRooms || [])) {
+    if ((r.type === 'booking' || !r.type) && r.bookingId) {
+      bookingUnreadMap[r.bookingId] = Number(r.unreadCount || 0)
+    }
+  }
 
   const cancelMutation = useMutation({
     mutationFn: (id) => bookingApi.cancel(id),
@@ -370,9 +398,16 @@ function SectionOrders() {
                 <OrderRow
                   key={order.id}
                   order={order}
-                  onDetail={() => navigate(`/booking/${order.id}`)}
+                  onDetail={() => navigate(`/orders/${order.bookingCode || order.id}`)}
                   onPay={() => navigate(`/payment/${order.id}`)}
                   onCancel={() => cancelMutation.mutate(order.id)}
+                  onChat={(order.hotelId || order.hotel?.id) ? () => setChatBooking({
+                    id: order.id,
+                    hotelId: order.hotelId || order.hotel?.id,
+                    hotelName: order.hotel?.name || 'Penginapan',
+                    bookingCode: order.bookingCode,
+                  }) : undefined}
+                  chatUnread={bookingUnreadMap[order.id] || 0}
                   canceling={cancelMutation.isPending}
                 />
               ))
@@ -424,6 +459,19 @@ function SectionOrders() {
           </button>
         </div>
       )}
+
+      {/* Chat modal */}
+      <BookingChatModal
+        open={!!chatBooking}
+        bookingId={chatBooking?.id}
+        hotelId={chatBooking?.hotelId}
+        hotelName={chatBooking?.hotelName}
+        bookingCode={chatBooking?.bookingCode}
+        onClose={() => {
+          setChatBooking(null)
+          qc.invalidateQueries({ queryKey: ['my-chat-rooms'] })
+        }}
+      />
     </div>
   )
 }

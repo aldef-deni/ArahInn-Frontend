@@ -114,7 +114,7 @@ export default function OrderHistory() {
                     </div>
 
                     <div className="flex gap-2 mt-4 pt-4 border-t">
-                      <button onClick={() => navigate(`/orders/${order.id}`)}
+                      <button onClick={() => navigate(`/orders/${order.bookingCode || order.id}`)}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2 border rounded-xl text-sm font-medium hover:bg-muted transition-colors">
                         Detail <ChevronRight className="w-4 h-4" />
                       </button>

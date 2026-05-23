@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { format, addDays, formatDistanceToNow } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
 import { hotelApi } from '@/services/hotelApi'
 import { reviewApi } from '@/services/reviewApi'
-import { campaignApi } from '@/services/index'
+import { campaignApi, chatApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { formatRupiah, diffDays, formatDate, getImageUrl } from '@/utils'
 import {
@@ -25,6 +25,7 @@ import {
   MessageSquare,
   ShieldCheck,
   Sparkles,
+  AlertTriangle,
   Star,
   Users,
   UtensilsCrossed,
@@ -448,7 +449,7 @@ function Stepper({ value, min = 1, max, onChange, label }) {
       <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
         {label}
       </label>
-      <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2.5">
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2.5">
         <button
           type="button"
           onClick={() => onChange(Math.max(min, value - 1))}
@@ -457,7 +458,7 @@ function Stepper({ value, min = 1, max, onChange, label }) {
         >
           −
         </button>
-        <span className="min-w-[3rem] text-center text-sm font-semibold text-slate-900">{value}</span>
+        <span className="text-center text-sm font-semibold text-slate-900">{value}</span>
         <button
           type="button"
           onClick={() => onChange(Math.min(max, value + 1))}
@@ -466,8 +467,8 @@ function Stepper({ value, min = 1, max, onChange, label }) {
         >
           +
         </button>
-        <span className="ml-auto text-xs text-slate-400">maks. {max}</span>
       </div>
+      <p className="mt-1 text-[11px] text-slate-400">Maksimum {max}</p>
     </div>
   )
 }
@@ -500,12 +501,45 @@ function BookingModal({
     })
   }, [initialDates.checkIn, initialDates.checkOut, initialGuests, initialRoomCount, open, room?.id])
 
-  if (!open || !room) return null
+  // ── Derived values (aman untuk room=null) ──
+  const perRoomCapacity = Math.max(Number(room?.maxGuests) || 1, 1)
 
-  const perRoomCapacity = Math.max(Number(room.maxGuests) || 1, 1)
-  const maxRoomCount = Math.max(Number(room.totalUnits) || 10, 1)
+  // Max kamar yang bisa dipesan.
+  //
+  // Sumber max:
+  //   1. availableUnits dari BE — allotment per tanggal yang owner set.
+  //      Bisa dianggap "kuota jualan" untuk tanggal itu.
+  //   2. Fallback: totalUnits (kapasitas fisik), MIN 10 supaya tidak terjebak
+  //      di default total_units=1 dari data lama.
+  //
+  // CATATAN: remainingUnits TIDAK dipakai sebagai cap karena bisa terganggu
+  // oleh pending booking lama yang stuck. BE BookingService::assertAllotment
+  // tetap akan reject saat submit kalau real-time sisa tidak mencukupi.
+  //
+  // Field di-camelize oleh axios response interceptor.
+  const resolveMaxRoomCount = () => {
+    if (!room) return 10
+    const allotment = Number(room.availableUnits)
+    if (Number.isFinite(allotment) && allotment > 0) return allotment
+    const total = Number(room.totalUnits)
+    if (Number.isFinite(total) && total > 0) return Math.max(total, 10)
+    return 10
+  }
+  const maxRoomCount = Math.max(resolveMaxRoomCount(), 1)
   const maxGuests = perRoomCapacity * draft.roomCount
   const stayNights = diffDays(draft.checkIn, draft.checkOut)
+
+  // Clamp draft.roomCount kalau melebihi max yang baru — HARUS sebelum early return
+  // supaya React Rules of Hooks tidak melanggar (hook count konsisten).
+  useEffect(() => {
+    if (draft.roomCount > maxRoomCount) {
+      setDraft(c => ({ ...c, roomCount: maxRoomCount }))
+    }
+  }, [maxRoomCount]) // eslint-disable-line
+
+  // Early return untuk modal tertutup / room belum loaded.
+  // Penting: SEMUA hook harus dipanggil sebelum ini.
+  if (!open || !room) return null
 
   const handleCheckInChange = (value) => {
     const nextCheckOut = value >= draft.checkOut ? format(addDays(new Date(value), 1), 'yyyy-MM-dd') : draft.checkOut
@@ -513,11 +547,14 @@ function BookingModal({
   }
 
   const handleRoomCountChange = (value) => {
-    const newMax = perRoomCapacity * value
+    const clamped = Math.max(1, Math.min(maxRoomCount, value))
+    const newMaxGuests = perRoomCapacity * clamped
     setDraft(current => ({
       ...current,
-      roomCount: value,
-      guests: Math.min(current.guests, newMax),
+      roomCount: clamped,
+      // Setiap kali roomCount berubah, guests otomatis = kapasitas penuh
+      // (mis. 1 kamar = 2 tamu, 2 kamar = 4 tamu, 3 kamar = 6 tamu, dst.)
+      guests: newMaxGuests,
     }))
   }
 
@@ -613,28 +650,48 @@ function BookingModal({
             <h4 className="mt-2 text-lg font-bold text-slate-900">{room.name}</h4>
             <p className="mt-1 text-sm capitalize text-slate-500">{room.type}</p>
 
-            <div className="mt-5 space-y-3 text-sm">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-slate-500">Harga / malam / kamar</span>
-                <span className="font-semibold text-slate-900">{formatRupiah(room.basePrice)}</span>
-              </div>
-              {draft.roomCount > 1 && (
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-slate-500">{draft.roomCount} kamar</span>
-                  <span className="font-semibold text-slate-900">{formatRupiah(room.basePrice * draft.roomCount)}/malam</span>
+            {(() => {
+              const unitPrice = Number(room.discountedPrice ?? room.basePrice)
+              const hasPromo  = room.discountedPrice && room.discountedPrice < room.basePrice
+              return (
+                <div className="mt-5 space-y-3 text-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-slate-500">Harga / malam / kamar</span>
+                    <div className="text-right">
+                      {hasPromo && (
+                        <p className="text-xs text-slate-400 line-through leading-tight">{formatRupiah(room.basePrice)}</p>
+                      )}
+                      <p className={`font-semibold ${hasPromo ? 'text-orange-600' : 'text-slate-900'}`}>
+                        {formatRupiah(unitPrice)}
+                      </p>
+                      {hasPromo && room.appliedPromo && (
+                        <span className="inline-block mt-1 px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-700 text-[10px] font-bold">
+                          {room.appliedPromo.discountType === 'percent'
+                            ? `${Number(room.appliedPromo.discountValue)}% OFF`
+                            : `Hemat ${formatRupiah(room.appliedPromo.discountValue)}`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {draft.roomCount > 1 && (
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500">{draft.roomCount} kamar</span>
+                      <span className="font-semibold text-slate-900">{formatRupiah(unitPrice * draft.roomCount)}/malam</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-slate-500">Kapasitas</span>
+                    <span className="font-semibold text-slate-900">Maks. {perRoomCapacity} tamu/kamar</span>
+                  </div>
+                  {stayNights > 0 && (
+                    <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                      <span className="text-slate-500 text-xs">{formatRupiah(unitPrice)} × {stayNights} mlm × {draft.roomCount} kmr</span>
+                      <span className="font-bold text-orange-600">{formatRupiah(unitPrice * stayNights * draft.roomCount)}</span>
+                    </div>
+                  )}
                 </div>
-              )}
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-slate-500">Kapasitas</span>
-                <span className="font-semibold text-slate-900">Maks. {perRoomCapacity} tamu/kamar</span>
-              </div>
-              {stayNights > 0 && (
-                <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
-                  <span className="text-slate-500 text-xs">{formatRupiah(room.basePrice)} × {stayNights} mlm × {draft.roomCount} kmr</span>
-                  <span className="font-bold text-orange-600">{formatRupiah(room.basePrice * stayNights * draft.roomCount)}</span>
-                </div>
-              )}
-            </div>
+              )
+            })()}
 
             <button
               type="button"
@@ -671,6 +728,15 @@ export default function HotelDetail() {
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [galleryIdx, setGalleryIdx] = useState(0)
   const [inquiryOpen, setInquiryOpen] = useState(false)
+  const qc = useQueryClient()
+
+  // Unread badge untuk button "Chat Penginapan" — polling 15s
+  const { data: myInquiries } = useQuery({
+    queryKey: ['my-inquiries'],
+    queryFn : () => chatApi.myInquiries().then(r => r.data?.data || []),
+    enabled : !!token,
+    refetchInterval: 15000,
+  })
 
   // Scroll ke atas setiap kali masuk halaman detail / ganti hotel
   useEffect(() => {
@@ -683,6 +749,9 @@ export default function HotelDetail() {
   })
 
   const resolvedId = hotel?.id
+
+  // Unread untuk hotel ini saja
+  const inquiryUnread = (myInquiries || []).find(r => String(r.hotelId) === String(resolvedId))?.unreadCount ?? 0
 
   const { data: reviewData } = useQuery({
     queryKey: ['hotel-reviews', resolvedId],
@@ -1036,9 +1105,37 @@ export default function HotelDetail() {
                   <h2 className="mt-2 text-2xl font-bold text-slate-900">Temukan tipe kamar yang cocok</h2>
                 </div>
                 <div className="rounded-full bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
-                  {roomTypeCount} opsi tersedia
+                  {(() => {
+                    const avail = availData?.filter(r => r.available !== false).length || 0
+                    return `${avail} / ${roomTypeCount} opsi tersedia`
+                  })()}
                 </div>
               </div>
+
+              {/* Danger banner: ada kamar yang penuh/tutup */}
+              {(() => {
+                if (!availData?.length) return null
+                const closedRooms = availData.filter(r => r.available === false)
+                if (!closedRooms.length) return null
+                const allClosed = closedRooms.length === availData.length
+                return (
+                  <div className="mt-5 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100">
+                      <AlertTriangle className="h-5 w-5 text-red-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-red-700">
+                        Kamar sudah penuh
+                      </p>
+                      <p className="mt-0.5 text-xs leading-relaxed text-red-600">
+                        {allClosed
+                          ? 'Semua tipe kamar tidak tersedia untuk tanggal yang Anda pilih. Silakan coba tanggal lain.'
+                          : `${closedRooms.length} dari ${availData.length} tipe kamar tidak dapat dipesan untuk tanggal ini: ${closedRooms.map(r => r.name).join(', ')}.`}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })()}
 
               <div className="mt-5 space-y-4">
                 {availData?.map(room => (
@@ -1095,10 +1192,15 @@ export default function HotelDetail() {
                   if (!token) return navigate('/login')
                   setInquiryOpen(true)
                 }}
-                className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-orange-500 px-5 py-3 text-sm font-semibold text-orange-600 transition-colors hover:bg-orange-50"
+                className="relative mb-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-orange-500 px-5 py-3 text-sm font-semibold text-orange-600 transition-colors hover:bg-orange-50"
               >
                 <MessageSquare className="h-4 w-4" />
                 Chat Penginapan
+                {Number(inquiryUnread) > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] px-1 inline-flex items-center justify-center bg-red-500 text-white text-[10px] font-extrabold rounded-full border-2 border-white shadow-sm">
+                    {Number(inquiryUnread) > 99 ? '99+' : Number(inquiryUnread)}
+                  </span>
+                )}
               </button>
               <div className="rounded-[24px] bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_55%,#f8fafc_100%)] p-5">
                 <div className="flex items-center justify-between gap-3">
@@ -1205,13 +1307,19 @@ export default function HotelDetail() {
                     Ketersediaan kamar
                   </label>
 
+                  {/* Danger banner sidebar */}
+                  {sidebarRoomList.length > 0 && availableRooms.length === 0 && (
+                    <div className="mb-2 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-3 py-2.5">
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+                      <p className="text-[11px] font-semibold leading-snug text-red-700">
+                        Kamar sudah penuh untuk tanggal ini
+                      </p>
+                    </div>
+                  )}
+
                   {sidebarRoomList.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-4 text-center text-xs text-slate-500">
                       Belum ada data kamar.
-                    </div>
-                  ) : availableRooms.length === 0 ? (
-                    <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-4 text-center text-xs text-red-600">
-                      Tidak ada kamar tersedia untuk tanggal ini.
                     </div>
                   ) : (
                     <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
@@ -1354,7 +1462,10 @@ export default function HotelDetail() {
         open={inquiryOpen}
         hotelId={hotel.id}
         hotelName={hotel.name}
-        onClose={() => setInquiryOpen(false)}
+        onClose={() => {
+          setInquiryOpen(false)
+          qc.invalidateQueries({ queryKey: ['my-inquiries'] })
+        }}
       />
     </div>
   )

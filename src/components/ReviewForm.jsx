@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { reviewApi } from '@/services/reviewApi'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
-import { Star, Send, LogIn, CheckCircle2 } from 'lucide-react'
+import { Star, Send, LogIn, CheckCircle2, Lock, Calendar } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 /**
@@ -25,9 +25,17 @@ export default function ReviewForm({ targetType, targetId, invalidateKey }) {
   const [comment, setComment] = useState('')
   const [submitted, setSubmitted] = useState(false)
 
+  // Cek eligibility — hanya untuk hotel (property review pakai aturan lain)
+  const { data: eligibility, isLoading: checkingEligibility } = useQuery({
+    queryKey: ['review-eligibility', targetType, targetId],
+    queryFn : () => reviewApi.eligibilityHotel(targetId).then(r => r.data?.data),
+    enabled : !!token && targetType === 'hotel' && !!targetId,
+  })
+
   const mutation = useMutation({
     mutationFn: () => reviewApi.store({
       [targetType === 'hotel' ? 'hotelId' : 'propertyId']: targetId,
+      bookingId: eligibility?.bookingId,
       rating,
       comment: comment.trim(),
     }),
@@ -35,6 +43,7 @@ export default function ReviewForm({ targetType, targetId, invalidateKey }) {
       toast({ title: 'Ulasan terkirim. Menunggu persetujuan superadmin.' })
       setRating(0); setComment(''); setSubmitted(true)
       if (invalidateKey) qc.invalidateQueries({ queryKey: invalidateKey })
+      qc.invalidateQueries({ queryKey: ['review-eligibility', targetType, targetId] })
     },
     onError: (err) => {
       toast({
@@ -57,6 +66,52 @@ export default function ReviewForm({ targetType, targetId, invalidateKey }) {
         </button>
       </div>
     )
+  }
+
+  // Eligibility guard untuk hotel
+  if (targetType === 'hotel') {
+    if (checkingEligibility) {
+      return (
+        <div className="rounded-[26px] border border-slate-200 bg-white p-6 text-center">
+          <div className="mx-auto h-6 w-6 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin" />
+          <p className="mt-2 text-xs text-slate-400">Mengecek eligibilitas...</p>
+        </div>
+      )
+    }
+
+    if (eligibility && !eligibility.eligible) {
+      const reason = eligibility.reason
+      const messages = {
+        no_completed_booking: {
+          icon: Calendar,
+          title: 'Ulasan tersedia setelah menginap',
+          desc: 'Anda hanya bisa memberi ulasan setelah booking selesai. Lakukan booking & selesaikan masa tinggal Anda terlebih dahulu.',
+        },
+        already_reviewed: {
+          icon: CheckCircle2,
+          title: 'Anda sudah memberi ulasan',
+          desc: 'Terima kasih, Anda sudah pernah mengulas penginapan ini berdasarkan booking sebelumnya.',
+        },
+        must_login: {
+          icon: Lock,
+          title: 'Login dulu untuk mengulas',
+          desc: 'Silakan login untuk dapat memberi ulasan.',
+        },
+      }
+      const m = messages[reason] || {
+        icon: Lock,
+        title: 'Belum dapat mengulas',
+        desc: 'Ulasan hanya bisa diberikan oleh tamu yang sudah menginap.',
+      }
+      const Icon = m.icon
+      return (
+        <div className="rounded-[26px] border border-slate-200 bg-slate-50 p-6 text-center">
+          <Icon className="mx-auto h-10 w-10 text-slate-400" />
+          <p className="mt-3 text-sm font-semibold text-slate-800">{m.title}</p>
+          <p className="mt-1 text-xs text-slate-500 leading-relaxed max-w-md mx-auto">{m.desc}</p>
+        </div>
+      )
+    }
   }
 
   if (submitted) {

@@ -11,6 +11,9 @@ export const reviewApi = {
   // user: list ulasan miliknya sendiri
   mine: () => api.get('/reviews/mine'),
 
+  // user: cek apakah eligible review hotel ini (sudah pernah booking & check-out)
+  eligibilityHotel: (hotelId) => api.get(`/reviews/eligibility/hotel/${hotelId}`),
+
   // admin
   adminList: (params) => api.get('/admin/reviews', { params }),
   approve:   (id)     => api.post(`/admin/reviews/${id}/approve`),

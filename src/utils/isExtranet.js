@@ -13,8 +13,21 @@ export const isOwnerPortal = () => {
 
 export const isExtranet = () => isManagementPortal() || isOwnerPortal()
 
-export const isManagementRole = (role) => MANAGEMENT_ROLES.includes(role)
-export const isOwnerRole = (role) => OWNER_ROLES.includes(role)
+// Terima single role string ATAU array of roles (user bisa punya multi-role)
+const _asArray = (input) => Array.isArray(input) ? input : (input ? [input] : [])
+
+export const isManagementRole = (input) =>
+  _asArray(input).some(r => MANAGEMENT_ROLES.includes(r))
+
+export const isOwnerRole = (input) =>
+  _asArray(input).some(r => OWNER_ROLES.includes(r))
+
+// Convenience: terima user object → cek dari user.roles[] (multi-role) ATAU user.role (fallback)
+export const userHasOwnerRole = (user) =>
+  isOwnerRole(user?.roles || user?.role)
+
+export const userHasManagementRole = (user) =>
+  isManagementRole(user?.roles || user?.role)
 
 export const getCustomerPortalUrl = () => (
   (import.meta.env.VITE_CUSTOMER_URL || 'https://staging.arahinn.com').replace(/\/$/, '')

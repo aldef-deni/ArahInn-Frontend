@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { chatApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
-import { Send, MessageSquare, User, Calendar, HelpCircle } from 'lucide-react'
+import { Send, MessageSquare, User, Calendar, HelpCircle, Building2 } from 'lucide-react'
+import { getImageUrl } from '@/utils'
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -161,18 +162,35 @@ export default function OwnerChat() {
                       }`}>
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center shrink-0 text-slate-600">
-                            <User className="w-4 h-4" />
+                          <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center shrink-0 text-slate-600 overflow-hidden">
+                            {room.user?.avatar ? (
+                              <img
+                                src={getImageUrl(room.user.avatar)}
+                                alt={room.user?.name || 'Tamu'}
+                                className="w-full h-full object-cover"
+                                onError={(e) => { e.currentTarget.style.display = 'none' }}
+                              />
+                            ) : (
+                              <User className="w-4 h-4" />
+                            )}
                           </div>
                           <div className="min-w-0">
                             <p className={`text-sm font-semibold truncate ${isActive ? 'text-blue-700' : 'text-slate-900'}`}>
                               {room.user?.name || 'Tamu'}
                             </p>
-                            <p className="text-xs text-slate-400 truncate">
-                              {tab === 'inquiry'
-                                ? (room.hotel?.name || 'Tanya penginapan')
-                                : (room.booking?.bookingCode || `Booking #${room.bookingId}`)}
-                            </p>
+                            {/* Hotel badge — selalu tampil agar owner tahu via hotel mana */}
+                            {room.hotel?.name && (
+                              <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[10px] font-semibold max-w-full">
+                                <Building2 className="w-3 h-3 shrink-0" />
+                                <span className="truncate">{room.hotel.name}</span>
+                              </span>
+                            )}
+                            {/* Booking code (hanya untuk tab booking) */}
+                            {tab !== 'inquiry' && (room.booking?.bookingCode || room.bookingId) && (
+                              <p className="text-xs text-slate-400 truncate mt-0.5">
+                                {room.booking?.bookingCode || `Booking #${room.bookingId}`}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div className="shrink-0 text-right">
@@ -203,18 +221,34 @@ export default function OwnerChat() {
         <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
           <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700">
-              <User className="w-4 h-4" />
+            <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 shrink-0 overflow-hidden">
+              {activeRoomData?.user?.avatar ? (
+                <img
+                  src={getImageUrl(activeRoomData.user.avatar)}
+                  alt={activeRoomData.user?.name || 'Tamu'}
+                  className="w-full h-full object-cover"
+                  onError={(e) => { e.currentTarget.style.display = 'none' }}
+                />
+              ) : (
+                <User className="w-4 h-4" />
+              )}
             </div>
-            <div>
-              <p className="font-semibold text-slate-900 text-sm">{activeRoomData?.user?.name || 'Tamu'}</p>
-              <p className="text-xs text-slate-400">
-                {tab === 'inquiry'
-                  ? (activeRoomData?.hotel?.name ? `Tanya: ${activeRoomData.hotel.name}` : activeRoomData?.user?.email)
-                  : (activeRoomData?.booking?.bookingCode
-                      ? `Booking ${activeRoomData.booking.bookingCode}`
-                      : activeRoomData?.user?.email)}
-              </p>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-slate-900 text-sm truncate">{activeRoomData?.user?.name || 'Tamu'}</p>
+              <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                {activeRoomData?.hotel?.name && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[10px] font-semibold">
+                    <Building2 className="w-3 h-3" />
+                    {activeRoomData.hotel.name}
+                  </span>
+                )}
+                {tab === 'inquiry' ? (
+                  <span className="text-[10px] text-slate-500 font-medium">· Inquiry pra-booking</span>
+                ) : activeRoomData?.booking?.bookingCode ? (
+                  <span className="text-[10px] text-slate-500 font-medium">· Booking {activeRoomData.booking.bookingCode}</span>
+                ) : null}
+              </div>
+              <p className="text-[10px] text-slate-400 truncate mt-0.5">{activeRoomData?.user?.email}</p>
             </div>
           </div>
 

@@ -63,6 +63,9 @@ export const hotelApi = {
   bulkUpdatePrices: (hId, d)         => api.post(`/hotels/${hId}/rooms/prices/bulk`, d),
   toggleRoomNow   : (hId, rId)       => api.put(`/hotels/${hId}/rooms/${rId}/toggle-now`),
 
+  // Range view (Softblock Allotment): semua kamar × tanggal
+  getRoomPricesRange: (hId, params)  => api.get(`/hotels/${hId}/rooms/prices/range`, { params }),
+
   // Hotel fees
   getHotelFees  : (hId)        => api.get(`/hotels/${hId}/fees`),
   createHotelFee: (hId, d)     => api.post(`/hotels/${hId}/fees`, d),

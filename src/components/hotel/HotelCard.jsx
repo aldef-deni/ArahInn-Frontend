@@ -9,6 +9,10 @@ const facilityIcons = { wifi: Wifi, parking: Car, pool: Waves }
 export default function HotelCard({ hotel }) {
   const { t } = useTranslation()
   const lowestPrice = hotel.rooms?.[0]?.basePrice
+  // Harga setelah promo platform yang di-follow owner (jika ada)
+  const discountedPrice = hotel.discountedPrice
+  const appliedPromo    = hotel.appliedPromo
+  const hasPromo        = discountedPrice != null && lowestPrice && discountedPrice < lowestPrice
   const [imgError, setImgError] = useState(false)
 
   return (
@@ -68,8 +72,25 @@ export default function HotelCard({ hotel }) {
             {lowestPrice ? (
               <>
                 <p className="text-xs text-muted-foreground">{t('hotel.startFrom')}</p>
-                <p className="price-tag text-lg">{formatRupiah(lowestPrice)}</p>
-                <p className="text-xs text-muted-foreground">{t('hotel.perNight')}</p>
+                {hasPromo ? (
+                  <>
+                    <p className="text-xs text-slate-400 line-through leading-tight">{formatRupiah(lowestPrice)}</p>
+                    <p className="price-tag text-lg text-orange-600">{formatRupiah(discountedPrice)}</p>
+                    {appliedPromo && (
+                      <span className="inline-block mt-1 px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-700 text-[10px] font-bold">
+                        {appliedPromo.discountType === 'percent'
+                          ? `${Number(appliedPromo.discountValue)}% OFF`
+                          : `Hemat ${formatRupiah(appliedPromo.discountValue)}`}
+                      </span>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-0.5">{t('hotel.perNight')}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="price-tag text-lg">{formatRupiah(lowestPrice)}</p>
+                    <p className="text-xs text-muted-foreground">{t('hotel.perNight')}</p>
+                  </>
+                )}
               </>
             ) : (
               <p className="text-sm text-muted-foreground">{t('hotel.contactUs')}</p>

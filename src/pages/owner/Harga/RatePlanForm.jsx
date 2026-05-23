@@ -3,7 +3,7 @@ import { useOutletContext, useNavigate, useParams, useLocation } from 'react-rou
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
 import { useToast } from '@/hooks/use-toast'
-import { ChevronUp, Info, AlertCircle, Loader2 } from 'lucide-react'
+import { ChevronUp, Info, AlertCircle, Loader2, X } from 'lucide-react'
 import { cn } from '@/utils'
 import PriceInput from '@/components/ui/PriceInput'
 
@@ -34,6 +34,40 @@ function Row({ label, desc, children, noBorder }) {
         {desc && <p className="text-sm text-slate-500 mt-1 leading-relaxed">{desc}</p>}
       </div>
       <div>{children}</div>
+    </div>
+  )
+}
+
+/* ─── Default Rate info modal (mirip tiket.com) ─── */
+function DefaultRateModal({ onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-7 z-10">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-4 right-4 p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <h3 className="text-2xl font-bold text-slate-900 mb-4">Default Rate</h3>
+
+        <p className="text-sm text-slate-600 leading-relaxed mb-5">
+          Jika tidak ada rate, sistem akan menggunakan Default Rates agar kamar Anda tetap dapat dipesan dan menghindari potensi kehilangan booking.
+        </p>
+
+        <div className="flex items-start gap-2 mb-1">
+          <div className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center shrink-0 mt-0.5">
+            <AlertCircle className="w-3.5 h-3.5 text-white" />
+          </div>
+          <p className="text-sm font-bold text-slate-900">Info penting:</p>
+        </div>
+        <p className="text-sm text-slate-600 leading-relaxed pl-7">
+          Jika ada minimal 1 booking memakai Default Rate, <span className="font-bold text-slate-900">rate menjadi Custom</span> dan tidak akan mengikuti perubahan default selanjutnya.
+        </p>
+      </div>
     </div>
   )
 }
@@ -87,6 +121,7 @@ const DEFAULT_FORM = {
   },
   multiplier: 1.0,
   active: true,
+  is_default: false,
 }
 
 export default function RatePlanForm() {
@@ -98,6 +133,9 @@ export default function RatePlanForm() {
 
   const planType = location.state?.planType  // { id, label, minNights }
   const isEdit   = !!id
+
+  /* ─── Modal: Default Rate info ─── */
+  const [showDefaultRateModal, setShowDefaultRateModal] = useState(false)
 
   /* ─── Load existing plan for edit ─── */
   const { data: existingPlan, isLoading: planLoading } = useQuery({
@@ -219,6 +257,32 @@ export default function RatePlanForm() {
             placeholder="Nama Rate Plan"
             className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
           />
+        </Row>
+
+        <Row
+          label="Jadikan Default Rate"
+          desc="Rate plan default akan otomatis dipakai saat booking tidak match rate custom. Hanya boleh 1 default per properti."
+        >
+          <div className="space-y-2">
+            <label className="flex items-start gap-2.5 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={!!form.is_default}
+                onChange={e => upd('is_default', e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/30 cursor-pointer"
+              />
+              <div>
+                <p className="text-sm font-semibold text-slate-800">Aktifkan sebagai Default Rate</p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Bila dicentang, rate plan default lain di properti ini akan otomatis dimatikan.
+                  <button type="button" onClick={() => setShowDefaultRateModal(true)}
+                    className="ml-1 text-blue-600 underline hover:text-blue-700">
+                    Apa itu Default Rate?
+                  </button>
+                </p>
+              </div>
+            </label>
+          </div>
         </Row>
 
         <Row
@@ -356,7 +420,10 @@ export default function RatePlanForm() {
             <p className="text-xs text-red-500 font-semibold mb-2 flex items-start gap-1">
               <span className="shrink-0">Baru!</span>
               <span>Agar kamar Anda tetap dapat dipesan dan menghindari kehilangan potensi booking, atur Default Rates di sini.{' '}
-                <button className="text-blue-600 underline font-normal">Bagaimana ini memengaruhi booking?</button>
+                <button type="button" onClick={() => setShowDefaultRateModal(true)}
+                  className="text-blue-600 underline font-normal hover:text-blue-700">
+                  Bagaimana ini memengaruhi booking?
+                </button>
               </span>
             </p>
             <div className="space-y-2">
@@ -618,6 +685,11 @@ export default function RatePlanForm() {
           {isEdit ? 'Simpan Perubahan' : 'Tambah rate plan baru'}
         </button>
       </div>
+
+      {/* ── Default Rate info modal ── */}
+      {showDefaultRateModal && (
+        <DefaultRateModal onClose={() => setShowDefaultRateModal(false)} />
+      )}
     </div>
   )
 }

@@ -1,38 +1,15 @@
-import { useState, useCallback } from 'react'
+import { useCallback } from 'react'
+import { toast as globalToast } from '@/components/ui/toaster'
 
-let toastId = 0
-const listeners = []
-
-function dispatch(toast) {
-  listeners.forEach(fn => fn(toast))
-}
-
+/**
+ * useToast — hook tipis yang delegate ke fungsi toast global di toaster.jsx.
+ * Dengan begini, semua component yang pakai useToast() akan tampil di Toaster
+ * yang di-mount di App.jsx.
+ */
 export function useToast() {
-  const toast = useCallback(({ title, description, variant = 'default', duration = 4000 }) => {
-    dispatch({ id: ++toastId, title, description, variant, duration })
-  }, [])
-
+  const toast = useCallback((args) => globalToast(args), [])
   return { toast }
 }
 
-export function useToastState() {
-  const [toasts, setToasts] = useState([])
-
-  useState(() => {
-    const handler = (toast) => {
-      setToasts(prev => [...prev, toast])
-      setTimeout(() => {
-        setToasts(prev => prev.filter(t => t.id !== toast.id))
-      }, toast.duration)
-    }
-    listeners.push(handler)
-    return () => {
-      const i = listeners.indexOf(handler)
-      if (i > -1) listeners.splice(i, 1)
-    }
-  })
-
-  const dismiss = (id) => setToasts(prev => prev.filter(t => t.id !== id))
-
-  return { toasts, dismiss }
-}
+// Re-export untuk kompatibilitas (kalau ada yang import langsung)
+export { toast } from '@/components/ui/toaster'

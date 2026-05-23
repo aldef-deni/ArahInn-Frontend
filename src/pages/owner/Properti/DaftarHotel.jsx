@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
+import { userApi } from '@/services/index'
 import { wilayahApi } from '@/services/wilayahApi'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import {
   Check, ChevronDown, ChevronRight, ChevronUp, Loader2, Clock,
-  ArrowLeft, Send, Save, Plus, Info, Copy, AlertCircle, ImageIcon, X, Star, Upload,
+  ArrowLeft, Send, Save, Plus, Info, Copy, AlertCircle, ImageIcon, X, Star, Upload, Pencil,
 } from 'lucide-react'
-import { cn } from '@/utils'
+import { cn, getImageUrl } from '@/utils'
 import { validateImageFiles } from '@/utils/imageValidation'
 import MapEmbed from '@/components/ui/MapEmbed'
 import PriceInput from '@/components/ui/PriceInput'
@@ -104,8 +105,16 @@ const INIT = {
   name: '', alias: '', star_rating: null, is_brand_chain: false, currency: '',
   address: '', postal_code: '', province: '', city: '',
   district: '', village: '', country: 'Indonesia', latitude: '', longitude: '',
+  // Step 2 — Informasi Check-in
+  booking_min_age: '',
+  check_in_24h: false,
+  check_in_start:  '14:00',
+  check_in_end:    '23:00',
+  check_out_start: '06:00',
+  check_out_end:   '12:00',
   // Step 3
   position: '', phone: '', property_phone: '', fax: '',
+  voucher_emails: [],
   // Step 4
   company_name: '', company_address: '', company_country: 'Indonesia',
   agree_name: '', agree_position: '', agree_email: '', agree_phone: '',
@@ -329,6 +338,7 @@ function Step1({ form, setForm }) {
 // ── Step 2: Info Umum + Lokasi ─────────────────────────────────────────────
 function Step2({ form, setForm, wilayah }) {
   const [infoOpen, setInfoOpen]     = useState(true)
+  const [checkInOpen, setCheckInOpen] = useState(true)
   const [lokasiOpen, setLokasiOpen] = useState(true)
   const { provId, setProvId, kotaId, setKotaId, kecId, setKecId,
           provinces, regencies, districts, villages,
@@ -416,6 +426,109 @@ function Step2({ form, setForm, wilayah }) {
         </div>
       </CollapsibleSection>
 
+      <CollapsibleSection
+        title="Informasi Check-In"
+        subtitle="Kebijakan usia booking dan jam operasional check-in / check-out."
+        open={checkInOpen}
+        onToggle={() => setCheckInOpen(o => !o)}
+      >
+        <div className="space-y-5 pt-4">
+          {/* Minimal Umur Booking */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Minimal Umur untuk Booking <span className="text-slate-400 font-normal">(opsional)</span>
+            </label>
+            <p className="text-xs text-slate-500 mb-2">Usia minimum tamu yang diperbolehkan melakukan pemesanan. Kosongkan jika tidak ada batas.</p>
+            <div className="relative max-w-xs">
+              <input
+                type="number"
+                min={0}
+                max={99}
+                value={form.booking_min_age ?? ''}
+                onChange={e => setForm(p => ({ ...p, booking_min_age: e.target.value === '' ? '' : Number(e.target.value) }))}
+                placeholder="Contoh: 18"
+                className="w-full px-4 py-2.5 pr-16 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">tahun</span>
+            </div>
+          </div>
+
+          {/* 24 Jam Toggle */}
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!form.check_in_24h}
+                onChange={e => setForm(p => ({ ...p, check_in_24h: e.target.checked }))}
+                className="mt-0.5 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/30 cursor-pointer"
+              />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-slate-900">Check-in 24 Jam</p>
+                <p className="text-xs text-slate-500 mt-0.5">Tamu dapat check-in kapan saja, 24/7. Jam check-in di bawah akan dinonaktifkan.</p>
+              </div>
+            </label>
+          </div>
+
+          {/* Check-In Range */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Jam Check-In <span className="text-red-500">*</span>
+            </label>
+            <p className="text-xs text-slate-500 mb-2">Rentang waktu tamu dapat check-in di properti Anda.</p>
+            <div className="grid grid-cols-2 gap-3 max-w-md">
+              <div>
+                <p className="text-xs text-slate-500 mb-1">Mulai</p>
+                <input
+                  type="time"
+                  value={form.check_in_start || '14:00'}
+                  disabled={form.check_in_24h}
+                  onChange={e => setForm(p => ({ ...p, check_in_start: e.target.value }))}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:bg-slate-100 disabled:text-slate-400"
+                />
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 mb-1">Hingga</p>
+                <input
+                  type="time"
+                  value={form.check_in_end || '23:00'}
+                  disabled={form.check_in_24h}
+                  onChange={e => setForm(p => ({ ...p, check_in_end: e.target.value }))}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 disabled:bg-slate-100 disabled:text-slate-400"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Check-Out Range */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Jam Check-Out <span className="text-red-500">*</span>
+            </label>
+            <p className="text-xs text-slate-500 mb-2">Rentang waktu tamu harus melakukan check-out.</p>
+            <div className="grid grid-cols-2 gap-3 max-w-md">
+              <div>
+                <p className="text-xs text-slate-500 mb-1">Mulai</p>
+                <input
+                  type="time"
+                  value={form.check_out_start || '06:00'}
+                  onChange={e => setForm(p => ({ ...p, check_out_start: e.target.value }))}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                />
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 mb-1">Hingga</p>
+                <input
+                  type="time"
+                  value={form.check_out_end || '12:00'}
+                  onChange={e => setForm(p => ({ ...p, check_out_end: e.target.value }))}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </CollapsibleSection>
+
       <CollapsibleSection title="Infokan Lokasi Properti" subtitle="Lengkapi detail di bawah ini dengan benar untuk memudahkan tamu menemukan propertimu." open={lokasiOpen} onToggle={() => setLokasiOpen(o => !o)}>
         <div className="space-y-4 pt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -439,8 +552,66 @@ function Step2({ form, setForm, wilayah }) {
           {(form.city || form.province) && (
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Google Map</label>
+
+              {/* Manual Latitude / Longitude — overrides geocoding */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Latitude</label>
+                  <input
+                    type="number"
+                    step="any"
+                    inputMode="decimal"
+                    value={form.latitude ?? ''}
+                    onChange={e => setForm(p => ({ ...p, latitude: e.target.value === '' ? '' : e.target.value }))}
+                    onPaste={e => {
+                      // Auto-detect "lat,lng" format paste (Google Maps right-click coords)
+                      const text = e.clipboardData.getData('text').trim()
+                      const m = text.match(/^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/)
+                      if (m) {
+                        e.preventDefault()
+                        setForm(p => ({ ...p, latitude: m[1], longitude: m[2] }))
+                      }
+                    }}
+                    placeholder="-6.200000"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Longitude</label>
+                  <input
+                    type="number"
+                    step="any"
+                    inputMode="decimal"
+                    value={form.longitude ?? ''}
+                    onChange={e => setForm(p => ({ ...p, longitude: e.target.value === '' ? '' : e.target.value }))}
+                    placeholder="106.816666"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-start justify-between gap-3 mb-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl">
+                <div className="flex items-start gap-2">
+                  <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-blue-700 leading-relaxed">
+                    Atur titik peta secara akurat. Buka <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" className="underline font-medium">Google Maps</a>, klik kanan di lokasi properti, klik koordinatnya, lalu paste di kolom Latitude (format <span className="font-mono bg-white/60 px-1 rounded">-6.2, 106.8</span> otomatis terisi keduanya).
+                  </p>
+                </div>
+                {(form.latitude || form.longitude) && (
+                  <button
+                    type="button"
+                    onClick={() => setForm(p => ({ ...p, latitude: '', longitude: '' }))}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-700 whitespace-nowrap shrink-0"
+                  >
+                    Reset auto
+                  </button>
+                )}
+              </div>
+
               <MapEmbed
                 query={[form.address, form.village, form.district, form.city, form.province, 'Indonesia'].filter(Boolean).join(', ')}
+                lat={form.latitude ? parseFloat(form.latitude) : undefined}
+                lng={form.longitude ? parseFloat(form.longitude) : undefined}
                 height={280}
                 onCoords={(lat, lng) => setForm(p => ({ ...p, latitude: lat, longitude: lng }))}
               />
@@ -454,7 +625,11 @@ function Step2({ form, setForm, wilayah }) {
 
 // ── Step 3: Detail Kontak ──────────────────────────────────────────────────
 function Step3Kontak({ form, setForm, user }) {
-  const [extraEmails, setExtraEmails] = useState([])
+  const extraEmails = Array.isArray(form.voucher_emails) ? form.voucher_emails : []
+  const setExtraEmails = (updater) => setForm(p => ({
+    ...p,
+    voucher_emails: typeof updater === 'function' ? updater(Array.isArray(p.voucher_emails) ? p.voucher_emails : []) : updater,
+  }))
   const [extraPhones, setExtraPhones] = useState([])
   const [extraPropPh, setExtraPropPh] = useState([])
   const [extraFaxes,  setExtraFaxes]  = useState([])
@@ -487,18 +662,39 @@ function Step3Kontak({ form, setForm, user }) {
         <label className="block text-sm font-medium text-slate-700 mb-1.5">Alamat Email</label>
         <input value={user?.email || ''} readOnly
           className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-500 cursor-not-allowed" />
-        <p className="text-xs text-slate-400 mt-1.5">Alamat email ini tidak dapat diubah. Untuk menambahkan alamat email lain, silakan buat pengguna baru.</p>
+        <p className="text-xs text-slate-400 mt-1.5">Alamat email utama (akun owner) tidak dapat diubah.</p>
+
         {extraEmails.map((val, i) => (
-          <div key={i} className="mt-2">
-            <input value={val} onChange={e => setExtraEmails(prev => prev.map((v, idx) => idx === i ? e.target.value : v))}
-              placeholder="Email tambahan"
-              className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+          <div key={i} className="mt-2 flex items-center gap-2">
+            <input
+              type="email"
+              value={val}
+              onChange={e => setExtraEmails(prev => prev.map((v, idx) => idx === i ? e.target.value : v))}
+              placeholder="email-tambahan@contoh.com"
+              className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+            />
+            <button
+              type="button"
+              onClick={() => setExtraEmails(prev => prev.filter((_, idx) => idx !== i))}
+              className="px-3 py-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+              title="Hapus email ini"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         ))}
+
         <button type="button" onClick={() => setExtraEmails(p => [...p, ''])}
           className="mt-2 flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium">
           <Plus className="w-3.5 h-3.5" /> Tambah email lain
         </button>
+
+        <div className="mt-2 flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl">
+          <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-800 leading-relaxed">
+            E-voucher booking akan otomatis dikirim ke email utama (owner) <strong>dan semua email tambahan</strong> yang Anda daftarkan di sini.
+          </p>
+        </div>
       </div>
 
       <div>
@@ -953,9 +1149,16 @@ function Step6Fasilitas({ form, setForm }) {
 function PhotoThumb({ file, isMain, onSetMain, onRemove }) {
   const [url, setUrl] = useState('')
   useEffect(() => {
-    const u = URL.createObjectURL(file)
-    setUrl(u)
-    return () => URL.revokeObjectURL(u)
+    // Existing photo (sudah ter-upload): { existing: true, path, url, category }
+    if (file && typeof file === 'object' && file.existing) {
+      setUrl(file.url || getImageUrl(file.path) || '')
+      return
+    }
+    if (file instanceof File || file instanceof Blob) {
+      const u = URL.createObjectURL(file)
+      setUrl(u)
+      return () => URL.revokeObjectURL(u)
+    }
   }, [file])
 
   return (
@@ -1119,7 +1322,7 @@ function Step7Foto({ form, setForm }) {
                 <input
                   type="file"
                   multiple
-                  accept="image/*"
+                  accept="image/jpeg,image/jpg,.jpg,.jpeg"
                   className="hidden"
                   onChange={e => { if (e.target.files?.length) addFiles(group.id, e.target.files) }}
                 />
@@ -1648,7 +1851,7 @@ function RoomForm({ room, onChange, onRemove, index, showErrors }) {
                   <label className="aspect-square border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-blue-300 hover:bg-blue-50/40 transition-colors">
                     <ImageIcon className="w-7 h-7 text-slate-300" />
                     <span className="text-xs text-slate-400 font-medium">+ Tambah foto</span>
-                    <input type="file" multiple accept="image/*" className="hidden"
+                    <input type="file" multiple accept="image/jpeg,image/jpg,.jpg,.jpeg" className="hidden"
                       onChange={e => { if (e.target.files?.length) addPhotos(pg.id, e.target.files) }} />
                   </label>
                 </div>
@@ -2407,11 +2610,37 @@ function calcTimeLeft(savedAt) {
 }
 
 // ── Main ───────────────────────────────────────────────────────────────────
-export default function DaftarHotel() {
+// Props:
+//   editId   — opsional; jika diisi, mode edit (override URL param).
+//              Dipakai oleh halaman Owner "Detail Properti" yang me-render
+//              komponen ini inline dengan ID hotel dari outlet context.
+export default function DaftarHotel({ editId: editIdProp } = {}) {
   const { toast }  = useToast()
   const navigate   = useNavigate()
+  const params     = useParams()
+  const location   = useLocation()
   const { user }   = useAuthStore()
   const qc         = useQueryClient()
+
+  // Edit mode: dari prop, URL param `:id`, atau path /xxx/hotels/:id/edit
+  const editId    = editIdProp ? String(editIdProp)
+                  : params?.id ? String(params.id)
+                  : null
+  const isEditMode = !!editId
+
+  // Path detection
+  const isAdminPath  = location.pathname.startsWith('/admin/')
+  const isOwnerPath  = location.pathname.startsWith('/owner/')
+
+  // Admin create mode: route `/admin/hotels/new-full?owner_id=X`
+  const queryParams  = new URLSearchParams(location.search)
+  const adminOwnerId = queryParams.get('owner_id') || ''
+  const isAdminCreate = isAdminPath && !isEditMode && !!adminOwnerId
+
+  // Owner edit (inline di /owner/properti) → jangan navigate setelah save,
+  // cukup refresh data + toast.
+  const isOwnerInlineEdit = isOwnerPath && isEditMode && !!editIdProp
+
   const [step, setStep]       = useState(1)
   const [success, setSuccess]         = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -2421,8 +2650,8 @@ export default function DaftarHotel() {
   const [kotaId, setKotaId]   = useState('')
   const [kecId, setKecId]     = useState('')
 
-  // ── Draft: state ──
-  const draftKey = user?.id ? `arahin_hotel_draft_${user.id}` : null
+  // ── Draft: state (hanya untuk create mode owner — skip di admin create & edit) ──
+  const draftKey = (!isEditMode && !isAdminCreate && user?.id) ? `arahin_hotel_draft_${user.id}` : null
   const [showDraftModal, setShowDraftModal] = useState(false)
   const [draftMeta, setDraftMeta]           = useState(null)
 
@@ -2430,9 +2659,9 @@ export default function DaftarHotel() {
     if (draftKey) try { localStorage.removeItem(draftKey) } catch {}
   }
 
-  // Cek draft on mount
+  // Cek draft on mount (skip dalam edit mode)
   useEffect(() => {
-    if (!draftKey) return
+    if (!draftKey || isEditMode) return
     try {
       const raw = localStorage.getItem(draftKey)
       if (!raw) return
@@ -2445,9 +2674,9 @@ export default function DaftarHotel() {
     } catch {}
   }, []) // eslint-disable-line
 
-  // Auto-save draft (debounced 800ms)
+  // Auto-save draft (debounced 800ms) — skip dalam edit mode
   useEffect(() => {
-    if (!draftKey || success) return
+    if (!draftKey || success || isEditMode) return
     if (step === 1 && !form.category) return
     const timer = setTimeout(() => {
       try {
@@ -2460,6 +2689,184 @@ export default function DaftarHotel() {
     }, 800)
     return () => clearTimeout(timer)
   }, [form, step, success]) // eslint-disable-line
+
+  // ── Edit Mode: fetch & populate ──
+  const { data: hotelData, isLoading: hotelLoading } = useQuery({
+    queryKey: ['hotel-edit-full', editId],
+    queryFn: () => hotelApi.getById(editId).then(r => r.data.data),
+    enabled: isEditMode,
+  })
+
+  // ── Admin Create Mode: fetch owner info untuk banner ──
+  const { data: adminOwner } = useQuery({
+    queryKey: ['admin-owner-info', adminOwnerId],
+    queryFn: () => userApi.getById(adminOwnerId).then(r => r.data?.data || r.data),
+    enabled: isAdminCreate && !!adminOwnerId,
+  })
+
+  useEffect(() => {
+    if (!isEditMode || !hotelData) return
+    const h = hotelData
+
+    // ── Helper: ambil value dari obj dengan toleransi snake/camel case
+    // axios response interceptor sudah camelize tapi kita tetap fallback
+    // ke snake_case untuk kompatibilitas dengan response yang belum di-intercept
+    const f = (obj, snakeKey, fallback = undefined) => {
+      if (!obj) return fallback
+      if (obj[snakeKey] !== undefined && obj[snakeKey] !== null) return obj[snakeKey]
+      const camelKey = snakeKey.replace(/_([a-z])/g, (_, c) => c.toUpperCase())
+      if (obj[camelKey] !== undefined && obj[camelKey] !== null) return obj[camelKey]
+      return fallback
+    }
+
+    // Hotel photos → photo_groups, group by category
+    const imagesArr = Array.isArray(h.images) ? h.images : []
+    const grouped = {}
+    imagesArr.forEach((img) => {
+      const cat = (img && typeof img === 'object') ? (img.category || '') : ''
+      const path = (img && typeof img === 'object') ? img.path : img
+      if (!path) return
+      if (!grouped[cat]) grouped[cat] = []
+      grouped[cat].push({ existing: true, path, url: getImageUrl(path), category: cat })
+    })
+    const photoGroups = Object.keys(grouped).length
+      ? Object.entries(grouped).map(([cat, files], i) => ({
+          id: Date.now() + i,
+          category: cat,
+          files,
+          mainIdx: files.length > 0 ? 0 : null,
+        }))
+      : [{ id: Date.now(), category: '', files: [], mainIdx: null }]
+
+    // Rooms
+    const rooms = (Array.isArray(h.rooms) ? h.rooms : []).map((r, i) => {
+      const rImg = Array.isArray(r.images) ? r.images : []
+      const rGrouped = {}
+      rImg.forEach((img) => {
+        const cat = (img && typeof img === 'object') ? (img.category || '') : ''
+        const path = (img && typeof img === 'object') ? img.path : img
+        if (!path) return
+        if (!rGrouped[cat]) rGrouped[cat] = []
+        rGrouped[cat].push({ existing: true, path, url: getImageUrl(path), category: cat })
+      })
+      const rPhotoGroups = Object.keys(rGrouped).length
+        ? Object.entries(rGrouped).map(([cat, files], j) => ({
+            id: Date.now() + i * 100 + j,
+            category: cat,
+            files,
+            mainIdx: files.length > 0 ? 0 : null,
+          }))
+        : [{ id: Date.now() + i, category: '', files: [], mainIdx: null }]
+
+      // Bed configs: BE bisa kirim {bed_type,bed_count} atau {bedType,bedCount}
+      const rawBedConfigs = f(r, 'bed_configs', [])
+      const bedConfigs = Array.isArray(rawBedConfigs) && rawBedConfigs.length
+        ? rawBedConfigs.map((bc, k) => ({
+            id: k + 1,
+            bed_type:  f(bc, 'bed_type',  ''),
+            bed_count: f(bc, 'bed_count', ''),
+          }))
+        : [{ id: 1, bed_type: '', bed_count: '' }]
+
+      const basePrice = f(r, 'base_price')
+      const maxGuests = f(r, 'max_guests', 0)
+
+      return {
+        id: r.id,
+        room_type: r.type || '',
+        room_name: r.name || '',
+        smoking_policy: f(r, 'smoking_policy', null),
+        price_threshold: basePrice != null ? String(basePrice) : '1000000',
+        max_occupancy: Number(maxGuests || 0),
+        has_bedrooms: f(r, 'has_bedrooms', null),
+        bed_configs: bedConfigs,
+        room_facilities: Array.isArray(r.facilities) ? r.facilities : [],
+        photo_groups: rPhotoGroups,
+      }
+    })
+
+    // Breakfast hour/minute
+    const [bfStartH, bfStartM] = String(f(h, 'breakfast_start', '06:00')).split(':')
+    const [bfEndH,   bfEndM  ] = String(f(h, 'breakfast_end',   '10:00')).split(':')
+
+    const npwpNumber = f(h, 'npwp_number', '')
+
+    setForm({
+      ...INIT,
+      guestTypes: Array.isArray(f(h, 'guest_types')) ? f(h, 'guest_types') : [],
+      category: h.category || '',
+      name: h.name || '',
+      alias: h.alias || '',
+      description: h.description || '',
+      star_rating: f(h, 'star_rating', null),
+      is_brand_chain: !!f(h, 'is_brand_chain', false),
+      currency: h.currency || 'IDR',
+      address: h.address || '',
+      postal_code: f(h, 'postal_code', ''),
+      province: h.province || '',
+      city: h.city || '',
+      district: h.district || '',
+      village: h.village || '',
+      country: h.country || 'Indonesia',
+      latitude:  h.latitude  != null ? String(h.latitude)  : '',
+      longitude: h.longitude != null ? String(h.longitude) : '',
+      booking_min_age: f(h, 'booking_min_age', ''),
+      // check_in_24h kena edge case interceptor (_24 tidak ter-camel) → coba semua varian
+      check_in_24h: !!(h.check_in_24h ?? h.checkIn_24h ?? h.checkIn24h ?? false),
+      check_in_start: String(f(h, 'check_in_start', '14:00')).slice(0,5),
+      check_in_end:   String(f(h, 'check_in_end',   '23:00')).slice(0,5),
+      check_out_start:String(f(h, 'check_out_start','06:00')).slice(0,5),
+      check_out_end:  String(f(h, 'check_out_end',  '12:00')).slice(0,5),
+      position: f(h, 'pic_position', ''),
+      phone:    f(h, 'pic_phone', ''),
+      property_phone: f(h, 'property_phone', ''),
+      fax: h.fax || '',
+      company_name:    f(h, 'company_name', ''),
+      company_address: f(h, 'company_address', ''),
+      company_country: f(h, 'company_country', 'Indonesia'),
+      agree_name:     f(h, 'agree_name', ''),
+      agree_position: f(h, 'agree_position', ''),
+      agree_email:    f(h, 'agree_email', ''),
+      agree_phone:    f(h, 'agree_phone', ''),
+      voucher_emails: Array.isArray(f(h, 'voucher_emails')) ? f(h, 'voucher_emails') : [],
+      check1: true, check2: true, check3: true, check4: true,
+      platforms: (h.platforms && typeof h.platforms === 'object') ? h.platforms : {},
+      platform_none: !(h.platforms && Object.keys(h.platforms).length),
+      facilities: Array.isArray(h.facilities) ? h.facilities : [],
+      photo_groups: photoGroups,
+      gender_policy:       f(h, 'gender_policy', null),
+      marriage_book:       f(h, 'marriage_book', null),
+      deposit_required:    f(h, 'deposit_required', null),
+      all_ages_allowed:    f(h, 'all_ages_allowed', null),
+      min_age:             f(h, 'min_age', null),
+      breakfast_available: f(h, 'breakfast_available', null),
+      breakfast_start_hour: bfStartH || '06',
+      breakfast_start_minute: bfStartM || '00',
+      breakfast_end_hour:   bfEndH || '10',
+      breakfast_end_minute: bfEndM || '00',
+      smoking_allowed: f(h, 'smoking_allowed', null),
+      alcohol_allowed: f(h, 'alcohol_allowed', null),
+      pets_allowed:    f(h, 'pets_allowed', null),
+      payment_method:      f(h, 'payment_method', ''),
+      bank_name:           f(h, 'bank_name', ''),
+      bank_branch:         f(h, 'bank_branch', ''),
+      bank_account_name:   f(h, 'bank_account_name', ''),
+      bank_account_number: f(h, 'bank_account_number', ''),
+      vcc_accepted_types: Array.isArray(f(h, 'vcc_accepted_types')) ? f(h, 'vcc_accepted_types') : [],
+      vcc_email:        f(h, 'vcc_email', ''),
+      vcc_account_name: f(h, 'vcc_account_name', ''),
+      npwp_type:    f(h, 'npwp_type', null),
+      npwp_number:  npwpNumber,
+      npwp_name:    f(h, 'npwp_name', ''),
+      nitku_number: f(h, 'nitku_number', ''),
+      nitku_name:   f(h, 'nitku_name', ''),
+      npwp_agree1: !!npwpNumber,
+      npwp_agree2: !!npwpNumber,
+      cancellation_policy: f(h, 'cancellation_policy', ''),
+      registration_source: f(h, 'registration_source', ''),
+      rooms: rooms.length ? rooms : INIT.rooms,
+    })
+  }, [isEditMode, hotelData])
 
   const { data: provinces, isLoading: provLoading } = useQuery({
     queryKey: ['wilayah-provinces'],
@@ -2485,6 +2892,25 @@ export default function DaftarHotel() {
     staleTime: 24 * 60 * 60 * 1000,
   })
 
+  // ── Edit mode: reverse lookup wilayah ID dari nama setelah data tiba ──
+  useEffect(() => {
+    if (!isEditMode || !provinces || provId || !form.province) return
+    const match = provinces.find(p => p.name?.toLowerCase() === form.province.toLowerCase())
+    if (match) setProvId(match.id)
+  }, [isEditMode, provinces, form.province])
+
+  useEffect(() => {
+    if (!isEditMode || !regencies || kotaId || !form.city) return
+    const match = regencies.find(r => r.name?.toLowerCase() === form.city.toLowerCase())
+    if (match) setKotaId(match.id)
+  }, [isEditMode, regencies, form.city])
+
+  useEffect(() => {
+    if (!isEditMode || !districts || kecId || !form.district) return
+    const match = districts.find(d => d.name?.toLowerCase() === form.district.toLowerCase())
+    if (match) setKecId(match.id)
+  }, [isEditMode, districts, form.district])
+
   const mutation = useMutation({
     mutationFn: () => {
       const fd = new FormData()
@@ -2503,6 +2929,9 @@ export default function DaftarHotel() {
         'npwp_type','npwp_number','npwp_name',
         'nitku_number','nitku_name',
         'registration_source',
+        // info check-in (Step 2)
+        'booking_min_age','check_in_24h',
+        'check_in_start','check_in_end','check_out_start','check_out_end',
         // kebijakan step 8
         'gender_policy','marriage_book','deposit_required','all_ages_allowed','min_age',
         'breakfast_available',
@@ -2514,19 +2943,35 @@ export default function DaftarHotel() {
         if (form[k] !== '' && form[k] != null) fd.append(k, form[k])
       })
 
+      // ── Admin create mode: kirim owner_id eksplisit ──
+      if (isAdminCreate && adminOwnerId) {
+        fd.append('owner_id', adminOwnerId)
+      }
+
       // ── JSON fields ──
       fd.append('guest_types',       JSON.stringify(form.guestTypes || []))
       fd.append('facilities',        JSON.stringify(form.facilities || []))
       fd.append('platforms',         JSON.stringify(form.platforms || {}))
       fd.append('vcc_accepted_types',JSON.stringify(form.vcc_accepted_types || []))
+      fd.append('voucher_emails',    JSON.stringify(
+        (form.voucher_emails || []).map(e => (e || '').trim()).filter(Boolean)
+      ))
 
       // ── Hotel photos ──
+      const existingHotelImages = []
       ;(form.photo_groups || []).forEach((group, gi) => {
         fd.append(`photo_categories[${gi}]`, group.category || '')
         ;(group.files || []).forEach(file => {
-          if (file instanceof File) fd.append(`hotel_photos[${gi}][]`, file)
+          if (file instanceof File) {
+            fd.append(`hotel_photos[${gi}][]`, file)
+          } else if (file && file.existing && file.path) {
+            existingHotelImages.push({ path: file.path, category: group.category || file.category || '' })
+          }
         })
       })
+      if (isEditMode) {
+        fd.append('existing_images', JSON.stringify(existingHotelImages))
+      }
 
       // ── NPWP / NITKU docs ──
       if (form.npwp_doc instanceof File)        fd.append('npwp_doc',         form.npwp_doc)
@@ -2535,6 +2980,7 @@ export default function DaftarHotel() {
 
       // ── Rooms meta (JSON) + room photos ──
       const roomsMeta = (form.rooms || []).map(r => ({
+        id:              r.id || null,
         room_type:       r.room_type,
         room_name:       r.room_name,
         smoking_policy:  r.smoking_policy,
@@ -2547,19 +2993,51 @@ export default function DaftarHotel() {
       fd.append('rooms_meta', JSON.stringify(roomsMeta))
 
       ;(form.rooms || []).forEach((room, ri) => {
+        const existingRoomImages = []
         ;(room.photo_groups || []).forEach((group, gi) => {
           fd.append(`room_photos_category[${ri}][${gi}]`, group.category || '')
           ;(group.files || []).forEach(file => {
-            if (file instanceof File) fd.append(`room_photos[${ri}][${gi}][]`, file)
+            if (file instanceof File) {
+              fd.append(`room_photos[${ri}][${gi}][]`, file)
+            } else if (file && file.existing && file.path) {
+              existingRoomImages.push({ path: file.path, category: group.category || file.category || '' })
+            }
           })
         })
+        if (isEditMode) {
+          fd.append(`existing_room_photos[${ri}]`, JSON.stringify(existingRoomImages))
+        }
       })
 
-      return hotelApi.create(fd)
+      return isEditMode
+        ? hotelApi.update(editId, fd)
+        : hotelApi.create(fd)
     },
-    onSuccess: () => { clearDraft(); qc.invalidateQueries({ queryKey: ['owner-my-hotels'] }); setSuccess(true) },
+    onSuccess: () => {
+      clearDraft()
+      qc.invalidateQueries({ queryKey: ['owner-my-hotels'] })
+      qc.invalidateQueries({ queryKey: ['owner-hotel-active'] })
+      qc.invalidateQueries({ queryKey: ['admin-hotels'] })
+      qc.invalidateQueries({ queryKey: ['pending-hotels'] })
+      qc.invalidateQueries({ queryKey: ['hotel-edit-full', editId] })
+      if (isEditMode) {
+        toast({ title: 'Perubahan berhasil disimpan.' })
+        if (isOwnerInlineEdit) {
+          // tetap di /owner/properti, biarkan user lanjut mengedit
+        } else if (isAdminPath) {
+          navigate('/admin/hotels')
+        } else if (isOwnerPath) {
+          navigate('/owner/properti')
+        }
+      } else if (isAdminCreate) {
+        toast({ title: 'Hotel baru berhasil dibuat untuk owner terpilih.' })
+        navigate('/admin/hotels')
+      } else {
+        setSuccess(true)
+      }
+    },
     onError: (e) => toast({
-      title: 'Gagal mendaftarkan hotel',
+      title: isEditMode ? 'Gagal menyimpan perubahan' : 'Gagal mendaftarkan hotel',
       description: e?.response?.data?.message || 'Terjadi kesalahan.',
       variant: 'destructive',
     }),
@@ -2630,6 +3108,16 @@ export default function DaftarHotel() {
     setStep(1); setForm(INIT); setSuccess(false)
     setProvId(''); setKotaId(''); setKecId('')
   }
+
+  // ── Edit mode: tampilkan loader saat fetch data hotel ──
+  if (isEditMode && hotelLoading) return (
+    <div className="max-w-lg mx-auto mt-10">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 text-center">
+        <Loader2 className="w-8 h-8 text-blue-500 animate-spin mx-auto mb-4" />
+        <p className="text-sm text-slate-500">Memuat data properti...</p>
+      </div>
+    </div>
+  )
 
   if (success) return (
     <div className="max-w-lg mx-auto mt-6">
@@ -2754,6 +3242,46 @@ export default function DaftarHotel() {
       </div>
     )}
 
+    {/* Edit mode banner */}
+    {isEditMode && (
+      <div className="mb-4 flex items-center gap-3 px-5 py-3.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-2xl shadow-sm">
+        <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+          <Pencil className="w-4 h-4" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold">
+            {isOwnerInlineEdit ? 'Detail Properti — Mode Edit' : 'Mode Edit Properti'}
+          </p>
+          <p className="text-xs text-blue-100 truncate">
+            Anda sedang mengedit data properti{form.name ? ` "${form.name}"` : ''}.{' '}
+            {isOwnerInlineEdit
+              ? 'Gunakan tombol Finish atau Simpan Perubahan di Langkah 12 untuk menyimpan.'
+              : 'Perubahan akan tersimpan setelah Anda menekan tombol Simpan di Langkah 12.'}
+          </p>
+        </div>
+      </div>
+    )}
+
+    {/* Admin create mode banner */}
+    {isAdminCreate && (
+      <div className="mb-4 flex items-center gap-3 px-5 py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-2xl shadow-sm">
+        <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+          <Plus className="w-4 h-4" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold">Mode Admin: Tambah Hotel untuk Owner</p>
+          <p className="text-xs text-emerald-100 truncate">
+            Hotel baru akan tercatat atas nama{' '}
+            <span className="font-bold">
+              {adminOwner?.name || `Owner #${adminOwnerId}`}
+              {adminOwner?.email && ` (${adminOwner.email})`}
+            </span>
+            . Setelah submit, owner langsung dapat mengelolanya.
+          </p>
+        </div>
+      </div>
+    )}
+
     <div className="flex gap-6 items-start">
       <StepSidebar current={step} />
 
@@ -2796,22 +3324,46 @@ export default function DaftarHotel() {
 
         {/* Action bar */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-4 flex items-center justify-between">
-          <button type="button" onClick={() => step > 1 ? setStep(s => s - 1) : navigate('/owner')}
+          <button type="button" onClick={() => {
+            if (step > 1) { setStep(s => s - 1); return }
+            if (isOwnerInlineEdit) return                 // tetap di /owner/properti
+            if (isEditMode || isAdminCreate) {
+              navigate(isAdminPath ? '/admin/hotels' : '/owner/properti')
+            } else {
+              navigate('/owner')
+            }
+          }}
             className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
             <ArrowLeft className="w-4 h-4" />
             {step > 1 ? 'Kembali' : 'Batal'}
           </button>
           <div className="flex items-center gap-3">
-            <button type="button" onClick={() => toast({ title: 'Draft tersimpan.' })}
-              className="hidden sm:flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
-              <Save className="w-4 h-4" /> Simpan Draft
-            </button>
+            {!isEditMode && (
+              <button type="button" onClick={() => toast({ title: 'Draft tersimpan.' })}
+                className="hidden sm:flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                <Save className="w-4 h-4" /> Simpan Draft
+              </button>
+            )}
+
+            {/* Finish button — hanya tampil di edit mode, di setiap step kecuali step terakhir */}
+            {isEditMode && step < STEPS.length && (
+              <button type="button"
+                onClick={() => setShowConfirm(true)}
+                disabled={mutation.isPending}
+                className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-sm">
+                {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {mutation.isPending ? 'Menyimpan...' : 'Finish'}
+              </button>
+            )}
+
             <button type="button" onClick={handleNext} disabled={mutation.isPending}
               className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm">
               {step === STEPS.length ? (
                 <>
                   {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  {mutation.isPending ? 'Mengirim...' : 'SUBMIT'}
+                  {mutation.isPending
+                    ? (isEditMode ? 'Menyimpan...' : 'Mengirim...')
+                    : (isEditMode ? 'SIMPAN PERUBAHAN' : 'SUBMIT')}
                 </>
               ) : (
                 <>Lanjutkan <ChevronRight className="w-4 h-4" /></>
@@ -2827,14 +3379,18 @@ export default function DaftarHotel() {
       <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-7">
           <div className="flex items-start justify-between mb-4">
-            <h2 className="text-lg font-bold text-slate-900">Ajukan registrasi properti?</h2>
+            <h2 className="text-lg font-bold text-slate-900">
+              {isEditMode ? 'Simpan perubahan properti?' : 'Ajukan registrasi properti?'}
+            </h2>
             <button type="button" onClick={() => setShowConfirm(false)}
               className="p-1 rounded-lg hover:bg-slate-100 transition-colors -mt-1 -mr-1">
               <X className="w-5 h-5 text-slate-400" />
             </button>
           </div>
           <p className="text-sm text-slate-500 mb-7">
-            Pastikan semua detail sudah benar, ya. Kamu tidak bisa mengubahnya setelah registrasi diajukan.
+            {isEditMode
+              ? 'Semua perubahan akan langsung tersimpan dan menggantikan data sebelumnya.'
+              : 'Pastikan semua detail sudah benar, ya. Kamu tidak bisa mengubahnya setelah registrasi diajukan.'}
           </p>
           <div className="flex gap-3">
             <button type="button" onClick={() => setShowConfirm(false)}
@@ -2845,7 +3401,9 @@ export default function DaftarHotel() {
               onClick={() => { setShowConfirm(false); mutation.mutate() }}
               disabled={mutation.isPending}
               className="flex-1 py-2.5 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm">
-              {mutation.isPending ? 'Mengirim...' : 'YA, SUBMIT'}
+              {mutation.isPending
+                ? (isEditMode ? 'Menyimpan...' : 'Mengirim...')
+                : (isEditMode ? 'YA, SIMPAN' : 'YA, SUBMIT')}
             </button>
           </div>
         </div>

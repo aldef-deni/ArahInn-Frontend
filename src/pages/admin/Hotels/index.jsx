@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { adminApi, userApi } from '@/services/index'
@@ -9,7 +10,7 @@ import { validateImageFiles } from '@/utils/imageValidation'
 import {
   Plus, Search, Star, MapPin, Eye, Pencil, Trash2, X, Save,
   Building2, CheckCircle2, XCircle, Tag, ChevronLeft, ChevronRight,
-  AlertTriangle, Hotel, ImagePlus,
+  AlertTriangle, Hotel, ImagePlus, DollarSign,
 } from 'lucide-react'
 
 // ── Constants ────────────────────────────────────────────────────────────
@@ -120,23 +121,13 @@ function HotelFormDrawer({ hotel, onClose }) {
   }
 
   const handleImageSelect = async (e) => {
-    const allowed = ['jpg', 'jpeg', 'png', 'webp']
     const files   = Array.from(e.target.files || [])
     e.target.value = ''
     if (!files.length) return
 
-    const extErrors = []
-    const extOk = files.filter(f => {
-      const ext = f.name.split('.').pop().toLowerCase()
-      if (!allowed.includes(ext)) {
-        extErrors.push(`${f.name}: format harus .jpg .jpeg .png .webp`)
-        return false
-      }
-      return true
-    })
-
-    const { validFiles, errors } = await validateImageFiles(extOk)
-    const allErrors = [...extErrors, ...errors]
+    // Validasi unified: ekstensi JPG/JPEG, max 5MB, min 800px (semua dilakukan di validateImageFiles)
+    const { validFiles, errors } = await validateImageFiles(files)
+    const allErrors = errors
     if (allErrors.length) {
       toast({ title: 'Beberapa foto ditolak', description: allErrors.join('\n'), variant: 'destructive' })
     }
@@ -169,7 +160,7 @@ function HotelFormDrawer({ hotel, onClose }) {
               <Building2 className="w-5 h-5 text-brand" />
             </div>
             <div>
-              <h2 className="font-bold text-slate-900">{hotel ? 'Edit Hotel' : 'Tambah Hotel'}</h2>
+              <h2 className="font-bold text-slate-900">{hotel ? 'Edit Akomodasi' : 'Tambah Akomodasi'}</h2>
               <p className="text-xs text-slate-500">{hotel ? hotel.name : 'Isi detail properti baru'}</p>
             </div>
           </div>
@@ -242,14 +233,31 @@ function HotelFormDrawer({ hotel, onClose }) {
 
             {/* Owner */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Pemilik (Owner)</label>
-              <select {...register('ownerId')}
-                className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand">
-                <option value="">-- Tidak Ada / Pilih Nanti --</option>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                Pemilik (Owner) {!hotel && <span className="text-red-500">*</span>}
+              </label>
+              <select
+                {...register('ownerId', !hotel ? {
+                  required: 'Pemilik (Owner) wajib dipilih sebelum hotel baru disimpan.',
+                } : {})}
+                className={`w-full px-4 py-2.5 border rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand ${
+                  errors.ownerId ? 'border-red-300' : 'border-slate-200'
+                }`}>
+                <option value="">
+                  {hotel ? '-- Tidak Ada / Pilih Nanti --' : '-- Pilih Owner --'}
+                </option>
                 {ownersData?.map(u => (
                   <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
                 ))}
               </select>
+              {errors.ownerId && (
+                <p className="text-red-500 text-xs mt-1">{errors.ownerId.message}</p>
+              )}
+              {!hotel && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Hotel baru wajib terhubung ke akun owner agar bisa dikelola dan menerima booking.
+                </p>
+              )}
             </div>
 
             {/* Description */}
@@ -338,7 +346,7 @@ function HotelFormDrawer({ hotel, onClose }) {
                     <span className="text-xs text-slate-400 text-center leading-tight">
                       Tambah<br />foto
                     </span>
-                    <input type="file" multiple accept=".jpg,.jpeg,.png,.webp" className="hidden"
+                    <input type="file" multiple accept="image/jpeg,image/jpg,.jpg,.jpeg" className="hidden"
                       onChange={handleImageSelect} />
                   </label>
                 )}
@@ -363,6 +371,238 @@ function HotelFormDrawer({ hotel, onClose }) {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  )
+}
+
+// ── OwnerPickerModal ─────────────────────────────────────────────────────
+// Tampil saat superadmin klik "Tambah Hotel". User wajib pilih owner dulu
+// sebelum lanjut ke form multi-step DaftarHotel.
+function OwnerPickerModal({ onClose }) {
+  const navigate = useNavigate()
+  const [search, setSearch] = useState('')
+  const [pickedId, setPickedId] = useState(null)
+
+  const { data: owners, isLoading } = useQuery({
+    queryKey: ['owner-users-picker'],
+    queryFn : () => userApi.getAll({ role: 'owner', limit: 200 }).then(r => r.data?.data || []),
+  })
+
+  const filtered = (owners || []).filter(u =>
+    !search ||
+    u.name?.toLowerCase().includes(search.toLowerCase()) ||
+    u.email?.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const handleContinue = () => {
+    if (!pickedId) return
+    navigate(`/admin/hotels/new-full?owner_id=${pickedId}`)
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-slate-100 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="font-bold text-slate-900">Pilih Pemilik (Owner)</h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Hotel baru wajib terhubung ke akun owner. Pilih owner terlebih dahulu sebelum lanjut.
+            </p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 shrink-0">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="px-6 pt-4 pb-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Cari nama atau email owner..."
+              className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+            />
+          </div>
+        </div>
+
+        {/* Owner list */}
+        <div className="px-3 pb-3 max-h-[320px] overflow-y-auto">
+          {isLoading && (
+            <p className="px-3 py-6 text-center text-sm text-slate-400">Memuat daftar owner...</p>
+          )}
+          {!isLoading && !filtered.length && (
+            <p className="px-3 py-6 text-center text-sm text-slate-400">
+              {search ? 'Owner tidak ditemukan.' : 'Belum ada owner terdaftar.'}
+            </p>
+          )}
+          {filtered.map(u => {
+            const picked = pickedId === u.id
+            return (
+              <button
+                key={u.id}
+                type="button"
+                onClick={() => setPickedId(u.id)}
+                className={`w-full flex items-start gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${
+                  picked ? 'bg-blue-50 border border-blue-200' : 'border border-transparent hover:bg-slate-50'
+                }`}
+              >
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
+                  picked ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {u.name?.[0]?.toUpperCase() || 'O'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-900 truncate">{u.name}</p>
+                  <p className="text-xs text-slate-500 truncate">{u.email}</p>
+                </div>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 ${
+                  picked ? 'border-blue-600 bg-blue-600' : 'border-slate-300'
+                }`}>
+                  {picked && <div className="w-2 h-2 rounded-full bg-white" />}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">
+          <button onClick={onClose}
+            className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-white transition-colors">
+            Batal
+          </button>
+          <button onClick={handleContinue} disabled={!pickedId}
+            className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2">
+            Lanjut ke Form
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── CommissionModal ──────────────────────────────────────────────────────
+// Modal untuk set/ubah persentase komisi per hotel.
+// Markup "Pajak & Others" di BE = commission_percent + 2% PPh.
+function CommissionModal({ hotel, onClose }) {
+  const { toast } = useToast()
+  const qc        = useQueryClient()
+
+  const initial = hotel.commissionPercent ?? hotel.commission_percent ?? 10
+  const [value, setValue] = useState(String(initial))
+
+  const mutation = useMutation({
+    mutationFn: () => adminApi.updateHotelCommission(hotel.id, Number(value)),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['admin-hotels'] })
+      toast({ title: res?.data?.message || 'Komisi berhasil disimpan.' })
+      onClose()
+    },
+    onError: (e) => toast({
+      title: 'Gagal menyimpan komisi',
+      description: e?.response?.data?.message || 'Terjadi kesalahan.',
+      variant: 'destructive',
+    }),
+  })
+
+  const numeric = Number(value)
+  const isValid = Number.isFinite(numeric) && numeric >= 0 && numeric <= 100
+  const finalMarkup = isValid ? (numeric + 2).toFixed(2) : '—'
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-slate-100 flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+              <DollarSign className="w-5 h-5 text-emerald-700" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-bold text-slate-900">Atur Komisi</h3>
+              <p className="text-xs text-slate-500 mt-0.5 truncate">{hotel.name}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 shrink-0">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Persentase Komisi <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step="0.01"
+                value={value}
+                onChange={e => setValue(e.target.value)}
+                placeholder="10"
+                autoFocus
+                className="w-full px-4 py-3 pr-12 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">%</span>
+            </div>
+            <p className="text-xs text-slate-500 mt-1.5">
+              Masukkan angka 0–100. Komisi ini ditarik dari setiap pesanan kamar.
+            </p>
+          </div>
+
+          {/* Breakdown info */}
+          <div className="rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3 text-sm">
+            <p className="font-bold text-emerald-900 mb-2">Perhitungan akhir di customer:</p>
+            <div className="space-y-1 text-emerald-800">
+              <div className="flex justify-between">
+                <span>Komisi properti</span>
+                <span className="font-semibold">{isValid ? `${numeric.toFixed(2)}%` : '—'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>+ PPh</span>
+                <span className="font-semibold">2.00%</span>
+              </div>
+              <div className="flex justify-between pt-1.5 mt-1.5 border-t border-emerald-200">
+                <span className="font-bold">Total "Pajak &amp; Others"</span>
+                <span className="font-extrabold">{finalMarkup}%</span>
+              </div>
+              <p className="text-[11px] text-emerald-700/80 pt-1">
+                Belum termasuk PPN 11% yang dihitung dari subtotal.
+              </p>
+            </div>
+          </div>
+
+          {!isValid && value !== '' && (
+            <p className="text-xs text-red-600 flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              Persentase harus antara 0 dan 100.
+            </p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+          <button onClick={onClose}
+            className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-white transition-colors">
+            Batal
+          </button>
+          <button
+            onClick={() => mutation.mutate()}
+            disabled={!isValid || mutation.isPending}
+            className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+            {mutation.isPending ? 'Menyimpan...' : <>
+              <Save className="w-4 h-4" /> Simpan Komisi
+            </>}
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -419,12 +659,15 @@ function DeleteConfirm({ hotel, onClose }) {
 export default function AdminHotels() {
   const { toast } = useToast()
   const qc        = useQueryClient()
+  const navigate  = useNavigate()
 
   const [search,      setSearch]      = useState('')
   const [status,      setStatus]      = useState('')
   const [page,        setPage]        = useState(1)
-  const [drawer,      setDrawer]      = useState(null)  // null | 'create' | hotel object
+  const [drawer,      setDrawer]      = useState(null)  // null | hotel object (untuk quick edit drawer lama, opsional)
   const [deleteTarget,setDeleteTarget]= useState(null)
+  const [ownerPickerOpen, setOwnerPickerOpen] = useState(false)
+  const [commissionTarget, setCommissionTarget] = useState(null) // hotel object
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-hotels', search, status, page],
@@ -489,12 +732,12 @@ export default function AdminHotels() {
           <option value="blocked">Diblokir</option>
         </select>
         <span className="text-sm text-slate-400 hidden sm:block">
-          {pagination.total ?? 0} hotel
+          {pagination.total ?? 0} akomodasi
         </span>
-        <button onClick={() => setDrawer('create')}
+        <button onClick={() => setOwnerPickerOpen(true)}
           className="flex items-center gap-2 px-4 py-2.5 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-700 transition-colors shadow-sm ml-auto">
           <Plus className="w-4 h-4" />
-          Tambah Hotel
+          Tambah Akomodasi
         </button>
       </div>
 
@@ -504,7 +747,7 @@ export default function AdminHotels() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
-                {['Hotel', 'Kota', 'Bintang', 'Pemilik', 'Fasilitas', 'Status', 'Aksi'].map(h => (
+                {['Akomodasi', 'Kota', 'Bintang', 'Kategori', 'Pemilik', 'Status', 'Komisi', 'Aksi'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                     {h}
                   </th>
@@ -515,7 +758,7 @@ export default function AdminHotels() {
               {isLoading
                 ? Array(5).fill(0).map((_, i) => (
                     <tr key={i}>
-                      {Array(7).fill(0).map((_, j) => (
+                      {Array(8).fill(0).map((_, j) => (
                         <td key={j} className="px-4 py-3.5">
                           <div className="skeleton h-4 rounded-lg" />
                         </td>
@@ -524,7 +767,7 @@ export default function AdminHotels() {
                   ))
                 : hotels.map(hotel => (
                     <tr key={hotel.id} className="hover:bg-slate-50/70 transition-colors group">
-                      {/* Hotel */}
+                      {/* Akomodasi */}
                       <td className="px-4 py-3.5 max-w-[220px]">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 shrink-0">
@@ -554,6 +797,14 @@ export default function AdminHotels() {
                           </span>
                         ) : <span className="text-slate-300">–</span>}
                       </td>
+                      {/* Kategori */}
+                      <td className="px-4 py-3.5">
+                        {hotel.category
+                          ? <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 whitespace-nowrap">
+                              {hotel.category}
+                            </span>
+                          : <span className="text-slate-300">–</span>}
+                      </td>
                       {/* Pemilik */}
                       <td className="px-4 py-3.5">
                         {hotel.owner
@@ -563,25 +814,26 @@ export default function AdminHotels() {
                             </div>
                           : <span className="text-slate-300">–</span>}
                       </td>
-                      {/* Fasilitas */}
-                      <td className="px-4 py-3.5">
-                        <div className="flex flex-wrap gap-1 max-w-[160px]">
-                          {hotel.facilities?.slice(0, 3).map(f => (
-                            <span key={f} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-xs">{f}</span>
-                          ))}
-                          {hotel.facilities?.length > 3 && (
-                            <span className="px-2 py-0.5 bg-brand/10 text-brand rounded-md text-xs">
-                              +{hotel.facilities.length - 3}
-                            </span>
-                          )}
-                          {!hotel.facilities?.length && <span className="text-slate-300 text-xs">–</span>}
-                        </div>
-                      </td>
                       {/* Status */}
                       <td className="px-4 py-3.5">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_MAP[hotel.status]?.cls}`}>
                           {STATUS_MAP[hotel.status]?.label || hotel.status}
                         </span>
+                      </td>
+                      {/* Komisi */}
+                      <td className="px-4 py-3.5">
+                        {hotel.commissionPercent != null ? (
+                          <div>
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700">
+                              {Number(hotel.commissionPercent).toFixed(2)}%
+                            </span>
+                            <p className="text-[10px] text-slate-400 mt-1">
+                              markup {(Number(hotel.commissionPercent) + 2).toFixed(2)}%
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-300 italic">belum diset</span>
+                        )}
                       </td>
                       {/* Aksi */}
                       <td className="px-4 py-3.5">
@@ -592,11 +844,17 @@ export default function AdminHotels() {
                             title="Lihat di website">
                             <Eye className="w-4 h-4" />
                           </a>
-                          {/* Edit */}
-                          <button onClick={() => setDrawer(hotel)}
+                          {/* Edit (full multi-step form) */}
+                          <button onClick={() => navigate(`/admin/hotels/${hotel.id}/edit`)}
                             className="p-1.5 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600 transition-colors"
-                            title="Edit hotel">
+                            title="Edit hotel (form lengkap)">
                             <Pencil className="w-4 h-4" />
+                          </button>
+                          {/* Atur Komisi */}
+                          <button onClick={() => setCommissionTarget(hotel)}
+                            className="p-1.5 rounded-lg hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition-colors"
+                            title="Atur komisi platform">
+                            <DollarSign className="w-4 h-4" />
                           </button>
                           {/* Approve */}
                           {hotel.status !== 'approved' && (
@@ -664,11 +922,24 @@ export default function AdminHotels() {
         </div>
       )}
 
-      {/* Drawer: Create or Edit */}
-      {drawer && (
+      {/* Drawer: Edit cepat (legacy — sekarang hanya dipakai kalau ada caller lain) */}
+      {drawer && drawer !== 'create' && (
         <HotelFormDrawer
-          hotel={drawer === 'create' ? null : drawer}
+          hotel={drawer}
           onClose={() => setDrawer(null)}
+        />
+      )}
+
+      {/* Owner picker modal — wajib dilewati sebelum tambah hotel baru */}
+      {ownerPickerOpen && (
+        <OwnerPickerModal onClose={() => setOwnerPickerOpen(false)} />
+      )}
+
+      {/* Commission modal */}
+      {commissionTarget && (
+        <CommissionModal
+          hotel={commissionTarget}
+          onClose={() => setCommissionTarget(null)}
         />
       )}
 

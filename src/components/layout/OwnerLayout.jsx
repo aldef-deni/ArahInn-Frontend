@@ -12,7 +12,7 @@ import {
   BedDouble, ClipboardList, ShieldCheck, MessageSquare, PlusCircle,
   CheckCircle2, Clock, XCircle, ChevronRight, DollarSign, Megaphone,
   X, Mail, Phone, User, Layers, RefreshCw, Receipt, Activity,
-  Calendar, Users, Star,
+  Calendar, Users, Star, Headphones,
 } from 'lucide-react'
 import { cn, getImageUrl } from '@/utils'
 import NotificationBell from '@/components/ui/NotificationBell'
@@ -129,8 +129,8 @@ const MENU_SECTIONS = [
     items: [
       { to: '/owner/harga/pricing-model',    label: 'Pricing Model',         icon: Layers      },
       { to: '/owner/harga/rate-plan',        label: 'Rate Plan',             icon: Tag         },
-      { to: '/owner/harga/harga-anak',       label: 'Kebijakan Harga Anak',  icon: Users       },
-      { to: '/owner/harga/atur',             label: 'Atur Harga & Tersedia', icon: Calendar    },
+      { to: '/owner/harga/harga-anak',       label: 'Kebijakan & Harga untuk Anak', icon: Users },
+      { to: '/owner/harga/atur',             label: 'Atur Harga & Ketersediaan', icon: Calendar },
       { to: '/owner/harga/bulk-update',      label: 'Bulk Update',           icon: RefreshCw   },
       { to: '/owner/harga/biaya-tambahan',   label: 'Biaya Tambahan',        icon: Receipt     },
       { to: '/owner/harga/ketersediaan-now', label: 'Ketersediaan Now',      icon: Activity    },
@@ -515,59 +515,88 @@ export default function OwnerLayout() {
       <div className="min-h-screen xl:ml-[280px]">
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex flex-col gap-5 px-5 py-5 md:px-8 xl:px-10">
-            <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-center">
-              <div className="flex min-w-0 items-start gap-4">
-                <div className="hidden h-14 w-14 items-center justify-center rounded-3xl bg-blue-50 text-blue-700 md:flex">
-                  <Building2 className="h-7 w-7" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-500">Selamat datang, {user?.name || 'Owner'}</p>
-                  <h1 className="mt-1 truncate text-2xl font-bold tracking-tight text-slate-900">
-                    {hotel?.name || 'Kelola Properti Anda'}
-                  </h1>
-                  {(() => {
-                    const stars = parseInt(hotel?.starRating, 10)
-                    if (!stars || stars < 1) return null
-                    return (
-                      <div className="mt-1.5 flex items-center gap-0.5">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star
-                            key={i}
-                            className={cn(
-                              'h-4 w-4 shrink-0',
-                              i < stars
-                                ? 'fill-amber-400 text-amber-400'
-                                : 'fill-slate-200 text-slate-200'
-                            )}
-                          />
-                        ))}
-                        <span className="ml-1.5 text-xs font-semibold text-amber-600">{stars} Bintang</span>
-                      </div>
-                    )
-                  })()}
-                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
-                    <span className="font-medium text-slate-700">{propertyCode}</span>
-                    <span className="flex items-center gap-1.5">
-                      <MapPin className="h-4 w-4" />
-                      {hotel?.city || 'Indonesia'}
-                    </span>
-                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                      {hotel?.status === 'approved' ? 'Properti aktif' : 'Menunggu persetujuan'}
-                    </span>
-                  </div>
+            {/* Top row: title (flexible) + actions (shrink-0) */}
+            <div className="flex items-start gap-4">
+              {/* Icon */}
+              <div className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-3xl bg-blue-50 text-blue-700 md:flex">
+                <Building2 className="h-7 w-7" />
+              </div>
+
+              {/* Title block — flexible, can shrink */}
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-slate-500">Selamat datang, {user?.name || 'Owner'}</p>
+                <h1
+                  className="mt-1 text-xl font-bold leading-tight tracking-tight text-slate-900 sm:text-2xl"
+                  title={hotel?.name || ''}
+                  style={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {hotel?.name || 'Kelola Properti Anda'}
+                </h1>
+                {(() => {
+                  const stars = parseInt(hotel?.starRating, 10)
+                  if (!stars || stars < 1) return null
+                  return (
+                    <div className="mt-1.5 flex items-center gap-0.5">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={cn(
+                            'h-4 w-4 shrink-0',
+                            i < stars
+                              ? 'fill-amber-400 text-amber-400'
+                              : 'fill-slate-200 text-slate-200'
+                          )}
+                        />
+                      ))}
+                      <span className="ml-1.5 text-xs font-semibold text-amber-600">{stars} Bintang</span>
+                    </div>
+                  )
+                })()}
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-slate-500">
+                  <span className="font-medium text-slate-700">{propertyCode}</span>
+                  <span className="flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4" />
+                    {hotel?.city || 'Indonesia'}
+                  </span>
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
+                    {hotel?.status === 'approved' ? 'Properti aktif' : 'Menunggu persetujuan'}
+                  </span>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
+              {/* Actions — shrink-0, ringkas */}
+              <div className="flex shrink-0 items-center gap-2">
                 <button
                   onClick={() => setMmOpen(true)}
-                  className="rounded-full bg-blue-50 px-5 py-3 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100">
-                  Hubungi Market Manager
+                  title="Hubungi Market Manager"
+                  className="hidden items-center gap-2 rounded-full bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100 lg:flex"
+                >
+                  <Headphones className="h-4 w-4" />
+                  <span className="hidden xl:inline">Hubungi Market Manager</span>
+                  <span className="xl:hidden">Market Manager</span>
                 </button>
-                <button className="flex items-center gap-2 rounded-full border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
+                <button
+                  onClick={() => setMmOpen(true)}
+                  title="Hubungi Market Manager"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-700 transition-colors hover:bg-blue-100 lg:hidden"
+                >
+                  <Headphones className="h-4 w-4" />
+                </button>
+
+                <button
+                  title="Bahasa ID"
+                  className="flex h-10 items-center gap-1.5 rounded-full border border-slate-200 px-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                >
                   <Languages className="h-4 w-4" />
-                  Bahasa ID
+                  <span className="hidden sm:inline">ID</span>
                 </button>
+
                 <NotificationBell />
               </div>
             </div>
@@ -588,7 +617,12 @@ export default function OwnerLayout() {
         </header>
 
         <main className="px-5 py-6 md:px-8 xl:px-10">
-          <div className="page-enter">
+          {/*
+            key={hotel?.id} → force remount setiap owner ganti hotel aktif.
+            Tanpa key ini state lokal di submenu (mis. selectedRoom, draft,
+            editing) bocor dari hotel sebelumnya.
+          */}
+          <div className="page-enter" key={hotel?.id || 'no-hotel'}>
             <Outlet context={{ hotel, allHotels, setSelectedHotelId }} />
           </div>
         </main>

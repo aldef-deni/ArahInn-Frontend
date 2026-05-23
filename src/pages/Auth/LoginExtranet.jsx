@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { authApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
-import { Eye, EyeOff, Mail, Lock, LogIn } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, LogIn, UserPlus } from 'lucide-react'
 import {
   getCustomerPortalUrl,
   getManagementPortalUrl,
@@ -24,22 +24,26 @@ export default function LoginExtranet() {
   const managementMode = isManagementPortal()
   const ownerMode = isOwnerPortal()
 
-  const { register, handleSubmit, formState: { errors } } = useForm()
+  const { register, handleSubmit, formState: { errors }, setError } = useForm()
 
   const mutation = useMutation({
     mutationFn: (d) => authApi.login(d),
     onSuccess: (r) => {
       const { user, accessToken, refreshToken } = r.data.data
-      if (managementMode && !isManagementRole(user.role)) {
-        if (isOwnerRole(user.role)) {
+
+      // Cek dari array `roles` (multi-role) — fallback ke `role` (single)
+      const rolesPayload = user.roles || user.role
+      const isMgmt   = isManagementRole(rolesPayload)
+      const isOwner  = isOwnerRole(rolesPayload)
+
+      if (managementMode && !isMgmt) {
+        if (isOwner) {
           toast({
             title: 'Gunakan portal Extranet',
             description: 'Akun owner properti harus login melalui extranet.arahinn.com.',
             variant: 'destructive',
           })
-          setTimeout(() => {
-            window.location.href = getOwnerPortalUrl('/owner')
-          }, 1200)
+          setTimeout(() => { window.location.href = getOwnerPortalUrl('/owner') }, 1200)
           return
         }
         toast({
@@ -47,22 +51,18 @@ export default function LoginExtranet() {
           description: 'Akun ini bukan akun pengelola. Gunakan portal utama arahinn.com.',
           variant: 'destructive',
         })
-        setTimeout(() => {
-          window.location.href = getCustomerPortalUrl()
-        }, 1200)
+        setTimeout(() => { window.location.href = getCustomerPortalUrl() }, 1200)
         return
       }
 
-      if (ownerMode && !isOwnerRole(user.role)) {
-        if (isManagementRole(user.role)) {
+      if (ownerMode && !isOwner) {
+        if (isMgmt) {
           toast({
             title: 'Gunakan portal Kelola',
             description: 'Akun pengelola harus login melalui kelola.arahinn.com.',
             variant: 'destructive',
           })
-          setTimeout(() => {
-            window.location.href = getManagementPortalUrl('/admin')
-          }, 1200)
+          setTimeout(() => { window.location.href = getManagementPortalUrl('/admin') }, 1200)
           return
         }
         toast({
@@ -70,21 +70,32 @@ export default function LoginExtranet() {
           description: 'Akun ini bukan akun owner properti. Gunakan portal utama arahinn.com.',
           variant: 'destructive',
         })
-        setTimeout(() => {
-          window.location.href = getCustomerPortalUrl()
-        }, 1200)
+        setTimeout(() => { window.location.href = getCustomerPortalUrl() }, 1200)
         return
       }
 
-      setAuth(user, accessToken, refreshToken)
+      // Force primary role saat di extranet: kalau user multi-role,
+      // set role aktif sesuai portal yang sedang diakses
+      const effectiveUser = { ...user, role: ownerMode ? 'owner' : (isMgmt ? (user.role || 'admin') : user.role) }
+
+      setAuth(effectiveUser, accessToken, refreshToken)
       toast({ title: `Selamat datang, ${user.name}!` })
-      navigate(isOwnerRole(user.role) ? '/owner' : '/admin')
+      navigate(ownerMode ? '/owner' : '/admin')
     },
-    onError: (e) => toast({
-      title: 'Login gagal',
-      description: e?.response?.data?.message || 'Email atau password salah.',
-      variant: 'destructive',
-    }),
+    onError: (e) => {
+      const code = e?.response?.data?.error
+      const msg  = e?.response?.data?.message
+
+      if (code === 'email_not_found') {
+        setError('email', { type: 'server', message: 'Email Anda Salah / belum terdaftar.' })
+        toast({ title: 'Email Anda Salah', description: msg || 'Email belum terdaftar di sistem.', variant: 'destructive' })
+      } else if (code === 'wrong_password') {
+        setError('password', { type: 'server', message: 'Password Anda Salah.' })
+        toast({ title: 'Password Anda Salah', description: msg || 'Periksa kembali password yang Anda masukkan.', variant: 'destructive' })
+      } else {
+        toast({ title: 'Login gagal', description: msg || 'Email atau password salah.', variant: 'destructive' })
+      }
+    },
   })
 
   const onSubmit = (d) => mutation.mutate(d)
@@ -131,6 +142,21 @@ export default function LoginExtranet() {
           {mutation.isPending ? 'Memproses...' : 'Masuk'}
         </button>
       </form>
+
+      {/* Register CTA — hanya untuk owner portal */}
+      {ownerMode && (
+        <div className="mt-6 p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl">
+          <p className="text-sm font-semibold text-slate-900 mb-1">Belum punya akun owner?</p>
+          <p className="text-xs text-slate-600 mb-3 leading-relaxed">
+            Daftarkan properti Anda sekarang dan mulai menerima booking dari ribuan tamu.
+          </p>
+          <Link to="/register"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl text-xs font-bold hover:from-amber-600 hover:to-orange-600 transition-all shadow-sm shadow-amber-200">
+            <UserPlus className="w-3.5 h-3.5" />
+            Daftar Sebagai Owner
+          </Link>
+        </div>
+      )}
 
       <p className="mt-8 pt-6 border-t border-muted text-center text-xs text-muted-foreground">
         Bukan pengelola properti?{' '}

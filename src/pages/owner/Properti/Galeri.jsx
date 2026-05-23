@@ -273,7 +273,7 @@ export default function PropertiGaleri() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/jpg,.jpg,.jpeg"
                     multiple
                     className="hidden"
                     onChange={handleFileSelect}

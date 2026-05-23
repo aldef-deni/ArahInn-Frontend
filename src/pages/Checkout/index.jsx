@@ -34,6 +34,7 @@ export default function Checkout() {
   })
   const [pricing, setPricing] = useState(null)
   const [promoApplied, setPromoApplied] = useState(false)
+  const [promoError, setPromoError] = useState('')
 
   const { data: hotel } = useQuery({
     queryKey: ['hotel-checkout', hotelId],
@@ -89,7 +90,40 @@ export default function Checkout() {
       }),
   })
 
-  const handleApplyPromo = () => calcMutation.mutate()
+  // Apply promo dengan handler khusus — kalau gagal, reset field + tampil inline error
+  const applyPromoMutation = useMutation({
+    mutationFn: (code) =>
+      bookingApi.calcPrice({
+        roomId,
+        checkIn,
+        checkOut,
+        roomCount,
+        promoCode: code,
+        usePoints: form.usePoints,
+      }),
+    onSuccess: (r) => {
+      const data = r.data.data
+      // BE sukses tapi promo tidak menghasilkan diskon → anggap kode tidak valid
+      if (!data?.promoDiscount || data.promoDiscount <= 0) {
+        setPromoError('Kode promo salah atau tidak berlaku.')
+        setForm(prev => ({ ...prev, promoCode: '' }))
+        return
+      }
+      setPricing(data)
+      setPromoApplied(true)
+      setPromoError('')
+    },
+    onError: (e) => {
+      setPromoError(e?.response?.data?.message || 'Kode promo salah.')
+      setForm(prev => ({ ...prev, promoCode: '' }))
+    },
+  })
+
+  const handleApplyPromo = () => {
+    if (!form.promoCode?.trim()) return
+    setPromoError('')
+    applyPromoMutation.mutate(form.promoCode.trim())
+  }
 
   // Auto-calc harga saat halaman pertama dibuka & saat roomCount/tanggal berubah
   useEffect(() => {
@@ -175,19 +209,32 @@ export default function Checkout() {
             <div className="flex gap-3">
               <input
                 value={form.promoCode}
-                onChange={e => setForm({ ...form, promoCode: e.target.value })}
+                onChange={e => {
+                  setForm({ ...form, promoCode: e.target.value })
+                  if (promoError) setPromoError('')
+                }}
                 placeholder={t('checkout.promoPh')}
-                className="flex-1 rounded-xl border px-4 py-2.5 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-brand/50"
+                className={`flex-1 rounded-xl border px-4 py-2.5 text-sm uppercase focus:outline-none focus:ring-2 ${
+                  promoError
+                    ? 'border-red-300 focus:ring-red-200 focus:border-red-400'
+                    : 'focus:ring-brand/50'
+                }`}
               />
               <button
                 onClick={handleApplyPromo}
-                disabled={!form.promoCode || calcMutation.isPending}
+                disabled={!form.promoCode || applyPromoMutation.isPending}
                 className="rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
               >
-                {calcMutation.isPending ? '...' : t('checkout.apply')}
+                {applyPromoMutation.isPending ? '...' : t('checkout.apply')}
               </button>
             </div>
-            {promoApplied && pricing?.promoDiscount > 0 && (
+            {promoError && (
+              <div className="mt-2 flex items-start gap-1.5 text-sm text-red-600">
+                <span className="font-semibold">⚠</span>
+                <span>{promoError}</span>
+              </div>
+            )}
+            {promoApplied && pricing?.promoDiscount > 0 && !promoError && (
               <div className="mt-3 rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-sm text-green-700">
                 {t('checkout.promoSuccess', { amount: formatRupiah(pricing.promoDiscount) })}
               </div>
@@ -221,29 +268,54 @@ export default function Checkout() {
               </div>
             )}
 
-            {pricing ? (
+            {pricing ? (() => {
+              // BE sekarang return original_base_price (sebelum promo) & base_price (setelah promo).
+              // Promo discount diaplikasikan di base price agar konsisten dengan card.
+              const hasPromo          = (pricing.promoDiscount || 0) > 0
+              const originalBase      = Number(pricing.originalBasePrice ?? pricing.basePrice) || 0
+              const basePriceFinal    = Number(pricing.basePrice) || 0
+              const promoDiscount     = Number(pricing.promoDiscount) || 0
+              const showInlineDiscount = hasPromo && !form.promoCode
+
+              // Persen: prioritaskan nilai dari promo (sumber kebenaran owner),
+              // fallback ke hitungan rasio kalau bukan tipe percent.
+              const promoPct = pricing.promo?.discountType === 'percent'
+                ? Math.round(Number(pricing.promo.discountValue) || 0)
+                : (originalBase > 0 ? Math.round((promoDiscount / originalBase) * 100) : 0)
+
+              return (
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
+                {/* Harga hotel — tampilkan coret + harga diskon kalau ada promo otomatis */}
+                <div className="flex justify-between items-start gap-3">
                   <span className="text-muted-foreground">{t('checkout.hotelPrice')}</span>
-                  <span>{formatRupiah(pricing.basePrice)}</span>
+                  <div className="text-right">
+                    {showInlineDiscount ? (
+                      <>
+                        <p className="text-xs text-slate-400 line-through leading-tight">
+                          {formatRupiah(originalBase)}
+                        </p>
+                        <p className="font-bold text-orange-600">{formatRupiah(basePriceFinal)}</p>
+                        <span className="inline-block mt-1 px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-700 text-[10px] font-bold">
+                          {promoPct}% OFF
+                        </span>
+                      </>
+                    ) : (
+                      <p>{formatRupiah(basePriceFinal)}</p>
+                    )}
+                  </div>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t('checkout.taxOthers')}</span>
                   <span>{formatRupiah((pricing.markupAmount || 0) + (pricing.taxAmount || 0) + (pricing.priceSuffix || 0))}</span>
                 </div>
-                {pricing.promoDiscount > 0 && (
+                {/* Hanya tampilkan baris diskon promo terpisah kalau pakai KODE MANUAL.
+                    Untuk promo otomatis, diskon sudah tergabung di baris "Harga hotel" di atas */}
+                {hasPromo && form.promoCode && (
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex flex-col">
-                      <span className="text-muted-foreground">
-                        {form.promoCode ? t('checkout.promoDiscount') : 'Diskon promo otomatis'}
-                      </span>
-                      {pricing.promo?.name && !form.promoCode && (
-                        <span className="text-[11px] text-orange-600 font-semibold mt-0.5">
-                          ✦ {pricing.promo.name}
-                        </span>
-                      )}
+                      <span className="text-muted-foreground">{t('checkout.promoDiscount')}</span>
                     </div>
-                    <span className="font-medium text-green-600 whitespace-nowrap">- {formatRupiah(pricing.promoDiscount)}</span>
+                    <span className="font-medium text-green-600 whitespace-nowrap">- {formatRupiah(promoDiscount)}</span>
                   </div>
                 )}
                 {pricing.loyaltyDiscount > 0 && (
@@ -253,34 +325,63 @@ export default function Checkout() {
                   </div>
                 )}
                 <div className="border-t pt-3">
-                  {pricing.promoDiscount > 0 && (
+                  {hasPromo && (
                     <div className="flex justify-between text-xs text-slate-400 line-through mb-1">
                       <span>Total tanpa promo</span>
-                      <span>{formatRupiah(pricing.totalPrice + pricing.promoDiscount)}</span>
+                      <span>{formatRupiah(pricing.totalPrice + promoDiscount)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-base font-bold">
                     <span>{t('checkout.total')}</span>
                     <span className="price-tag">{formatRupiah(pricing.totalPrice)}</span>
                   </div>
+                  {showInlineDiscount && pricing.promo?.name && (
+                    <p className="mt-1 text-[11px] text-orange-600 font-semibold">
+                      ✦ {pricing.promo.name} otomatis diterapkan
+                    </p>
+                  )}
                 </div>
               </div>
-            ) : room && (
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">
-                    {t('checkout.perRoomNight', { price: formatRupiah(room.basePrice), nights, rooms: roomCount })}
-                  </span>
-                  <span>{formatRupiah(room.basePrice * nights * roomCount)}</span>
+              )
+            })() : room && (() => {
+              const unitPrice = Number(room.discountedPrice ?? room.basePrice)
+              const hasPromo  = room.discountedPrice && room.discountedPrice < room.basePrice
+              return (
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between gap-3 items-start">
+                    <span className="text-muted-foreground">
+                      {t('checkout.perRoomNight', { price: formatRupiah(unitPrice), nights, rooms: roomCount })}
+                    </span>
+                    <div className="text-right">
+                      {hasPromo && (
+                        <p className="text-xs text-slate-400 line-through leading-tight">
+                          {formatRupiah(room.basePrice * nights * roomCount)}
+                        </p>
+                      )}
+                      <p className={hasPromo ? 'font-bold text-orange-600' : ''}>
+                        {formatRupiah(unitPrice * nights * roomCount)}
+                      </p>
+                    </div>
+                  </div>
+                  {hasPromo && room.appliedPromo && (
+                    <div className="text-[11px] text-orange-600 font-semibold flex items-center gap-1">
+                      ✦ {room.appliedPromo.name}
+                      <span className="px-1.5 py-0.5 rounded-md bg-orange-100">
+                        {room.appliedPromo.discountType === 'percent'
+                          ? `${Number(room.appliedPromo.discountValue)}% OFF`
+                          : `Hemat ${formatRupiah(room.appliedPromo.discountValue)}`}
+                      </span>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => calcMutation.mutate()}
+                    className="mt-2 w-full rounded-lg border border-brand/30 py-2 text-xs text-brand transition-colors hover:bg-brand/5"
+                  >
+                    {t('checkout.calcDetail')}
+                  </button>
                 </div>
-                <button
-                  onClick={() => calcMutation.mutate()}
-                  className="mt-2 w-full rounded-lg border border-brand/30 py-2 text-xs text-brand transition-colors hover:bg-brand/5"
-                >
-                  {t('checkout.calcDetail')}
-                </button>
-              </div>
-            )}
+              )
+            })()}
 
             <button
               onClick={() => bookMutation.mutate()}
