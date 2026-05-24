@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
 import {
   ChevronLeft, ChevronRight, BedDouble, X, Save, Calendar as CalendarIcon,
-  List as ListIcon, Download, Clock, Info, ChevronDown,
+  List as ListIcon, Download, Clock, Info, ChevronDown, RefreshCw,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { cn, formatRupiah } from '@/utils'
@@ -105,7 +105,7 @@ function RegularAllotment({ hotel, rooms }) {
     if (!selectedRoom && rooms?.length) setSelectedRoom(rooms[0])
   }, [rooms]) // eslint-disable-line
 
-  const { data: priceData } = useQuery({
+  const { data: priceData, isFetching: priceFetching, dataUpdatedAt } = useQuery({
     queryKey: ['room-prices', selectedRoom?.id, year, month + 1],
     queryFn: () =>
       hotelApi.getRoomPrices(hotel.id, selectedRoom.id, { year, month: month + 1 })
@@ -116,6 +116,12 @@ function RegularAllotment({ hotel, rooms }) {
           totalUnits: r.data?.totalUnits ?? r.data?.total_units ?? 1,
         })),
     enabled: !!hotel?.id && !!selectedRoom?.id,
+    // Auto-refresh: cek booking baru tiap 30 detik supaya owner langsung lihat
+    // perubahan allotment (mis. customer baru booking) tanpa refresh manual.
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,  // langsung refresh saat balik ke tab
+    refetchOnReconnect: true,    // refresh saat koneksi internet balik
+    staleTime: 10_000,           // anggap data fresh 10 detik supaya tidak over-fetch saat editing
   })
 
   const upsertMutation = useMutation({
@@ -152,12 +158,20 @@ function RegularAllotment({ hotel, rooms }) {
       ? Number(rawUnits)
       : totalUnits
 
+    // BE pisah: booked (sudah bayar/issued) vs pending (menunggu pembayaran)
+    const remaining = saved?.remainingUnits ?? saved?.remaining_units
+    const booked    = (saved?.bookedCount   ?? saved?.booked_count)   ?? 0
+    const pending   = (saved?.pendingCount  ?? saved?.pending_count)  ?? 0
+
     // Status tutup: kalau allotment 0 ATAU is_available eksplisit false
     const available = allotment > 0 && rawAvail !== false
 
     return {
       price: saved?.price ?? priceData?.basePrice ?? selectedRoom?.basePrice ?? 0,
       allotment,
+      remaining: (remaining !== undefined && remaining !== null) ? Number(remaining) : allotment,
+      booked: Number(booked),
+      pending: Number(pending),
       available,
     }
   }
@@ -172,12 +186,25 @@ function RegularAllotment({ hotel, rooms }) {
       return
     }
     const cell = getCell(day.date)
-    setEditing({ date: day.date, price: cell.price, allotment: cell.allotment })
+    setEditing({
+      date: day.date,
+      price: cell.price,
+      remaining: cell.remaining,
+      allotment: cell.allotment,
+      booked: cell.booked,   // sudah bayar (paid/issued)
+      pending: cell.pending, // menunggu pembayaran
+    })
   }
 
   const saveEdit = () => {
     if (!editing) return
-    const units = Math.max(0, Number(editing.allotment) || 0)
+    const remaining = Math.max(0, Number(editing.remaining) || 0)
+    const booked    = Number(editing.booked) || 0
+    // Total = sudah bayar + sisa yang masih bisa dipesan.
+    // Pending TIDAK dihitung — kalau customer akhirnya bayar, jadi booked.
+    // Kalau VA expired, pending hilang. Allotment owner stabil.
+    const units     = booked + remaining
+
     upsertMutation.mutate([{
       date:            fmtKey(editing.date),
       price:           Number(editing.price) || 0,
@@ -242,6 +269,30 @@ function RegularAllotment({ hotel, rooms }) {
             className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:underline">
             <Download className="w-4 h-4" /> Ekspor ke excel
           </button>
+
+          {/* Auto-refresh indicator + manual refresh button */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl">
+            <span className={cn(
+              'w-1.5 h-1.5 rounded-full',
+              priceFetching ? 'bg-blue-500 animate-pulse' : 'bg-emerald-500'
+            )} />
+            <span className="text-[11px] text-slate-500 font-medium">
+              {priceFetching
+                ? 'Memperbarui...'
+                : dataUpdatedAt
+                  ? `Diperbarui ${new Date(dataUpdatedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`
+                  : 'Auto-refresh aktif'}
+            </span>
+            <button
+              type="button"
+              onClick={() => qc.invalidateQueries({ queryKey: ['room-prices', selectedRoom?.id] })}
+              disabled={priceFetching}
+              title="Refresh sekarang"
+              className="p-1 rounded-md hover:bg-slate-200 text-slate-500 disabled:opacity-50"
+            >
+              <RefreshCw className={cn('w-3 h-3', priceFetching && 'animate-spin')} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -325,15 +376,27 @@ function RegularAllotment({ hotel, rooms }) {
                       )}>
                         {cell.available ? formatRupiah(cell.price) : 'Tutup'}
                       </p>
-                      <div className="mt-0.5 flex items-center gap-1">
+                      <div className="mt-0.5 flex items-center gap-1 flex-wrap">
                         <span className={cn(
                           'text-[9px] font-bold px-1.5 py-0.5 rounded',
-                          cell.available
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-red-100 text-red-700'
+                          !cell.available
+                            ? 'bg-red-100 text-red-700'
+                            : cell.remaining === 0
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-emerald-100 text-emerald-700'
                         )}>
-                          {cell.allotment} kmr
+                          {cell.remaining}/{cell.allotment} kmr
                         </span>
+                        {cell.booked > 0 && (
+                          <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-emerald-50 text-emerald-600" title="Sudah dibayar">
+                            ✓{cell.booked}
+                          </span>
+                        )}
+                        {cell.pending > 0 && (
+                          <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-amber-50 text-amber-600" title="Menunggu pembayaran">
+                            ⏳{cell.pending}
+                          </span>
+                        )}
                       </div>
                     </>
                   )}
@@ -371,11 +434,25 @@ function RegularAllotment({ hotel, rooms }) {
                         {formatRupiah(c.price)}
                       </td>
                       <td className="px-5 py-3 text-center">
-                        <span className={cn('inline-flex items-center justify-center min-w-[40px] px-2 py-0.5 rounded-md text-xs font-bold',
-                          c.allotment > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
-                        )}>
-                          {c.allotment} kamar
-                        </span>
+                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                          <span className={cn('inline-flex items-center justify-center min-w-[50px] px-2 py-0.5 rounded-md text-xs font-bold',
+                            c.allotment === 0 ? 'bg-red-50 text-red-700' :
+                            c.remaining === 0 ? 'bg-amber-50 text-amber-700' :
+                            'bg-emerald-50 text-emerald-700'
+                          )}>
+                            {c.remaining}/{c.allotment} kamar
+                          </span>
+                          {c.booked > 0 && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600" title="Sudah dibayar customer">
+                              ✓ {c.booked} bayar
+                            </span>
+                          )}
+                          {c.pending > 0 && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-600" title="Menunggu pembayaran customer">
+                              ⏳ {c.pending} menunggu
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-5 py-3">
                         <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full',
@@ -436,12 +513,69 @@ function RegularAllotment({ hotel, rooms }) {
                 />
               </div>
 
-              {/* Allotment (jumlah kamar tersedia) */}
+              {/* Allotment Breakdown — Total | Dipesan (paid) | Menunggu (pending, info saja) | Sisa */}
+              {(editing.booked > 0 || editing.pending > 0 || (Number(editing.remaining) || 0) > 0 || (Number(editing.allotment) || 0) > 0) && (() => {
+                const booked    = Number(editing.booked) || 0
+                const pending   = Number(editing.pending) || 0
+                const remaining = Number(editing.remaining) || 0
+                // Total = booked + remaining (pending tidak mengurangi total/sisa)
+                const total     = booked + remaining
+                return (
+                  <div className="grid grid-cols-4 gap-1.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                    <div className="text-center px-1">
+                      <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wide mb-0.5">Total</p>
+                      <p className="text-base font-black text-slate-900 leading-none">{total}</p>
+                      <p className="text-[9px] text-slate-400 mt-0.5">kamar</p>
+                    </div>
+                    <div className="text-center px-1 border-l border-slate-200">
+                      <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-wide mb-0.5">Dipesan</p>
+                      <p className={cn('text-base font-black leading-none', booked > 0 ? 'text-emerald-600' : 'text-slate-300')}>{booked}</p>
+                      <p className="text-[9px] text-slate-400 mt-0.5">bayar</p>
+                    </div>
+                    <div className="text-center px-1 border-l border-slate-200">
+                      <p className="text-[9px] font-bold text-amber-600 uppercase tracking-wide mb-0.5">Menunggu</p>
+                      <p className={cn('text-base font-black leading-none', pending > 0 ? 'text-amber-600' : 'text-slate-300')}>{pending}</p>
+                      <p className="text-[9px] text-slate-400 mt-0.5">bayar</p>
+                    </div>
+                    <div className="text-center px-1 border-l border-slate-200">
+                      <p className="text-[9px] font-bold uppercase tracking-wide mb-0.5 text-blue-600">Sisa</p>
+                      <p className={cn('text-base font-black leading-none',
+                        remaining === 0 ? 'text-slate-400' : 'text-blue-600'
+                      )}>{remaining}</p>
+                      <p className="text-[9px] text-slate-400 mt-0.5">{remaining === 0 ? 'penuh' : 'free'}</p>
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Edit Sisa Kamar yang Bisa Dipesan */}
               <div>
-                <label className="text-xs font-semibold text-slate-600 mb-1 block">Jumlah Kamar Tersedia</label>
+                <label className="text-xs font-semibold text-slate-600 mb-1 block">
+                  Sisa Kamar yang Bisa Dipesan
+                </label>
+                {(editing.booked > 0 || editing.pending > 0) && (
+                  <div className="mb-2 space-y-1.5">
+                    {editing.booked > 0 && (
+                      <div className="px-2.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg flex items-start gap-1.5">
+                        <span className="text-[10px] mt-0.5">✅</span>
+                        <p className="text-[11px] text-emerald-800 leading-snug">
+                          <span className="font-bold">{editing.booked} kamar</span> sudah dipesan & dibayar customer (terkonfirmasi).
+                        </p>
+                      </div>
+                    )}
+                    {editing.pending > 0 && (
+                      <div className="px-2.5 py-1.5 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-1.5">
+                        <span className="text-[10px] mt-0.5">⏳</span>
+                        <p className="text-[11px] text-amber-800 leading-snug">
+                          <span className="font-bold">{editing.pending} kamar</span> menunggu pembayaran (slot terkunci sementara, otomatis lepas kalau VA expired).
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <button type="button"
-                    onClick={() => setEditing(v => ({ ...v, allotment: Math.max(0, (Number(v.allotment) || 0) - 1) }))}
+                    onClick={() => setEditing(v => ({ ...v, remaining: Math.max(0, (Number(v.remaining) || 0) - 1) }))}
                     className="w-9 h-9 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50">
                     −
                   </button>
@@ -449,26 +583,32 @@ function RegularAllotment({ hotel, rooms }) {
                     type="number"
                     min={0}
                     max={999}
-                    value={editing.allotment ?? 0}
+                    value={editing.remaining ?? 0}
                     onChange={e => setEditing(v => ({
                       ...v,
-                      allotment: e.target.value === '' ? 0 : Math.max(0, +e.target.value),
+                      remaining: e.target.value === '' ? 0 : Math.max(0, +e.target.value),
                     }))}
                     className="flex-1 text-center text-base font-bold border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200"
                   />
                   <button type="button"
-                    onClick={() => setEditing(v => ({ ...v, allotment: Math.min(999, (Number(v.allotment) || 0) + 1) }))}
+                    onClick={() => setEditing(v => ({ ...v, remaining: Math.min(999, (Number(v.remaining) || 0) + 1) }))}
                     className="w-9 h-9 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50">
                     +
                   </button>
                 </div>
                 <p className={cn(
                   'mt-1.5 text-[11px] leading-snug',
-                  (Number(editing.allotment) || 0) === 0 ? 'text-red-600' : 'text-slate-500'
+                  (Number(editing.remaining) || 0) === 0 && (Number(editing.booked) || 0) === 0 ? 'text-red-600' :
+                  (Number(editing.remaining) || 0) === 0 ? 'text-amber-600' :
+                  'text-slate-500'
                 )}>
-                  {(Number(editing.allotment) || 0) === 0
-                    ? '⚠️ Isi 0 berarti kamar TUTUP — tidak bisa dipesan tanggal ini.'
-                    : `Tamu dapat memesan hingga ${Number(editing.allotment)} kamar pada tanggal ini.`}
+                  {(() => {
+                    const remaining = Number(editing.remaining) || 0
+                    const booked    = Number(editing.booked) || 0
+                    if (remaining === 0 && booked === 0) return '⚠️ Isi 0 berarti kamar TUTUP — tidak bisa dipesan tanggal ini.'
+                    if (remaining === 0) return `Customer tidak bisa booking lagi (penuh). Tambah angka di atas supaya bisa terima booking baru.`
+                    return `${remaining} kamar masih bisa dipesan customer di tanggal ini.`
+                  })()}
                 </p>
               </div>
 
@@ -476,14 +616,19 @@ function RegularAllotment({ hotel, rooms }) {
               <div className="flex flex-wrap gap-1.5">
                 {[0, 1, 2, 5, 10].map(n => (
                   <button key={n} type="button"
-                    onClick={() => setEditing(v => ({ ...v, allotment: n }))}
+                    onClick={() => setEditing(v => ({ ...v, remaining: n }))}
                     className={cn(
                       'px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors',
-                      Number(editing.allotment) === n
+                      Number(editing.remaining) === n
                         ? 'bg-blue-600 border-blue-600 text-white'
                         : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                    )}>
-                    {n === 0 ? 'Tutup' : `${n} kamar`}
+                    )}
+                    title={n === 0
+                      ? (editing.booked > 0 ? 'Tutup booking baru (booking yang sudah ada tetap)' : 'Tutup kamar')
+                      : `${n} kamar bisa dipesan customer (total: ${(editing.booked || 0) + n})`}>
+                    {n === 0
+                      ? (editing.booked > 0 ? 'Tutup baru' : 'Tutup')
+                      : `+${n} kamar`}
                   </button>
                 ))}
               </div>
@@ -541,6 +686,11 @@ function SoftblockAllotment({ hotel, rooms }) {
       room_id:   roomFilter || undefined,
     }).then(r => r.data),
     enabled: !!hotel?.id,
+    // Auto-refresh untuk tab Softblock Allotment supaya booked_count selalu fresh
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 10_000,
   })
 
   const upsertMutation = useMutation({

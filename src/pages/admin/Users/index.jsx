@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { userApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
-import { getImageUrl } from '@/utils'
+import { getImageUrl, cn } from '@/utils'
 import {
   Search, Plus, Pencil, Trash2,
   X, Save, User, Mail, Phone, Lock, Shield, AlertTriangle,
@@ -33,7 +33,7 @@ function UserFormDrawer({ user: editUser, defaultRole = 'user', roleOptions, onC
   const qc        = useQueryClient()
   const [showPass, setShowPass] = useState(false)
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({
     defaultValues: editUser ? {
       name    : editUser.name,
       email   : editUser.email,
@@ -42,6 +42,8 @@ function UserFormDrawer({ user: editUser, defaultRole = 'user', roleOptions, onC
       isActive: editUser.isActive !== false,
     } : { role: defaultRole, isActive: true },
   })
+
+  const isActiveValue = watch('isActive')
 
   const saveMutation = useMutation({
     mutationFn: (d) => editUser ? userApi.adminUpdate(editUser.id, d) : userApi.create(d),
@@ -61,6 +63,8 @@ function UserFormDrawer({ user: editUser, defaultRole = 'user', roleOptions, onC
   const onSubmit = (data) => {
     const payload = { ...data }
     if (!payload.password) delete payload.password
+    // Defensive: pastikan isActive selalu boolean (default true) saat create user baru
+    payload.isActive = data.isActive !== false
     saveMutation.mutate(payload)
   }
 
@@ -149,15 +153,50 @@ function UserFormDrawer({ user: editUser, defaultRole = 'user', roleOptions, onC
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Status Akun</label>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <div className="relative">
-                  <input type="checkbox" {...register('isActive')} className="sr-only peer" />
-                  <div className="w-10 h-5.5 bg-slate-200 rounded-full peer peer-checked:bg-emerald-500 transition-colors" />
-                  <div className="absolute top-0.5 left-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-all peer-checked:translate-x-[18px]" />
-                </div>
-                <span className="text-sm text-slate-600">Akun aktif</span>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Status Akun <span className="text-red-500">*</span>
               </label>
+              {/* Hidden input untuk register react-hook-form */}
+              <input type="hidden" {...register('isActive')} />
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setValue('isActive', true, { shouldDirty: true })}
+                  className={cn(
+                    'flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-semibold transition-all',
+                    isActiveValue !== false
+                      ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
+                      : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                  )}
+                >
+                  <span className={cn(
+                    'w-2 h-2 rounded-full',
+                    isActiveValue !== false ? 'bg-emerald-500' : 'bg-slate-300'
+                  )} />
+                  Aktif
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setValue('isActive', false, { shouldDirty: true })}
+                  className={cn(
+                    'flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-semibold transition-all',
+                    isActiveValue === false
+                      ? 'border-red-500 bg-red-50 text-red-700 shadow-sm'
+                      : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                  )}
+                >
+                  <span className={cn(
+                    'w-2 h-2 rounded-full',
+                    isActiveValue === false ? 'bg-red-500' : 'bg-slate-300'
+                  )} />
+                  Nonaktif
+                </button>
+              </div>
+              <p className="text-xs text-slate-500 mt-1.5">
+                {isActiveValue !== false
+                  ? 'Akun langsung aktif & bisa login setelah dibuat.'
+                  : 'Akun dibuat tapi tidak bisa login sampai diaktifkan.'}
+              </p>
             </div>
           </div>
 

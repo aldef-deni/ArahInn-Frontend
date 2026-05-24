@@ -1222,7 +1222,20 @@ export default function HotelDetail() {
                       type="date"
                       value={dates.checkIn}
                       min={today}
-                      onChange={e => setDates({ ...dates, checkIn: e.target.value })}
+                      onChange={e => {
+                        const newCheckIn = e.target.value
+                        // Auto-adjust check-out: kalau check-out lama <= check-in baru,
+                        // set check-out = check-in + 1 hari (default 1 malam)
+                        setDates(prev => {
+                          let nextCheckOut = prev.checkOut
+                          if (!nextCheckOut || nextCheckOut <= newCheckIn) {
+                            const d = new Date(newCheckIn)
+                            d.setDate(d.getDate() + 1)
+                            nextCheckOut = d.toISOString().split('T')[0]
+                          }
+                          return { ...prev, checkIn: newCheckIn, checkOut: nextCheckOut }
+                        })
+                      }}
                       className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
                     />
                   </div>

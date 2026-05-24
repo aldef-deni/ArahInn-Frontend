@@ -278,7 +278,7 @@ export default function AdminLayout() {
             {!collapsed && (
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-slate-900 truncate leading-tight">
-                  {isSuperadmin ? 'Superadmin' : (user?.name || 'Admin')}
+                  {user?.name || 'Pengguna'}
                 </p>
                 <p className="text-[10px] text-slate-500 truncate">{roleLabel(user?.role)}</p>
               </div>
