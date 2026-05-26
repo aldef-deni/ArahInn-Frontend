@@ -9,12 +9,46 @@ import { formatRupiah, formatDateShort, getImageUrl } from '@/utils'
 import {
   Search, MapPin, Calendar, Users, ArrowRight,
   Zap, Shield, Headphones, Award, TrendingUp, Tag, Copy, Check, Clock, Building2,
-  ChevronDown, Wallet,
+  ChevronDown, Wallet, Hotel, Smartphone, Lightbulb, Receipt, Sofa, BadgePercent,
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { format, addDays, parseISO } from 'date-fns'
 import HotelCard from '@/components/hotel/HotelCard'
 import InteriorPenawaran from '@/components/InteriorPenawaran'
 import PromoFlyerCarousel from '@/components/PromoFlyerCarousel'
+
+/**
+ * ServiceCategoryTabs — horizontal scrollable kategori utama di atas hero.
+ * Pattern umum di booking site: tap kategori → ke landing page kategori itu.
+ */
+function ServiceCategoryTabs() {
+  const items = [
+    { label: 'Akomodasi',     Icon: Hotel,        to: '/search',          accent: '#ffffff' },
+    { label: 'Pulsa & Data',  Icon: Smartphone,   to: '/ppob/pulsa-data', accent: '#60a5fa' },
+    { label: 'Listrik PLN',   Icon: Lightbulb,    to: '/ppob/pln',        accent: '#fbbf24' },
+    { label: 'Bayar Tagihan', Icon: Receipt,      to: '/ppob/tagihan',    accent: '#34d399' },
+    { label: 'E-Wallet',      Icon: Wallet,       to: '/ppob/ewallet',    accent: '#a78bfa' },
+    { label: 'Properti',      Icon: Building2,    to: '/properti',        accent: '#f87171' },
+    { label: 'Interior',      Icon: Sofa,         to: '/interior',        accent: '#fb923c' },
+    { label: 'Promo',         Icon: BadgePercent, to: '/promo',           accent: '#fbbf24' },
+  ]
+  return (
+    <div className="overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0 scrollbar-thin">
+      <div className="flex items-stretch gap-2 lg:gap-3 lg:justify-center min-w-max lg:min-w-0 pb-1">
+        {items.map(({ label, Icon, to, accent }) => (
+          <Link
+            key={to}
+            to={to}
+            className="group flex flex-col items-center justify-center gap-1.5 min-w-[80px] lg:min-w-[100px] px-3 py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 hover:border-white/30 backdrop-blur-sm transition-all"
+          >
+            <Icon className="w-5 h-5 lg:w-6 lg:h-6 transition-transform group-hover:scale-110" style={{ color: accent }} />
+            <span className="text-[11px] lg:text-xs font-semibold text-white text-center leading-tight">{label}</span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 const PROMO_STYLES = {
   flash_sale : { grad: 'from-orange-500 to-red-500',    sub: 'text-orange-100', icon: Zap,   iconBg: 'bg-white/20' },
@@ -216,9 +250,12 @@ export default function Home() {
         <div className="absolute inset-0 opacity-10"
           style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}
         />
-        <div className="container relative py-12 lg:py-16 flex flex-col gap-12 lg:gap-16">
+        <div className="container relative py-8 lg:py-12 flex flex-col gap-8 lg:gap-12">
 
-          {/* Kategori */}
+          {/* ── Horizontal Service Category Tabs ── */}
+          <ServiceCategoryTabs />
+
+          {/* Kategori akomodasi */}
           <div className="text-center">
             <h2 className="font-display text-2xl lg:text-3xl font-bold text-white mb-6">
               {t('hero.categoryTitle')}

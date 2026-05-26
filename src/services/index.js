@@ -160,3 +160,22 @@ export const interiorDesignApi = {
   approve     : (id)    => api.post(`/admin/interior-designs/${id}/approve`),
   reject      : (id)    => api.post(`/admin/interior-designs/${id}/reject`),
 }
+
+// ── PPOB (Payment Point Online Banking) ────────────────────────────
+export const ppobApi = {
+  // Public catalog
+  categories      : ()        => api.get('/ppob/categories'),
+  products        : (p)       => api.get('/ppob/products', { params: p }),
+  // Authenticated
+  inquiry         : (d)       => api.post('/ppob/inquiry', d),
+  createTrx       : (d)       => api.post('/ppob/transactions', d),
+  myTransactions  : (p)       => api.get('/ppob/my-transactions', { params: p }),
+  getTrx          : (code)    => api.get(`/ppob/transactions/${code}`),
+  // Admin
+  adminTrx        : (p)       => api.get('/admin/ppob/transactions', { params: p }),
+  adminRefund     : (code, d) => api.post(`/admin/ppob/transactions/${code}/refund`, d),
+  adminRetry      : (code)    => api.post(`/admin/ppob/transactions/${code}/retry`),
+  adminBalance    : ()        => api.get('/admin/ppob/balance'),
+  adminCategories : ()        => api.get('/admin/ppob/categories'),
+  adminUpdateCategory: (id,d) => api.put(`/admin/ppob/categories/${id}`, d),
+}

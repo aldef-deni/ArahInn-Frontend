@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Hotel, ShoppingBag, BarChart2,
   Users, UserCog, Tag, LogOut, Menu, X, User,
   FileText, CreditCard, Building2, Megaphone, ChevronDown, MessageSquare,
-  CalendarDays, Sofa, Headphones, Shield,
+  CalendarDays, Sofa, Headphones, Shield, Receipt,
 } from 'lucide-react'
 import { cn, roleLabel, getImageUrl } from '@/utils'
 import NotificationBell from '@/components/ui/NotificationBell'
@@ -32,6 +32,7 @@ const NAV_ADMIN = [
   { to: '/admin/property-approval', label: 'Jual - Beli Properti',  icon: Building2 },
   { to: '/admin/interior',          label: 'Design Interior',       icon: Sofa },
   { to: '/admin/harga',             label: 'Harga & Ketersediaan',  icon: CalendarDays },
+  { to: '/admin/ppob',              label: 'PPOB Monitoring',       icon: Receipt },
   {
     type: 'group',
     key: 'promo',

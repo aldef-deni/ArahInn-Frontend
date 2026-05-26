@@ -22,6 +22,10 @@ import PropertyMarket from '@/pages/PropertyMarket'
 import PropertyDetail from '@/pages/PropertyDetail'
 import InteriorPage from '@/pages/Interior'
 import PromoPage from '@/pages/Promo'
+import PpobLanding from '@/pages/Ppob/PpobLanding'
+import PpobCategoryPage from '@/pages/Ppob/PpobCategoryPage'
+import PpobHistory from '@/pages/Ppob/PpobHistory'
+import AdminPpob from '@/pages/admin/Ppob'
 
 // Auth Pages
 import Login from '@/pages/Auth/Login'
@@ -197,6 +201,9 @@ export default function App() {
             <Route path="/properti/:id" element={<PropertyDetail />} />
             <Route path="/interior" element={<InteriorPage />} />
             <Route path="/promo" element={<PromoPage />} />
+            <Route path="/ppob" element={<PpobLanding />} />
+            <Route path="/ppob/history" element={<PrivateRoute><PpobHistory /></PrivateRoute>} />
+            <Route path="/ppob/:group" element={<PpobCategoryPage />} />
             <Route path="/checkout/:roomId" element={<PrivateRoute><Checkout /></PrivateRoute>} />
             <Route path="/payment/:bookingId" element={<PrivateRoute><Payment /></PrivateRoute>} />
             <Route path="/orders" element={<PrivateRoute><OrderHistory /></PrivateRoute>} />
@@ -237,6 +244,7 @@ export default function App() {
           <Route path="property-approval" element={<BlockRoles roles={['design_interior']}><AdminPropertyApproval /></BlockRoles>} />
           <Route path="reviews" element={<BlockRoles roles={['design_interior']}><AdminReviews /></BlockRoles>} />
           <Route path="interior" element={<AdminInterior />} />
+          <Route path="ppob" element={<AdminPpob />} />
           <Route path="customer-chat" element={<BlockRoles roles={['design_interior']}><AdminCustomerChat /></BlockRoles>} />
           <Route path="harga" element={<BlockRoles roles={['design_interior']}><AdminHarga /></BlockRoles>}>
             <Route index element={<Navigate to="pricing-model" replace />} />
