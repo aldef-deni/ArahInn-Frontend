@@ -416,17 +416,17 @@ export default function UserLayout() {
                 <h4 className="text-xs font-bold text-brand-800 uppercase tracking-[0.18em]">Our Partners</h4>
                 <span className="h-px flex-1 bg-gradient-to-l from-brand/30 to-transparent" />
               </div>
-              <div className="flex flex-wrap items-center justify-center gap-4">
+              <div className="flex flex-wrap items-center justify-center gap-3">
                 {['AKR.png','BBS.png','Dekorasi.me.png','IMG_20260510_184716.png','RuangSinggah.png'].map(f => (
                   <div
                     key={f}
-                    className="relative h-24 w-40 flex items-center justify-center rounded-xl bg-white border border-slate-200/70 px-4"
+                    className="relative h-16 w-28 flex items-center justify-center rounded-xl bg-white border border-slate-200/70 px-3"
                   >
                     <img
                       src={`/our-partners/${f}`}
                       alt={f.replace(/\.[^.]+$/, '')}
                       loading="lazy"
-                      className="max-h-16 max-w-full object-contain"
+                      className="max-h-10 max-w-full object-contain"
                     />
                   </div>
                 ))}

@@ -1,6 +1,6 @@
 import { useDeferredValue, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { adminApi, bookingApi } from '@/services/index'
+import { adminApi, bookingApi, paymentApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah, formatDateShort, statusBadgeClass, statusLabel } from '@/utils'
@@ -199,6 +199,16 @@ export default function AdminOrders() {
     onError: (e) => toast({ title: 'Gagal konfirmasi', description: e?.response?.data?.message, variant: 'destructive' }),
   })
 
+  // Manual transfer mode: konfirmasi pembayaran masuk rekening
+  const confirmPayMutation = useMutation({
+    mutationFn: (id) => paymentApi.confirmManual(id),
+    onSuccess : () => {
+      qc.invalidateQueries({ queryKey: ['admin-orders'] })
+      toast({ title: 'Pembayaran dikonfirmasi.', description: 'Voucher e-mail otomatis terkirim ke tamu.' })
+    },
+    onError: (e) => toast({ title: 'Gagal konfirmasi pembayaran', description: e?.response?.data?.message, variant: 'destructive' }),
+  })
+
   const rescheduleMutation = useMutation({
     mutationFn: ({ id, checkIn, checkOut }) => bookingApi.reschedule(id, { checkIn, checkOut }),
     onSuccess : () => {
@@ -359,11 +369,25 @@ export default function AdminOrders() {
                       {isSuperAdmin && (
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            {/* Konfirmasi — for pending/paid */}
+                            {/* Konfirmasi Pembayaran — manual transfer mode, for pending only */}
+                            {order.status === 'pending' && (
+                              <button
+                                onClick={() => {
+                                  if (window.confirm(`Konfirmasi pembayaran ${order.bookingCode}? Pastikan transfer sudah masuk rekening.`)) {
+                                    confirmPayMutation.mutate(order.id)
+                                  }
+                                }}
+                                disabled={confirmPayMutation.isPending}
+                                title="Tandai pembayaran transfer manual sudah masuk → otomatis kirim voucher"
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors font-medium whitespace-nowrap disabled:opacity-50">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Konfirmasi Bayar
+                              </button>
+                            )}
+                            {/* Konfirmasi (issue) — for paid */}
                             {['pending','paid'].includes(order.status) && (
                               <button onClick={() => setApprove(order)}
                                 className="flex items-center gap-1 px-3 py-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors font-medium whitespace-nowrap">
-                                <CheckCircle2 className="w-3.5 h-3.5" /> Konfirmasi
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Issue Voucher
                               </button>
                             )}
                             {/* Batalkan — for pending/paid/issued */}

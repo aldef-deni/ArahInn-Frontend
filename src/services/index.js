@@ -15,9 +15,15 @@ export const bookingApi = {
 }
 
 export const paymentApi = {
-  initiate    : (d)    => api.post('/payments/initiate', d),
-  status      : (bId)  => api.get(`/payments/${bId}/status`),
-  getAll      : (p)    => api.get('/payments', { params: p }),
+  mode        : ()       => api.get('/payments/mode'),
+  initiate    : (d)      => api.post('/payments/initiate', d),
+  status      : (bId)    => api.get(`/payments/${bId}/status`),
+  uploadProof : (bId, fd)=> api.post(`/payments/${bId}/upload-proof`, fd, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  // Admin manual confirmation
+  confirmManual: (bId, d) => api.post(`/payments/${bId}/confirm-manual`, d || {}),
+  getAll      : (p)      => api.get('/payments', { params: p }),
 }
 
 export const promoApi = {
