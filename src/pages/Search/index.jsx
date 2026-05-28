@@ -3,10 +3,11 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
 import { formatRupiah } from '@/utils'
-import { Search, MapPin, RotateCcw, ChevronDown, SlidersHorizontal } from 'lucide-react'
+import { Search, MapPin, RotateCcw, ChevronDown, SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { useTranslation } from 'react-i18next'
 import HotelCardRow from '@/components/hotel/HotelCardRow'
+import SEO from '@/components/SEO'
 
 const MAX_PRICE = 7000000
 const STAR_OPTIONS = [5, 4, 3, 2, 1]
@@ -97,6 +98,12 @@ export default function SearchPage() {
   const [sortBy, setSortBy] = useState('popular')
   const [page,   setPage]   = useState(1)
 
+  // Lock body scroll when mobile filter sheet open
+  useEffect(() => {
+    document.body.style.overflow = mobileFilter ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [mobileFilter])
+
   const query = {
     q         : form.q || undefined,
     checkIn   : form.checkIn,
@@ -186,13 +193,18 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <SEO
+        title="Cari Hotel & Villa"
+        description="Cari dan bandingkan ribuan hotel, villa, dan akomodasi di seluruh Indonesia. Filter berdasarkan lokasi, harga, dan fasilitas. Pesan instan di ArahInn."
+        url="/search"
+      />
 
       {/* ── Search bar top ── */}
-      <div className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="container py-4">
-          <form onSubmit={handleSearch}
-            className="flex flex-col md:flex-row gap-2 items-stretch md:items-end">
-            <div className="flex-[2] relative">
+      <div className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30">
+        <div className="container py-3 sm:py-4">
+          <form onSubmit={handleSearch} className="flex flex-col gap-2">
+            {/* Destination — always full width */}
+            <div className="relative">
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">KOTA / NAMA HOTEL</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -201,48 +213,53 @@ export default function SearchPage() {
                   className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand bg-slate-50" />
               </div>
             </div>
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">TIPE AKOMODASI</label>
-              <select value={form.category} onChange={e => setForm({...form, category: e.target.value})}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/30 min-w-[140px]">
-                <option value="">Semua Tipe</option>
-                {['Hotel','Villa','Kosan','Apartment','Guest House','Resort','Glamping'].map(c => (
-                  <option key={c} value={c}>{c === 'Apartment' ? 'Apartemen' : c}</option>
-                ))}
-              </select>
+
+            {/* Other fields: 2-col grid on mobile, single row on lg */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">TIPE</label>
+                <select value={form.category} onChange={e => setForm({...form, category: e.target.value})}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/30">
+                  <option value="">Semua Tipe</option>
+                  {['Hotel','Villa','Kosan','Apartment','Guest House','Resort','Glamping'].map(c => (
+                    <option key={c} value={c}>{c === 'Apartment' ? 'Apartemen' : c}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('search.guests')}</label>
+                <select value={form.guests} onChange={e => setForm({...form, guests: e.target.value})}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/30">
+                  {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} {t('search.guestUnit')}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('search.checkin')}</label>
+                <input type="date" value={form.checkIn} min={today}
+                  onChange={e => setForm({...form, checkIn: e.target.value})}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand bg-slate-50" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('search.checkout')}</label>
+                <input type="date" value={form.checkOut} min={form.checkIn}
+                  onChange={e => setForm({...form, checkOut: e.target.value})}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand bg-slate-50" />
+              </div>
             </div>
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('search.checkin')}</label>
-              <input type="date" value={form.checkIn} min={today}
-                onChange={e => setForm({...form, checkIn: e.target.value})}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand bg-slate-50" />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('search.checkout')}</label>
-              <input type="date" value={form.checkOut} min={form.checkIn}
-                onChange={e => setForm({...form, checkOut: e.target.value})}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand bg-slate-50" />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('search.guests')}</label>
-              <select value={form.guests} onChange={e => setForm({...form, guests: e.target.value})}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/30">
-                {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} {t('search.guestUnit')}</option>)}
-              </select>
-            </div>
+
             <button type="submit"
-              className="flex items-center justify-center gap-2 px-6 py-2.5 bg-orange-500 text-white rounded-xl font-semibold hover:bg-orange-600 transition-colors shadow-sm text-sm whitespace-nowrap">
+              className="flex items-center justify-center gap-2 px-6 py-2.5 bg-orange-500 text-white rounded-xl font-semibold hover:bg-orange-600 active:scale-[0.98] transition-all shadow-sm text-sm whitespace-nowrap">
               <Search className="w-4 h-4" /> {t('search.search')}
             </button>
           </form>
         </div>
       </div>
 
-      <div className="container py-6">
+      <div className="container py-4 sm:py-6">
         <div className="flex gap-6 items-start">
 
           {/* ── Sidebar (desktop) ── */}
-          <div className="hidden lg:block w-64 shrink-0 sticky top-4">
+          <div className="hidden lg:block w-64 shrink-0 sticky top-44">
             <Sidebar />
           </div>
 
@@ -250,9 +267,9 @@ export default function SearchPage() {
           <div className="flex-1 min-w-0">
 
             {/* Results header */}
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="font-bold text-slate-900">
+            <div className="flex items-center justify-between gap-3 mb-3 sm:mb-4">
+              <div className="min-w-0">
+                <p className="font-bold text-sm sm:text-base text-slate-900 truncate">
                   {isLoading ? t('search.searching') : (
                     <>{(form.q || form.category) && (
                       <span className="text-slate-500">
@@ -263,18 +280,19 @@ export default function SearchPage() {
                   )}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 {/* Mobile filter toggle */}
                 <button onClick={() => setMobileFilter(true)}
-                  className="lg:hidden flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-xl text-sm text-slate-600 bg-white hover:bg-slate-50">
-                  <SlidersHorizontal className="w-4 h-4" /> {t('search.filter')}
+                  className="lg:hidden flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-600 bg-white hover:bg-slate-50 active:scale-95 transition-all">
+                  <SlidersHorizontal className="w-4 h-4" />
+                  <span className="hidden xs:inline">{t('search.filter')}</span>
                 </button>
                 {/* Sort dropdown */}
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-500 whitespace-nowrap hidden md:block">{t('search.sortByLabel')}</span>
+                  <span className="text-sm text-slate-500 whitespace-nowrap hidden lg:block">{t('search.sortByLabel')}</span>
                   <div className="relative">
                     <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                      className="appearance-none pl-3 pr-8 py-2 border border-slate-200 rounded-xl text-sm bg-white font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand/30 cursor-pointer">
+                      className="appearance-none pl-3 pr-8 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm bg-white font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand/30 cursor-pointer">
                       {sortOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                     <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -284,12 +302,12 @@ export default function SearchPage() {
             </div>
 
             {/* Hotel list */}
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {isLoading ? (
                 Array(4).fill(0).map((_, i) => (
-                  <div key={i} className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex h-40">
-                    <div className="skeleton w-44 shrink-0" />
-                    <div className="flex-1 p-4 space-y-3">
+                  <div key={i} className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 overflow-hidden flex flex-col sm:flex-row h-auto sm:h-40">
+                    <div className="skeleton w-full h-40 sm:w-44 sm:h-auto shrink-0" />
+                    <div className="flex-1 p-3 sm:p-4 space-y-3">
                       <div className="skeleton h-5 w-2/3 rounded" />
                       <div className="skeleton h-4 w-1/3 rounded" />
                       <div className="skeleton h-4 w-1/2 rounded" />
@@ -299,45 +317,117 @@ export default function SearchPage() {
               ) : data?.data?.length ? (
                 data.data.map(hotel => <HotelCardRow key={hotel.id} hotel={hotel} />)
               ) : (
-                <div className="bg-white rounded-2xl border border-slate-200 py-20 text-center">
-                  <p className="text-4xl mb-4">🔍</p>
-                  <p className="font-semibold text-lg text-slate-700">{t('search.noResults')}</p>
-                  <p className="text-slate-400 text-sm mt-1">{t('search.noResultsHint')}</p>
+                <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 py-14 sm:py-20 text-center px-4">
+                  <p className="text-4xl mb-3 sm:mb-4">🔍</p>
+                  <p className="font-semibold text-base sm:text-lg text-slate-700">{t('search.noResults')}</p>
+                  <p className="text-slate-400 text-xs sm:text-sm mt-1">{t('search.noResultsHint')}</p>
                 </div>
               )}
             </div>
 
-            {/* Pagination */}
+            {/* Pagination — smart compact on mobile */}
             {data?.pagination?.total_pages > 1 && (
-              <div className="flex justify-center gap-2 mt-8">
-                {Array.from({ length: data.pagination.total_pages }, (_, i) => i + 1).map(p => (
-                  <button key={p} onClick={() => setPage(p)}
-                    className={`w-10 h-10 rounded-xl text-sm font-medium transition-colors border ${
-                      page === p ? 'bg-brand text-white border-brand' : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
-                    }`}>
-                    {p}
-                  </button>
-                ))}
-              </div>
+              <Pagination
+                current={page}
+                total={data.pagination.total_pages}
+                onChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+              />
             )}
           </div>
         </div>
       </div>
 
-      {/* ── Mobile filter drawer ── */}
+      {/* ── Mobile filter bottom sheet ── */}
       {mobileFilter && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileFilter(false)} />
-          <div className="absolute right-0 top-0 bottom-0 w-80 bg-slate-50 overflow-y-auto p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-lg">{t('search.filter')}</h2>
-              <button onClick={() => setMobileFilter(false)}
-                className="p-2 rounded-xl hover:bg-slate-200 transition-colors">✕</button>
+        <div className="fixed inset-0 z-50 lg:hidden flex items-end" onClick={() => setMobileFilter(false)}>
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in-fast" />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full bg-slate-50 rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col animate-slide-up-fast"
+          >
+            <div className="shrink-0 px-5 pt-3 pb-3 bg-white rounded-t-3xl border-b border-slate-100">
+              <div className="mx-auto w-10 h-1 rounded-full bg-slate-300 mb-3" />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Filter</p>
+                  <h2 className="font-display text-lg font-bold text-slate-900">{t('search.filter')}</h2>
+                </div>
+                <button onClick={() => setMobileFilter(false)}
+                  className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center"
+                  aria-label="Tutup">
+                  <X className="w-4 h-4 text-slate-600" />
+                </button>
+              </div>
             </div>
-            <Sidebar />
+            <div className="overflow-y-auto p-4 pb-24">
+              <Sidebar />
+            </div>
+            <div className="shrink-0 p-4 bg-white border-t border-slate-200">
+              <button onClick={() => setMobileFilter(false)}
+                className="w-full py-3 bg-orange-500 text-white rounded-xl font-bold text-sm hover:bg-orange-600 active:scale-[0.98] transition-all shadow-sm">
+                Terapkan Filter
+              </button>
+            </div>
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes slide-up-fast {
+          from { transform: translateY(100%); }
+          to   { transform: translateY(0); }
+        }
+        @keyframes fade-in-fast {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        .animate-slide-up-fast { animation: slide-up-fast 0.28s cubic-bezier(0.32, 0.72, 0, 1); }
+        .animate-fade-in-fast  { animation: fade-in-fast 0.2s ease-out; }
+      `}</style>
+    </div>
+  )
+}
+
+function Pagination({ current, total, onChange }) {
+  // Smart compact range — show neighbors + first/last
+  const window = 1
+  const pages = new Set([1, total, current])
+  for (let i = current - window; i <= current + window; i++) {
+    if (i > 1 && i < total) pages.add(i)
+  }
+  const sorted = [...pages].filter(p => p >= 1 && p <= total).sort((a, b) => a - b)
+  const items = []
+  let prev = 0
+  for (const p of sorted) {
+    if (p - prev > 1) items.push('…')
+    items.push(p)
+    prev = p
+  }
+
+  return (
+    <div className="flex justify-center items-center gap-1 sm:gap-2 mt-6 sm:mt-8">
+      <button onClick={() => onChange(Math.max(1, current - 1))}
+        disabled={current === 1}
+        className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all">
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+      {items.map((it, i) => (
+        it === '…' ? (
+          <span key={`e${i}`} className="w-7 sm:w-9 text-center text-slate-400 text-sm">…</span>
+        ) : (
+          <button key={it} onClick={() => onChange(it)}
+            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-xs sm:text-sm font-medium transition-all border active:scale-95 ${
+              current === it ? 'bg-brand text-white border-brand shadow' : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+            }`}>
+            {it}
+          </button>
+        )
+      ))}
+      <button onClick={() => onChange(Math.min(total, current + 1))}
+        disabled={current === total}
+        className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all">
+        <ChevronRight className="w-4 h-4" />
+      </button>
     </div>
   )
 }

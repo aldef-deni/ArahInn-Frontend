@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast'
 import {
   Clock, CheckCircle2, X, Tag, Copy, Check, Sparkles, CalendarDays, Wallet, Percent, Search,
 } from 'lucide-react'
+import SEO from '@/components/SEO'
 
 function checkIsUpcoming(startDate) {
   if (!startDate) return false
@@ -33,9 +34,9 @@ function PromoDetailModal({ promo, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
       onClick={onClose}>
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+      <div className="bg-white w-full max-w-lg sm:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden max-h-[92vh] sm:max-h-[90vh] overflow-y-auto animate-slide-up-promo"
         onClick={(e) => e.stopPropagation()}>
 
         <div className="relative bg-slate-50">
@@ -48,33 +49,33 @@ function PromoDetailModal({ promo, onClose }) {
             </div>
           )}
           <button onClick={onClose}
-            className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 backdrop-blur flex items-center justify-center hover:bg-white transition-colors shadow-md">
+            className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 backdrop-blur flex items-center justify-center hover:bg-white active:scale-90 transition-all shadow-md">
             <X className="w-4 h-4 text-slate-700" />
           </button>
           {isUpcoming ? (
-            <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-3 py-1.5 bg-amber-500 text-white rounded-full text-xs font-bold shadow-md">
+            <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-amber-500 text-white rounded-full text-[10px] sm:text-xs font-bold shadow-md">
               <Clock className="w-3 h-3" /> Segera Hadir
             </span>
           ) : (
-            <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-500 text-white rounded-full text-xs font-bold shadow-md">
+            <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-emerald-500 text-white rounded-full text-[10px] sm:text-xs font-bold shadow-md">
               <CheckCircle2 className="w-3 h-3" /> Sedang Berjalan
             </span>
           )}
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="p-5 sm:p-6 space-y-4 sm:space-y-5">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 leading-tight">{promo.name}</h2>
-            <p className="mt-1.5 text-xs text-slate-400 uppercase tracking-wide font-semibold">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight">{promo.name}</h2>
+            <p className="mt-1 sm:mt-1.5 text-[11px] sm:text-xs text-slate-400 uppercase tracking-wide font-semibold">
               {promo.type === 'flash_sale' ? 'Flash Sale' : promo.type === 'loyalty' ? 'Loyalty' : 'Voucher'}
             </p>
           </div>
 
-          <div className="rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100 p-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-orange-500">Diskon</p>
-            <p className="mt-1 text-4xl font-black text-orange-600">{discountLabel}</p>
+          <div className="rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100 p-4 sm:p-5">
+            <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-orange-500">Diskon</p>
+            <p className="mt-1 text-3xl sm:text-4xl font-black text-orange-600 break-all">{discountLabel}</p>
             {promo.maxDiscount > 0 && promo.discountType === 'percent' && (
-              <p className="mt-1 text-xs text-orange-700/80">Maks. {formatRupiah(promo.maxDiscount)}</p>
+              <p className="mt-1 text-[11px] sm:text-xs text-orange-700/80">Maks. {formatRupiah(promo.maxDiscount)}</p>
             )}
           </div>
 
@@ -156,6 +157,11 @@ export default function PromoPage() {
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff7ed_0%,#ffffff_30%,#ffffff_100%)]">
+      <SEO
+        title="Promo & Flash Sale"
+        description="Kumpulan promo terbaru ArahInn: diskon hotel, voucher cashback, flash sale, dan penawaran spesial untuk akomodasi pilihan di seluruh Indonesia."
+        url="/promo"
+      />
       {/* Hero Section */}
       <section className="relative overflow-hidden text-white">
         {/* Base gradient */}
@@ -192,41 +198,41 @@ export default function PromoPage() {
         <div className="absolute top-32 right-1/3 w-1.5 h-1.5 bg-yellow-200 rounded-full opacity-70" />
         <div className="absolute bottom-24 left-1/3 w-1 h-1 bg-white rounded-full opacity-50" />
 
-        <div className="container py-16 lg:py-24 relative">
+        <div className="container py-10 sm:py-14 lg:py-24 relative">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-white/15 backdrop-blur-md rounded-full text-xs font-bold mb-5 border border-white/25 shadow-lg shadow-black/10">
-              <Sparkles className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1 sm:py-1.5 bg-white/15 backdrop-blur-md rounded-full text-[11px] sm:text-xs font-bold mb-3 sm:mb-5 border border-white/25 shadow-lg shadow-black/10">
+              <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               <span className="tracking-wide">PROMO ARAHINN</span>
             </div>
-            <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-black leading-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.25)]">
+            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.25)]">
               Promo dari{' '}
               <span className="bg-gradient-to-r from-amber-200 via-orange-100 to-yellow-200 bg-clip-text text-transparent">
                 ArahInn
               </span>
             </h1>
-            <p className="mt-4 text-white/95 text-base md:text-lg max-w-lg drop-shadow-[0_1px_4px_rgba(0,0,0,0.2)]">
+            <p className="mt-2 sm:mt-4 text-white/95 text-sm sm:text-base md:text-lg max-w-lg drop-shadow-[0_1px_4px_rgba(0,0,0,0.2)]">
               Penawaran spesial buat kamu.
             </p>
 
             {/* Stats */}
             {!isLoading && promos.length > 0 && (
-              <div className="mt-8 flex flex-wrap gap-3">
-                <div className="bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl px-5 py-3.5 flex items-center gap-3 shadow-lg shadow-black/10">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-400/30 backdrop-blur flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-200" />
+              <div className="mt-5 sm:mt-8 grid grid-cols-2 sm:flex sm:flex-wrap gap-2.5 sm:gap-3">
+                <div className="bg-white/15 backdrop-blur-md border border-white/25 rounded-xl sm:rounded-2xl px-3 sm:px-5 py-2.5 sm:py-3.5 flex items-center gap-2.5 sm:gap-3 shadow-lg shadow-black/10">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-400/30 backdrop-blur flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-200" />
                   </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-white/70 font-bold">Sedang Berjalan</p>
-                    <p className="font-black text-2xl leading-tight">{running}</p>
+                  <div className="min-w-0">
+                    <p className="text-[9px] sm:text-[10px] uppercase tracking-wide text-white/70 font-bold">Sedang Berjalan</p>
+                    <p className="font-black text-lg sm:text-2xl leading-tight">{running}</p>
                   </div>
                 </div>
-                <div className="bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl px-5 py-3.5 flex items-center gap-3 shadow-lg shadow-black/10">
-                  <div className="w-10 h-10 rounded-xl bg-amber-300/30 backdrop-blur flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-amber-100" />
+                <div className="bg-white/15 backdrop-blur-md border border-white/25 rounded-xl sm:rounded-2xl px-3 sm:px-5 py-2.5 sm:py-3.5 flex items-center gap-2.5 sm:gap-3 shadow-lg shadow-black/10">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-amber-300/30 backdrop-blur flex items-center justify-center shrink-0">
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-amber-100" />
                   </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-white/70 font-bold">Segera Hadir</p>
-                    <p className="font-black text-2xl leading-tight">{stats.upcoming}</p>
+                  <div className="min-w-0">
+                    <p className="text-[9px] sm:text-[10px] uppercase tracking-wide text-white/70 font-bold">Segera Hadir</p>
+                    <p className="font-black text-lg sm:text-2xl leading-tight">{stats.upcoming}</p>
                   </div>
                 </div>
               </div>
@@ -239,16 +245,16 @@ export default function PromoPage() {
       </section>
 
       {/* Filter tabs */}
-      <section className="container py-8">
-        <div className="flex items-center justify-center mb-8">
-          <div className="inline-flex p-1 bg-white border border-slate-200 rounded-2xl shadow-sm">
+      <section className="container py-6 sm:py-8">
+        <div className="flex items-center justify-center mb-5 sm:mb-8">
+          <div className="inline-flex p-1 bg-white border border-slate-200 rounded-2xl shadow-sm w-full sm:w-auto">
             {[
               { val: 'all',      label: 'Semua' },
-              { val: 'running',  label: 'Sedang Berjalan' },
-              { val: 'upcoming', label: 'Segera Hadir' },
+              { val: 'running',  label: 'Berjalan' },
+              { val: 'upcoming', label: 'Segera' },
             ].map(t => (
               <button key={t.val} onClick={() => setFilter(t.val)}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all active:scale-95 ${
                   filter === t.val
                     ? 'bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-md shadow-orange-200'
                     : 'text-slate-500 hover:text-slate-700'
@@ -261,28 +267,28 @@ export default function PromoPage() {
 
         {/* Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {Array(6).fill(0).map((_, i) => (
-              <div key={i} className="skeleton aspect-[16/9] rounded-3xl" />
+              <div key={i} className="skeleton aspect-[16/9] rounded-2xl sm:rounded-3xl" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-24">
-            <div className="w-20 h-20 mx-auto rounded-full bg-slate-100 flex items-center justify-center mb-4">
-              <Percent className="w-10 h-10 text-slate-300" />
+          <div className="text-center py-14 sm:py-24 px-4">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-100 flex items-center justify-center mb-3 sm:mb-4">
+              <Percent className="w-8 h-8 sm:w-10 sm:h-10 text-slate-300" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900">Belum ada promo</h3>
-            <p className="mt-2 text-slate-500">Pantau halaman ini untuk update penawaran terbaru.</p>
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900">Belum ada promo</h3>
+            <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-slate-500">Pantau halaman ini untuk update penawaran terbaru.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filtered.map(promo => {
               const isUpcoming = checkIsUpcoming(promo.startDate)
               return (
                 <button
                   key={promo.id}
                   onClick={() => setSelected(promo)}
-                  className="group relative rounded-3xl overflow-hidden bg-white border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all text-left"
+                  className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-white border border-slate-200 hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all text-left"
                 >
                   <div className="relative bg-slate-50 overflow-hidden">
                     <img
@@ -292,11 +298,11 @@ export default function PromoPage() {
                       onError={(e) => { e.currentTarget.style.display = 'none' }}
                     />
                     {isUpcoming ? (
-                      <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500 text-white rounded-full text-[11px] font-bold shadow-md">
+                      <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500 text-white rounded-full text-[10px] sm:text-[11px] font-bold shadow-md">
                         <Clock className="w-3 h-3" /> Segera Hadir
                       </span>
                     ) : (
-                      <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500 text-white rounded-full text-[11px] font-bold shadow-md">
+                      <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500 text-white rounded-full text-[10px] sm:text-[11px] font-bold shadow-md">
                         <CheckCircle2 className="w-3 h-3" /> Sedang Berjalan
                       </span>
                     )}
@@ -310,6 +316,20 @@ export default function PromoPage() {
 
       {/* Detail modal */}
       {selected && <PromoDetailModal promo={selected} onClose={() => setSelected(null)} />}
+
+      <style>{`
+        @keyframes slide-up-promo {
+          from { transform: translateY(100%); opacity: 0.5; }
+          to   { transform: translateY(0); opacity: 1; }
+        }
+        @media (min-width: 640px) {
+          @keyframes slide-up-promo {
+            from { transform: scale(0.95); opacity: 0; }
+            to   { transform: scale(1); opacity: 1; }
+          }
+        }
+        .animate-slide-up-promo { animation: slide-up-promo 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+      `}</style>
     </div>
   )
 }

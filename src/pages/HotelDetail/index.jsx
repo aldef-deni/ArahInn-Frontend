@@ -36,6 +36,7 @@ import {
 import MapEmbed from '@/components/ui/MapEmbed'
 import ReviewForm from '@/components/ReviewForm'
 import InquiryChatModal from '@/components/chat/InquiryChatModal'
+import SEO from '@/components/SEO'
 
 const facilityIcons = {
   wifi: Wifi,
@@ -564,28 +565,29 @@ function BookingModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 py-6 backdrop-blur-sm">
-      <div className="w-full max-w-2xl overflow-hidden rounded-[32px] border border-white/30 bg-white shadow-[0_32px_80px_rgba(15,23,42,0.28)]">
-        <div className="border-b border-slate-200 px-6 py-5 md:px-7">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Pemesanan kamar</p>
-              <h3 className="mt-2 text-2xl font-bold text-slate-900">Lengkapi detail sebelum checkout</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/55 sm:px-4 sm:py-6 backdrop-blur-sm" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-2xl max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden rounded-t-3xl sm:rounded-[32px] border border-white/30 bg-white shadow-[0_32px_80px_rgba(15,23,42,0.28)] animate-slide-up-modal">
+        <div className="shrink-0 border-b border-slate-200 px-4 sm:px-6 pt-3 sm:pt-5 pb-4 sm:pb-5 md:px-7">
+          <div className="sm:hidden mx-auto w-10 h-1 rounded-full bg-slate-300 mb-3" />
+          <div className="flex items-start justify-between gap-3 sm:gap-4">
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Pemesanan kamar</p>
+              <h3 className="mt-1 sm:mt-2 text-lg sm:text-2xl font-bold text-slate-900 leading-tight">Lengkapi detail sebelum checkout</h3>
+              <p className="mt-1 sm:mt-2 text-xs sm:text-sm leading-5 sm:leading-6 text-slate-500 line-clamp-2">
                 {room.name} di {hotelName}
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-800"
+              className="rounded-full border border-slate-200 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-800 active:scale-95 shrink-0"
             >
               Tutup
             </button>
           </div>
         </div>
 
-        <div className="grid gap-6 px-6 py-6 md:grid-cols-[minmax(0,1fr)_260px] md:px-7">
+        <div className="overflow-y-auto grid gap-5 sm:gap-6 px-4 sm:px-6 py-4 sm:py-6 md:grid-cols-[minmax(0,1fr)_260px] md:px-7">
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -645,8 +647,8 @@ function BookingModal({
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Ringkasan pilihan</p>
+          <div className="rounded-2xl sm:rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 sm:p-5">
+            <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Ringkasan pilihan</p>
             <h4 className="mt-2 text-lg font-bold text-slate-900">{room.name}</h4>
             <p className="mt-1 text-sm capitalize text-slate-500">{room.type}</p>
 
@@ -697,7 +699,7 @@ function BookingModal({
               type="button"
               onClick={handleSubmit}
               disabled={stayNights <= 0}
-              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
+              className="mt-5 sm:mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-orange-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
             >
               Lanjutkan pemesanan
               <ArrowRight className="h-4 w-4" />
@@ -705,6 +707,20 @@ function BookingModal({
           </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes slide-up-modal {
+          from { transform: translateY(100%); opacity: 0.5; }
+          to   { transform: translateY(0); opacity: 1; }
+        }
+        @media (min-width: 640px) {
+          @keyframes slide-up-modal {
+            from { transform: scale(0.95); opacity: 0; }
+            to   { transform: scale(1); opacity: 1; }
+          }
+        }
+        .animate-slide-up-modal { animation: slide-up-modal 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+      `}</style>
     </div>
   )
 }
@@ -861,20 +877,39 @@ export default function HotelDetail() {
   const prevImg = () => setSelImg(i => (i - 1 + images.length) % images.length)
   const nextImg = () => setSelImg(i => (i + 1) % images.length)
 
+  const seoTitle = hotel?.name
+    ? `${hotel.name}${hotel.city ? ` di ${hotel.city}` : ''}`
+    : null
+  const seoDescription = hotel?.description
+    ? String(hotel.description).replace(/<[^>]+>/g, '').slice(0, 160)
+    : `Pesan ${hotel?.name || 'akomodasi pilihan'} di ArahInn dengan harga terbaik. Pembayaran aman, konfirmasi instan, dan customer service 24 jam.`
+  const seoImage = images[0] ? getImageUrl(images[0]) : undefined
+  const seoUrl = hotel?.category && hotel?.slug
+    ? `/${hotel.category}/${hotel.slug}`
+    : `/hotel/${hotelKey}`
+
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f7fbff_0%,#eef5ff_48%,#ffffff_100%)]">
-      <div className="container py-8">
+      <SEO
+        title={seoTitle}
+        description={seoDescription}
+        image={seoImage}
+        url={seoUrl}
+        type="article"
+      />
+      <div className="container py-4 sm:py-6 lg:py-8 pb-24 lg:pb-8">
         <button
           onClick={() => navigate(-1)}
-          className="group mb-6 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition-colors hover:border-blue-200 hover:text-blue-600"
+          className="group mb-4 sm:mb-6 inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-slate-200 bg-white px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-slate-600 shadow-sm transition-colors hover:border-blue-200 hover:text-blue-600 active:scale-95"
         >
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-          Kembali ke hasil pencarian
+          <span className="hidden sm:inline">Kembali ke hasil pencarian</span>
+          <span className="sm:hidden">Kembali</span>
         </button>
 
-        <section className="overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-[0_22px_60px_rgba(15,23,42,0.08)]">
+        <section className="overflow-hidden rounded-2xl sm:rounded-3xl lg:rounded-[34px] border border-slate-200 bg-white shadow-[0_22px_60px_rgba(15,23,42,0.08)]">
           <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_340px]">
-            <div className="relative min-h-[420px] bg-slate-950">
+            <div className="relative min-h-[260px] sm:min-h-[340px] lg:min-h-[420px] bg-slate-950">
               {images[selImg] ? (
                 <img
                   src={getImageUrl(images[selImg])}
@@ -892,63 +927,63 @@ export default function HotelDetail() {
                   <button
                     type="button"
                     onClick={prevImg}
-                    className="absolute left-5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/15 text-white backdrop-blur transition-colors hover:bg-white/25"
+                    className="absolute left-3 sm:left-5 top-1/2 flex h-9 w-9 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/15 text-white backdrop-blur transition-colors hover:bg-white/25 active:scale-90"
                   >
-                    <ChevronLeft className="h-5 w-5" />
+                    <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
                   <button
                     type="button"
                     onClick={nextImg}
-                    className="absolute right-5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/15 text-white backdrop-blur transition-colors hover:bg-white/25"
+                    className="absolute right-3 sm:right-5 top-1/2 flex h-9 w-9 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/15 text-white backdrop-blur transition-colors hover:bg-white/25 active:scale-90"
                   >
-                    <ChevronRight className="h-5 w-5" />
+                    <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
                 </>
               ) : null}
 
-              <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
+              <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8">
                 {campaigns.length ? (
-                  <div className="mb-5 flex flex-wrap gap-2">
+                  <div className="mb-3 sm:mb-5 flex flex-wrap gap-1.5 sm:gap-2">
                     {campaigns.slice(0, 2).map(campaign => (
                       <span
                         key={campaign.id}
-                        className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-4 py-2 text-xs font-semibold text-white backdrop-blur"
+                        className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/20 bg-white/15 px-2.5 sm:px-4 py-1 sm:py-2 text-[10px] sm:text-xs font-semibold text-white backdrop-blur"
                       >
-                        <Sparkles className="h-3.5 w-3.5" />
-                        {campaign.title}
+                        <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        <span className="truncate max-w-[160px] sm:max-w-none">{campaign.title}</span>
                       </span>
                     ))}
                   </div>
                 ) : null}
 
                 <div className="max-w-3xl">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-700">
-                      <ShieldCheck className="h-3.5 w-3.5" />
-                      Akomodasi terverifikasi
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <span className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-white px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold text-blue-700">
+                      <ShieldCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                      <span className="hidden xs:inline">Akomodasi </span>Terverifikasi
                     </span>
                     {hotel.starRating ? (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold text-white backdrop-blur">
                         {Array.from({ length: hotel.starRating }, (_, index) => (
-                          <Star key={index} className="h-3.5 w-3.5 fill-amber-300 text-amber-300" />
+                          <Star key={index} className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-amber-300 text-amber-300" />
                         ))}
                       </span>
                     ) : null}
                   </div>
 
-                  <h1 className="mt-4 max-w-3xl text-3xl font-bold leading-tight text-white md:text-[2.6rem]">
+                  <h1 className="mt-2 sm:mt-4 max-w-3xl text-xl sm:text-2xl md:text-3xl lg:text-[2.6rem] font-bold leading-tight text-white">
                     {hotel.name}
                   </h1>
 
-                  <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm text-white/85">
-                    <span className="inline-flex items-center gap-2">
-                      <MapPin className="h-4 w-4 shrink-0" />
-                      {[hotel.address, hotel.city].filter(Boolean).join(', ')}
+                  <div className="mt-2 sm:mt-4 flex flex-wrap items-center gap-x-3 sm:gap-x-5 gap-y-1.5 sm:gap-y-3 text-xs sm:text-sm text-white/85">
+                    <span className="inline-flex items-center gap-1.5 sm:gap-2 min-w-0">
+                      <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                      <span className="truncate">{[hotel.address, hotel.city].filter(Boolean).join(', ')}</span>
                     </span>
                     {averageRating ? (
-                      <span className="inline-flex items-center gap-2">
-                        <Star className="h-4 w-4 fill-amber-300 text-amber-300" />
-                        {averageRating} dari {reviewData?.total || 0} ulasan
+                      <span className="inline-flex items-center gap-1.5 sm:gap-2 shrink-0">
+                        <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-amber-300 text-amber-300" />
+                        {averageRating} <span className="hidden sm:inline">dari {reviewData?.total || 0} ulasan</span>
                       </span>
                     ) : null}
                   </div>
@@ -956,18 +991,18 @@ export default function HotelDetail() {
               </div>
             </div>
 
-            <aside className="border-t border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-5 lg:border-l lg:border-t-0">
-              <div className="mb-4 flex items-center justify-between">
+            <aside className="border-t border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 sm:p-5 lg:border-l lg:border-t-0">
+              <div className="mb-3 sm:mb-4 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Galeri</p>
-                  <p className="mt-1 text-sm text-slate-500">Lihat suasana kamar dan area properti.</p>
+                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Galeri</p>
+                  <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-slate-500">Lihat suasana kamar dan area properti.</p>
                 </div>
-                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                <span className="rounded-full bg-blue-50 px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold text-blue-700 shrink-0">
                   {images.length} foto
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-4 lg:grid-cols-2 gap-2 sm:gap-3">
                 {visibleThumbs.map((image, index) => (
                   <GalleryThumb
                     key={`${image}-${index}`}
@@ -982,7 +1017,7 @@ export default function HotelDetail() {
                 <button
                   type="button"
                   onClick={() => openGallery(selImg)}
-                  className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-semibold text-blue-700 transition-all hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm"
+                  className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-white px-4 py-2.5 text-xs sm:text-sm font-semibold text-blue-700 transition-all hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm active:scale-[0.98]"
                 >
                   <ImageIcon className="h-4 w-4" />
                   Lihat Semua Foto
@@ -997,7 +1032,7 @@ export default function HotelDetail() {
           </div>
         </section>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <div className="mt-4 sm:mt-6 grid gap-3 sm:gap-4 sm:grid-cols-3">
           {[
             {
               label: 'Lokasi',
@@ -1023,16 +1058,16 @@ export default function HotelDetail() {
           ].map(item => {
             const Icon = item.icon
             return (
-              <div key={item.label} className="group rounded-[28px] border border-slate-200 bg-white px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
-                <div className="flex items-center gap-4">
-                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${item.tint} transition-transform group-hover:scale-105`}>
-                    <Icon className="h-5 w-5" />
+              <div key={item.label} className="group rounded-2xl sm:rounded-[28px] border border-slate-200 bg-white px-4 sm:px-5 py-3.5 sm:py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className={`flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-br ${item.tint} transition-transform group-hover:scale-105`}>
+                    <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">{item.label}</p>
-                    <p className="mt-1 text-base font-bold text-slate-900 truncate">{item.value}</p>
+                    <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">{item.label}</p>
+                    <p className="mt-0.5 sm:mt-1 text-sm sm:text-base font-bold text-slate-900 truncate">{item.value}</p>
                     {item.sub && (
-                      <p className="mt-0.5 text-xs text-slate-500 truncate">{item.sub}</p>
+                      <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 truncate">{item.sub}</p>
                     )}
                   </div>
                 </div>
@@ -1041,13 +1076,13 @@ export default function HotelDetail() {
           })}
         </div>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="mt-6 sm:mt-8 grid gap-6 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="space-y-7">
-            <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
+            <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Tentang properti</p>
-                  <h2 className="mt-2 text-2xl font-bold text-slate-900">Menginap lebih nyaman, lebih meyakinkan</h2>
+                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Tentang properti</p>
+                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">Menginap lebih nyaman, lebih meyakinkan</h2>
                 </div>
                 {hotel.starRating ? (
                   <div className="rounded-2xl bg-amber-50 px-4 py-3 text-right">
@@ -1062,11 +1097,11 @@ export default function HotelDetail() {
               </p>
             </section>
 
-            <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
+            <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Lokasi</p>
-                  <h2 className="mt-2 text-2xl font-bold text-slate-900">Dekat dengan destinasi utama</h2>
+                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Lokasi</p>
+                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">Dekat dengan destinasi utama</h2>
                 </div>
                 <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600">
                   {[hotel.city, hotel.province].filter(Boolean).join(', ')}
@@ -1084,10 +1119,10 @@ export default function HotelDetail() {
             </section>
 
             {hotel.facilities?.length > 0 ? (
-              <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
+              <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
                 <div className="mb-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Fasilitas</p>
-                  <h2 className="mt-2 text-2xl font-bold text-slate-900">Fitur yang paling dicari tamu</h2>
+                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Fasilitas</p>
+                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">Fitur yang paling dicari tamu</h2>
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -1098,11 +1133,11 @@ export default function HotelDetail() {
               </section>
             ) : null}
 
-            <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
+            <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Pilihan kamar</p>
-                  <h2 className="mt-2 text-2xl font-bold text-slate-900">Temukan tipe kamar yang cocok</h2>
+                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Pilihan kamar</p>
+                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">Temukan tipe kamar yang cocok</h2>
                 </div>
                 <div className="rounded-full bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
                   {(() => {
@@ -1144,11 +1179,11 @@ export default function HotelDetail() {
               </div>
             </section>
 
-            <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
+            <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Ulasan tamu</p>
-                  <h2 className="mt-2 text-2xl font-bold text-slate-900">Pendapat tamu setelah menginap</h2>
+                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Ulasan tamu</p>
+                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">Pendapat tamu setelah menginap</h2>
                 </div>
                 {averageRating ? (
                   <div className="rounded-2xl bg-blue-50 px-4 py-3 text-right">
@@ -1205,7 +1240,7 @@ export default function HotelDetail() {
               <div className="rounded-[24px] bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_55%,#f8fafc_100%)] p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Cek ketersediaan</p>
+                    <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Cek ketersediaan</p>
                     <h3 className="mt-2 text-xl font-bold text-slate-900">Rencanakan tanggal menginap</h3>
                   </div>
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-blue-600 shadow-sm">
@@ -1448,6 +1483,43 @@ export default function HotelDetail() {
               </div>
             </div>
           </aside>
+        </div>
+      </div>
+
+      {/* ── Mobile floating CTA bar (hidden on lg+) ───────────── */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-8px_24px_rgba(15,23,42,0.08)]">
+        <div className="container py-3 flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            {sidebarUnitPrice > 0 ? (
+              <>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Mulai dari</p>
+                <p className="text-base font-black text-orange-600 leading-tight truncate">
+                  {formatRupiah(sidebarUnitPrice)}
+                  <span className="text-[10px] font-medium text-slate-500"> /malam</span>
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Cek tanggal</p>
+                <p className="text-xs font-semibold text-slate-700">untuk lihat harga</p>
+              </>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (!token) return navigate('/login')
+              if (selectedSidebarRoom) {
+                setBookingRoom(selectedSidebarRoom)
+              } else {
+                document.querySelector('aside.space-y-5')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }
+            }}
+            className="px-5 py-2.5 bg-orange-500 text-white rounded-xl font-bold text-sm shadow-md hover:bg-orange-600 active:scale-95 transition-all flex items-center gap-1.5 shrink-0"
+          >
+            Pesan
+            <ArrowRight className="h-4 w-4" />
+          </button>
         </div>
       </div>
 

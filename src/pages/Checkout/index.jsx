@@ -134,22 +134,22 @@ export default function Checkout() {
   }, [roomId, checkIn, checkOut, roomCount])
 
   return (
-    <div className="container max-w-5xl py-8">
+    <div className="container max-w-5xl py-4 sm:py-6 lg:py-8 pb-28 lg:pb-8">
       <button
         onClick={() => navigate(-1)}
-        className="mb-6 flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        className="mb-4 sm:mb-6 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground transition-all hover:text-foreground active:scale-95"
       >
         <ChevronLeft className="h-4 w-4" /> {t('common.back')}
       </button>
-      <h1 className="mb-8 font-display text-2xl font-bold">{t('checkout.title')}</h1>
+      <h1 className="mb-5 sm:mb-8 font-display text-xl sm:text-2xl font-bold leading-tight">{t('checkout.title')}</h1>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <div className="rounded-2xl border bg-white p-6 shadow-card">
-            <h2 className="mb-5 flex items-center gap-2 text-base font-semibold">
-              <User className="h-5 w-5 text-brand" /> {t('checkout.guestInfo')}
+      <div className="grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-3 lg:gap-8">
+        <div className="space-y-4 sm:space-y-6 lg:col-span-2">
+          <div className="rounded-xl sm:rounded-2xl border bg-white p-4 sm:p-5 lg:p-6 shadow-card">
+            <h2 className="mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base font-semibold">
+              <User className="h-4 w-4 sm:h-5 sm:w-5 text-brand" /> {t('checkout.guestInfo')}
             </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
               {[
                 {
                   key: 'guestName',
@@ -174,7 +174,7 @@ export default function Checkout() {
                 },
               ].map(({ key, label, icon: Icon, type, placeholder }) => (
                 <div key={key} className={key === 'guestName' ? 'sm:col-span-2' : ''}>
-                  <label className="mb-1.5 block text-sm font-medium">
+                  <label className="mb-1.5 block text-xs sm:text-sm font-medium">
                     {label} <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -190,7 +190,7 @@ export default function Checkout() {
                 </div>
               ))}
               <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-sm font-medium">{t('checkout.notes')} ({t('common.optional')})</label>
+                <label className="mb-1.5 block text-xs sm:text-sm font-medium">{t('checkout.notes')} ({t('common.optional')})</label>
                 <textarea
                   value={form.notes}
                   onChange={e => setForm({ ...form, notes: e.target.value })}
@@ -202,11 +202,11 @@ export default function Checkout() {
             </div>
           </div>
 
-          <div className="rounded-2xl border bg-white p-6 shadow-card">
-            <h2 className="mb-5 flex items-center gap-2 text-base font-semibold">
-              <Tag className="h-5 w-5 text-brand" /> {t('checkout.promoCode')}
+          <div className="rounded-xl sm:rounded-2xl border bg-white p-4 sm:p-5 lg:p-6 shadow-card">
+            <h2 className="mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base font-semibold">
+              <Tag className="h-4 w-4 sm:h-5 sm:w-5 text-brand" /> {t('checkout.promoCode')}
             </h2>
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3">
               <input
                 value={form.promoCode}
                 onChange={e => {
@@ -214,7 +214,7 @@ export default function Checkout() {
                   if (promoError) setPromoError('')
                 }}
                 placeholder={t('checkout.promoPh')}
-                className={`flex-1 rounded-xl border px-4 py-2.5 text-sm uppercase focus:outline-none focus:ring-2 ${
+                className={`flex-1 min-w-0 rounded-xl border px-3 sm:px-4 py-2.5 text-sm uppercase focus:outline-none focus:ring-2 ${
                   promoError
                     ? 'border-red-300 focus:ring-red-200 focus:border-red-400'
                     : 'focus:ring-brand/50'
@@ -223,19 +223,19 @@ export default function Checkout() {
               <button
                 onClick={handleApplyPromo}
                 disabled={!form.promoCode || applyPromoMutation.isPending}
-                className="rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
+                className="rounded-xl bg-brand px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold text-white transition-all hover:bg-brand-700 active:scale-95 disabled:opacity-50 shrink-0"
               >
                 {applyPromoMutation.isPending ? '...' : t('checkout.apply')}
               </button>
             </div>
             {promoError && (
-              <div className="mt-2 flex items-start gap-1.5 text-sm text-red-600">
+              <div className="mt-2 flex items-start gap-1.5 text-xs sm:text-sm text-red-600">
                 <span className="font-semibold">⚠</span>
                 <span>{promoError}</span>
               </div>
             )}
             {promoApplied && pricing?.promoDiscount > 0 && !promoError && (
-              <div className="mt-3 rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-sm text-green-700">
+              <div className="mt-3 rounded-xl border border-green-200 bg-green-50 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-green-700">
                 {t('checkout.promoSuccess', { amount: formatRupiah(pricing.promoDiscount) })}
               </div>
             )}
@@ -243,8 +243,8 @@ export default function Checkout() {
         </div>
 
         <div className="space-y-4">
-          <div className="sticky top-24 rounded-2xl border bg-white p-5 shadow-card">
-            <h2 className="mb-4 text-base font-semibold">{t('checkout.summary')}</h2>
+          <div className="lg:sticky lg:top-24 rounded-xl sm:rounded-2xl border bg-white p-4 sm:p-5 shadow-card">
+            <h2 className="mb-3 sm:mb-4 text-sm sm:text-base font-semibold">{t('checkout.summary')}</h2>
 
             {hotel && (
               <div className="mb-4 flex gap-3 border-b pb-4">
@@ -386,15 +386,34 @@ export default function Checkout() {
             <button
               onClick={() => bookMutation.mutate()}
               disabled={!form.guestName || !form.guestEmail || bookMutation.isPending}
-              className="mt-5 w-full rounded-xl bg-brand py-3 font-bold text-white shadow-brand/30 shadow-md transition-colors hover:bg-brand-700 disabled:opacity-50"
+              className="mt-4 sm:mt-5 hidden lg:flex w-full items-center justify-center rounded-xl bg-brand py-3 font-bold text-white shadow-brand/30 shadow-md transition-all hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50"
             >
               {bookMutation.isPending ? t('checkout.processing') : t('checkout.proceedPayment')}
             </button>
 
-            <p className="mt-3 text-center text-xs text-muted-foreground">
+            <p className="mt-3 text-center text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
               {t('checkout.agreement')}
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* ── Mobile sticky bottom CTA (hidden on lg+) ───────────── */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-8px_24px_rgba(15,23,42,0.08)]">
+        <div className="container py-3 flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">{t('checkout.total')}</p>
+            <p className="text-base font-black text-orange-600 leading-tight truncate">
+              {pricing ? formatRupiah(pricing.totalPrice) : '—'}
+            </p>
+          </div>
+          <button
+            onClick={() => bookMutation.mutate()}
+            disabled={!form.guestName || !form.guestEmail || bookMutation.isPending}
+            className="px-5 py-2.5 bg-brand text-white rounded-xl font-bold text-sm shadow-md hover:bg-brand-700 active:scale-95 disabled:opacity-50 transition-all shrink-0"
+          >
+            {bookMutation.isPending ? '...' : t('checkout.proceedPayment')}
+          </button>
         </div>
       </div>
     </div>

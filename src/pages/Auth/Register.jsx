@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import { useTranslation } from 'react-i18next'
 import { Eye, EyeOff, Mail, Lock, User, Phone, UserPlus, CheckCircle2, X } from 'lucide-react'
+import SEO from '@/components/SEO'
 
 export default function Register() {
   const { t }     = useTranslation()
@@ -43,6 +44,7 @@ export default function Register() {
 
   return (
     <>
+    <SEO title="Daftar Akun" description="Buat akun ArahInn gratis untuk menikmati promo eksklusif dan pemesanan akomodasi yang lebih cepat." url="/register" noindex />
     {/* Success popup */}
     {showSuccess && (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">

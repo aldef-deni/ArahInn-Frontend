@@ -357,9 +357,10 @@ export default function UserLayout() {
           <div>
             <h4 className="font-display font-bold text-xl text-brand-800 mb-4">{t('footer.help')}</h4>
             <ul className="space-y-2.5 text-sm text-slate-500">
-              {[t('footer.helpCenter'), t('footer.terms'), t('footer.privacy'), t('footer.contactLink')].map(l => (
-                <li key={l}><a href="#" className="hover:text-brand transition-colors">{l}</a></li>
-              ))}
+              <li><a href="#" className="hover:text-brand transition-colors">{t('footer.helpCenter')}</a></li>
+              <li><Link to="/syarat-ketentuan" className="hover:text-brand transition-colors">{t('footer.terms')}</Link></li>
+              <li><Link to="/privacy-policy" className="hover:text-brand transition-colors">{t('footer.privacy')}</Link></li>
+              <li><a href="#" className="hover:text-brand transition-colors">{t('footer.contactLink')}</a></li>
             </ul>
           </div>
           <div>

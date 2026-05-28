@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useTranslation } from 'react-i18next'
 import { Eye, EyeOff, Mail, Lock, LogIn } from 'lucide-react'
 import { isManagementRole, isOwnerRole } from '@/utils/isExtranet'
+import SEO from '@/components/SEO'
 
 export default function Login() {
   const { t }      = useTranslation()
@@ -30,7 +31,7 @@ export default function Login() {
       if (!hasCustomer && isManagementRole(rolesPayload)) {
         toast({
           title: 'Login gagal',
-          description: 'Akun superadmin, market manager, dan finance tidak bisa login dari staging.arahinn.com.',
+          description: 'Akun superadmin, market manager, dan finance tidak bisa login dari arahinn.com.',
           variant: 'destructive',
         })
         setAuth(null, null, null)
@@ -39,7 +40,7 @@ export default function Login() {
       if (!hasCustomer && isOwnerRole(rolesPayload)) {
         toast({
           title: 'Login gagal',
-          description: 'Akun owner properti tidak bisa login dari staging.arahinn.com.',
+          description: 'Akun owner properti tidak bisa login dari arahinn.com.',
           variant: 'destructive',
         })
         setAuth(null, null, null)
@@ -73,6 +74,7 @@ export default function Login() {
 
   return (
     <div className="animate-fade-in">
+      <SEO title="Masuk" description="Masuk ke akun ArahInn untuk memesan hotel, villa, dan layanan lainnya." url="/login" noindex />
       <h2 className="font-display text-3xl font-bold mb-2">{t('auth.login')}</h2>
       <p className="text-muted-foreground mb-8">{t('auth.noAccount')}{' '}
         <Link to="/register" className="text-brand font-medium hover:underline">{t('auth.register')}</Link>

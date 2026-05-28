@@ -92,18 +92,18 @@ export default function PpobCategoryPage() {
   }
 
   return (
-    <div className="container py-6 max-w-3xl">
+    <div className="container py-4 sm:py-6 max-w-3xl pb-24 sm:pb-6">
       <button onClick={() => navigate('/ppob')}
-        className="flex items-center gap-1 text-sm text-slate-500 hover:text-brand mb-3">
+        className="flex items-center gap-1 text-xs sm:text-sm text-slate-500 hover:text-brand active:scale-95 mb-2 sm:mb-3 transition-all">
         <ChevronLeft className="w-4 h-4" /> Kembali ke PPOB
       </button>
 
-      <h1 className="text-2xl font-display font-bold text-slate-900">{meta.title}</h1>
-      <p className="text-sm text-slate-500 mt-1 mb-6">Pilih kategori, isi nomor, lalu lanjut pembayaran.</p>
+      <h1 className="text-xl sm:text-2xl font-display font-bold text-slate-900 leading-tight">{meta.title}</h1>
+      <p className="text-xs sm:text-sm text-slate-500 mt-1 mb-4 sm:mb-6">Pilih kategori, isi nomor, lalu lanjut pembayaran.</p>
 
       {/* Step 1: Pilih kategori */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 mb-4">
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">1. Pilih layanan</p>
+      <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4">
+        <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5 sm:mb-3">1. Pilih layanan</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {groupCategories.map(cat => {
             const Icon = ICONS[cat.icon] || Wallet
@@ -112,7 +112,7 @@ export default function PpobCategoryPage() {
               <button
                 key={cat.id}
                 onClick={() => { setSelectedCategory(cat); setSelectedProduct(null); setInquiry(null) }}
-                className={`p-3 rounded-xl border-2 flex flex-col items-center gap-1.5 transition-all ${
+                className={`p-3 rounded-xl border-2 flex flex-col items-center gap-1.5 transition-all active:scale-95 ${
                   active ? 'border-brand bg-brand/5' : 'border-slate-200 hover:border-slate-300'
                 }`}
               >
@@ -120,7 +120,7 @@ export default function PpobCategoryPage() {
                   style={{ backgroundColor: cat.color || '#1d4ed8' }}>
                   <Icon className="w-5 h-5 text-white" />
                 </div>
-                <p className="text-xs font-semibold text-slate-700">{cat.name}</p>
+                <p className="text-[11px] sm:text-xs font-semibold text-slate-700 text-center leading-tight">{cat.name}</p>
               </button>
             )
           })}
@@ -129,10 +129,11 @@ export default function PpobCategoryPage() {
 
       {/* Step 2: Nomor pelanggan */}
       {selectedCategory && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 mb-4">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">2. {meta.label}</p>
+        <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4">
+          <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5 sm:mb-3">2. {meta.label}</p>
           <input
             type="tel"
+            inputMode="numeric"
             value={customerNumber}
             onChange={e => { setCustomerNumber(e.target.value.replace(/\D/g, '')); setInquiry(null) }}
             placeholder={meta.placeholder}
@@ -143,18 +144,18 @@ export default function PpobCategoryPage() {
 
       {/* Step 3: Pilih produk / nominal */}
       {selectedCategory && customerNumber.length >= 4 && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 mb-4">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">
+        <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4">
+          <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5 sm:mb-3">
             3. {selectedCategory.type === 'pascabayar' ? 'Cek tagihan' : 'Pilih nominal'}
           </p>
           {loadingProducts && (
-            <div className="flex items-center gap-2 text-sm text-slate-500"><Loader2 className="w-4 h-4 animate-spin" /> Memuat produk...</div>
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500"><Loader2 className="w-4 h-4 animate-spin" /> Memuat produk...</div>
           )}
           {!loadingProducts && products.length === 0 && (
             <div className="text-center py-6">
               <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-              <p className="text-sm text-slate-500">Belum ada produk untuk kategori ini.</p>
-              <p className="text-xs text-slate-400 mt-1">Akan tersedia setelah sync ke Raja Biller selesai.</p>
+              <p className="text-xs sm:text-sm text-slate-500">Belum ada produk untuk kategori ini.</p>
+              <p className="text-[11px] sm:text-xs text-slate-400 mt-1">Akan tersedia setelah sync ke Raja Biller selesai.</p>
             </div>
           )}
           {selectedCategory.type === 'prabayar' && (
@@ -165,11 +166,11 @@ export default function PpobCategoryPage() {
                   <button
                     key={p.id}
                     onClick={() => setSelectedProduct(p)}
-                    className={`p-3 rounded-xl border-2 text-left transition-all ${
+                    className={`p-3 rounded-xl border-2 text-left transition-all active:scale-95 ${
                       active ? 'border-brand bg-brand/5' : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
-                    <p className="text-xs font-semibold text-slate-700">{p.name}</p>
+                    <p className="text-[11px] sm:text-xs font-semibold text-slate-700 leading-snug line-clamp-2">{p.name}</p>
                     <p className="text-sm font-bold text-brand mt-1">{formatRupiah(p.price_sell)}</p>
                   </button>
                 )
@@ -180,35 +181,48 @@ export default function PpobCategoryPage() {
             <button
               onClick={() => { setSelectedProduct(products[0]); inquiryMutation.mutate({ product_id: products[0].id, customer_number: customerNumber }) }}
               disabled={inquiryMutation.isPending}
-              className="w-full py-3 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 disabled:opacity-50"
+              className="w-full py-3 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 transition-all"
             >
               {inquiryMutation.isPending ? 'Mengecek...' : 'Cek Tagihan'}
             </button>
           )}
           {inquiry && (
-            <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+            <div className="mt-4 p-3.5 sm:p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle className="w-4 h-4 text-emerald-600" />
-                <p className="text-sm font-bold text-emerald-700">Tagihan ditemukan</p>
+                <p className="text-xs sm:text-sm font-bold text-emerald-700">Tagihan ditemukan</p>
               </div>
-              <p className="text-sm text-slate-700">Nama: <b>{inquiry.customer_name}</b></p>
-              <p className="text-sm text-slate-700">Tagihan: <b>{formatRupiah(inquiry.total - (inquiry.admin_fee || 0))}</b></p>
-              <p className="text-sm text-slate-700">Biaya admin: <b>{formatRupiah(inquiry.admin_fee || 0)}</b></p>
-              <p className="text-base font-bold text-slate-900 mt-2">Total: {formatRupiah(inquiry.total)}</p>
+              <p className="text-xs sm:text-sm text-slate-700">Nama: <b>{inquiry.customer_name}</b></p>
+              <p className="text-xs sm:text-sm text-slate-700">Tagihan: <b>{formatRupiah(inquiry.total - (inquiry.admin_fee || 0))}</b></p>
+              <p className="text-xs sm:text-sm text-slate-700">Biaya admin: <b>{formatRupiah(inquiry.admin_fee || 0)}</b></p>
+              <p className="text-sm sm:text-base font-bold text-slate-900 mt-2">Total: {formatRupiah(inquiry.total)}</p>
             </div>
           )}
         </div>
       )}
 
-      {/* CTA */}
+      {/* CTA — sticky bottom on mobile */}
       {selectedProduct && (selectedCategory.type === 'prabayar' || inquiry) && (
-        <button
-          onClick={handleProceed}
-          disabled={createMutation.isPending}
-          className="w-full py-4 bg-brand text-white rounded-2xl font-bold text-base hover:bg-brand-700 disabled:opacity-50 shadow-lg shadow-brand/30"
-        >
-          {createMutation.isPending ? 'Membuat transaksi...' : 'Lanjut Bayar'}
-        </button>
+        <>
+          {/* Desktop inline */}
+          <button
+            onClick={handleProceed}
+            disabled={createMutation.isPending}
+            className="hidden sm:flex w-full items-center justify-center py-4 bg-brand text-white rounded-2xl font-bold text-base hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-brand/30 transition-all"
+          >
+            {createMutation.isPending ? 'Membuat transaksi...' : 'Lanjut Bayar'}
+          </button>
+          {/* Mobile sticky bottom */}
+          <div className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] px-4 py-3">
+            <button
+              onClick={handleProceed}
+              disabled={createMutation.isPending}
+              className="w-full py-3 bg-brand text-white rounded-xl font-bold text-sm hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-brand/30 transition-all"
+            >
+              {createMutation.isPending ? 'Membuat transaksi...' : `Lanjut Bayar · ${formatRupiah(inquiry?.total || selectedProduct?.price_sell)}`}
+            </button>
+          </div>
+        </>
       )}
     </div>
   )

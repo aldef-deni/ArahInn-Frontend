@@ -1,0 +1,32 @@
+# ──────────────────────────────────────────────────────────────────────
+# ArahInn — Staging Redirect (staging.arahinn.com → arahinn.com)
+# ──────────────────────────────────────────────────────────────────────
+# Cara pakai:
+# 1. Login cPanel server yang melayani staging.arahinn.com
+# 2. Buka File Manager → folder document root staging (mis. public_html/staging)
+# 3. RENAME atau HAPUS semua isi folder tersebut (backup dulu kalau perlu)
+# 4. Upload file ini, rename jadi `.htaccess`
+# 5. Pastikan permission .htaccess = 644
+# 6. Test: buka https://staging.arahinn.com/syarat-ketentuan
+#    → harus auto-redirect ke https://arahinn.com/syarat-ketentuan
+# ──────────────────────────────────────────────────────────────────────
+
+RewriteEngine On
+
+# Paksa HTTPS dulu (kalau request masuk HTTP)
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+# 301 permanent redirect — semua path & query string ikut dibawa
+RewriteCond %{HTTP_HOST} ^(www\.)?staging\.arahinn\.com$ [NC]
+RewriteRule ^(.*)$ https://arahinn.com/$1 [R=301,L,QSA]
+
+# Block direct access — kalau ada file ketinggalan, jangan ke-serve
+<FilesMatch ".*">
+    Require all denied
+</FilesMatch>
+
+# Kecuali .htaccess sendiri tetap di-honor oleh Apache
+<Files ".htaccess">
+    Require all granted
+</Files>

@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import ReviewForm from '@/components/ReviewForm'
 import MapEmbed from '@/components/ui/MapEmbed'
+import SEO from '@/components/SEO'
 
 const CERT_LABELS = { SHM: 'SHM', HGB: 'HGB', Strata: 'Strata Title', Lainnya: 'Lainnya' }
 
@@ -123,20 +124,36 @@ export default function PropertyDetail() {
     data.bathrooms != null ? { icon: Bath, label: 'Kamar mandi', value: `${data.bathrooms}` } : null,
   ].filter(Boolean)
 
+  const seoTitle = data?.title
+    ? `${data.title}${data.city ? ` di ${data.city}` : ''} — ${listingTypeLabel}`
+    : 'Properti'
+  const seoDescription = data?.description
+    ? String(data.description).replace(/<[^>]+>/g, '').slice(0, 160)
+    : `${listingTypeLabel}: ${data?.title || 'properti pilihan'} di ArahInn. Listing properti terkurasi dengan harga transparan.`
+  const seoImage = images[0] ? getImageUrl(images[0]) : undefined
+
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#eff6ff_48%,#ffffff_100%)]">
-      <div className="container py-8">
+      <SEO
+        title={seoTitle}
+        description={seoDescription}
+        image={seoImage}
+        url={`/properti/${id}`}
+        type="article"
+      />
+      <div className="container py-4 sm:py-6 lg:py-8 pb-24 lg:pb-8">
         <button
           onClick={() => navigate('/properti')}
-          className="group mb-6 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition-colors hover:border-blue-200 hover:text-blue-600"
+          className="group mb-4 sm:mb-6 inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-slate-200 bg-white px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-slate-600 shadow-sm transition-colors hover:border-blue-200 hover:text-blue-600 active:scale-95"
         >
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-          Kembali ke daftar properti
+          <span className="hidden sm:inline">Kembali ke daftar properti</span>
+          <span className="sm:hidden">Kembali</span>
         </button>
 
-        <section className="overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-[0_22px_60px_rgba(15,23,42,0.08)]">
+        <section className="overflow-hidden rounded-2xl sm:rounded-3xl lg:rounded-[34px] border border-slate-200 bg-white shadow-[0_22px_60px_rgba(15,23,42,0.08)]">
           <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_340px]">
-            <div className="relative min-h-[420px] bg-slate-950">
+            <div className="relative min-h-[260px] sm:min-h-[340px] lg:min-h-[420px] bg-slate-950">
               {images.length > 0 ? (
                 <img
                   src={getImageUrl(images[imgIdx])}
@@ -153,115 +170,115 @@ export default function PropertyDetail() {
                   <button
                     type="button"
                     onClick={prevImg}
-                    className="absolute left-5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/15 text-white backdrop-blur transition-colors hover:bg-white/25"
+                    className="absolute left-3 sm:left-5 top-1/2 flex h-9 w-9 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/15 text-white backdrop-blur transition-colors hover:bg-white/25 active:scale-90"
                   >
-                    <ChevronLeft className="h-5 w-5" />
+                    <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
                   <button
                     type="button"
                     onClick={nextImg}
-                    className="absolute right-5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/15 text-white backdrop-blur transition-colors hover:bg-white/25"
+                    className="absolute right-3 sm:right-5 top-1/2 flex h-9 w-9 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/15 text-white backdrop-blur transition-colors hover:bg-white/25 active:scale-90"
                   >
-                    <ChevronRight className="h-5 w-5" />
+                    <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
                 </>
               ) : null}
 
-              <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-                <div className="mb-4 flex flex-wrap gap-2">
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${listingTypeColor}`}>
+              <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8">
+                <div className="mb-2 sm:mb-4 flex flex-wrap gap-1.5 sm:gap-2">
+                  <span className={`rounded-full px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold ${listingTypeColor}`}>
                     {listingTypeLabel}
                   </span>
                   {data.category ? (
-                    <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
+                    <span className="rounded-full border border-white/20 bg-white/10 px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-white backdrop-blur">
                       {data.category}
                     </span>
                   ) : null}
                   {data.certificate ? (
-                    <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
-                      <ShieldCheck className="h-3.5 w-3.5" />
+                    <span className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/20 bg-white/10 px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-white backdrop-blur">
+                      <ShieldCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       {CERT_LABELS[data.certificate] || data.certificate}
                     </span>
                   ) : null}
                 </div>
 
-                <h1 className="max-w-3xl text-3xl font-bold leading-tight text-white md:text-[2.5rem]">
+                <h1 className="max-w-3xl text-xl sm:text-2xl md:text-3xl lg:text-[2.5rem] font-bold leading-tight text-white">
                   {data.title}
                 </h1>
 
-                <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm text-white/85">
-                  <span className="inline-flex items-center gap-2">
-                    <MapPin className="h-4 w-4 shrink-0" />
-                    {[data.address, data.city, data.province].filter(Boolean).join(', ')}
+                <div className="mt-2 sm:mt-4 flex flex-wrap items-center gap-x-3 sm:gap-x-5 gap-y-1.5 sm:gap-y-3 text-xs sm:text-sm text-white/85">
+                  <span className="inline-flex items-center gap-1.5 sm:gap-2 min-w-0">
+                    <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                    <span className="truncate">{[data.address, data.city, data.province].filter(Boolean).join(', ')}</span>
                   </span>
-                  <span className="inline-flex items-center gap-2">
-                    <Eye className="h-4 w-4 shrink-0" />
-                    {(data.viewsCount || 0).toLocaleString('id-ID')} kali dilihat
+                  <span className="inline-flex items-center gap-1.5 sm:gap-2 shrink-0">
+                    <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+                    {(data.viewsCount || 0).toLocaleString('id-ID')}<span className="hidden sm:inline"> kali dilihat</span>
                   </span>
                 </div>
               </div>
             </div>
 
-            <aside className="border-t border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-5 lg:border-l lg:border-t-0">
-              <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Harga listing</p>
-                <p className="mt-3 text-3xl font-black text-orange-600">{formatRupiah(data.price)}</p>
+            <aside className="border-t border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 sm:p-5 lg:border-l lg:border-t-0">
+              <div className="rounded-2xl sm:rounded-[28px] border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+                <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Harga listing</p>
+                <p className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-black text-orange-600 break-all">{formatRupiah(data.price)}</p>
                 {data.priceNegotiable ? (
-                  <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span className="mt-2 sm:mt-3 inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-emerald-50 px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-semibold text-emerald-700">
+                    <CheckCircle2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     Harga dapat dinegosiasikan
                   </span>
                 ) : null}
 
-                <div className="my-5 h-px bg-slate-100" />
+                <div className="my-4 sm:my-5 h-px bg-slate-100" />
 
-                <div className="space-y-3">
+                <div className="space-y-2.5 sm:space-y-3">
                   {data.contactPhone ? (
                     <a
                       href={`tel:${data.contactPhone}`}
-                      className="flex w-full items-center gap-3 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-600"
+                      className="flex w-full items-center gap-2.5 sm:gap-3 rounded-xl sm:rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-emerald-600 active:scale-[0.98]"
                     >
-                      <Phone className="h-4 w-4" />
-                      {data.contactPhone}
+                      <Phone className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{data.contactPhone}</span>
                     </a>
                   ) : null}
                   {data.contactEmail ? (
                     <a
                       href={`mailto:${data.contactEmail}`}
-                      className="flex w-full items-center gap-3 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                      className="flex w-full items-center gap-2.5 sm:gap-3 rounded-xl sm:rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-blue-700 active:scale-[0.98]"
                     >
-                      <Mail className="h-4 w-4" />
-                      {data.contactEmail}
+                      <Mail className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{data.contactEmail}</span>
                     </a>
                   ) : null}
                 </div>
 
                 {!data.contactPhone && !data.contactEmail ? (
-                  <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500">
+                  <div className="mt-4 rounded-xl sm:rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center text-xs sm:text-sm text-slate-500">
                     Kontak penjual belum tersedia
                   </div>
                 ) : null}
               </div>
 
-              <div className="mt-4 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Ringkasan properti</p>
-                <div className="mt-4 space-y-3 text-sm">
+              <div className="mt-3 sm:mt-4 rounded-2xl sm:rounded-[28px] border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+                <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Ringkasan properti</p>
+                <div className="mt-3 sm:mt-4 space-y-2.5 sm:space-y-3 text-xs sm:text-sm">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-slate-500">Tipe listing</span>
                     <span className="font-semibold text-slate-900">{listingTypeLabel}</span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-slate-500">Kategori</span>
-                    <span className="font-semibold text-slate-900">{data.category || '-'}</span>
+                    <span className="font-semibold text-slate-900 truncate">{data.category || '-'}</span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-slate-500">Kota</span>
-                    <span className="font-semibold text-slate-900">{data.city || '-'}</span>
+                    <span className="font-semibold text-slate-900 truncate">{data.city || '-'}</span>
                   </div>
                   {data.owner?.name ? (
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-slate-500">Pemilik</span>
-                      <span className="font-semibold text-slate-900">{data.owner.name}</span>
+                      <span className="font-semibold text-slate-900 truncate">{data.owner.name}</span>
                     </div>
                   ) : null}
                 </div>
@@ -270,13 +287,13 @@ export default function PropertyDetail() {
           </div>
         </section>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="space-y-7">
-            <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
+        <div className="mt-6 sm:mt-8 grid gap-5 sm:gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-5 sm:space-y-7">
+            <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Tentang listing</p>
-                  <h2 className="mt-2 text-2xl font-bold text-slate-900">Detail properti yang lebih jelas</h2>
+                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Tentang listing</p>
+                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">Detail properti yang lebih jelas</h2>
                 </div>
                 <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
                   <Sparkles className="h-3.5 w-3.5" />
@@ -290,10 +307,10 @@ export default function PropertyDetail() {
             </section>
 
             {specCards.length ? (
-              <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
+              <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
                 <div className="mb-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Spesifikasi</p>
-                  <h2 className="mt-2 text-2xl font-bold text-slate-900">Ukuran dan komposisi ruangan</h2>
+                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Spesifikasi</p>
+                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">Ukuran dan komposisi ruangan</h2>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -304,7 +321,7 @@ export default function PropertyDetail() {
               </section>
             ) : null}
 
-            <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
+            <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
               <div className="mb-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Lokasi</p>
                 <h2 className="mt-2 text-2xl font-bold text-slate-900">Posisi properti di area sekitar</h2>
@@ -321,10 +338,10 @@ export default function PropertyDetail() {
             </section>
 
             {data.facilities?.length > 0 ? (
-              <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
+              <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
                 <div className="mb-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Fasilitas</p>
-                  <h2 className="mt-2 text-2xl font-bold text-slate-900">Nilai tambah dari properti ini</h2>
+                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Fasilitas</p>
+                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">Nilai tambah dari properti ini</h2>
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -343,11 +360,11 @@ export default function PropertyDetail() {
               </section>
             ) : null}
 
-            <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm md:p-7">
+            <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Ulasan</p>
-                  <h2 className="mt-2 text-2xl font-bold text-slate-900">Pendapat tentang properti ini</h2>
+                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Ulasan</p>
+                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">Pendapat tentang properti ini</h2>
                 </div>
                 {reviewData?.average_rating ? (
                   <div className="rounded-2xl bg-blue-50 px-4 py-3 text-right">
@@ -412,12 +429,12 @@ export default function PropertyDetail() {
             </section>
           </div>
 
-          <aside className="space-y-5">
+          <aside className="space-y-4 sm:space-y-5">
             {data.owner ? (
-              <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Pemilik listing</p>
-                <div className="mt-4 flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 font-bold text-blue-700">
+              <section className="rounded-2xl sm:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+                <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Pemilik listing</p>
+                <div className="mt-3 sm:mt-4 flex items-center gap-3">
+                  <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl sm:rounded-2xl bg-blue-50 font-bold text-blue-700 shrink-0">
                     {data.owner.name?.[0]?.toUpperCase()}
                   </div>
                   <div className="min-w-0">
@@ -428,16 +445,16 @@ export default function PropertyDetail() {
               </section>
             ) : null}
 
-            <section className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Legalitas</p>
-              <div className="mt-4 rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+            <section className="rounded-2xl sm:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+              <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Legalitas</p>
+              <div className="mt-3 sm:mt-4 rounded-xl sm:rounded-[24px] border border-slate-200 bg-slate-50 p-3 sm:p-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-blue-600 shadow-sm">
-                    <Landmark className="h-4.5 w-4.5" />
+                  <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl sm:rounded-2xl bg-white text-blue-600 shadow-sm shrink-0">
+                    <Landmark className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Sertifikat</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                  <div className="min-w-0">
+                    <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Sertifikat</p>
+                    <p className="mt-0.5 sm:mt-1 text-sm font-semibold text-slate-900 truncate">
                       {data.certificate ? (CERT_LABELS[data.certificate] || data.certificate) : 'Belum tersedia'}
                     </p>
                   </div>
@@ -447,6 +464,36 @@ export default function PropertyDetail() {
           </aside>
         </div>
       </div>
+
+      {/* ── Mobile floating CTA bar (hidden on lg+) ────────────── */}
+      {(data.contactPhone || data.contactEmail) && (
+        <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-8px_24px_rgba(15,23,42,0.08)]">
+          <div className="container py-3 flex items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">{listingTypeLabel}</p>
+              <p className="text-base font-black text-orange-600 leading-tight truncate">
+                {formatRupiah(data.price)}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {data.contactPhone && (
+                <a href={`tel:${data.contactPhone}`}
+                  className="h-11 w-11 rounded-xl bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 active:scale-95 transition-all shadow-md"
+                  aria-label="Telepon">
+                  <Phone className="h-4 w-4" />
+                </a>
+              )}
+              {data.contactEmail && (
+                <a href={`mailto:${data.contactEmail}`}
+                  className="px-4 h-11 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 active:scale-95 transition-all shadow-md flex items-center gap-1.5">
+                  <Mail className="h-4 w-4" />
+                  Email
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

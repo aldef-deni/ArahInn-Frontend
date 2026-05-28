@@ -16,6 +16,7 @@ import { format, addDays, parseISO } from 'date-fns'
 import HotelCard from '@/components/hotel/HotelCard'
 import InteriorPenawaran from '@/components/InteriorPenawaran'
 import PromoFlyerCarousel from '@/components/PromoFlyerCarousel'
+import SEO from '@/components/SEO'
 
 /**
  * ServiceCategoryTabs — horizontal scrollable kategori utama di atas hero.
@@ -39,10 +40,10 @@ function ServiceCategoryTabs() {
           <Link
             key={to}
             to={to}
-            className="group flex flex-col items-center justify-center gap-1.5 min-w-[80px] lg:min-w-[100px] px-3 py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 hover:border-white/30 backdrop-blur-sm transition-all"
+            className="group flex flex-col items-center justify-center gap-1.5 min-w-[72px] sm:min-w-[88px] lg:min-w-[100px] px-2.5 sm:px-3 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 hover:border-white/30 backdrop-blur-sm active:scale-95 transition-all"
           >
             <Icon className="w-5 h-5 lg:w-6 lg:h-6 transition-transform group-hover:scale-110" style={{ color: accent }} />
-            <span className="text-[11px] lg:text-xs font-semibold text-white text-center leading-tight">{label}</span>
+            <span className="text-[10px] sm:text-[11px] lg:text-xs font-semibold text-white text-center leading-tight">{label}</span>
           </Link>
         ))}
       </div>
@@ -245,19 +246,20 @@ export default function Home() {
 
   return (
     <div>
+      <SEO url="/" />
       {/* ── Hero ─────────────────────────────────────────── */}
       <section className="hero-gradient relative overflow-hidden">
         <div className="absolute inset-0 opacity-10"
           style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}
         />
-        <div className="container relative py-8 lg:py-12 flex flex-col gap-8 lg:gap-12">
+        <div className="container relative py-6 sm:py-8 lg:py-12 flex flex-col gap-6 sm:gap-8 lg:gap-12">
 
           {/* Kategori akomodasi */}
           <div className="text-center">
-            <h2 className="font-display text-2xl lg:text-3xl font-bold text-white mb-6">
+            <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-4 sm:mb-6 leading-tight px-2">
               {t('hero.categoryTitle')}
             </h2>
-            <div className="flex flex-wrap justify-center gap-4">
+            <div className="grid grid-cols-3 gap-2.5 sm:flex sm:flex-wrap sm:justify-center sm:gap-4">
               {[
                 { labelKey: 'hero.catHotel',      img: '/hotel-kategori.png', cats: 'Hotel,Apartment'          },
                 { labelKey: 'hero.catGuestHouse',  img: '/kosan-kategori.png', cats: 'Guest House,Kosan'        },
@@ -266,25 +268,25 @@ export default function Home() {
                 <button
                   key={cats}
                   onClick={() => navigate(`/search?categories=${encodeURIComponent(cats)}&checkIn=${today}&checkOut=${tomorrow}&guests=2`)}
-                  className="group flex flex-col items-center justify-center gap-3 w-36 h-36 rounded-2xl bg-white/15 hover:bg-orange-500 border border-white/25 hover:border-orange-400 backdrop-blur-sm transition-all duration-200"
+                  className="group flex flex-col items-center justify-center gap-2 sm:gap-3 w-full h-28 sm:w-32 sm:h-32 lg:w-36 lg:h-36 rounded-xl sm:rounded-2xl bg-white/15 hover:bg-orange-500 border border-white/25 hover:border-orange-400 backdrop-blur-sm active:scale-95 transition-all duration-200"
                 >
-                  <img src={img} alt={cats} className="w-12 h-12 object-contain" />
-                  <span className="text-white text-xs font-semibold leading-snug text-center whitespace-pre-line">{t(labelKey)}</span>
+                  <img src={img} alt={cats} className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
+                  <span className="text-white text-[11px] sm:text-xs font-semibold leading-snug text-center whitespace-pre-line px-1">{t(labelKey)}</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Search box — glass / Traveloka style */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl overflow-hidden shadow-2xl">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl">
             <form onSubmit={handleSearch}
-              className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-white/15">
+              className="flex flex-col lg:flex-row lg:items-stretch divide-y lg:divide-y-0 lg:divide-x divide-white/15">
 
-              {/* Destination / Hotel Name */}
-              <div className="flex-[2] flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-colors cursor-text">
-                <MapPin className="w-5 h-5 text-white/50 shrink-0" />
+              {/* Destination */}
+              <div className="lg:flex-[2] flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-4 hover:bg-white/5 transition-colors cursor-text">
+                <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-white/50 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">KOTA / NAMA HOTEL</p>
+                  <p className="text-[9px] sm:text-[10px] font-bold text-white/50 uppercase tracking-widest mb-0.5 sm:mb-1">KOTA / NAMA HOTEL</p>
                   <input
                     value={form.q}
                     onChange={e => setForm({...form, q: e.target.value})}
@@ -294,73 +296,77 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Accommodation Type */}
-              <div className="flex-[1.2] flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-colors">
-                <Building2 className="w-5 h-5 text-white/50 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">TIPE AKOMODASI</p>
-                  <select
-                    value={form.category}
-                    onChange={e => setForm({...form, category: e.target.value})}
-                    className="w-full bg-transparent text-sm font-medium focus:outline-none [color-scheme:dark] cursor-pointer text-white"
-                  >
-                    {ACCOMMODATION_TYPES.map(t => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+              {/* Mobile-only grid wrapper for fields below destination */}
+              <div className="grid grid-cols-2 lg:contents divide-x divide-white/15 lg:divide-x-0">
 
-              {/* Check-in */}
-              <div className="flex-1 flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-colors">
-                <Calendar className="w-5 h-5 text-white/50 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">{t('search.checkin')}</p>
-                  <div className="relative">
-                    <span className="block text-white text-sm font-medium pointer-events-none">
-                      {form.checkIn ? format(parseISO(form.checkIn), 'dd/MM/yyyy') : ''}
-                    </span>
-                    <input type="date" value={form.checkIn} min={today}
-                      onChange={e => setForm({...form, checkIn: e.target.value})}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                    />
+                {/* Accommodation Type */}
+                <div className="lg:flex-[1.2] flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-3 sm:py-4 hover:bg-white/5 transition-colors">
+                  <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-white/50 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] sm:text-[10px] font-bold text-white/50 uppercase tracking-widest mb-0.5 sm:mb-1">TIPE</p>
+                    <select
+                      value={form.category}
+                      onChange={e => setForm({...form, category: e.target.value})}
+                      className="w-full bg-transparent text-sm font-medium focus:outline-none [color-scheme:dark] cursor-pointer text-white"
+                    >
+                      {ACCOMMODATION_TYPES.map(t => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Check-in */}
+                <div className="lg:flex-1 flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-3 sm:py-4 hover:bg-white/5 transition-colors border-t lg:border-t-0 border-white/15">
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-white/50 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] sm:text-[10px] font-bold text-white/50 uppercase tracking-widest mb-0.5 sm:mb-1">{t('search.checkin')}</p>
+                    <div className="relative">
+                      <span className="block text-white text-sm font-medium pointer-events-none">
+                        {form.checkIn ? format(parseISO(form.checkIn), 'dd/MM/yyyy') : ''}
+                      </span>
+                      <input type="date" value={form.checkIn} min={today}
+                        onChange={e => setForm({...form, checkIn: e.target.value})}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Check-out */}
+                <div className="lg:flex-1 flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-3 sm:py-4 hover:bg-white/5 transition-colors border-t lg:border-t-0 border-white/15">
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-white/50 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] sm:text-[10px] font-bold text-white/50 uppercase tracking-widest mb-0.5 sm:mb-1">{t('search.checkout')}</p>
+                    <div className="relative">
+                      <span className="block text-white text-sm font-medium pointer-events-none">
+                        {form.checkOut ? format(parseISO(form.checkOut), 'dd/MM/yyyy') : ''}
+                      </span>
+                      <input type="date" value={form.checkOut} min={form.checkIn}
+                        onChange={e => setForm({...form, checkOut: e.target.value})}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Guests */}
+                <div className="lg:flex-1 flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-3 sm:py-4 hover:bg-white/5 transition-colors col-span-2 lg:col-span-1 border-t lg:border-t-0 border-white/15">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-white/50 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] sm:text-[10px] font-bold text-white/50 uppercase tracking-widest mb-0.5 sm:mb-1">{t('search.guests')}</p>
+                    <select value={form.guests} onChange={e => setForm({...form, guests: e.target.value})}
+                      className="w-full bg-transparent text-white text-sm font-medium focus:outline-none [color-scheme:dark] cursor-pointer">
+                      {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} {t('search.guestUnit')}</option>)}
+                    </select>
                   </div>
                 </div>
               </div>
 
-              {/* Check-out */}
-              <div className="flex-1 flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-colors">
-                <Calendar className="w-5 h-5 text-white/50 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">{t('search.checkout')}</p>
-                  <div className="relative">
-                    <span className="block text-white text-sm font-medium pointer-events-none">
-                      {form.checkOut ? format(parseISO(form.checkOut), 'dd/MM/yyyy') : ''}
-                    </span>
-                    <input type="date" value={form.checkOut} min={form.checkIn}
-                      onChange={e => setForm({...form, checkOut: e.target.value})}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Guests */}
-              <div className="flex-1 flex items-center gap-3 px-5 py-4 hover:bg-white/5 transition-colors">
-                <Users className="w-5 h-5 text-white/50 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">{t('search.guests')}</p>
-                  <select value={form.guests} onChange={e => setForm({...form, guests: e.target.value})}
-                    className="w-full bg-transparent text-white text-sm font-medium focus:outline-none [color-scheme:dark] cursor-pointer">
-                    {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} {t('search.guestUnit')}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {/* Search button */}
-              <div className="flex items-center px-4 py-4 lg:pl-3">
+              {/* Search button — inline on lg+, full-width on mobile */}
+              <div className="flex items-center px-3 sm:px-4 py-3 lg:py-2.5 lg:pl-3">
                 <button type="submit"
-                  className="w-full lg:w-auto px-7 py-3.5 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 transition-colors shadow-lg flex items-center justify-center gap-2 whitespace-nowrap text-sm">
+                  className="w-full lg:w-auto px-6 lg:px-7 py-3 lg:py-3.5 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 active:scale-[0.98] transition-all shadow-lg flex items-center justify-center gap-2 whitespace-nowrap text-sm">
                   <Search className="w-4 h-4" />
                   {t('hero.cta')}
                 </button>
@@ -368,11 +374,11 @@ export default function Home() {
             </form>
 
             {/* Popular cities */}
-            <div className="flex flex-wrap gap-2 px-5 py-3 border-t border-white/15 items-center">
-              <span className="text-xs text-white/45 font-medium">{t('home.popular')}:</span>
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 sm:py-3 border-t border-white/15 items-center">
+              <span className="text-[11px] sm:text-xs text-white/45 font-medium">{t('home.popular')}:</span>
               {popularCities.map(city => (
                 <button key={city} onClick={() => navigate(`/search?city=${city}&checkIn=${today}&checkOut=${tomorrow}&guests=2`)}
-                  className="px-3 py-1 text-xs rounded-full bg-white/10 hover:bg-white/20 text-white/65 hover:text-white transition-colors font-medium border border-white/15">
+                  className="px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white/65 hover:text-white transition-all font-medium border border-white/15">
                   {city}
                 </button>
               ))}
@@ -388,19 +394,21 @@ export default function Home() {
       <PromoFlyerCarousel />
 
       {/* ── Featured Hotels ───────────────────────────────── */}
-      <section className="container py-12">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="font-display text-2xl lg:text-3xl font-bold text-foreground">{t('home.featuredHotels')}</h2>
-            <p className="text-muted-foreground mt-1">{t('home.featuredSubtitle')}</p>
+      <section className="container py-8 sm:py-10 lg:py-12">
+        <div className="flex items-end justify-between gap-3 mb-5 sm:mb-7 lg:mb-8">
+          <div className="min-w-0">
+            <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-foreground leading-tight">{t('home.featuredHotels')}</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-1 sm:line-clamp-none">{t('home.featuredSubtitle')}</p>
           </div>
           <button onClick={() => navigate('/search')}
-            className="flex items-center gap-1.5 text-sm font-medium text-brand hover:text-brand-700 transition-colors">
-            {t('home.viewAll')} <ArrowRight className="w-4 h-4" />
+            className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-medium text-brand hover:text-brand-700 transition-colors shrink-0">
+            <span className="hidden sm:inline">{t('home.viewAll')}</span>
+            <span className="sm:hidden">Lihat</span>
+            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
           {featured?.data?.map(hotel => (
             <HotelCard key={hotel.id} hotel={hotel} />
           ))}
@@ -418,16 +426,16 @@ export default function Home() {
       </section>
 
       {/* ── Property Section ─────────────────────────────── */}
-      <section className="bg-blue-50 py-14">
+      <section className="bg-blue-50 py-10 sm:py-12 lg:py-14">
         <div className="container">
 
           {/* Search card */}
-          <div className="bg-gradient-to-r from-[#1a56db] to-[#2563eb] rounded-2xl p-5 mb-8 shadow-xl">
+          <div className="bg-gradient-to-r from-[#1a56db] to-[#2563eb] rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-6 sm:mb-8 shadow-xl">
             {/* Tabs */}
-            <div className="flex gap-2 mb-4">
+            <div className="flex gap-2 mb-3 sm:mb-4">
               <button
                 onClick={() => setPropForm(p => ({ ...p, listingType: 'sell' }))}
-                className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${
+                className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-bold transition-all active:scale-95 ${
                   propForm.listingType === 'sell'
                     ? 'bg-orange-500 text-white shadow-md'
                     : 'bg-white/20 text-white border border-white/30 hover:bg-white/30'
@@ -436,7 +444,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setPropForm(p => ({ ...p, listingType: 'rent' }))}
-                className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${
+                className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-bold transition-all active:scale-95 ${
                   propForm.listingType === 'rent'
                     ? 'bg-orange-500 text-white shadow-md'
                     : 'bg-white/20 text-white border border-white/30 hover:bg-white/30'
@@ -448,7 +456,7 @@ export default function Home() {
             {/* Search bar */}
             <div className="bg-white rounded-xl flex flex-col lg:flex-row items-stretch overflow-hidden shadow-sm">
               {/* Location */}
-              <div className="flex items-center gap-3 px-4 py-3 flex-[2] border-b lg:border-b-0 lg:border-r border-slate-100">
+              <div className="flex items-center gap-2.5 px-3.5 sm:px-4 py-2.5 sm:py-3 flex-[2] border-b lg:border-b-0 lg:border-r border-slate-100">
                 <MapPin className="w-4 h-4 text-blue-400 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] text-slate-400 mb-0.5">Cari lokasi property</p>
@@ -462,7 +470,7 @@ export default function Home() {
               </div>
 
               {/* Category */}
-              <div className="flex items-center gap-2 px-4 py-3 flex-[2] border-b lg:border-b-0 lg:border-r border-slate-100">
+              <div className="flex items-center gap-2 px-3.5 sm:px-4 py-2.5 sm:py-3 flex-[2] border-b lg:border-b-0 lg:border-r border-slate-100">
                 <Building2 className="w-4 h-4 text-blue-400 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] text-slate-400 mb-0.5">Jenis Property</p>
@@ -478,7 +486,7 @@ export default function Home() {
               </div>
 
               {/* Price Range */}
-              <div className="flex items-center gap-2 px-4 py-3 flex-[2] border-b lg:border-b-0 lg:border-r border-slate-100">
+              <div className="flex items-center gap-2 px-3.5 sm:px-4 py-2.5 sm:py-3 flex-[2] border-b lg:border-b-0 lg:border-r border-slate-100">
                 <Wallet className="w-4 h-4 text-blue-400 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] text-slate-400 mb-0.5">Range Harga</p>
@@ -494,49 +502,52 @@ export default function Home() {
               {/* Search button */}
               <button
                 onClick={handlePropertySearch}
-                className="flex items-center justify-center px-5 py-3 bg-orange-500 hover:bg-orange-600 text-white transition-colors shrink-0">
+                className="flex items-center justify-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-600 active:scale-[0.98] text-white transition-all shrink-0 text-sm font-bold">
                 <Search className="w-5 h-5" />
+                <span className="lg:hidden">Cari Property</span>
               </button>
             </div>
           </div>
 
           {/* Title */}
-          <h2 className="font-display text-2xl lg:text-3xl font-bold text-slate-900 mb-5">
+          <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 mb-4 sm:mb-5 leading-tight">
             Property dengan harga terbaik untuk investasimu!
           </h2>
 
-          {/* Category pills */}
-          <div className="flex flex-wrap gap-2 mb-7">
-            {[
-              { label: '🏨 Hotel & Apartemen',       cats: ['Hotel','Apartment'] },
-              { label: '🏠 Guest House & Kosan',      cats: ['Guest House','Kosan'] },
-              { label: '🌴 Villa, Resort & Glamping', cats: ['Villa','Resort','Glamping'] },
-              { label: '🏡 Hunian Keluarga',          cats: [] },
-            ].map((g) => (
-              <button key={g.label}
-                onClick={() => {
-                  setActivePropCat(g.label)
-                  navigate(`/properti?categories=${encodeURIComponent(g.cats.join(','))}`)
-                }}
-                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all border ${
-                  activePropCat === g.label
-                    ? 'bg-orange-500 text-white border-orange-500'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-orange-400 hover:text-orange-500'
-                }`}>
-                {g.label}
-              </button>
-            ))}
+          {/* Category pills — horizontal scroll on mobile */}
+          <div className="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto scrollbar-thin mb-5 sm:mb-7">
+            <div className="flex sm:flex-wrap gap-2 min-w-max sm:min-w-0">
+              {[
+                { label: '🏨 Hotel & Apartemen',       cats: ['Hotel','Apartment'] },
+                { label: '🏠 Guest House & Kosan',      cats: ['Guest House','Kosan'] },
+                { label: '🌴 Villa, Resort & Glamping', cats: ['Villa','Resort','Glamping'] },
+                { label: '🏡 Hunian Keluarga',          cats: [] },
+              ].map((g) => (
+                <button key={g.label}
+                  onClick={() => {
+                    setActivePropCat(g.label)
+                    navigate(`/properti?categories=${encodeURIComponent(g.cats.join(','))}`)
+                  }}
+                  className={`px-3.5 sm:px-4 py-2 rounded-full text-[11px] sm:text-xs font-semibold transition-all border active:scale-95 whitespace-nowrap ${
+                    activePropCat === g.label
+                      ? 'bg-orange-500 text-white border-orange-500'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-orange-400 hover:text-orange-500'
+                  }`}>
+                  {g.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Property grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {featuredProperties?.data?.map(listing => {
               const img = listing.images?.[0]
               return (
                 <div key={listing.id}
                   onClick={() => navigate(`/properti/${listing.id}`)}
-                  className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-lg transition-all cursor-pointer group">
-                  <div className="relative h-44 bg-slate-100 overflow-hidden">
+                  className="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-lg active:scale-[0.98] transition-all cursor-pointer group">
+                  <div className="relative h-36 sm:h-44 bg-slate-100 overflow-hidden">
                     {img && !propImgErr[img] ? (
                       <img src={getImageUrl(img)} alt={listing.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={() => setPropImgErr(p => ({ ...p, [img]: true }))} />
@@ -545,25 +556,25 @@ export default function Home() {
                         <Building2 className="w-10 h-10 text-slate-300" />
                       </div>
                     )}
-                    <span className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    <span className="absolute top-2 left-2 bg-orange-500 text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full">
                       {listing.category}
                     </span>
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-bold text-slate-900 text-sm leading-snug line-clamp-2 mb-1">{listing.title}</h3>
-                    <div className="flex items-center gap-1 text-xs text-slate-500 mb-2">
+                  <div className="p-3 sm:p-4">
+                    <h3 className="font-bold text-slate-900 text-xs sm:text-sm leading-snug line-clamp-2 mb-1">{listing.title}</h3>
+                    <div className="flex items-center gap-1 text-[11px] sm:text-xs text-slate-500 mb-1.5 sm:mb-2">
                       <MapPin className="w-3 h-3 text-orange-400 shrink-0" />
                       <span className="truncate">{listing.city}</span>
                     </div>
-                    <p className="text-xs text-slate-500">Start : <span className="text-orange-500 font-bold">{formatRupiah(listing.price)}</span></p>
+                    <p className="text-[11px] sm:text-xs text-slate-500">Start: <span className="text-orange-500 font-bold">{formatRupiah(listing.price)}</span></p>
                   </div>
                 </div>
               )
             })}
             {!featuredProperties && Array(4).fill(0).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl overflow-hidden border border-slate-100">
-                <div className="skeleton h-44" />
-                <div className="p-4 space-y-2">
+              <div key={i} className="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100">
+                <div className="skeleton h-36 sm:h-44" />
+                <div className="p-3 sm:p-4 space-y-2">
                   <div className="skeleton h-4 w-3/4 rounded" />
                   <div className="skeleton h-3 w-1/2 rounded" />
                   <div className="skeleton h-4 w-1/3 rounded mt-1" />
@@ -575,44 +586,45 @@ export default function Home() {
       </section>
 
       {/* ── Furnish & Design Interior ─────────────────────── */}
-      <section className="bg-orange-50 py-14">
+      <section className="bg-orange-50 py-10 sm:py-12 lg:py-14">
         <div className="container">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full mb-3">
+          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 bg-orange-100 text-orange-700 text-[11px] sm:text-xs font-semibold rounded-full mb-2 sm:mb-3">
             ✨ Layanan Premium
           </div>
-          <h2 className="font-display text-2xl lg:text-3xl font-bold text-slate-900 mb-5">
-            Furnish & Design Interior
+          <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 mb-4 sm:mb-5 leading-tight">
+            Furnish &amp; Design Interior
           </h2>
           <InteriorPenawaran noCard />
         </div>
       </section>
 
       {/* ── App Banner ───────────────────────────────────── */}
-      <section className="container py-8">
-        <a href="/register" className="block rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow mx-auto" style={{ maxWidth: '80%' }}>
+      <section className="container py-6 sm:py-8">
+        <a href="/register" className="block rounded-xl sm:rounded-2xl overflow-hidden shadow-md hover:shadow-xl active:scale-[0.99] transition-all max-w-full lg:max-w-[80%] mx-auto">
           <img
             src="/app-banner.png"
             alt="New User Special Treats – ArahInn App"
             className="w-full h-auto object-cover"
+            loading="lazy"
           />
         </a>
       </section>
 
       {/* ── Features ──────────────────────────────────────── */}
       <section className="bg-muted/50 border-y">
-        <div className="container py-16">
-          <div className="text-center mb-12">
-            <h2 className="font-display text-2xl lg:text-3xl font-bold">{t('home.whyTitle')}</h2>
-            <p className="text-muted-foreground mt-2">{t('home.whySubtitle')}</p>
+        <div className="container py-10 sm:py-12 lg:py-16">
+          <div className="text-center mb-8 sm:mb-10 lg:mb-12">
+            <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold leading-tight">{t('home.whyTitle')}</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2">{t('home.whySubtitle')}</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
             {features.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="bg-white rounded-2xl p-6 shadow-card hover:shadow-card-hover transition-shadow group">
-                <div className="w-12 h-12 rounded-xl bg-brand/10 flex items-center justify-center mb-4 group-hover:bg-brand/15 transition-colors">
-                  <Icon className="w-6 h-6 text-brand-700" />
+              <div key={title} className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 shadow-card hover:shadow-card-hover transition-shadow group">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-brand/10 flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-brand/15 transition-colors">
+                  <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-brand-700" />
                 </div>
-                <h3 className="font-semibold text-base mb-1">{title}</h3>
-                <p className="text-sm text-muted-foreground">{desc}</p>
+                <h3 className="font-semibold text-sm sm:text-base mb-1 leading-snug">{title}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>

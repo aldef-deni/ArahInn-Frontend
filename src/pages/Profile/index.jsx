@@ -90,13 +90,13 @@ function SectionAccount({ user, updateUser }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-slate-900 mb-1">Akun</h2>
-        <p className="text-sm text-slate-500">Kelola informasi profil Anda.</p>
+        <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-1">Akun</h2>
+        <p className="text-xs sm:text-sm text-slate-500">Kelola informasi profil Anda.</p>
       </div>
 
       {/* Avatar card */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-        <div className="flex items-center gap-5">
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
+        <div className="flex items-center gap-4 sm:gap-5">
           <div className="relative shrink-0">
             <Avatar key={user?.avatar || 'default'} user={user} size="lg" />
             {avatarMutation.isPending && (
@@ -104,26 +104,26 @@ function SectionAccount({ user, updateUser }) {
                 <Loader2 className="w-6 h-6 text-white animate-spin" />
               </div>
             )}
-            <label className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-brand text-white flex items-center justify-center transition-colors shadow-sm ${avatarMutation.isPending ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer hover:bg-brand-700'}`}>
+            <label className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-brand text-white flex items-center justify-center transition-colors shadow-sm ${avatarMutation.isPending ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer hover:bg-brand-700 active:scale-90'}`}>
               <Camera className="w-3.5 h-3.5" />
               <input type="file" accept=".jpg,.jpeg,.png" className="hidden" disabled={avatarMutation.isPending}
                 onChange={e => { handleAvatarChange(e.target.files[0]); e.target.value = '' }} />
             </label>
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <p className="font-bold text-lg text-slate-900">{user?.name}</p>
-              <BadgeCheck className="w-5 h-5 text-blue-500" />
+              <p className="font-bold text-base sm:text-lg text-slate-900 truncate">{user?.name}</p>
+              <BadgeCheck className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 shrink-0" />
             </div>
-            <p className="text-sm text-slate-500">{user?.email}</p>
-            <p className="text-xs text-slate-400 mt-1 capitalize">{user?.role?.replace('_', ' ')}</p>
-            <p className="text-xs text-slate-400 mt-1">Foto avatar: min. resolusi 256 px · maks. 5 MB.</p>
+            <p className="text-xs sm:text-sm text-slate-500 truncate">{user?.email}</p>
+            <p className="text-[11px] sm:text-xs text-slate-400 mt-1 capitalize">{user?.role?.replace('_', ' ')}</p>
+            <p className="text-[10px] sm:text-xs text-slate-400 mt-1 leading-relaxed">Foto avatar: min. 256 px · maks. 5 MB.</p>
           </div>
         </div>
       </div>
 
       {/* Edit form */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
         <h3 className="font-semibold text-slate-900 mb-5">Informasi Profil</h3>
         <form onSubmit={handleSubmit(d => profileMutation.mutate(d))} className="space-y-4">
           {[
@@ -173,10 +173,10 @@ function SectionSecurity() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-slate-900 mb-1">Keamanan</h2>
-        <p className="text-sm text-slate-500">Kelola password akun Anda.</p>
+        <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-1">Keamanan</h2>
+        <p className="text-xs sm:text-sm text-slate-500">Kelola password akun Anda.</p>
       </div>
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
         <h3 className="font-semibold text-slate-900 mb-5">Ubah Password</h3>
         <form onSubmit={handleSubmit(d => passMutation.mutate(d))} className="space-y-4 max-w-sm">
           {[
@@ -348,8 +348,8 @@ function SectionOrders() {
       {/* Header */}
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Pesanan Saya</h2>
-          <p className="text-sm text-slate-500 mt-0.5">Semua riwayat booking Anda.</p>
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">Pesanan Saya</h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Semua riwayat booking Anda.</p>
         </div>
         {totalOrders > 0 && (
           <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
@@ -481,19 +481,19 @@ function SectionLoyalty({ loyalty }) {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-bold text-slate-900 mb-1">Poin Loyalitas</h2>
+        <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-1">Poin Loyalitas</h2>
         <p className="text-sm text-slate-500">Kumpulkan poin dari setiap transaksi.</p>
       </div>
-      <div className={`bg-gradient-to-br ${tier.color} rounded-2xl p-6 text-white shadow-lg`}>
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-sm font-semibold opacity-80">{tier.label}</span>
-          <Star className="w-6 h-6 fill-white/40 text-white/40" />
+      <div className={`bg-gradient-to-br ${tier.color} rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white shadow-lg`}>
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <span className="text-xs sm:text-sm font-semibold opacity-80">{tier.label}</span>
+          <Star className="w-5 h-5 sm:w-6 sm:h-6 fill-white/40 text-white/40" />
         </div>
-        <p className="font-display text-5xl font-bold">{(loyalty?.balance || 0).toLocaleString('id-ID')}</p>
-        <p className="text-sm opacity-80 mt-1">Poin tersedia</p>
-        <p className="text-xs opacity-60 mt-3">≈ {formatRupiah(loyalty?.balance || 0)} nilai tukar · 1 poin = Rp 1</p>
+        <p className="font-display text-4xl sm:text-5xl font-bold break-all">{(loyalty?.balance || 0).toLocaleString('id-ID')}</p>
+        <p className="text-xs sm:text-sm opacity-80 mt-1">Poin tersedia</p>
+        <p className="text-[11px] sm:text-xs opacity-60 mt-2 sm:mt-3 leading-relaxed">≈ {formatRupiah(loyalty?.balance || 0)} nilai tukar · 1 poin = Rp 1</p>
       </div>
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm">
         <h3 className="font-semibold text-slate-900 mb-4">Cara Mendapatkan Poin</h3>
         <ul className="space-y-3">
           {[
@@ -535,8 +535,8 @@ function SectionReviews() {
     <div className="space-y-4">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Ulasan Anda</h2>
-          <p className="text-sm text-slate-500 mt-0.5">Riwayat semua ulasan yang Anda kirim.</p>
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">Ulasan Anda</h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Riwayat semua ulasan yang Anda kirim.</p>
         </div>
         {stats.total > 0 && (
           <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
@@ -1194,14 +1194,54 @@ export default function Profile() {
   }
 
   return (
-    <div className="bg-[#f0f3f8] min-h-screen py-8">
+    <div className="bg-[#f0f3f8] min-h-screen py-4 sm:py-6 lg:py-8">
       <div className="container max-w-6xl">
+
+        {/* ── Mobile: user card on top ────────────────────── */}
+        <div className="lg:hidden bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 shadow-sm mb-3">
+          <div className="flex items-center gap-3">
+            <Avatar key={user?.avatar || 'default'} user={user} size="md" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <p className="font-bold text-slate-900 truncate text-sm sm:text-base">{user?.name}</p>
+                <BadgeCheck className="w-4 h-4 text-blue-500 shrink-0" />
+              </div>
+              <p className="text-[11px] sm:text-xs text-slate-400 truncate">{user?.email}</p>
+            </div>
+            {!isPengelola && loyalty?.balance != null && (
+              <div className={`bg-gradient-to-r ${tier.color} rounded-xl px-2.5 py-1.5 shrink-0`}>
+                <p className="text-[9px] uppercase tracking-wide text-white/70 font-bold leading-tight">{tier.label}</p>
+                <p className="text-sm font-bold text-white leading-tight">
+                  {(loyalty?.balance || 0).toLocaleString('id-ID')}<span className="text-[10px] font-normal text-white/70 ml-0.5">pt</span>
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Mobile: horizontal scroll tabs ──────────────── */}
+        <div className="lg:hidden -mx-4 px-4 mb-4 overflow-x-auto scrollbar-thin">
+          <div className="flex gap-2 min-w-max">
+            {MENU.map(item => (
+              <button key={item.id} onClick={() => setActive(item.id)}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all active:scale-95 border ${
+                  active === item.id
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                    : 'bg-white text-slate-700 border-slate-200'
+                }`}>
+                <item.icon className="w-3.5 h-3.5" />
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="flex gap-6 items-start">
 
-          {/* ── Sidebar ─────────────────────────────────── */}
-          <aside className="w-[280px] shrink-0 sticky top-24 space-y-4">
+          {/* ── Desktop Sidebar ─────────────────────────────── */}
+          <aside className="hidden lg:block w-[280px] shrink-0 sticky top-24 space-y-4">
             {/* User card */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm">
               <div className="flex items-center gap-3">
                 <Avatar key={user?.avatar || 'default'} user={user} size="md" />
                 <div className="min-w-0">
@@ -1251,7 +1291,7 @@ export default function Profile() {
           </aside>
 
           {/* ── Content ──────────────────────────────────── */}
-          <main className="flex-1 min-w-0 animate-fade-in">
+          <main className="flex-1 min-w-0 animate-fade-in w-full">
             {renderContent()}
           </main>
 

@@ -3,7 +3,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { propertyApi } from '@/services/propertyApi'
 import { formatRupiah, getImageUrl } from '@/utils'
-import { Search, MapPin, SlidersHorizontal, X, Building2, Home, Trees, Hotel, RotateCcw, ChevronDown } from 'lucide-react'
+import { Search, MapPin, SlidersHorizontal, X, Building2, Home, Trees, Hotel, RotateCcw, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import SEO from '@/components/SEO'
 
 const CATEGORIES = [
   { label: 'Semua Kategori', value: '' },
@@ -58,11 +59,11 @@ function PropertyCard({ listing, onClick }) {
   return (
     <div
       onClick={onClick}
-      className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+      className="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md active:scale-[0.99] sm:active:scale-100 transition-all cursor-pointer group"
     >
       <div className="flex flex-col sm:flex-row">
         {/* Image Section */}
-        <div className="relative w-full sm:w-64 h-48 sm:h-auto bg-slate-100 overflow-hidden">
+        <div className="relative w-full sm:w-60 lg:w-64 h-44 sm:h-auto bg-slate-100 overflow-hidden">
           {img && !imgErr ? (
             <img
               src={getImageUrl(img)}
@@ -76,79 +77,68 @@ function PropertyCard({ listing, onClick }) {
             </div>
           )}
           {/* Category badge */}
-          <span className="absolute top-3 left-3 bg-orange-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
+          <span className="absolute top-2.5 sm:top-3 left-2.5 sm:left-3 bg-orange-500 text-white text-[10px] font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">
             {listing.category}
           </span>
           {/* Listing type badge */}
-          <span className={`absolute top-3 right-3 ${listingTypeColor} text-white text-[10px] font-bold px-2.5 py-1 rounded-full`}>
+          <span className={`absolute top-2.5 sm:top-3 right-2.5 sm:right-3 ${listingTypeColor} text-white text-[10px] font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full`}>
             {listingTypeLabel}
           </span>
         </div>
 
         {/* Content Section */}
-        <div className="flex-1 p-4 sm:p-6">
-          <div className="flex flex-col h-full justify-between">
+        <div className="flex-1 p-3.5 sm:p-5 lg:p-6">
+          <div className="flex flex-col h-full justify-between gap-3">
             {/* Title and Location */}
-            <div className="mb-4">
-              <h3 className="font-bold text-slate-900 text-base sm:text-lg leading-snug line-clamp-2 mb-2">
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm sm:text-base lg:text-lg leading-snug line-clamp-2 mb-1.5 sm:mb-2">
                 {listing.title}
               </h3>
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <MapPin className="w-4 h-4 text-orange-500 shrink-0" />
+              <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-slate-500">
+                <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-500 shrink-0" />
                 <span className="truncate">{listing.city}{listing.province ? `, ${listing.province}` : ''}</span>
               </div>
             </div>
 
             {/* Facilities and Specs */}
-            <div className="mb-4">
-              <div className="flex flex-wrap gap-2 mb-3">
-                {listing.bedrooms != null && (
-                  <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium">
-                    {listing.bedrooms} KT
-                  </span>
-                )}
-                {listing.bathrooms != null && (
-                  <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium">
-                    {listing.bathrooms} KM
-                  </span>
-                )}
-                {listing.area && (
-                  <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium">
-                    {listing.area} m²
-                  </span>
-                )}
-              </div>
-              {listing.facilities && listing.facilities.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {listing.facilities.slice(0, 4).map((facility, index) => (
-                    <span key={index} className="text-xs text-slate-500">
-                      {facility}
-                    </span>
-                  ))}
-                </div>
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+              {listing.bedrooms != null && (
+                <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-100 text-slate-700 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-medium">
+                  {listing.bedrooms} KT
+                </span>
+              )}
+              {listing.bathrooms != null && (
+                <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-100 text-slate-700 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-medium">
+                  {listing.bathrooms} KM
+                </span>
+              )}
+              {listing.area && (
+                <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-100 text-slate-700 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-medium">
+                  {listing.area} m²
+                </span>
               )}
             </div>
 
             {/* Price and Action */}
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-orange-600 font-bold text-lg sm:text-xl leading-tight">
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+              <div className="min-w-0">
+                <p className="text-orange-600 font-bold text-base sm:text-lg lg:text-xl leading-tight truncate">
                   {formatRupiah(listing.price)}
                 </p>
                 {listing.priceNegotiable && (
-                  <span className="text-xs text-emerald-600 font-semibold bg-emerald-50 px-2 py-1 rounded-full">
+                  <span className="inline-block mt-1 text-[10px] sm:text-xs text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 sm:py-1 rounded-full">
                     Bisa Nego
                   </span>
                 )}
               </div>
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation()
                   onClick()
                 }}
-                className="px-4 py-2 bg-orange-500 text-white rounded-xl font-semibold hover:bg-orange-600 transition-colors text-sm whitespace-nowrap"
+                className="px-3 sm:px-4 py-2 bg-orange-500 text-white rounded-lg sm:rounded-xl font-semibold hover:bg-orange-600 active:scale-95 transition-all text-xs sm:text-sm whitespace-nowrap shrink-0"
               >
-                Lihat Detail
+                Detail
               </button>
             </div>
           </div>
@@ -251,7 +241,13 @@ export default function PropertyMarket() {
   const [selectedFacilities, setSelectedFacilities] = useState([])
   const [selectedRatings, setSelectedRatings] = useState([])
   const [page, setPage] = useState(1)
-  
+
+  // Lock body scroll when mobile filter sheet open
+  useEffect(() => {
+    document.body.style.overflow = mobileFilter ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [mobileFilter])
+
   // Sync URL params with state
   useEffect(() => {
     const minPrice = params.get('min_price')
@@ -379,61 +375,71 @@ export default function PropertyMarket() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <SEO
+        title="Jual Beli Properti"
+        description="Temukan rumah, villa, apartemen, dan tanah dijual di seluruh Indonesia. Listing properti terkurasi dengan harga transparan di ArahInn."
+        url="/properti"
+      />
 
       {/* ── Search bar top ── */}
-      <div className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="container py-4">
-          <form onSubmit={handleSearch}
-            className="flex flex-col md:flex-row gap-2 items-stretch md:items-end">
-            <div className="flex-[2] relative">
+      <div className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30">
+        <div className="container py-3 sm:py-4">
+          <form onSubmit={handleSearch} className="flex flex-col gap-2">
+            {/* City — always full width */}
+            <div className="relative">
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Kota / Lokasi</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input 
-                  value={form.city} 
+                <input
+                  value={form.city}
                   onChange={e => setForm({...form, city: e.target.value})}
                   placeholder="Jakarta, Bali, Yogyakarta..."
-                  className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500 bg-slate-50" 
+                  className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500 bg-slate-50"
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Kategori</label>
-              <select 
-                value={form.category} 
-                onChange={e => setForm({...form, category: e.target.value})}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500"
-              >
-                {CATEGORIES.map(c => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
-              </select>
+
+            {/* Category + Type: 2-col grid on mobile, inline on lg+ */}
+            <div className="grid grid-cols-2 lg:grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Kategori</label>
+                <select
+                  value={form.category}
+                  onChange={e => setForm({...form, category: e.target.value})}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500"
+                >
+                  {CATEGORIES.map(c => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tipe</label>
+                <select
+                  value={form.listingType}
+                  onChange={e => setForm({...form, listingType: e.target.value})}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500"
+                >
+                  <option value="">Semua</option>
+                  <option value="sell">Dijual</option>
+                  <option value="rent">Disewa</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tipe</label>
-              <select 
-                value={form.listingType} 
-                onChange={e => setForm({...form, listingType: e.target.value})}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500"
-              >
-                <option value="">Semua</option>
-                <option value="sell">Dijual</option>
-                <option value="rent">Disewa</option>
-              </select>
-            </div>
+
             <button type="submit"
-              className="flex items-center justify-center gap-2 px-6 py-2.5 bg-orange-500 text-white rounded-xl font-semibold hover:bg-orange-600 transition-colors shadow-sm text-sm whitespace-nowrap">
+              className="flex items-center justify-center gap-2 px-6 py-2.5 bg-orange-500 text-white rounded-xl font-semibold hover:bg-orange-600 active:scale-[0.98] transition-all shadow-sm text-sm whitespace-nowrap">
               <Search className="w-4 h-4" /> Cari Properti
             </button>
           </form>
         </div>
       </div>
 
-      <div className="container py-6">
+      <div className="container py-4 sm:py-6">
         <div className="flex gap-6 items-start">
 
           {/* ── Sidebar (desktop) ── */}
-          <div className="hidden lg:block w-64 shrink-0 sticky top-4">
+          <div className="hidden lg:block w-64 shrink-0 sticky top-40">
             <Sidebar />
           </div>
 
@@ -441,14 +447,14 @@ export default function PropertyMarket() {
           <div className="flex-1 min-w-0">
 
           {/* Tabs + Results header */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
             {/* Tabs */}
-            <div className="flex bg-white rounded-xl border border-slate-200 p-1 shadow-sm">
+            <div className="flex bg-white rounded-xl border border-slate-200 p-1 shadow-sm w-full sm:w-auto">
               {LISTING_TABS.map(tab => (
                 <button
                   key={tab.value}
                   onClick={() => { setForm({...form, listingType: tab.value}); setPage(1) }}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all active:scale-95 ${
                     form.listingType === tab.value
                       ? 'bg-blue-600 text-white shadow-sm'
                       : 'text-slate-600 hover:bg-slate-50'
@@ -459,16 +465,16 @@ export default function PropertyMarket() {
               ))}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
               {/* Results count */}
-              <p className="text-sm text-slate-500">
-                {isLoading ? 'Mencari...' : `${total.toLocaleString('id')} properti ditemukan`}
+              <p className="text-xs sm:text-sm text-slate-500 truncate">
+                {isLoading ? 'Mencari...' : `${total.toLocaleString('id')} properti`}
               </p>
 
               {/* Filter toggle mobile */}
               <button
                 onClick={() => setMobileFilter(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-slate-50 shadow-sm lg:hidden"
+                className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-600 hover:bg-slate-50 active:scale-95 shadow-sm lg:hidden transition-all"
               >
                 <SlidersHorizontal className="w-4 h-4" /> Filter
               </button>
@@ -484,7 +490,7 @@ export default function PropertyMarket() {
                     setSelectedRatings([])
                     setPage(1)
                   }}
-                  className="flex items-center gap-1 px-3 py-2 bg-red-50 text-red-600 border border-red-100 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors"
+                  className="flex items-center gap-1 px-2.5 sm:px-3 py-2 bg-red-50 text-red-600 border border-red-100 rounded-xl text-xs sm:text-sm font-medium hover:bg-red-100 active:scale-95 transition-all"
                 >
                   <X className="w-3.5 h-3.5" /> Reset
                 </button>
@@ -517,7 +523,7 @@ export default function PropertyMarket() {
           )}
 
           {/* List */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3 sm:gap-4">
             {isLoading ? (
               Array(8).fill(0).map((_, i) => <SkeletonCard key={i} />)
             ) : listings.length > 0 ? (
@@ -529,12 +535,12 @@ export default function PropertyMarket() {
                 />
               ))
             ) : (
-              <div className="col-span-full bg-white rounded-2xl border border-slate-200 py-24 text-center shadow-sm">
-                <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-5">
-                  <Building2 className="w-8 h-8 text-slate-300" />
+              <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 py-14 sm:py-24 text-center shadow-sm px-4">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4 sm:mb-5">
+                  <Building2 className="w-7 h-7 sm:w-8 sm:h-8 text-slate-300" />
                 </div>
-                <p className="font-semibold text-lg text-slate-700">Belum ada properti ditemukan</p>
-                <p className="text-slate-400 text-sm mt-1">Coba ubah filter pencarian Anda</p>
+                <p className="font-semibold text-base sm:text-lg text-slate-700">Belum ada properti ditemukan</p>
+                <p className="text-slate-400 text-xs sm:text-sm mt-1">Coba ubah filter pencarian Anda</p>
                 {hasFilters && (
                   <button onClick={() => {
                     setForm({ city: '', category: '', listingType: '' })
@@ -544,7 +550,7 @@ export default function PropertyMarket() {
                     setSelectedRatings([])
                     setPage(1)
                   }}
-                    className="mt-4 px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
+                    className="mt-4 px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 active:scale-95 transition-all">
                     Reset Filter
                   </button>
                 )}
@@ -552,44 +558,44 @@ export default function PropertyMarket() {
             )}
           </div>
 
-          {/* Pagination */}
+          {/* Pagination — smart compact */}
           {totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-8">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                <button
-                  key={p}
-                  onClick={() => setPage(p)}
-                  className={`w-10 h-10 rounded-xl text-sm font-semibold transition-colors border ${
-                    page === p
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
+            <PropertyPagination
+              current={page}
+              total={totalPages}
+              onChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+            />
           )}
           </div>
         </div>
       </div>
 
-      {/* ── Mobile Filter Drawer ── */}
+      {/* ── Mobile Filter Bottom Sheet ── */}
       {mobileFilter && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileFilter(false)} />
-          <div className="absolute right-0 top-0 bottom-0 w-80 bg-white shadow-2xl flex flex-col">
-            <div className="flex items-center justify-between px-5 py-4 border-b">
-              <h3 className="font-bold text-slate-900">Filter</h3>
-              <button onClick={() => setMobileFilter(false)}
-                className="p-2 rounded-xl hover:bg-slate-100 transition-colors">
-                <X className="w-5 h-5 text-slate-500" />
-              </button>
+        <div className="fixed inset-0 z-50 lg:hidden flex items-end" onClick={() => setMobileFilter(false)}>
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in-fast" />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full bg-slate-50 rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col animate-slide-up-fast"
+          >
+            <div className="shrink-0 px-5 pt-3 pb-3 bg-white rounded-t-3xl border-b border-slate-100">
+              <div className="mx-auto w-10 h-1 rounded-full bg-slate-300 mb-3" />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Filter</p>
+                  <h2 className="font-display text-lg font-bold text-slate-900">Filter Properti</h2>
+                </div>
+                <button onClick={() => setMobileFilter(false)}
+                  className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center"
+                  aria-label="Tutup">
+                  <X className="w-4 h-4 text-slate-600" />
+                </button>
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-5">
+            <div className="flex-1 overflow-y-auto p-4">
               <Sidebar />
             </div>
-            <div className="p-5 border-t flex gap-3">
+            <div className="shrink-0 p-4 bg-white border-t border-slate-200 flex gap-3">
               <button
                 onClick={() => {
                   setForm({ city: '', category: '', listingType: '' })
@@ -599,20 +605,76 @@ export default function PropertyMarket() {
                   setSelectedRatings([])
                   setPage(1)
                 }}
-                className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 active:scale-[0.98] transition-all"
               >
                 Reset
               </button>
               <button
                 onClick={() => { setPage(1); setMobileFilter(false) }}
-                className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors"
+                className="flex-[1.5] py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 active:scale-[0.98] transition-all shadow-sm"
               >
-                Terapkan
+                Terapkan Filter
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes slide-up-fast {
+          from { transform: translateY(100%); }
+          to   { transform: translateY(0); }
+        }
+        @keyframes fade-in-fast {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        .animate-slide-up-fast { animation: slide-up-fast 0.28s cubic-bezier(0.32, 0.72, 0, 1); }
+        .animate-fade-in-fast  { animation: fade-in-fast 0.2s ease-out; }
+      `}</style>
+    </div>
+  )
+}
+
+function PropertyPagination({ current, total, onChange }) {
+  const win = 1
+  const pages = new Set([1, total, current])
+  for (let i = current - win; i <= current + win; i++) {
+    if (i > 1 && i < total) pages.add(i)
+  }
+  const sorted = [...pages].filter(p => p >= 1 && p <= total).sort((a, b) => a - b)
+  const items = []
+  let prev = 0
+  for (const p of sorted) {
+    if (p - prev > 1) items.push('…')
+    items.push(p)
+    prev = p
+  }
+
+  return (
+    <div className="flex justify-center items-center gap-1 sm:gap-2 mt-6 sm:mt-8">
+      <button onClick={() => onChange(Math.max(1, current - 1))}
+        disabled={current === 1}
+        className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all">
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+      {items.map((it, i) => (
+        it === '…' ? (
+          <span key={`e${i}`} className="w-7 sm:w-9 text-center text-slate-400 text-sm">…</span>
+        ) : (
+          <button key={it} onClick={() => onChange(it)}
+            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-xs sm:text-sm font-semibold transition-all border active:scale-95 ${
+              current === it ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+            }`}>
+            {it}
+          </button>
+        )
+      ))}
+      <button onClick={() => onChange(Math.min(total, current + 1))}
+        disabled={current === total}
+        className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all">
+        <ChevronRight className="w-4 h-4" />
+      </button>
     </div>
   )
 }

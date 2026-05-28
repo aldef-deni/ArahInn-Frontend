@@ -26,6 +26,8 @@ import PpobLanding from '@/pages/Ppob/PpobLanding'
 import PpobCategoryPage from '@/pages/Ppob/PpobCategoryPage'
 import PpobHistory from '@/pages/Ppob/PpobHistory'
 import AdminPpob from '@/pages/admin/Ppob'
+import TermsAndConditions from '@/pages/Legal/TermsAndConditions'
+import PrivacyPolicy from '@/pages/Legal/PrivacyPolicy'
 
 // Auth Pages
 import Login from '@/pages/Auth/Login'
@@ -210,6 +212,9 @@ export default function App() {
             <Route path="/orders/:id" element={<PrivateRoute><OrderDetail /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
             <Route path="/dashboard" element={<PrivateRoute><OrderHistory /></PrivateRoute>} />
+            <Route path="/syarat-ketentuan" element={<TermsAndConditions />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/kebijakan-privasi" element={<PrivacyPolicy />} />
             {/* SEO-friendly hotel detail URL: /<kategori>/<slug> — placed LAST so static routes win */}
             <Route path="/:category/:slug" element={<HotelDetail />} />
           </Route>

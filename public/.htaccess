@@ -1,5 +1,81 @@
-Options -MultiViews
+# ──────────────────────────────────────────────────────────────────────
+# ArahInn Production — arahinn.com
+# ──────────────────────────────────────────────────────────────────────
+
+Options -MultiViews -Indexes
 RewriteEngine On
+
+# ── 1. Force HTTPS ───────────────────────────────────────────────────
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+# ── 2. Force canonical host: www.arahinn.com → arahinn.com ───────────
+RewriteCond %{HTTP_HOST} ^www\.arahinn\.com$ [NC]
+RewriteRule ^ https://arahinn.com%{REQUEST_URI} [R=301,L]
+
+# ── 3. SPA fallback (React Router) ───────────────────────────────────
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.html [QSA,L]
+
+# ── 4. Gzip compression ──────────────────────────────────────────────
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript
+    AddOutputFilterByType DEFLATE application/javascript application/x-javascript application/json
+    AddOutputFilterByType DEFLATE application/xml application/rss+xml image/svg+xml
+    AddOutputFilterByType DEFLATE font/ttf font/otf font/woff font/woff2 application/font-woff application/font-woff2
+</IfModule>
+
+# ── 5. Browser caching ───────────────────────────────────────────────
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault                          "access plus 1 month"
+
+    # HTML — short cache, must revalidate
+    ExpiresByType text/html                 "access plus 0 seconds"
+    ExpiresByType application/json          "access plus 0 seconds"
+
+    # CSS / JS (Vite hash di filename → boleh cache panjang)
+    ExpiresByType text/css                  "access plus 1 year"
+    ExpiresByType application/javascript    "access plus 1 year"
+    ExpiresByType text/javascript           "access plus 1 year"
+
+    # Images
+    ExpiresByType image/jpeg                "access plus 6 months"
+    ExpiresByType image/png                 "access plus 6 months"
+    ExpiresByType image/webp                "access plus 6 months"
+    ExpiresByType image/svg+xml             "access plus 6 months"
+    ExpiresByType image/x-icon              "access plus 1 year"
+
+    # Fonts
+    ExpiresByType font/woff                 "access plus 1 year"
+    ExpiresByType font/woff2                "access plus 1 year"
+    ExpiresByType application/font-woff2    "access plus 1 year"
+</IfModule>
+
+<IfModule mod_headers.c>
+    # Hashed assets boleh immutable
+    <FilesMatch "\.(js|css|woff2?|ttf|otf|eot)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    # HTML / JSON — selalu revalidate
+    <FilesMatch "\.(html|json)$">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
+
+    # ── 6. Security headers ──────────────────────────────────────────
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(self), camera=(), microphone=()"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
+</IfModule>
+
+# ── 7. Block sensitive files ─────────────────────────────────────────
+<FilesMatch "^\.(env|git|htaccess|htpasswd)|composer\.(json|lock)$">
+    Require all denied
+</FilesMatch>
+
+# ── 8. Custom 404 → SPA handles routing ──────────────────────────────
+ErrorDocument 404 /index.html

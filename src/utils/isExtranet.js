@@ -30,7 +30,7 @@ export const userHasManagementRole = (user) =>
   isManagementRole(user?.roles || user?.role)
 
 export const getCustomerPortalUrl = () => (
-  (import.meta.env.VITE_CUSTOMER_URL || 'https://staging.arahinn.com').replace(/\/$/, '')
+  (import.meta.env.VITE_CUSTOMER_URL || 'https://arahinn.com').replace(/\/$/, '')
 )
 
 export const getManagementPortalUrl = (path = '/login') => {

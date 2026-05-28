@@ -130,19 +130,19 @@ export default function Payment() {
 
   // ── Paid ─────────────────────────────────────────────────────────────────
   if (isPaid) return (
-    <div className="container py-20 max-w-md mx-auto text-center">
-      <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-        <CheckCircle className="w-12 h-12 text-green-600" />
+    <div className="container py-12 sm:py-16 lg:py-20 max-w-md mx-auto text-center px-4">
+      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4 sm:mb-6">
+        <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12 text-green-600" />
       </div>
-      <h1 className="font-display text-2xl font-bold mb-2 text-green-700">Pembayaran Berhasil!</h1>
-      <p className="text-muted-foreground mb-2">
+      <h1 className="font-display text-xl sm:text-2xl font-bold mb-2 text-green-700">Pembayaran Berhasil!</h1>
+      <p className="text-sm sm:text-base text-muted-foreground mb-1 sm:mb-2">
         Booking <strong>{booking?.bookingCode}</strong> dikonfirmasi.
       </p>
-      <p className="text-sm text-muted-foreground mb-8">
+      <p className="text-xs sm:text-sm text-muted-foreground mb-6 sm:mb-8 break-words">
         Tiket dikirim ke <strong>{booking?.guestEmail}</strong>
       </p>
       <button onClick={() => navigate('/orders')}
-        className="px-8 py-3 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 transition-colors">
+        className="px-6 sm:px-8 py-2.5 sm:py-3 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 active:scale-95 transition-all text-sm sm:text-base">
         Lihat Pesanan Saya
       </button>
     </div>
@@ -152,76 +152,76 @@ export default function Payment() {
   // (booking pending tetap bisa diakses; admin yang verify mutasi rekening)
 
   return (
-    <div className="container py-8 max-w-2xl">
-      <h1 className="font-display text-2xl font-bold mb-2">Selesaikan Pembayaran</h1>
+    <div className="container py-4 sm:py-6 lg:py-8 max-w-2xl">
+      <h1 className="font-display text-xl sm:text-2xl font-bold mb-2 leading-tight">Selesaikan Pembayaran</h1>
 
       {/* Countdown — hanya tampil untuk DOKU mode (manual transfer tidak butuh urgency) */}
       {paymentMode === 'doku' && (
-        <div className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-6 text-sm font-medium ${
+        <div className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl mb-4 sm:mb-6 text-xs sm:text-sm font-medium ${
           secs < 600 ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-orange-50 border border-orange-200 text-orange-700'
         }`}>
-          <Clock className="w-5 h-5 shrink-0 animate-pulse" />
-          <span>{vaInfo ? 'Bayar sebelum waktu habis:' : 'Sisa waktu memilih pembayaran:'}</span>
-          <span className="font-mono text-xl font-bold ml-auto">{countdown}</span>
+          <Clock className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 animate-pulse" />
+          <span className="truncate">{vaInfo ? 'Bayar sebelum waktu habis:' : 'Sisa waktu:'}</span>
+          <span className="font-mono text-base sm:text-xl font-bold ml-auto">{countdown}</span>
         </div>
       )}
 
       {/* Order summary */}
-      <div className="bg-white border rounded-2xl p-5 mb-6 shadow-card">
+      <div className="bg-white border rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6 shadow-card">
         {/* Hotel & booking info */}
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <p className="font-semibold">{booking?.hotel?.name}</p>
-            <p className="text-sm text-muted-foreground">
+        <div className="flex justify-between items-start gap-3 mb-3 sm:mb-4">
+          <div className="min-w-0">
+            <p className="font-semibold text-sm sm:text-base line-clamp-2">{booking?.hotel?.name}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
               {booking?.room?.name} · {booking?.totalNights} malam
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">Kode Booking</p>
-            <p className="font-mono font-bold text-brand">{booking?.bookingCode}</p>
+          <div className="text-right shrink-0">
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Kode Booking</p>
+            <p className="font-mono font-bold text-brand text-xs sm:text-sm">{booking?.bookingCode}</p>
           </div>
         </div>
 
         {/* Price breakdown */}
-        <div className="border-t pt-4 space-y-2 text-sm">
-          <div className="flex justify-between text-muted-foreground">
+        <div className="border-t pt-3 sm:pt-4 space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
+          <div className="flex justify-between items-start gap-3 text-muted-foreground">
             <span>Harga Hotel ({booking?.totalNights} malam)</span>
-            <span>{formatRupiah(parseFloat(booking?.basePrice) || 0)}</span>
+            <span className="text-right">{formatRupiah(parseFloat(booking?.basePrice) || 0)}</span>
           </div>
-          <div className="flex justify-between text-muted-foreground">
-            <span>PPN & Others</span>
-            <span>{formatRupiah((parseFloat(booking?.markupAmount) || 0) + (parseFloat(booking?.taxAmount) || 0) + (parseFloat(booking?.priceSuffix) || 0))}</span>
+          <div className="flex justify-between items-start gap-3 text-muted-foreground">
+            <span>PPN &amp; Others</span>
+            <span className="text-right">{formatRupiah((parseFloat(booking?.markupAmount) || 0) + (parseFloat(booking?.taxAmount) || 0) + (parseFloat(booking?.priceSuffix) || 0))}</span>
           </div>
 
           {booking?.promoDiscount > 0 && (
-            <div className="flex justify-between text-green-600">
-              <span>
+            <div className="flex justify-between items-start gap-3 text-green-600">
+              <span className="min-w-0">
                 Diskon promo
                 {booking?.voucherCode ? ` (${booking.voucherCode})` : ''}
               </span>
-              <span>− {formatRupiah(booking.promoDiscount)}</span>
+              <span className="text-right whitespace-nowrap">− {formatRupiah(booking.promoDiscount)}</span>
             </div>
           )}
           {booking?.loyaltyDiscount > 0 && (
-            <div className="flex justify-between text-green-600">
+            <div className="flex justify-between items-start gap-3 text-green-600">
               <span>Diskon poin loyalitas</span>
-              <span>− {formatRupiah(booking.loyaltyDiscount)}</span>
+              <span className="text-right whitespace-nowrap">− {formatRupiah(booking.loyaltyDiscount)}</span>
             </div>
           )}
 
-          <div className="pt-3 border-t">
+          <div className="pt-2.5 sm:pt-3 border-t">
             {booking?.promoDiscount > 0 && (
-              <div className="flex justify-between items-center text-xs text-slate-400 line-through mb-1">
+              <div className="flex justify-between items-center text-[11px] sm:text-xs text-slate-400 line-through mb-1">
                 <span>Total tanpa promo</span>
                 <span>{formatRupiah((parseFloat(booking?.totalPrice) || 0) + (parseFloat(booking?.promoDiscount) || 0))}</span>
               </div>
             )}
-            <div className="flex justify-between items-center font-bold text-base">
-              <span>Total Tagihan</span>
-              <span className="price-tag text-xl">{formatRupiah(booking?.totalPrice)}</span>
+            <div className="flex justify-between items-center font-bold gap-3">
+              <span className="text-sm sm:text-base">Total Tagihan</span>
+              <span className="price-tag text-base sm:text-xl">{formatRupiah(booking?.totalPrice)}</span>
             </div>
             {booking?.promoDiscount > 0 && (
-              <p className="mt-1.5 text-[11px] text-orange-600 font-semibold">
+              <p className="mt-1.5 text-[10px] sm:text-[11px] text-orange-600 font-semibold">
                 ✦ Anda hemat {formatRupiah(booking.promoDiscount)} dengan promo
               </p>
             )}
@@ -232,7 +232,7 @@ export default function Payment() {
       {/* ═════ MANUAL TRANSFER MODE ═════ */}
       {paymentMode === 'manual' && !manualInfo && (
         <button onClick={() => initMutation.mutate()} disabled={initMutation.isPending}
-          className="w-full py-4 bg-brand text-white rounded-2xl font-bold text-base hover:bg-brand-700 disabled:opacity-50 transition-colors shadow-brand/30 shadow-lg">
+          className="w-full py-3.5 sm:py-4 bg-brand text-white rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 transition-all shadow-brand/30 shadow-lg">
           {initMutation.isPending
             ? 'Memproses...'
             : `Lanjut ke Instruksi Transfer — ${formatRupiah(booking?.totalPrice)}`}
@@ -240,24 +240,24 @@ export default function Payment() {
       )}
 
       {paymentMode === 'manual' && manualInfo && (
-        <div className="bg-white border rounded-2xl p-6 shadow-card">
+        <div className="bg-white border rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-card">
           {/* Nominal unik */}
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-sm text-muted-foreground">Total Transfer</p>
-            <span className="text-xs font-semibold text-brand bg-brand/10 px-2 py-0.5 rounded">NOMINAL UNIK</span>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <p className="text-xs sm:text-sm text-muted-foreground">Total Transfer</p>
+            <span className="text-[10px] sm:text-xs font-semibold text-brand bg-brand/10 px-2 py-0.5 rounded">NOMINAL UNIK</span>
           </div>
-          <div className="flex items-center gap-3 bg-muted/50 rounded-xl px-4 py-4 mb-2">
-            <span className="font-mono text-3xl font-black tracking-tight flex-1 text-foreground">
+          <div className="flex items-center gap-2 sm:gap-3 bg-muted/50 rounded-xl px-3 sm:px-4 py-3 sm:py-4 mb-2">
+            <span className="font-mono text-xl sm:text-3xl font-black tracking-tight flex-1 min-w-0 text-foreground truncate">
               {formatRupiah(manualInfo.finalAmount)}
             </span>
             <button onClick={() => copyText(manualInfo.finalAmount, 'amount')}
-              className="p-2 rounded-xl hover:bg-white transition-colors shrink-0">
+              className="p-2 rounded-xl hover:bg-white active:scale-90 transition-all shrink-0">
               {copied && copiedField === 'amount'
                 ? <CheckCircle className="w-5 h-5 text-green-500" />
                 : <Copy className="w-5 h-5 text-muted-foreground" />}
             </button>
           </div>
-          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-5 flex items-start gap-2">
+          <p className="text-[11px] sm:text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4 sm:mb-5 flex items-start gap-2 leading-relaxed">
             <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
             <span>
               Transfer <strong>tepat {formatRupiah(manualInfo.finalAmount)}</strong> (termasuk 3 digit kode unik <strong>{String(manualInfo.uniqueCode).padStart(3, '0')}</strong>) supaya admin lebih cepat verifikasi.
@@ -265,7 +265,7 @@ export default function Payment() {
           </p>
 
           {/* Bank info */}
-          <div className="space-y-2 mb-5">
+          <div className="space-y-2 mb-4 sm:mb-5">
             <FieldRow label="Bank Tujuan" value={manualInfo.bankName} />
             <FieldRow label="Nomor Rekening" value={manualInfo.accountNumber}
               onCopy={() => copyText(manualInfo.accountNumber, 'rek')}
@@ -274,7 +274,7 @@ export default function Payment() {
           </div>
 
           {/* How to pay */}
-          <div className="space-y-2 text-sm bg-muted/30 rounded-xl p-4 mb-5">
+          <div className="space-y-2 text-xs sm:text-sm bg-muted/30 rounded-xl p-3.5 sm:p-4 mb-4 sm:mb-5">
             <p className="font-semibold text-slate-700 mb-2">Cara Pembayaran:</p>
             {[
               `Transfer ke ${manualInfo.bankName} ${manualInfo.accountNumber} a.n. ${manualInfo.accountName}`,
@@ -283,13 +283,13 @@ export default function Payment() {
               'Voucher dikirim ke email otomatis setelah pembayaran dikonfirmasi admin',
             ].map((step, i) => (
               <div key={i} className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-brand text-white text-xs flex items-center justify-center shrink-0 mt-0.5 font-medium">{i + 1}</span>
-                <span className="text-muted-foreground">{step}</span>
+                <span className="w-5 h-5 rounded-full bg-brand text-white text-[10px] sm:text-xs flex items-center justify-center shrink-0 mt-0.5 font-medium">{i + 1}</span>
+                <span className="text-muted-foreground leading-relaxed">{step}</span>
               </div>
             ))}
           </div>
 
-          <p className="text-xs text-muted-foreground text-center mt-4">
+          <p className="text-[11px] sm:text-xs text-muted-foreground text-center mt-4 leading-relaxed">
             Halaman ini otomatis update saat admin sudah konfirmasi pembayaran.
           </p>
         </div>
@@ -298,31 +298,31 @@ export default function Payment() {
       {/* ═════ DOKU VA MODE (default) ═════ */}
       {paymentMode === 'doku' && !vaInfo && (
         <>
-          <div className="bg-white border rounded-2xl p-5 mb-6 shadow-card">
-            <h2 className="font-semibold mb-4 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-brand" /> Pilih Bank Virtual Account
+          <div className="bg-white border rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6 shadow-card">
+            <h2 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
+              <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-brand" /> Pilih Bank Virtual Account
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
               {BANKS.map(b => (
                 <button
                   key={b.id}
                   onClick={() => setBank(b.id)}
                   title={b.label}
-                  className={`group flex items-center justify-center h-20 px-4 bg-white border-2 rounded-2xl transition-all ${
+                  className={`group flex items-center justify-center h-16 sm:h-20 px-3 sm:px-4 bg-white border-2 rounded-xl sm:rounded-2xl transition-all active:scale-95 ${
                     bank === b.id
                       ? 'border-brand shadow-md ring-2 ring-brand/15'
                       : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
                   }`}
                 >
                   <img src={b.logo} alt={b.label}
-                    className="max-h-10 w-auto object-contain transition-transform group-hover:scale-105" />
+                    className="max-h-8 sm:max-h-10 w-auto object-contain transition-transform group-hover:scale-105" />
                 </button>
               ))}
             </div>
           </div>
 
           <button onClick={() => initMutation.mutate()} disabled={initMutation.isPending}
-            className="w-full py-4 bg-brand text-white rounded-2xl font-bold text-base hover:bg-brand-700 disabled:opacity-50 transition-colors shadow-brand/30 shadow-lg">
+            className="w-full py-3.5 sm:py-4 bg-brand text-white rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 transition-all shadow-brand/30 shadow-lg">
             {initMutation.isPending
               ? 'Membuat Virtual Account...'
               : `💳 Bayar via VA ${BANKS.find(b => b.id === bank)?.label} — ${formatRupiah(booking?.totalPrice)}`}
@@ -331,28 +331,28 @@ export default function Payment() {
       )}
 
       {paymentMode === 'doku' && vaInfo && (
-        <div className="bg-white border rounded-2xl p-6 shadow-card">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-sm text-muted-foreground">Nomor Virtual Account</p>
-            <span className="text-sm font-semibold text-brand">{vaInfo.bank} VA</span>
+        <div className="bg-white border rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-card">
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <p className="text-xs sm:text-sm text-muted-foreground">Nomor Virtual Account</p>
+            <span className="text-xs sm:text-sm font-semibold text-brand">{vaInfo.bank} VA</span>
           </div>
 
-          <div className="flex items-center gap-3 bg-muted/50 rounded-xl px-4 py-3 mb-4">
-            <span className="font-mono text-2xl font-bold tracking-widest flex-1 text-foreground">
+          <div className="flex items-center gap-2 sm:gap-3 bg-muted/50 rounded-xl px-3 sm:px-4 py-3 mb-3 sm:mb-4">
+            <span className="font-mono text-base sm:text-2xl font-bold tracking-widest flex-1 min-w-0 text-foreground truncate">
               {vaInfo.vaNumber}
             </span>
-            <button onClick={copyVA} className="p-2 rounded-xl hover:bg-white transition-colors shrink-0">
+            <button onClick={copyVA} className="p-2 rounded-xl hover:bg-white active:scale-90 transition-all shrink-0">
               {copied && copiedField === 'va'
                 ? <CheckCircle className="w-5 h-5 text-green-500" />
                 : <Copy className="w-5 h-5 text-muted-foreground" />}
             </button>
           </div>
 
-          <p className="text-sm text-center text-muted-foreground mb-5">
+          <p className="text-xs sm:text-sm text-center text-muted-foreground mb-4 sm:mb-5">
             Transfer tepat <strong>{formatRupiah(booking?.totalPrice)}</strong> ke nomor di atas
           </p>
 
-          <div className="space-y-2 text-sm bg-muted/30 rounded-xl p-4">
+          <div className="space-y-2 text-xs sm:text-sm bg-muted/30 rounded-xl p-3.5 sm:p-4">
             {[
               `Buka aplikasi mobile banking ${vaInfo.bank}`,
               'Pilih menu Transfer → Virtual Account',
@@ -361,13 +361,13 @@ export default function Payment() {
               'Konfirmasi dan selesaikan pembayaran',
             ].map((step, i) => (
               <div key={i} className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-brand text-white text-xs flex items-center justify-center shrink-0 mt-0.5 font-medium">{i + 1}</span>
-                <span className="text-muted-foreground">{step}</span>
+                <span className="w-5 h-5 rounded-full bg-brand text-white text-[10px] sm:text-xs flex items-center justify-center shrink-0 mt-0.5 font-medium">{i + 1}</span>
+                <span className="text-muted-foreground leading-relaxed break-all">{step}</span>
               </div>
             ))}
           </div>
 
-          <p className="text-xs text-muted-foreground text-center mt-4">
+          <p className="text-[11px] sm:text-xs text-muted-foreground text-center mt-4 leading-relaxed">
             Halaman ini otomatis diperbarui setelah pembayaran diterima.
           </p>
         </div>
