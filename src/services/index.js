@@ -61,8 +61,18 @@ export const adminApi = {
   bookings       : (p)      => api.get('/admin/reports/bookings', { params: p }),
   canceled       : (p)      => api.get('/admin/reports/canceled', { params: p }),
   logs           : (p)      => api.get('/admin/logs', { params: p }),
+  // Analytics
+  analyticsOverview  : (p)  => api.get('/admin/analytics/overview', { params: p }),
+  analyticsUsers     : (p)  => api.get('/admin/analytics/users', { params: p }),
+  analyticsBookings  : (p)  => api.get('/admin/analytics/bookings', { params: p }),
+  analyticsTopHotels : (p)  => api.get('/admin/analytics/top-hotels', { params: p }),
   gateways       : ()       => api.get('/admin/settings/payment-gateways'),
   setGateway     : (d)      => api.post('/admin/settings/payment-gateways', d),
+  // Payment mode + manual bank
+  getPaymentMode    : ()    => api.get('/admin/settings/payment-mode'),
+  setPaymentMode    : (d)   => api.post('/admin/settings/payment-mode', d),
+  getPaymentManual  : ()    => api.get('/admin/settings/payment-manual'),
+  setPaymentManual  : (d)   => api.post('/admin/settings/payment-manual', d),
   // Hotels CRUD
   hotels         : (p)      => api.get('/admin/hotels', { params: p }),
   pendingHotels  : ()       => api.get('/admin/hotels/pending'),
@@ -172,16 +182,20 @@ export const ppobApi = {
   // Public catalog
   categories      : ()        => api.get('/ppob/categories'),
   products        : (p)       => api.get('/ppob/products', { params: p }),
-  // Authenticated
+  // Authenticated — PREPAID 1-step (purchase), POSTPAID 2-step (inquiry → confirmPay)
+  purchase        : (d)       => api.post('/ppob/purchase', d),
   inquiry         : (d)       => api.post('/ppob/inquiry', d),
-  createTrx       : (d)       => api.post('/ppob/transactions', d),
+  confirmPay      : (code)    => api.post(`/ppob/transactions/${code}/confirm-pay`),
   myTransactions  : (p)       => api.get('/ppob/my-transactions', { params: p }),
   getTrx          : (code)    => api.get(`/ppob/transactions/${code}`),
   // Admin
   adminTrx        : (p)       => api.get('/admin/ppob/transactions', { params: p }),
+  adminMarkPaid   : (code, d) => api.post(`/admin/ppob/transactions/${code}/mark-paid`, d),
+  adminCancel     : (code, d) => api.post(`/admin/ppob/transactions/${code}/cancel`, d),
   adminRefund     : (code, d) => api.post(`/admin/ppob/transactions/${code}/refund`, d),
   adminRetry      : (code)    => api.post(`/admin/ppob/transactions/${code}/retry`),
   adminBalance    : ()        => api.get('/admin/ppob/balance'),
   adminCategories : ()        => api.get('/admin/ppob/categories'),
   adminUpdateCategory: (id,d) => api.put(`/admin/ppob/categories/${id}`, d),
+  adminSyncCatalog: (d)       => api.post('/admin/ppob/sync-catalog', d),
 }

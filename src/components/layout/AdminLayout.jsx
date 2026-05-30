@@ -5,10 +5,10 @@ import { useAuthStore } from '@/store/authStore'
 import { authApi, chatApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import {
-  LayoutDashboard, Hotel, ShoppingBag, BarChart2,
+  LayoutDashboard, Hotel, ShoppingBag, BarChart2, BarChart3,
   Users, UserCog, Tag, LogOut, Menu, X, User,
   FileText, CreditCard, Building2, Megaphone, ChevronDown, MessageSquare,
-  CalendarDays, Sofa, Headphones, Shield, Receipt,
+  CalendarDays, Sofa, Headphones, Shield, Receipt, Settings,
 } from 'lucide-react'
 import { cn, roleLabel, getImageUrl } from '@/utils'
 import NotificationBell from '@/components/ui/NotificationBell'
@@ -44,6 +44,7 @@ const NAV_ADMIN = [
     ],
   },
   { to: '/admin/reports',           label: 'Laporan',               icon: BarChart2 },
+  { to: '/admin/analytics',         label: 'Analytics',             icon: BarChart3 },
 
   { type: 'section', label: 'User Management' },
   { to: '/admin/users',                  label: 'Pengelola',       icon: UserCog },
@@ -51,6 +52,9 @@ const NAV_ADMIN = [
   { to: '/admin/users?section=pengguna', label: 'Customer',        icon: Users },
   { to: '/admin/mm-handler',             label: 'MM Handler',      icon: UserCog },
   { to: '/admin/reviews',                label: 'Review Tamu',     icon: MessageSquare },
+
+  { type: 'section', label: 'System' },
+  { to: '/admin/settings',               label: 'Pengaturan',      icon: Settings },
 ]
 
 const NAV_MARKET_MANAGER = [

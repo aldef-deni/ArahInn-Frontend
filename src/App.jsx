@@ -22,12 +22,16 @@ import PropertyMarket from '@/pages/PropertyMarket'
 import PropertyDetail from '@/pages/PropertyDetail'
 import InteriorPage from '@/pages/Interior'
 import PromoPage from '@/pages/Promo'
+import ComingSoon from '@/pages/ComingSoon'
 import PpobLanding from '@/pages/Ppob/PpobLanding'
 import PpobCategoryPage from '@/pages/Ppob/PpobCategoryPage'
 import PpobHistory from '@/pages/Ppob/PpobHistory'
+import PpobPayment from '@/pages/Ppob/PpobPayment'
+import Maintenance from '@/pages/Maintenance'
 import AdminPpob from '@/pages/admin/Ppob'
 import TermsAndConditions from '@/pages/Legal/TermsAndConditions'
 import PrivacyPolicy from '@/pages/Legal/PrivacyPolicy'
+import AccountDeletion from '@/pages/Legal/AccountDeletion'
 
 // Auth Pages
 import Login from '@/pages/Auth/Login'
@@ -51,11 +55,18 @@ const extranetMode = isExtranet()
 const managementMode = isManagementPortal()
 const ownerMode = isOwnerPortal()
 
+// Maintenance mode — toggle via VITE_MAINTENANCE_MODE=true di .env, rebuild dist.
+// Saat aktif: homepage + semua route transaksi customer di-redirect ke /maintenance.
+// Admin (kelola.*), owner (extranet.*), login, dan legal pages tetap accessible.
+const maintenanceMode = String(import.meta.env.VITE_MAINTENANCE_MODE || '').toLowerCase() === 'true'
+
 // Admin Pages
 import Dashboard from '@/pages/admin/Dashboard'
 import AdminHotels from '@/pages/admin/Hotels'
 import AdminOrders from '@/pages/admin/Orders'
 import AdminReports from '@/pages/admin/Reports'
+import AdminAnalytics from '@/pages/admin/Analytics'
+import AdminSettings from '@/pages/admin/Settings'
 import AdminUsers from '@/pages/admin/Users'
 import AdminPromos from '@/pages/admin/Promos'
 import AdminCampaigns from '@/pages/admin/Campaigns'
@@ -194,7 +205,18 @@ export default function App() {
       <Routes>
         {extranetMode && <Route path="/" element={<Navigate to="/login" replace />} />}
 
-        {!extranetMode && (
+        {!extranetMode && maintenanceMode && (
+          <>
+            <Route path="/maintenance" element={<Maintenance />} />
+            <Route path="/account-deletion" element={<AccountDeletion />} />
+            <Route path="/hapus-akun" element={<AccountDeletion />} />
+            {/* Semua customer routes lain → Maintenance. Admin/login tetap accessible
+                karena route mereka lebih spesifik dari "*". */}
+            <Route path="*" element={<Maintenance />} />
+          </>
+        )}
+
+        {!extranetMode && !maintenanceMode && (
           <Route element={<UserLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/search" element={<Search />} />
@@ -203,8 +225,10 @@ export default function App() {
             <Route path="/properti/:id" element={<PropertyDetail />} />
             <Route path="/interior" element={<InteriorPage />} />
             <Route path="/promo" element={<PromoPage />} />
+            <Route path="/coming-soon" element={<ComingSoon />} />
             <Route path="/ppob" element={<PpobLanding />} />
             <Route path="/ppob/history" element={<PrivateRoute><PpobHistory /></PrivateRoute>} />
+            <Route path="/ppob/pay/:trxCode" element={<PrivateRoute><PpobPayment /></PrivateRoute>} />
             <Route path="/ppob/:group" element={<PpobCategoryPage />} />
             <Route path="/checkout/:roomId" element={<PrivateRoute><Checkout /></PrivateRoute>} />
             <Route path="/payment/:bookingId" element={<PrivateRoute><Payment /></PrivateRoute>} />
@@ -212,9 +236,12 @@ export default function App() {
             <Route path="/orders/:id" element={<PrivateRoute><OrderDetail /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
             <Route path="/dashboard" element={<PrivateRoute><OrderHistory /></PrivateRoute>} />
+            <Route path="/maintenance" element={<Maintenance />} />
             <Route path="/syarat-ketentuan" element={<TermsAndConditions />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/kebijakan-privasi" element={<PrivacyPolicy />} />
+            <Route path="/account-deletion" element={<AccountDeletion />} />
+            <Route path="/hapus-akun" element={<AccountDeletion />} />
             {/* SEO-friendly hotel detail URL: /<kategori>/<slug> — placed LAST so static routes win */}
             <Route path="/:category/:slug" element={<HotelDetail />} />
           </Route>
@@ -240,6 +267,8 @@ export default function App() {
           <Route path="hotels/:id/edit" element={<BlockRoles roles={['design_interior']}><OwnerDaftarHotel /></BlockRoles>} />
           <Route path="orders" element={<BlockRoles roles={['design_interior']}><AdminOrders /></BlockRoles>} />
           <Route path="reports" element={<BlockRoles roles={['design_interior']}><AdminReports /></BlockRoles>} />
+          <Route path="analytics" element={<BlockRoles roles={['design_interior']}><AdminAnalytics /></BlockRoles>} />
+          <Route path="settings" element={<AdminRoute roles={['superadmin']}><AdminSettings /></AdminRoute>} />
           <Route path="users" element={<BlockRoles roles={['design_interior']}><AdminUsers /></BlockRoles>} />
           <Route path="promos" element={<BlockRoles roles={['design_interior']}><AdminPromos /></BlockRoles>} />
           <Route path="campaigns" element={<BlockRoles roles={['design_interior']}><AdminCampaigns /></BlockRoles>} />

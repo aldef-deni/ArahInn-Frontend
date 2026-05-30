@@ -7,7 +7,7 @@ import { bookingApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah, diffDays, getImageUrl } from '@/utils'
-import { Tag, ChevronLeft, User, Phone, Mail } from 'lucide-react'
+import { Tag, ChevronLeft, User, Phone, Mail, X, ArrowRight } from 'lucide-react'
 
 export default function Checkout() {
   const { t } = useTranslation()
@@ -133,20 +133,73 @@ export default function Checkout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, checkIn, checkOut, roomCount])
 
-  return (
-    <div className="container max-w-5xl py-4 sm:py-6 lg:py-8 pb-28 lg:pb-8">
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-4 sm:mb-6 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground transition-all hover:text-foreground active:scale-95"
-      >
-        <ChevronLeft className="h-4 w-4" /> {t('common.back')}
-      </button>
-      <h1 className="mb-5 sm:mb-8 font-display text-xl sm:text-2xl font-bold leading-tight">{t('checkout.title')}</h1>
+  // Lock body scroll while modal open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
 
-      <div className="grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-3 lg:gap-8">
-        <div className="space-y-4 sm:space-y-6 lg:col-span-2">
-          <div className="rounded-xl sm:rounded-2xl border bg-white p-4 sm:p-5 lg:p-6 shadow-card">
-            <h2 className="mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base font-semibold">
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) navigate(-1)
+  }
+
+  return (
+    <div
+      onClick={handleBackdropClick}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:p-4 animate-fade-in-checkout"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full sm:max-w-3xl max-h-[94vh] sm:max-h-[90vh] bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up-checkout"
+      >
+        {/* ── Header ───────────────────────────────────────── */}
+        <div className="shrink-0 px-4 sm:px-6 pt-3 sm:pt-5 pb-3 sm:pb-4 bg-white border-b border-slate-100">
+          <div className="sm:hidden mx-auto w-10 h-1 rounded-full bg-slate-300 mb-3" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Konfirmasi</p>
+              <h1 className="font-display text-lg sm:text-xl md:text-2xl font-bold leading-tight text-slate-900">
+                {t('checkout.title')}
+              </h1>
+            </div>
+            <button
+              onClick={() => navigate(-1)}
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-95 flex items-center justify-center transition-all shrink-0"
+              aria-label="Tutup"
+            >
+              <X className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600" />
+            </button>
+          </div>
+        </div>
+
+        {/* ── Scrollable Body ──────────────────────────────── */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 space-y-4 sm:space-y-5">
+
+          {/* Order Summary (compact card at top) */}
+          {hotel && (
+            <div className="bg-gradient-to-br from-brand/5 to-blue-50 border border-brand/15 rounded-xl sm:rounded-2xl p-3.5 sm:p-4">
+              <div className="flex gap-3">
+                <div className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
+                  {hotel.images?.[0] ? (
+                    <img src={getImageUrl(hotel.images[0])} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-2xl">🏨</div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-1 text-sm sm:text-base font-bold text-slate-900">{hotel.name}</p>
+                  <p className="text-xs text-slate-600 truncate">{room?.name}{room?.type ? ` · ${room.type}` : ''}</p>
+                  <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 truncate">
+                    {checkIn} {t('checkout.until')} {checkOut} · {nights} {t('checkout.nights')} · {guests} {t('checkout.guests')} · {roomCount} {t('checkout.rooms')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Guest Info Card */}
+          <div className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+            <h2 className="mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base font-bold text-slate-900">
               <User className="h-4 w-4 sm:h-5 sm:w-5 text-brand" /> {t('checkout.guestInfo')}
             </h2>
             <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
@@ -202,8 +255,9 @@ export default function Checkout() {
             </div>
           </div>
 
-          <div className="rounded-xl sm:rounded-2xl border bg-white p-4 sm:p-5 lg:p-6 shadow-card">
-            <h2 className="mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base font-semibold">
+          {/* Promo Code Card */}
+          <div className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+            <h2 className="mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base font-bold text-slate-900">
               <Tag className="h-4 w-4 sm:h-5 sm:w-5 text-brand" /> {t('checkout.promoCode')}
             </h2>
             <div className="flex gap-2 sm:gap-3">
@@ -240,33 +294,10 @@ export default function Checkout() {
               </div>
             )}
           </div>
-        </div>
 
-        <div className="space-y-4">
-          <div className="lg:sticky lg:top-24 rounded-xl sm:rounded-2xl border bg-white p-4 sm:p-5 shadow-card">
-            <h2 className="mb-3 sm:mb-4 text-sm sm:text-base font-semibold">{t('checkout.summary')}</h2>
-
-            {hotel && (
-              <div className="mb-4 flex gap-3 border-b pb-4">
-                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
-                  {hotel.images?.[0] ? (
-                    <img src={getImageUrl(hotel.images[0])} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-2xl">H</div>
-                  )}
-                </div>
-                <div>
-                  <p className="line-clamp-1 text-sm font-semibold">{hotel.name}</p>
-                  <p className="text-xs text-muted-foreground">{room?.name} - {room?.type}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {checkIn} {t('checkout.until')} {checkOut} - {nights} {t('checkout.nights')}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {guests} {t('checkout.guests')} - {roomCount} {t('checkout.rooms')}
-                  </p>
-                </div>
-              </div>
-            )}
+          {/* Price Breakdown Card */}
+          <div className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+            <h2 className="mb-3 sm:mb-4 text-sm sm:text-base font-bold text-slate-900">{t('checkout.summary')}</h2>
 
             {pricing ? (() => {
               // BE sekarang return original_base_price (sebelum promo) & base_price (setelah promo).
@@ -383,39 +414,51 @@ export default function Checkout() {
               )
             })()}
 
+          </div>
+        </div>
+
+        {/* ── Sticky Modal Footer (Total + CTA) ─────────────── */}
+        <div className="shrink-0 bg-white border-t border-slate-200 px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] sm:text-xs uppercase tracking-wider text-slate-400 font-semibold">{t('checkout.total')}</p>
+              <p className="text-base sm:text-lg font-black text-orange-600 leading-tight truncate">
+                {pricing ? formatRupiah(pricing.totalPrice) : '—'}
+              </p>
+            </div>
             <button
               onClick={() => bookMutation.mutate()}
               disabled={!form.guestName || !form.guestEmail || bookMutation.isPending}
-              className="mt-4 sm:mt-5 hidden lg:flex w-full items-center justify-center rounded-xl bg-brand py-3 font-bold text-white shadow-brand/30 shadow-md transition-all hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50"
+              className="px-5 sm:px-6 py-3 bg-brand text-white rounded-xl font-bold text-sm shadow-md hover:bg-brand-700 active:scale-95 disabled:opacity-50 transition-all shrink-0 flex items-center gap-1.5"
             >
-              {bookMutation.isPending ? t('checkout.processing') : t('checkout.proceedPayment')}
+              {bookMutation.isPending ? '...' : t('checkout.proceedPayment')}
+              {!bookMutation.isPending && <ArrowRight className="w-4 h-4" />}
             </button>
-
-            <p className="mt-3 text-center text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
-              {t('checkout.agreement')}
-            </p>
           </div>
+          <p className="mt-2 text-center text-[10px] sm:text-[11px] text-slate-400 leading-relaxed">
+            {t('checkout.agreement')}
+          </p>
         </div>
       </div>
 
-      {/* ── Mobile sticky bottom CTA (hidden on lg+) ───────────── */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-8px_24px_rgba(15,23,42,0.08)]">
-        <div className="container py-3 flex items-center gap-3">
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">{t('checkout.total')}</p>
-            <p className="text-base font-black text-orange-600 leading-tight truncate">
-              {pricing ? formatRupiah(pricing.totalPrice) : '—'}
-            </p>
-          </div>
-          <button
-            onClick={() => bookMutation.mutate()}
-            disabled={!form.guestName || !form.guestEmail || bookMutation.isPending}
-            className="px-5 py-2.5 bg-brand text-white rounded-xl font-bold text-sm shadow-md hover:bg-brand-700 active:scale-95 disabled:opacity-50 transition-all shrink-0"
-          >
-            {bookMutation.isPending ? '...' : t('checkout.proceedPayment')}
-          </button>
-        </div>
-      </div>
+      <style>{`
+        @keyframes slide-up-checkout {
+          from { transform: translateY(100%); }
+          to   { transform: translateY(0); }
+        }
+        @keyframes fade-in-checkout {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @media (min-width: 640px) {
+          @keyframes slide-up-checkout {
+            from { transform: scale(0.95); opacity: 0; }
+            to   { transform: scale(1); opacity: 1; }
+          }
+        }
+        .animate-slide-up-checkout { animation: slide-up-checkout 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+        .animate-fade-in-checkout  { animation: fade-in-checkout 0.2s ease-out; }
+      `}</style>
     </div>
   )
 }

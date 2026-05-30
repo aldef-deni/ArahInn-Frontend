@@ -10,6 +10,7 @@ import {
   Search, MapPin, Calendar, Users, ArrowRight,
   Zap, Shield, Headphones, Award, TrendingUp, Tag, Copy, Check, Clock, Building2,
   ChevronDown, Wallet, Hotel, Smartphone, Lightbulb, Receipt, Sofa, BadgePercent,
+  Plane, Bus, TrainFront,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { format, addDays, parseISO } from 'date-fns'
@@ -24,17 +25,20 @@ import SEO from '@/components/SEO'
  */
 function ServiceCategoryTabs() {
   const items = [
-    { label: 'Akomodasi',     Icon: Hotel,        to: '/search',          accent: '#ffffff' },
-    { label: 'Pulsa & Data',  Icon: Smartphone,   to: '/ppob/pulsa-data', accent: '#60a5fa' },
-    { label: 'Listrik PLN',   Icon: Lightbulb,    to: '/ppob/pln',        accent: '#fbbf24' },
-    { label: 'Bayar Tagihan', Icon: Receipt,      to: '/ppob/tagihan',    accent: '#34d399' },
-    { label: 'E-Wallet',      Icon: Wallet,       to: '/ppob/ewallet',    accent: '#a78bfa' },
-    { label: 'Properti',      Icon: Building2,    to: '/properti',        accent: '#f87171' },
-    { label: 'Interior',      Icon: Sofa,         to: '/interior',        accent: '#fb923c' },
-    { label: 'Promo',         Icon: BadgePercent, to: '/promo',           accent: '#fbbf24' },
+    { label: 'Akomodasi',     Icon: Hotel,        to: '/search',                              accent: '#ffffff' },
+    { label: 'Tiket Pesawat', Icon: Plane,        to: '/coming-soon?feature=tiket-pesawat',   accent: '#7dd3fc' },
+    { label: 'Tiket Bus',     Icon: Bus,          to: '/coming-soon?feature=tiket-bus',       accent: '#86efac' },
+    { label: 'Tiket Kereta',  Icon: TrainFront,   to: '/coming-soon?feature=tiket-kereta',    accent: '#fdba74' },
+    { label: 'Pulsa & Data',  Icon: Smartphone,   to: '/ppob/pulsa-data',                     accent: '#60a5fa' },
+    { label: 'Listrik PLN',   Icon: Lightbulb,    to: '/ppob/pln',                            accent: '#fbbf24' },
+    { label: 'Bayar Tagihan', Icon: Receipt,      to: '/ppob/tagihan',                        accent: '#34d399' },
+    { label: 'E-Wallet',      Icon: Wallet,       to: '/ppob/ewallet',                        accent: '#a78bfa' },
+    { label: 'Properti',      Icon: Building2,    to: '/properti',                            accent: '#f87171' },
+    { label: 'Interior',      Icon: Sofa,         to: '/interior',                            accent: '#fb923c' },
+    { label: 'Promo',         Icon: BadgePercent, to: '/promo',                               accent: '#fbbf24' },
   ]
   return (
-    <div className="overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0 scrollbar-thin">
+    <div className="overflow-x-auto scrollbar-thin">
       <div className="flex items-stretch gap-2 lg:gap-3 lg:justify-center min-w-max lg:min-w-0 pb-1">
         {items.map(({ label, Icon, to, accent }) => (
           <Link
