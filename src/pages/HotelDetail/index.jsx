@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { format, addDays, formatDistanceToNow } from 'date-fns'
@@ -123,7 +124,7 @@ function GalleryLightbox({ open, images, startIdx = 0, onClose, hotelName }) {
               type="button"
               onClick={prev}
               className="absolute left-3 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white backdrop-blur transition-colors hover:bg-white/25 sm:left-6"
-              aria-label="Foto sebelumnya"
+              aria-label={t('hotelDetail.prevPhoto')}
             >
               <ChevronLeft className="h-6 w-6" />
             </button>
@@ -266,11 +267,11 @@ function RoomCard({ room, nights, onBook }) {
           >
             {room.available ? (
               <>
-                {expanded ? 'Sembunyikan' : 'Lihat Kamar'}
+                {expanded ? t('hotelDetail.hideRoom') : t('hotelDetail.viewRoom')}
                 <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
               </>
             ) : (
-              'Kamar penuh'
+              t('hotelDetail.roomFull')
             )}
           </button>
         </div>
@@ -321,7 +322,7 @@ function RoomCard({ room, nights, onBook }) {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Deskripsi Kamar</p>
                 <p className="mt-2 text-sm leading-7 text-slate-600">
-                  {room.description || 'Belum ada deskripsi untuk tipe kamar ini.'}
+                  {room.description || t('hotelDetail.noDescription')}
                 </p>
               </div>
 
@@ -618,14 +619,14 @@ function BookingModal({
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Stepper
-                label="Jumlah kamar"
+                label={t('hotelDetail.roomCount')}
                 value={draft.roomCount}
                 min={1}
                 max={maxRoomCount}
                 onChange={handleRoomCountChange}
               />
               <Stepper
-                label="Jumlah tamu"
+                label={t('hotelDetail.guestCount')}
                 value={draft.guests}
                 min={1}
                 max={maxGuests}
@@ -726,6 +727,7 @@ function BookingModal({
 }
 
 export default function HotelDetail() {
+  const { t } = useTranslation()
   // Route bisa /hotel/:id (legacy) atau /:category/:slug (SEO-friendly)
   const { id, slug } = useParams()
   const hotelKey = id ?? slug
@@ -1036,20 +1038,20 @@ export default function HotelDetail() {
           {[
             {
               label: 'Lokasi',
-              value: hotel.city || 'Belum tersedia',
+              value: hotel.city || t('hotelDetail.notAvailable'),
               sub: hotel.province || null,
               icon: MapPin,
               tint: 'from-blue-50 to-blue-100/50 text-blue-600',
             },
             {
-              label: 'Rating Tamu',
+              label: t('hotelDetail.guestRating'),
               value: averageRating ? `${averageRating} / 5` : 'Jumlah Ulasan',
               sub: reviewData?.total > 0 ? `${reviewData.total} ulasan` : 'Jadilah yang pertama mengulas',
               icon: Star,
               tint: 'from-amber-50 to-amber-100/50 text-amber-600',
             },
             {
-              label: 'Pilihan Kamar',
+              label: t('hotelDetail.roomChoices'),
               value: `${roomTypeCount} ${roomTypeCount > 1 ? 'tipe kamar' : 'tipe kamar'}`,
               sub: 'Tersedia untuk dipesan',
               icon: Users,

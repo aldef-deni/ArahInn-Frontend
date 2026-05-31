@@ -39,8 +39,8 @@ export default function LoginExtranet() {
       if (managementMode && !isMgmt) {
         if (isOwner) {
           toast({
-            title: 'Gunakan portal Extranet',
-            description: 'Akun owner properti harus login melalui extranet.arahinn.com.',
+            title: 'Gunakan portal Owner',
+            description: 'Akun owner properti harus login melalui my.arahinn.com.',
             variant: 'destructive',
           })
           setTimeout(() => { window.location.href = getOwnerPortalUrl('/owner') }, 1200)

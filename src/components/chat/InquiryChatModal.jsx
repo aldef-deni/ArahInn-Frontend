@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, Send, Loader2, Building2, User, LogIn } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { chatApi } from '@/services/index'
@@ -15,6 +16,7 @@ import { useAuthStore } from '@/store/authStore'
  *  - onClose : fn
  */
 export default function InquiryChatModal({ hotelId, hotelName, open, onClose }) {
+  const { t } = useTranslation()
   const { token, user }       = useAuthStore()
   const navigate              = useNavigate()
   const [room, setRoom]       = useState(null)
@@ -86,8 +88,8 @@ export default function InquiryChatModal({ hotelId, hotelName, open, onClose }) 
               <Building2 className="w-5 h-5" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] uppercase tracking-wider text-orange-100">Chat Penginapan</p>
-              <p className="font-bold text-sm truncate">{hotelName || 'Penginapan'}</p>
+              <p className="text-[10px] uppercase tracking-wider text-orange-100">{t('chatModal.chatInquiryLabel')}</p>
+              <p className="font-bold text-sm truncate">{hotelName || t('chatModal.defaultHotel')}</p>
             </div>
             <button
               onClick={onClose}
@@ -102,13 +104,13 @@ export default function InquiryChatModal({ hotelId, hotelName, open, onClose }) 
         {!token ? (
           <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-3">
             <Building2 className="w-10 h-10 text-slate-300" />
-            <p className="text-sm font-semibold text-slate-700">Login untuk chat dengan pihak penginapan</p>
-            <p className="text-xs text-slate-500">Tanya seputar kamar, fasilitas, atau ketersediaan sebelum booking.</p>
+            <p className="text-sm font-semibold text-slate-700">{t('chatModal.loginToChat')}</p>
+            <p className="text-xs text-slate-500">{t('chatModal.loginToChatSub')}</p>
             <button
               onClick={() => { onClose(); navigate('/login') }}
               className="mt-2 inline-flex items-center gap-2 px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl transition-colors"
             >
-              <LogIn className="w-4 h-4" /> Masuk
+              <LogIn className="w-4 h-4" /> {t('chatModal.signIn')}
             </button>
           </div>
         ) : loading ? (
@@ -125,7 +127,7 @@ export default function InquiryChatModal({ hotelId, hotelName, open, onClose }) 
                 </div>
                 <div className="bg-gradient-to-br from-orange-500 to-amber-500 text-white rounded-2xl rounded-bl-md px-3.5 py-2.5 shadow-sm shadow-orange-200 max-w-[78%]">
                   <p className="text-sm">
-                    Halo {user?.name?.split(' ')[0] || ''}! 👋 Silakan tanya seputar penginapan ini. Kami akan membantu memberikan informasi tentang penginapan ini.
+                    {t('chatModal.welcomeInquiry', { name: user?.name?.split(' ')[0] || '' })}
                   </p>
                 </div>
               </div>
@@ -164,7 +166,7 @@ export default function InquiryChatModal({ hotelId, hotelName, open, onClose }) 
                   onKeyDown={e => {
                     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
                   }}
-                  placeholder="Tulis pertanyaan Anda..."
+                  placeholder={t('chatModal.placeholderInquiry')}
                   className="flex-1 resize-none border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 max-h-24"
                 />
                 <button

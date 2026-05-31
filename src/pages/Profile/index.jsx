@@ -18,8 +18,9 @@ import {
   Clock, AlertCircle, Building2, Hotel as HotelIcon,
   ShieldCheck, Zap, Search, BedDouble, Sparkles, ArrowRight,
   Headphones, ChevronDown, Globe, DollarSign, MapPin, Info,
-  FileText, ScrollText, Settings, Send,
+  FileText, ScrollText, Settings, Send, Receipt,
 } from 'lucide-react'
+import PpobTransactionList from '@/pages/Ppob/PpobTransactionList'
 
 // ── Avatar with fallback ──────────────────────────────────
 function Avatar({ user, size = 'md' }) {
@@ -305,6 +306,7 @@ function SectionOrders() {
   const navigate = useNavigate()
   const qc       = useQueryClient()
   const { toast } = useToast()
+  const [activeMain, setActiveMain] = useState('akomodasi') // akomodasi | ppob
   const [activeTab, setActiveTab] = useState('')
   const [page, setPage] = useState(1)
   const [chatBooking, setChatBooking] = useState(null) // { id, hotelId, hotelName, bookingCode } | null
@@ -349,16 +351,51 @@ function SectionOrders() {
       <div className="flex items-end justify-between gap-3">
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">Pesanan Saya</h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Semua riwayat booking Anda.</p>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Semua riwayat booking & transaksi PPOB.</p>
         </div>
-        {totalOrders > 0 && (
+        {activeMain === 'akomodasi' && totalOrders > 0 && (
           <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
             {totalOrders} pesanan
           </span>
         )}
       </div>
 
-      {/* Tabs — pill segmented control */}
+      {/* ── Main tabs Akomodasi | PPOB (underline style) ────────────────── */}
+      <div className="relative border-b border-slate-200">
+        <div className="flex gap-1 sm:gap-2">
+          {[
+            { value: 'akomodasi', label: 'Akomodasi', Icon: HotelIcon },
+            { value: 'ppob',      label: 'PPOB',      Icon: Receipt },
+          ].map(tab => {
+            const TabIcon = tab.Icon
+            const active = activeMain === tab.value
+            return (
+              <button
+                key={tab.value}
+                onClick={() => setActiveMain(tab.value)}
+                className={`relative flex items-center gap-2 px-4 sm:px-5 py-3 text-sm font-semibold transition-colors ${
+                  active ? 'text-brand' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <TabIcon className={`w-4 h-4 transition-transform ${active ? 'scale-110' : ''}`} />
+                {tab.label}
+                {active && (
+                  <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-brand rounded-full" />
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── PPOB tab content ──────────────────────────── */}
+      {activeMain === 'ppob' && (
+        <PpobTransactionList limit={30} />
+      )}
+
+      {/* ── Akomodasi tab content (existing) ──────────── */}
+      {activeMain === 'akomodasi' && (<>
+      {/* Tabs status — pill segmented control */}
       <div className="inline-flex p-1 bg-slate-100 rounded-2xl overflow-x-auto max-w-full">
         {ORDER_TABS.map(tab => {
           const active = activeTab === tab.value
@@ -459,6 +496,7 @@ function SectionOrders() {
           </button>
         </div>
       )}
+      </>)}
 
       {/* Chat modal */}
       <BookingChatModal

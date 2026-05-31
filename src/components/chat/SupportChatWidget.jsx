@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { MessageCircle, X, Send, Headphones, Loader2, User } from 'lucide-react'
 import { chatApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
@@ -8,6 +9,7 @@ import { useAuthStore } from '@/store/authStore'
  * Chat langsung dengan tim customer service Arahinn (tidak butuh booking).
  */
 export default function SupportChatWidget() {
+  const { t } = useTranslation()
   const { token, user } = useAuthStore()
   const [open, setOpen]         = useState(false)
   const [room, setRoom]         = useState(null)
@@ -77,7 +79,7 @@ export default function SupportChatWidget() {
           className="fixed bottom-5 right-5 z-40 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-full shadow-lg shadow-orange-500/40 transition-all hover:-translate-y-0.5"
         >
           <MessageCircle className="w-5 h-5" />
-          <span className="font-semibold text-sm">Live Chat</span>
+          <span className="font-semibold text-sm">{t('supportChat.liveChat')}</span>
         </button>
       )}
 
@@ -91,10 +93,10 @@ export default function SupportChatWidget() {
                 <Headphones className="w-5 h-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm">ArahInn Support</p>
+                <p className="font-bold text-sm">{t('supportChat.title')}</p>
                 <p className="text-[11px] text-blue-100 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
-                  Tim CS online
+                  {t('supportChat.onlineStatus')}
                 </p>
               </div>
               <button
@@ -110,10 +112,10 @@ export default function SupportChatWidget() {
           {!token ? (
             <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-3">
               <MessageCircle className="w-10 h-10 text-slate-300" />
-              <p className="text-sm font-semibold text-slate-700">Login dulu untuk mulai chat</p>
-              <p className="text-xs text-slate-500">Akun gratis, simpan riwayat chat dengan tim Arahinn.</p>
+              <p className="text-sm font-semibold text-slate-700">{t('supportChat.loginPrompt')}</p>
+              <p className="text-xs text-slate-500">{t('supportChat.loginPromptSub')}</p>
               <a href="/login" className="mt-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors">
-                Masuk
+                {t('supportChat.signIn')}
               </a>
             </div>
           ) : loading ? (
@@ -130,7 +132,7 @@ export default function SupportChatWidget() {
                   </div>
                   <div className="bg-gradient-to-br from-orange-500 to-amber-500 text-white rounded-2xl rounded-bl-md px-3.5 py-2.5 shadow-sm shadow-orange-200 max-w-[78%]">
                     <p className="text-sm">
-                      Halo {user?.name?.split(' ')[0] || ''}! 👋 Ada yang bisa kami bantu?
+                      {t('supportChat.welcomeMessage', { name: user?.name?.split(' ')[0] || '' })}
                     </p>
                   </div>
                 </div>
@@ -169,7 +171,7 @@ export default function SupportChatWidget() {
                     onKeyDown={e => {
                       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
                     }}
-                    placeholder="Tulis pesan..."
+                    placeholder={t('supportChat.placeholder')}
                     className="flex-1 resize-none border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 max-h-24"
                   />
                   <button

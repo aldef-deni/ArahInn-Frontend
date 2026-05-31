@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
 import {
   Clock, Copy, CheckCircle, XCircle, ArrowLeft, Info, Loader2,
-  Receipt, Building2,
+  Receipt, Building2, X, Zap, Smartphone, Wallet, ShoppingBag, Share2,
 } from 'lucide-react'
 import SEO from '@/components/SEO'
 
@@ -51,6 +51,19 @@ export default function PpobPayment() {
   const paymentMode = modeData?.mode ?? 'manual'
   const manualBank  = modeData?.bank
 
+  // Lock body scroll while modal open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  // Back ke previous page (kalau dibuka dari history/orders). Fallback ke /ppob.
+  const handleClose = () => {
+    if (window.history.length > 1) navigate(-1)
+    else navigate("/topup-tagihan")
+  }
+  const handleBackdrop = (e) => { if (e.target === e.currentTarget) handleClose() }
+
   // Transaksi PPOB
   const { data: trx, isLoading } = useQuery({
     queryKey: ['ppob-trx', trxCode],
@@ -84,21 +97,25 @@ export default function PpobPayment() {
 
   if (isLoading) {
     return (
-      <div className="container py-20 text-center">
-        <div className="w-16 h-16 border-4 border-brand border-t-transparent rounded-full animate-spin mx-auto" />
-      </div>
+      <ModalShell onClose={handleClose} onBackdrop={handleBackdrop}>
+        <div className="py-20 text-center">
+          <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mx-auto" />
+        </div>
+      </ModalShell>
     )
   }
 
   if (!trx) {
     return (
-      <div className="container py-16 text-center max-w-md mx-auto">
-        <XCircle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-        <p className="text-slate-700 font-semibold">Transaksi tidak ditemukan.</p>
-        <Link to="/ppob" className="inline-block mt-4 text-sm font-semibold text-brand hover:underline">
-          Kembali ke PPOB
-        </Link>
-      </div>
+      <ModalShell onClose={handleClose} onBackdrop={handleBackdrop}>
+        <div className="py-16 text-center px-6">
+          <XCircle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-slate-700 font-semibold">Transaksi tidak ditemukan.</p>
+          <button onClick={handleClose} className="inline-block mt-4 text-sm font-semibold text-brand hover:underline">
+            Kembali ke PPOB
+          </button>
+        </div>
+      </ModalShell>
     )
   }
 
@@ -109,42 +126,25 @@ export default function PpobPayment() {
   // ── Terminal states ──
   if (status === 'success') {
     return (
-      <SuccessView trx={trx} navigate={navigate} />
+      <ModalShell onClose={handleClose} onBackdrop={handleBackdrop}>
+        <SuccessView trx={trx} navigate={navigate} />
+      </ModalShell>
     )
   }
   if (['failed', 'refundable', 'refunded'].includes(status)) {
     return (
-      <FailedView trx={trx} status={status} navigate={navigate} />
+      <ModalShell onClose={handleClose} onBackdrop={handleBackdrop}>
+        <FailedView trx={trx} status={status} navigate={navigate} />
+      </ModalShell>
     )
   }
 
-  // ── Active payment / waiting states ──
+  // ── Active payment / waiting states (modal) ──
   return (
-    <div className="bg-slate-50 sm:bg-transparent min-h-[60vh] pb-6">
+    <ModalShell onClose={handleClose} onBackdrop={handleBackdrop}>
       <SEO title="Selesaikan Pembayaran" description="Instruksi pembayaran transaksi PPOB ArahInn." />
 
-      {/* Sticky header mobile */}
-      <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 sm:hidden">
-        <div className="container py-3 flex items-center gap-2">
-          <Link to="/ppob" className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-100 active:scale-90 transition-all" aria-label="Kembali">
-            <ArrowLeft className="w-5 h-5 text-slate-700" />
-          </Link>
-          <h1 className="font-bold text-slate-900 text-base leading-tight flex-1 truncate">
-            Selesaikan Pembayaran
-          </h1>
-        </div>
-      </header>
-
-      <div className="container py-4 sm:py-6 lg:py-8 max-w-2xl">
-        {/* Desktop title */}
-        <div className="hidden sm:block">
-          <Link to="/ppob" className="inline-flex items-center gap-1 text-xs sm:text-sm text-slate-500 hover:text-brand mb-3">
-            <ArrowLeft className="w-4 h-4" /> Kembali ke PPOB
-          </Link>
-          <h1 className="font-display text-xl sm:text-2xl font-bold text-slate-900 mb-2 leading-tight">
-            Selesaikan Pembayaran
-          </h1>
-        </div>
+      <div className="px-4 sm:px-6 pb-6 pt-4 sm:pt-5">
 
       {/* Status indicator */}
       <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl mb-4 text-xs sm:text-sm font-semibold bg-${presentation.color}-50 border border-${presentation.color}-200 text-${presentation.color}-700`}>
@@ -248,7 +248,7 @@ export default function PpobPayment() {
 
       {/* Footer actions */}
       <div className="mt-5 sm:mt-6 grid grid-cols-2 gap-2 sm:gap-3">
-        <Link to="/ppob/history"
+        <Link to="/topup-tagihan/history"
           className="text-center py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 active:scale-[0.98] transition-all">
           Riwayat
         </Link>
@@ -257,6 +257,49 @@ export default function PpobPayment() {
           Chat Admin
         </a>
       </div>
+      </div>
+    </ModalShell>
+  )
+}
+
+/**
+ * ModalShell — overlay backdrop + centered card dengan slide-up animation
+ * (pattern sama dengan Checkout akomodasi).
+ */
+function ModalShell({ children, onClose, onBackdrop }) {
+  return (
+    <div
+      onClick={onBackdrop}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:p-4 animate-fade-in-checkout"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full sm:max-w-2xl max-h-[94vh] sm:max-h-[90vh] bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up-checkout"
+      >
+        {/* Header */}
+        <div className="shrink-0 px-4 sm:px-6 pt-3 sm:pt-5 pb-3 sm:pb-4 bg-white border-b border-slate-100">
+          <div className="sm:hidden mx-auto w-10 h-1 rounded-full bg-slate-300 mb-3" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Pembayaran</p>
+              <h1 className="font-display text-lg sm:text-xl md:text-2xl font-bold leading-tight text-slate-900 truncate">
+                Selesaikan Pembayaran
+              </h1>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-95 flex items-center justify-center transition-all shrink-0"
+              aria-label="Tutup"
+            >
+              <X className="w-5 h-5 text-slate-600" />
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          {children}
+        </div>
       </div>
     </div>
   )
@@ -287,37 +330,245 @@ function FieldRow({ label, value, onCopy, copied, mono }) {
   )
 }
 
+/**
+ * Detect kategori trx dari product code/name + category.
+ * Return: 'pln' | 'pulsa' | 'ewallet' | 'tagihan' | 'game' | 'other'
+ */
+function detectTrxKind(trx) {
+  const code = (trx.product?.code || '').toUpperCase()
+  const name = (trx.product?.name || '').toUpperCase()
+  const catCode = (trx.category?.code || '').toLowerCase()
+  if (catCode === 'pln' || code.startsWith('PLN') || name.startsWith('PLN ')) return 'pln'
+  if (catCode === 'pulsa-data' || /TELKOMSEL|INDOSAT|XL\b|AXIS|TRI|SMART|FREN|BYU/.test(name)) return 'pulsa'
+  if (catCode === 'ewallet' || /GOPAY|OVO|DANA|SHOPEE|LINKAJA|SPEEDCASH/.test(name)) return 'ewallet'
+  if (catCode === 'tagihan' || /PDAM|BPJS|TELKOM|TV|PAJAK|SAMSAT|PBB/.test(name)) return 'tagihan'
+  if (catCode === 'game' || /MOBILE\s*LEGEND|FREE\s*FIRE|PUBG|VOUCHER GAME/.test(name)) return 'game'
+  return 'other'
+}
+
+/** Format token PLN ke grup 4 digit: 1234567890123456 → "1234 5678 9012 3456" */
+function formatToken(raw) {
+  if (!raw) return ''
+  const digits = String(raw).replace(/\D/g, '')
+  if (digits.length < 8) return String(raw)
+  return digits.match(/.{1,4}/g)?.join(' ') || String(raw)
+}
+
 function SuccessView({ trx, navigate }) {
+  const [copied, setCopied]   = useState(false)
+  const kind = detectTrxKind(trx)
+  const sn   = trx.serialNumber
+  const hasSn = sn && String(sn).trim() && String(sn).trim() !== '-'
+
+  const copyToken = () => {
+    if (!sn) return
+    navigator.clipboard.writeText(String(sn).replace(/\D/g, ''))
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2500)
+  }
+
+  const shareToken = async () => {
+    if (!navigator.share || !sn) return
+    try {
+      await navigator.share({
+        title: `Token ${trx.product?.name} ArahInn`,
+        text : `Token PLN: ${sn}\nMeter: ${trx.customer?.number}\nNama: ${trx.customer?.name || '-'}`,
+      })
+    } catch {}
+  }
+
+  // Detect PLN specific data dari template_struk atau payment_response
+  const struk = trx.templateStruk || {}
+  const kwh   = struk.jumlah_kwh || struk.jumlahKwh
+  const tarif = struk.tarif_daya || struk.tarifDaya
+
   return (
-    <div className="container py-12 sm:py-16 lg:py-20 max-w-md mx-auto text-center px-4">
-      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4 sm:mb-6">
-        <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12 text-emerald-600" />
-      </div>
-      <h1 className="font-display text-xl sm:text-2xl font-bold mb-2 text-emerald-700">Transaksi Berhasil!</h1>
-      <p className="text-sm sm:text-base text-slate-600 mb-1">
-        <strong>{trx.product?.name}</strong> sudah dikirim ke <strong className="font-mono">{trx.customer?.number}</strong>.
-      </p>
-      {(() => {
-        const sn = trx.serialNumber
-        const hasSn = sn && String(sn).trim() && String(sn).trim() !== '-'
-        if (!hasSn) return null
-        return (
-          <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 text-left">
-            <p className="text-[10px] sm:text-xs font-bold text-emerald-700 uppercase mb-1">Token / SN</p>
-            <p className="font-mono text-sm sm:text-base font-bold text-emerald-900 break-all">{sn}</p>
+    <div className="px-4 sm:px-6 py-6 sm:py-8">
+      {/* Hero check icon */}
+      <div className="text-center mb-5 sm:mb-6">
+        <div className="relative inline-flex items-center justify-center">
+          <div className="absolute inset-0 bg-emerald-400 rounded-full blur-2xl opacity-30 animate-pulse" />
+          <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/40">
+            <CheckCircle className="w-9 h-9 sm:w-11 sm:h-11 text-white" strokeWidth={2.5} />
           </div>
-        )
-      })()}
-      <div className="mt-6 sm:mt-8 flex gap-3">
-        <button onClick={() => navigate('/ppob')}
-          className="flex-1 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+        </div>
+        <h1 className="font-display text-xl sm:text-2xl font-bold mt-4 text-slate-900">
+          Transaksi Berhasil!
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          {kind === 'pln'     ? 'Token listrik PLN sudah terbit'
+          : kind === 'pulsa'  ? `Pulsa sudah dikirim ke ${trx.customer?.number}`
+          : kind === 'ewallet'? `Saldo sudah masuk ke ${trx.customer?.number}`
+          : kind === 'tagihan'? `Tagihan ${trx.product?.name} terbayar`
+          : kind === 'game'   ? `Voucher game sudah terkirim ke ID ${trx.customer?.number}`
+          : 'Transaksi sudah selesai'}
+        </p>
+      </div>
+
+      {/* ── PLN TOKEN CARD (special) ────────────────────────── */}
+      {kind === 'pln' && hasSn && (
+        <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 border-2 border-amber-200 rounded-2xl p-4 sm:p-5 shadow-sm mb-4 relative overflow-hidden">
+          {/* Decorative */}
+          <div className="absolute -top-8 -right-8 w-32 h-32 bg-amber-300 rounded-full opacity-10 blur-2xl" />
+          <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-orange-400 rounded-full opacity-10 blur-2xl" />
+
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-9 h-9 rounded-lg bg-amber-500 flex items-center justify-center">
+                <Zap className="w-4.5 h-4.5 text-white" strokeWidth={2.5} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-bold text-amber-700 uppercase tracking-wider">Token Listrik PLN</p>
+                <p className="text-[11px] text-slate-600">
+                  Untuk meter <span className="font-mono font-semibold">{trx.customer?.number}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Token besar dengan grouping */}
+            <div className="bg-white border-2 border-dashed border-amber-300 rounded-xl py-4 px-3 mb-3 text-center">
+              <p className="font-mono text-lg sm:text-2xl font-black text-amber-900 tracking-wider break-all leading-tight">
+                {formatToken(sn)}
+              </p>
+            </div>
+
+            {/* Meta info kalau ada */}
+            {(trx.customer?.name || kwh || tarif) && (
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                {trx.customer?.name && (
+                  <div className="bg-white/60 rounded-lg p-2.5">
+                    <p className="text-[9px] sm:text-[10px] uppercase text-slate-500 font-bold">Pelanggan</p>
+                    <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{trx.customer.name}</p>
+                  </div>
+                )}
+                {kwh && (
+                  <div className="bg-white/60 rounded-lg p-2.5">
+                    <p className="text-[9px] sm:text-[10px] uppercase text-slate-500 font-bold">Jumlah Listrik</p>
+                    <p className="text-xs sm:text-sm font-bold text-amber-700">{kwh} kWh</p>
+                  </div>
+                )}
+                {tarif && (
+                  <div className="bg-white/60 rounded-lg p-2.5">
+                    <p className="text-[9px] sm:text-[10px] uppercase text-slate-500 font-bold">Tarif / Daya</p>
+                    <p className="text-xs sm:text-sm font-semibold text-slate-900">{tarif}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={copyToken}
+                className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-[0.97] ${
+                  copied
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm shadow-amber-500/30'
+                }`}
+              >
+                {copied ? (
+                  <>
+                    <CheckCircle className="w-4 h-4" /> Tersalin!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" /> Salin Token
+                  </>
+                )}
+              </button>
+              {typeof navigator !== 'undefined' && navigator.share && (
+                <button
+                  onClick={shareToken}
+                  className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 border-amber-300 text-amber-700 font-bold text-sm hover:bg-amber-100 active:scale-[0.97] transition-all"
+                >
+                  <Share2 className="w-4 h-4" /> Bagikan
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── PLN Instructions ────────────────────────────── */}
+      {kind === 'pln' && hasSn && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3.5 sm:p-4 mb-4">
+          <p className="text-xs sm:text-sm font-bold text-blue-900 mb-2 flex items-center gap-1.5">
+            <Info className="w-4 h-4" /> Cara Input Token ke Meter PLN
+          </p>
+          <ol className="text-[11px] sm:text-xs text-blue-800 space-y-1 list-decimal list-inside leading-relaxed">
+            <li>Tekan <strong>20 digit token</strong> di atas pada keypad meter PLN Anda.</li>
+            <li>Tekan tombol <strong>Enter</strong> atau <strong>OK</strong>.</li>
+            <li>Tunggu sampai meter respond <em>"Berhasil"</em> dan kWh bertambah.</li>
+            <li>Kalau meter respond <em>"Token Salah"</em>, periksa angka lalu coba lagi.</li>
+          </ol>
+        </div>
+      )}
+
+      {/* ── Non-PLN: simpler SN display ─────────────────── */}
+      {kind !== 'pln' && hasSn && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 sm:p-4 mb-4">
+          <p className="text-[10px] sm:text-xs font-bold text-emerald-700 uppercase mb-2">
+            {kind === 'game' ? 'Voucher Code' : 'Nomor Referensi'}
+          </p>
+          <div className="flex items-center gap-2 bg-white border border-emerald-200 rounded-lg px-3 py-2.5">
+            <p className="font-mono text-sm sm:text-base font-bold text-emerald-900 break-all flex-1">{sn}</p>
+            <button onClick={copyToken}
+              className="p-2 rounded-lg hover:bg-emerald-100 active:scale-90 transition-all shrink-0">
+              {copied
+                ? <CheckCircle className="w-4 h-4 text-emerald-600" />
+                : <Copy className="w-4 h-4 text-emerald-600" />}
+            </button>
+          </div>
+          {kind === 'pulsa' && (
+            <p className="text-[11px] text-emerald-700 mt-2.5 leading-relaxed">
+              💡 Cek pulsa Anda dengan <strong>*888#</strong> atau cek saldo via SMS provider.
+            </p>
+          )}
+          {kind === 'ewallet' && (
+            <p className="text-[11px] text-emerald-700 mt-2.5 leading-relaxed">
+              💡 Buka aplikasi e-wallet untuk cek saldo terbaru.
+            </p>
+          )}
+          {kind === 'game' && (
+            <p className="text-[11px] text-emerald-700 mt-2.5 leading-relaxed">
+              💡 Diamond/voucher otomatis masuk ke akun game tertaut.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ── Trx info summary ────────────────────────────── */}
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 sm:p-4 mb-5">
+        <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+          <InfoCell label="Produk" value={trx.product?.name} />
+          <InfoCell label="No. Tujuan" value={trx.customer?.number} mono />
+          <InfoCell label="Kode Transaksi" value={trx.trxCode} mono />
+          <InfoCell label="Total Bayar" value={formatRupiah(trx.pricing?.totalAmount || 0)} accent="brand" />
+        </div>
+      </div>
+
+      {/* CTA */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+        <button onClick={() => navigate("/topup-tagihan")}
+          className="py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:scale-[0.98] transition-all">
           Transaksi Lagi
         </button>
-        <button onClick={() => navigate('/ppob/history')}
-          className="flex-1 py-3 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 text-sm">
+        <button onClick={() => navigate("/topup-tagihan/history")}
+          className="py-3 bg-brand text-white rounded-xl font-bold text-sm hover:bg-brand-700 active:scale-[0.98] transition-all shadow-md shadow-brand/30">
           Lihat Riwayat
         </button>
       </div>
+    </div>
+  )
+}
+
+function InfoCell({ label, value, mono, accent }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[9px] sm:text-[10px] uppercase text-slate-500 font-bold tracking-wider">{label}</p>
+      <p className={`mt-0.5 ${mono ? 'font-mono' : ''} ${accent === 'brand' ? 'text-brand font-bold' : 'text-slate-900 font-semibold'} truncate`}>
+        {value || '-'}
+      </p>
     </div>
   )
 }
@@ -326,7 +577,7 @@ function FailedView({ trx, status, navigate }) {
   const presentation = STATUS_PRESENTATION[status]
   const Icon = presentation?.Icon || XCircle
   return (
-    <div className="container py-12 sm:py-16 max-w-md mx-auto text-center px-4">
+    <div className="py-8 sm:py-10 px-6 text-center">
       <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-${presentation?.color || 'red'}-100 flex items-center justify-center mx-auto mb-4 sm:mb-6`}>
         <Icon className={`w-10 h-10 sm:w-12 sm:h-12 text-${presentation?.color || 'red'}-600`} />
       </div>
@@ -345,7 +596,7 @@ function FailedView({ trx, status, navigate }) {
         </p>
       )}
       <div className="mt-6 sm:mt-8 flex gap-3">
-        <button onClick={() => navigate('/ppob')}
+        <button onClick={() => navigate("/topup-tagihan")}
           className="flex-1 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50">
           Kembali
         </button>

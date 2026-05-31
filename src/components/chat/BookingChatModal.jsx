@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, Send, Loader2, MessageSquare, User } from 'lucide-react'
 import { chatApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
@@ -17,6 +18,7 @@ import { getImageUrl } from '@/utils'
  *  - onClose    : fn
  */
 export default function BookingChatModal({ open, bookingId, hotelId, hotelName, bookingCode, onClose }) {
+  const { t } = useTranslation()
   const { user }              = useAuthStore()
   const [room, setRoom]       = useState(null)
   const [messages, setMsgs]   = useState([])
@@ -91,8 +93,8 @@ export default function BookingChatModal({ open, bookingId, hotelId, hotelName, 
               <MessageSquare className="w-5 h-5" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] uppercase tracking-wider text-blue-100">Chat Booking</p>
-              <p className="font-bold text-sm truncate">{hotelName || 'Penginapan'}</p>
+              <p className="text-[10px] uppercase tracking-wider text-blue-100">{t('chatModal.chatBookingLabel')}</p>
+              <p className="font-bold text-sm truncate">{hotelName || t('chatModal.defaultHotel')}</p>
               {bookingCode && (
                 <p className="text-[10px] text-blue-100 font-mono mt-0.5">#{bookingCode}</p>
               )}
@@ -121,7 +123,7 @@ export default function BookingChatModal({ open, bookingId, hotelId, hotelName, 
                 </div>
                 <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-2xl rounded-bl-md px-3.5 py-2.5 shadow-sm shadow-blue-200 max-w-[78%]">
                   <p className="text-sm">
-                    Halo {user?.name?.split(' ')[0] || ''}! 👋 Kirim pesan terkait booking ini ke pihak penginapan.
+                    {t('chatModal.welcomeBooking', { name: user?.name?.split(' ')[0] || '' })}
                   </p>
                 </div>
               </div>
@@ -162,7 +164,7 @@ export default function BookingChatModal({ open, bookingId, hotelId, hotelName, 
                   onKeyDown={e => {
                     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
                   }}
-                  placeholder="Tulis pesan untuk pihak penginapan..."
+                  placeholder={t('chatModal.placeholderBooking')}
                   className="flex-1 resize-none border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400 max-h-24"
                 />
                 <button

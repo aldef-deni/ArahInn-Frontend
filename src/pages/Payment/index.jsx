@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { bookingApi, paymentApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
@@ -29,6 +30,7 @@ function useCountdown(expiresAt) {
 }
 
 export default function Payment() {
+  const { t } = useTranslation()
   const { bookingId } = useParams()
   const navigate      = useNavigate()
   const { toast }     = useToast()
@@ -134,16 +136,16 @@ export default function Payment() {
       <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4 sm:mb-6">
         <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12 text-green-600" />
       </div>
-      <h1 className="font-display text-xl sm:text-2xl font-bold mb-2 text-green-700">Pembayaran Berhasil!</h1>
+      <h1 className="font-display text-xl sm:text-2xl font-bold mb-2 text-green-700">{t('payment.paid')}</h1>
       <p className="text-sm sm:text-base text-muted-foreground mb-1 sm:mb-2">
-        Booking <strong>{booking?.bookingCode}</strong> dikonfirmasi.
+        Booking <strong>{booking?.bookingCode}</strong>.
       </p>
       <p className="text-xs sm:text-sm text-muted-foreground mb-6 sm:mb-8 break-words">
-        Tiket dikirim ke <strong>{booking?.guestEmail}</strong>
+        {t('payment.paidNote')} <strong>{booking?.guestEmail}</strong>
       </p>
       <button onClick={() => navigate('/orders')}
         className="px-6 sm:px-8 py-2.5 sm:py-3 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 active:scale-95 transition-all text-sm sm:text-base">
-        Lihat Pesanan Saya
+        {t('payment.viewOrders')}
       </button>
     </div>
   )
@@ -153,7 +155,7 @@ export default function Payment() {
 
   return (
     <div className="container py-4 sm:py-6 lg:py-8 max-w-2xl">
-      <h1 className="font-display text-xl sm:text-2xl font-bold mb-2 leading-tight">Selesaikan Pembayaran</h1>
+      <h1 className="font-display text-xl sm:text-2xl font-bold mb-2 leading-tight">{t('payment.title')}</h1>
 
       {/* Countdown — hanya tampil untuk DOKU mode (manual transfer tidak butuh urgency) */}
       {paymentMode === 'doku' && (
@@ -161,7 +163,7 @@ export default function Payment() {
           secs < 600 ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-orange-50 border border-orange-200 text-orange-700'
         }`}>
           <Clock className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 animate-pulse" />
-          <span className="truncate">{vaInfo ? 'Bayar sebelum waktu habis:' : 'Sisa waktu:'}</span>
+          <span className="truncate">{vaInfo ? t('payment.remainingBeforePayment') : t('payment.remainingTime') + ':'}</span>
           <span className="font-mono text-base sm:text-xl font-bold ml-auto">{countdown}</span>
         </div>
       )}
@@ -177,7 +179,7 @@ export default function Payment() {
             </p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-[10px] sm:text-xs text-muted-foreground">Kode Booking</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">{t('payment.bookingCode')}</p>
             <p className="font-mono font-bold text-brand text-xs sm:text-sm">{booking?.bookingCode}</p>
           </div>
         </div>
@@ -185,18 +187,18 @@ export default function Payment() {
         {/* Price breakdown */}
         <div className="border-t pt-3 sm:pt-4 space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
           <div className="flex justify-between items-start gap-3 text-muted-foreground">
-            <span>Harga Hotel ({booking?.totalNights} malam)</span>
+            <span>{t('payment.hotelPrice')} ({booking?.totalNights} malam)</span>
             <span className="text-right">{formatRupiah(parseFloat(booking?.basePrice) || 0)}</span>
           </div>
           <div className="flex justify-between items-start gap-3 text-muted-foreground">
-            <span>PPN &amp; Others</span>
+            <span>{t('payment.tax')}</span>
             <span className="text-right">{formatRupiah((parseFloat(booking?.markupAmount) || 0) + (parseFloat(booking?.taxAmount) || 0) + (parseFloat(booking?.priceSuffix) || 0))}</span>
           </div>
 
           {booking?.promoDiscount > 0 && (
             <div className="flex justify-between items-start gap-3 text-green-600">
               <span className="min-w-0">
-                Diskon promo
+                {t('payment.promoDiscount')}
                 {booking?.voucherCode ? ` (${booking.voucherCode})` : ''}
               </span>
               <span className="text-right whitespace-nowrap">− {formatRupiah(booking.promoDiscount)}</span>
@@ -204,7 +206,7 @@ export default function Payment() {
           )}
           {booking?.loyaltyDiscount > 0 && (
             <div className="flex justify-between items-start gap-3 text-green-600">
-              <span>Diskon poin loyalitas</span>
+              <span>{t('payment.loyaltyDiscount')}</span>
               <span className="text-right whitespace-nowrap">− {formatRupiah(booking.loyaltyDiscount)}</span>
             </div>
           )}
@@ -212,17 +214,17 @@ export default function Payment() {
           <div className="pt-2.5 sm:pt-3 border-t">
             {booking?.promoDiscount > 0 && (
               <div className="flex justify-between items-center text-[11px] sm:text-xs text-slate-400 line-through mb-1">
-                <span>Total tanpa promo</span>
+                <span>{t('payment.totalWithoutPromo')}</span>
                 <span>{formatRupiah((parseFloat(booking?.totalPrice) || 0) + (parseFloat(booking?.promoDiscount) || 0))}</span>
               </div>
             )}
             <div className="flex justify-between items-center font-bold gap-3">
-              <span className="text-sm sm:text-base">Total Tagihan</span>
+              <span className="text-sm sm:text-base">{t('payment.totalBill')}</span>
               <span className="price-tag text-base sm:text-xl">{formatRupiah(booking?.totalPrice)}</span>
             </div>
             {booking?.promoDiscount > 0 && (
               <p className="mt-1.5 text-[10px] sm:text-[11px] text-orange-600 font-semibold">
-                ✦ Anda hemat {formatRupiah(booking.promoDiscount)} dengan promo
+                ✦ {t('payment.savings')} {formatRupiah(booking.promoDiscount)} {t('payment.withPromo')}
               </p>
             )}
           </div>
@@ -234,8 +236,8 @@ export default function Payment() {
         <button onClick={() => initMutation.mutate()} disabled={initMutation.isPending}
           className="w-full py-3.5 sm:py-4 bg-brand text-white rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 transition-all shadow-brand/30 shadow-lg">
           {initMutation.isPending
-            ? 'Memproses...'
-            : `Lanjut ke Instruksi Transfer — ${formatRupiah(booking?.totalPrice)}`}
+            ? t('payment.loading')
+            : `t('payment.continueInstructions') — ${formatRupiah(booking?.totalPrice)}`}
         </button>
       )}
 

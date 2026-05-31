@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import {
   Wrench, ShieldCheck, Mail, MessageCircle, Clock, ArrowRight,
   Sparkles, Settings,
 } from 'lucide-react'
 import SEO from '@/components/SEO'
+import { maintenanceApi } from '@/services/index'
 
 /**
  * Halaman maintenance/sementara — tampil saat sistem PPOB/transaksi
@@ -14,17 +17,26 @@ import SEO from '@/components/SEO'
  * gentle gradient bg, animated subtle elements.
  */
 export default function Maintenance() {
+  const { t } = useTranslation()
   const [tick, setTick] = useState(0)
   useEffect(() => {
     const t = setInterval(() => setTick(v => (v + 1) % 4), 700)
     return () => clearInterval(t)
   }, [])
 
+  // Re-use cache yang sama dengan App.jsx
+  const { data: mData } = useQuery({
+    queryKey: ['maintenance-status'],
+    queryFn : () => maintenanceApi.status().then(r => r.data?.data ?? {}),
+    staleTime: 20_000,
+  })
+  const customMessage = mData?.message?.trim()
+
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 via-orange-50/30 to-blue-50/40 flex items-center justify-center px-4 py-10">
       <SEO
-        title="Sedang Maintenance"
-        description="Sistem ArahInn sedang dalam pemeliharaan terjadwal. Mohon kembali sebentar lagi."
+        title={t('maintenancePage.seoTitle')}
+        description={t('maintenancePage.seoDescription')}
         url="/"
       />
 
@@ -66,25 +78,23 @@ export default function Maintenance() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75 animate-ping" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
             </span>
-            Maintenance Mode
+            {t('maintenancePage.badge')}
           </div>
 
           {/* Headline */}
           <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-3 sm:mb-4 leading-tight">
-            Kami sedang berbenah <br className="hidden sm:block"/>
-            untuk pengalaman yang lebih baik
+            {t('maintenancePage.title')}
           </h1>
 
           {/* Description */}
           <p className="text-sm sm:text-base text-slate-600 leading-relaxed mb-6 sm:mb-7 max-w-md mx-auto">
-            Sistem ArahInn sedang dalam pemeliharaan terjadwal untuk meningkatkan layanan booking hotel,
-            properti, dan PPOB. Kami akan kembali sebentar lagi — terima kasih atas kesabaran Anda.
+            {customMessage || t('maintenancePage.defaultMessage')}
           </p>
 
           {/* Status pill */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 mb-7 sm:mb-8">
             <Clock className="w-4 h-4" />
-            <span className="text-xs sm:text-sm font-semibold">Estimasi: 1 - 2 jam ke depan</span>
+            <span className="text-xs sm:text-sm font-semibold">{t('maintenancePage.estimate')}</span>
           </div>
 
           {/* Contact CTAs */}
@@ -96,7 +106,7 @@ export default function Maintenance() {
               className="group flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-white font-bold text-sm shadow-sm shadow-emerald-500/30 transition-all"
             >
               <MessageCircle className="w-4 h-4" />
-              Hubungi via WhatsApp
+              {t('maintenancePage.ctaWa')}
               <ArrowRight className="w-4 h-4 opacity-0 -ml-3 group-hover:opacity-100 group-hover:ml-0 transition-all" />
             </a>
             <a
@@ -104,27 +114,27 @@ export default function Maintenance() {
               className="flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-xl bg-white border border-slate-200 hover:border-brand active:scale-[0.98] text-slate-700 hover:text-brand font-bold text-sm transition-all"
             >
               <Mail className="w-4 h-4" />
-              Email Tim Support
+              {t('maintenancePage.ctaEmail')}
             </a>
           </div>
 
           {/* Trust footer */}
           <div className="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-slate-200/70 flex items-center justify-center gap-2 text-[11px] sm:text-xs text-slate-500">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Data &amp; transaksi Anda <strong className="text-slate-700">aman</strong>. Tidak ada yang hilang.</span>
+            <span>{t('maintenancePage.trust')}</span>
           </div>
         </div>
 
         {/* Tagline */}
         <p className="text-center mt-5 sm:mt-6 text-[11px] sm:text-xs text-slate-400">
-          © 2026 ArahInn.com — Indonesia&apos;s Travel Super App
+          {t('maintenancePage.tagline')}
         </p>
 
         {/* Admin access (subtle, kalau ada keperluan urgent) */}
         <p className="text-center mt-2 text-[10px] sm:text-[11px] text-slate-300">
-          Admin?{' '}
+          {t('maintenancePage.adminAccess')}{' '}
           <Link to="/login" className="text-slate-400 hover:text-brand font-semibold underline-offset-2 hover:underline transition-colors">
-            Masuk
+            {t('maintenancePage.loginLink')}
           </Link>
         </p>
       </div>

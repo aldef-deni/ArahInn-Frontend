@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast'
 import {
   Settings as SettingsIcon, Landmark, CreditCard, Save, RefreshCw,
   Building2, User, Hash, Clock, CheckCircle2, AlertTriangle, Info,
-  ToggleLeft, ToggleRight,
+  ToggleLeft, ToggleRight, Wrench, Power,
 } from 'lucide-react'
 
 const BANK_OPTIONS = [
@@ -27,6 +27,33 @@ export default function AdminSettings() {
     queryKey: ['admin-payment-manual'],
     queryFn : () => adminApi.getPaymentManual().then(r => r.data?.data),
   })
+
+  const { data: maintData, isLoading: maintLoading } = useQuery({
+    queryKey: ['admin-maintenance'],
+    queryFn : () => adminApi.getMaintenance().then(r => r.data?.data),
+  })
+
+  const [maintMsg, setMaintMsg] = useState('')
+  useEffect(() => {
+    if (maintData?.message != null) setMaintMsg(maintData.message)
+  }, [maintData])
+
+  const maintMutation = useMutation({
+    mutationFn: (payload) => adminApi.setMaintenance(payload),
+    onSuccess: (r) => {
+      toast({
+        title: r.data?.data?.enabled ? 'Maintenance AKTIF' : 'Maintenance dimatikan',
+        description: r.data?.data?.enabled
+          ? 'Customer arahinn.com akan diarahkan ke halaman maintenance.'
+          : 'Customer arahinn.com kembali normal.',
+      })
+      qc.invalidateQueries({ queryKey: ['admin-maintenance'] })
+      qc.invalidateQueries({ queryKey: ['maintenance-status'] })
+    },
+    onError: (e) => toast({ title: 'Gagal update maintenance', description: e?.response?.data?.message, variant: 'destructive' }),
+  })
+
+  const maintEnabled = !!maintData?.enabled
 
   /* ── Local form state ────────────────────────────────────────────── */
   const [bank, setBank] = useState({
@@ -96,6 +123,90 @@ export default function AdminSettings() {
         <p className="text-xs sm:text-sm text-slate-500 mt-1">
           Konfigurasi mode pembayaran dan rekening transfer manual.
         </p>
+      </div>
+
+      {/* ── Maintenance Mode ─────────────────────────────────────────── */}
+      <div className={`bg-white rounded-xl sm:rounded-2xl border-2 p-4 sm:p-6 shadow-sm transition-all ${
+        maintEnabled ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-200'
+      }`}>
+        <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-5">
+          <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl text-white flex items-center justify-center shrink-0 ${
+            maintEnabled ? 'bg-gradient-to-br from-amber-500 to-orange-600' : 'bg-gradient-to-br from-slate-500 to-slate-700'
+          }`}>
+            <Wrench className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900">Maintenance Mode</h2>
+              {maintEnabled && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wider">
+                  <span className="relative flex w-1.5 h-1.5">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75 animate-ping" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500" />
+                  </span>
+                  AKTIF
+                </span>
+              )}
+            </div>
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5 leading-relaxed">
+              Saat aktif: <strong>arahinn.com</strong> (customer-facing) akan menampilkan halaman maintenance.
+              Admin panel & owner portal tetap accessible.
+            </p>
+          </div>
+        </div>
+
+        {maintLoading ? (
+          <div className="skeleton h-20 rounded-xl" />
+        ) : (
+          <>
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+              <button
+                onClick={() => maintMutation.mutate({ enabled: !maintEnabled, message: maintMsg || null })}
+                disabled={maintMutation.isPending}
+                className={`flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all active:scale-[0.97] disabled:opacity-50 ${
+                  maintEnabled
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/30'
+                    : 'bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-500/30'
+                }`}
+              >
+                <Power className="w-4 h-4" />
+                {maintMutation.isPending
+                  ? 'Memproses...'
+                  : maintEnabled
+                    ? 'Matikan Maintenance — Buka Site'
+                    : 'Aktifkan Maintenance — Tutup Site'}
+              </button>
+              <p className="text-[11px] sm:text-xs text-slate-500 leading-snug sm:flex-1">
+                Perubahan langsung berlaku ke customer (refresh tiap 30 detik di sisi browser).
+              </p>
+            </div>
+
+            <div className="mt-4">
+              <label className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide block mb-2">
+                Pesan Khusus (Opsional)
+              </label>
+              <textarea
+                value={maintMsg}
+                onChange={e => setMaintMsg(e.target.value)}
+                placeholder="Misal: 'Sistem PPOB sedang ditingkatkan, estimasi 2 jam.' — kosongkan untuk pakai pesan default."
+                rows={2}
+                maxLength={300}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 resize-none"
+              />
+              <p className="text-[10px] text-slate-400 mt-1">{maintMsg.length}/300 — pesan ini ditampilkan di halaman maintenance customer.</p>
+            </div>
+
+            {maintEnabled && (
+              <div className="mt-4 flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  Maintenance mode <strong>AKTIF sekarang</strong>. Customer di arahinn.com tidak bisa transaksi.
+                  Jangan lupa <strong>matikan</strong> setelah operasi selesai.
+                </p>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* ── Payment Mode Toggle ──────────────────────────────────────── */}

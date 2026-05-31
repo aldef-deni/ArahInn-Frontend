@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { ppobApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
@@ -12,23 +13,22 @@ import {
 import PpobPulsaDataView from './PpobPulsaDataView'
 import PpobPlnView from './PpobPlnView'
 import PpobEwalletView from './PpobEwalletView'
+import PpobConfirmModal from './PpobConfirmModal'
 
 const ICONS = { Smartphone, Wifi, Zap, Lightbulb, Droplets, HeartPulse, Router, Wallet }
 
-/**
- * Generic category page — handles Pulsa/Data, PLN Token, Tagihan, E-wallet.
- * Route: /ppob/:group  (group = 'pulsa', 'pln', 'tagihan', 'ewallet')
- */
-const GROUP_META = {
-  'pulsa-data': { title: 'Pulsa & Paket Data', placeholder: 'Nomor HP (08...)',           label: 'Nomor HP',                  filterGroups: ['pulsa-data'] },
-  'pln':        { title: 'Listrik PLN',        placeholder: 'Nomor Meter / ID Pelanggan', label: 'No. Meter / ID Pelanggan',  filterGroups: ['pln'] },
-  'tagihan':    { title: 'Bayar Tagihan',      placeholder: 'Nomor pelanggan',            label: 'Nomor Pelanggan',           filterGroups: ['tagihan'] },
-  'ewallet':    { title: 'Top Up E-Wallet',    placeholder: 'Nomor HP terdaftar',         label: 'Nomor HP E-Wallet',         filterGroups: ['ewallet'] },
-  'game':       { title: 'Game Online',        placeholder: 'User ID / ID Game',          label: 'User ID Game',              filterGroups: ['game'] },
-}
-
 export default function PpobCategoryPage() {
+  const { t } = useTranslation()
   const { group } = useParams()
+
+  // Group meta inside component so labels reactively translate
+  const GROUP_META = {
+    'pulsa-data': { title: t('topupLanding.pulsaData'),   placeholder: t('topup.phonePlaceholder'),       label: t('topup.phoneNumber'),         filterGroups: ['pulsa-data'] },
+    'pln':        { title: t('topupLanding.listrikPln'),  placeholder: t('topup.meterPlaceholder'),      label: t('topup.selectMeter'),         filterGroups: ['pln'] },
+    'tagihan':    { title: t('topupLanding.tagihan'),     placeholder: 'Nomor pelanggan',                label: 'Nomor Pelanggan',              filterGroups: ['tagihan'] },
+    'ewallet':    { title: t('topupLanding.ewallet'),     placeholder: t('topup.phonePlaceholder'),      label: t('topup.phoneNumber'),         filterGroups: ['ewallet'] },
+    'game':       { title: t('topupLanding.game'),        placeholder: 'User ID / ID Game',              label: 'User ID Game',                 filterGroups: ['game'] },
+  }
   const meta = GROUP_META[group]
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -39,6 +39,7 @@ export default function PpobCategoryPage() {
   const [selectedProduct, setSelectedProduct]   = useState(null)
   const [inquiry, setInquiry] = useState(null)
   const [extraParams, setExtraParams] = useState({}) // utk PLN nominal & sejenisnya
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   const { data: categories = [] } = useQuery({
     queryKey: ['ppob-categories'],
@@ -74,26 +75,49 @@ export default function PpobCategoryPage() {
   const purchaseMutation = useMutation({
     mutationFn: (d) => ppobApi.purchase(d).then(r => r.data),
     onSuccess: (data) => {
-      if (!data.success) return toast({ title: 'Gagal', description: data.message, variant: 'destructive' })
+      if (!data.success) {
+        setConfirmOpen(false)
+        return toast({ title: 'Gagal', description: data.message, variant: 'destructive' })
+      }
       const trxCode = data.data?.trxCode
+      setConfirmOpen(false)
       toast({ title: 'Transaksi dibuat', description: 'Lanjut ke instruksi pembayaran.' })
-      navigate(`/ppob/pay/${trxCode}`)
+      navigate(`/topup-tagihan/pay/${trxCode}`)
     },
-    onError: (e) => toast({ title: 'Gagal', description: e?.response?.data?.message, variant: 'destructive' }),
+    onError: (e) => {
+      setConfirmOpen(false)
+      const msg = e?.response?.data?.message || 'Transaksi gagal'
+      const isDup = /duplikat|duplicate|sedang diproses/i.test(msg)
+      toast({
+        title: isDup ? 'Transaksi sebelumnya masih diproses' : 'Gagal',
+        description: isDup
+          ? 'Tunggu 5-15 menit, atau coba nominal/nomor berbeda. Vendor mencegah pembelian duplikat dalam waktu singkat.'
+          : msg,
+        variant: 'destructive',
+      })
+    },
   })
 
   // POSTPAID Step 2: confirm-pay (setelah user lihat tagihan dan setuju)
   const confirmPayMutation = useMutation({
     mutationFn: (trxCode) => ppobApi.confirmPay(trxCode).then(r => r.data),
     onSuccess: (data) => {
-      if (!data.success) return toast({ title: 'Gagal', description: data.message, variant: 'destructive' })
+      if (!data.success) {
+        setConfirmOpen(false)
+        return toast({ title: 'Gagal', description: data.message, variant: 'destructive' })
+      }
       const trxCode = data.data?.trxCode
+      setConfirmOpen(false)
       toast({ title: 'Konfirmasi diterima', description: 'Lanjut ke instruksi pembayaran.' })
-      navigate(`/ppob/pay/${trxCode}`)
+      navigate(`/topup-tagihan/pay/${trxCode}`)
     },
-    onError: (e) => toast({ title: 'Gagal', description: e?.response?.data?.message, variant: 'destructive' }),
+    onError: (e) => {
+      setConfirmOpen(false)
+      toast({ title: 'Gagal', description: e?.response?.data?.message, variant: 'destructive' })
+    },
   })
 
+  // Triggered by CTA — open konfirmasi modal dulu (kecuali postpaid yang sudah lewat inquiry).
   const handleProceed = () => {
     if (!token) {
       toast({ title: 'Login dulu', description: 'Silakan login untuk lanjut transaksi.', variant: 'destructive' })
@@ -102,18 +126,21 @@ export default function PpobCategoryPage() {
     }
     if (!selectedProduct || !customerNumber.trim()) return
 
-    // Postpaid path (PLN Pascabayar/Non Taglist, PDAM, BPJS, dll) — inquiry → confirm
-    if (inquiry) {
-      confirmPayMutation.mutate(inquiry.trxCode)
-      return
-    }
-
-    // PLN Prabayar: butuh nominal di extra
-    if (group === 'pln' && !extraParams.nominal) {
+    if (group === 'pln' && !inquiry && !extraParams.nominal) {
       toast({ title: 'Pilih nominal token PLN dulu', variant: 'destructive' })
       return
     }
 
+    setConfirmOpen(true)
+  }
+
+  // Triggered when user click "Ya, Lanjut Bayar" di confirm modal
+  const handleConfirmPurchase = () => {
+    // Postpaid path (PLN Pascabayar, PDAM, BPJS, dll) — inquiry → confirm-pay
+    if (inquiry) {
+      confirmPayMutation.mutate(inquiry.trxCode)
+      return
+    }
     purchaseMutation.mutate({
       product_id: selectedProduct.id,
       customer_number: customerNumber,
@@ -143,12 +170,12 @@ export default function PpobCategoryPage() {
   const isEwallet   = group === 'ewallet'
 
   return (
-    <div className="bg-slate-50 sm:bg-transparent min-h-[60vh] pb-28 sm:pb-6">
+    <div className="bg-slate-50 sm:bg-transparent min-h-[60vh] pb-32 sm:pb-28">
       {/* ── Sticky header mobile ─────────────────────────── */}
       <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 sm:hidden">
         <div className="container py-3 flex items-center gap-2">
           <button
-            onClick={() => navigate('/ppob')}
+            onClick={() => navigate("/topup-tagihan")}
             className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-100 active:scale-90 transition-all"
             aria-label="Kembali"
           >
@@ -163,7 +190,7 @@ export default function PpobCategoryPage() {
       <div className="container py-4 sm:py-6 max-w-3xl">
         {/* Desktop back button + title */}
         <div className="hidden sm:block">
-          <button onClick={() => navigate('/ppob')}
+          <button onClick={() => navigate("/topup-tagihan")}
             className="flex items-center gap-1 text-xs sm:text-sm text-slate-500 hover:text-brand active:scale-95 mb-2 sm:mb-3 transition-all">
             <ChevronLeft className="w-4 h-4" /> Kembali ke PPOB
           </button>
@@ -333,29 +360,41 @@ export default function PpobCategoryPage() {
         const needsNominal = (isPln || isEwallet) && !inquiry && !hasNominal
         const ctaDisabled = submitting || needsNominal || !totalAmount
         return (
-          <>
-            {/* Desktop inline */}
-            <button
-              onClick={handleProceed}
-              disabled={ctaDisabled}
-              className="hidden sm:flex w-full items-center justify-center py-4 bg-brand text-white rounded-2xl font-bold text-base hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-brand/30 transition-all"
-            >
-              {submitting ? 'Membuat transaksi...' : `Lanjut Bayar · ${formatRupiah(totalAmount)}`}
-            </button>
-            {/* Mobile sticky bottom (with safe area) */}
-            <div className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+12px)]">
+          // Sticky CTA bottom — visible di mobile + desktop tanpa perlu scroll.
+          <div className="fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] sm:pb-4">
+            <div className="container max-w-3xl px-4">
               <button
                 onClick={handleProceed}
                 disabled={ctaDisabled}
-                className="w-full py-3.5 bg-brand text-white rounded-xl font-bold text-sm hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-brand/30 transition-all"
+                className="w-full py-3.5 sm:py-4 bg-brand text-white rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-brand/30 transition-all"
               >
                 {submitting ? 'Membuat transaksi...' : `Lanjut Bayar · ${formatRupiah(totalAmount)}`}
               </button>
             </div>
-          </>
+          </div>
         )
       })()}
       </div>
+
+      {/* Konfirmasi modal sebelum buat transaksi real */}
+      <PpobConfirmModal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmPurchase}
+        isLoading={purchaseMutation.isPending || confirmPayMutation.isPending}
+        product={selectedProduct}
+        customerNumber={customerNumber}
+        customerLabel={meta?.label || 'Nomor Tujuan'}
+        operatorLabel={selectedProduct?.operator || meta?.title}
+        totalAmount={inquiry?.pricing?.totalAmount ?? (extraParams.nominal ? Number(extraParams.nominal) : selectedProduct?.priceSell)}
+        note={
+          isPln
+            ? 'Pastikan nomor meter & nominal sudah benar. Token akan terbit untuk meter ini.'
+            : isEwallet
+              ? 'Saldo akan masuk ke nomor e-wallet ini. Tidak bisa dialihkan setelah konfirmasi.'
+              : 'Pulsa/paket akan dikirim ke nomor ini. Tidak bisa dialihkan setelah konfirmasi.'
+        }
+      />
     </div>
   )
 }

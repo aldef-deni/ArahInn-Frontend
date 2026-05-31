@@ -89,13 +89,21 @@ export default function AdminPpob() {
           <p className="text-sm text-slate-500 mt-1">Pantau transaksi PPOB, refund manual, retry yang failed.</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2">
+          <a
+            href="https://wr.rajabiller.com/login?callbackUrl=https%3A%2F%2Fwr.rajabiller.com%2Fhome"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 hover:bg-emerald-100 transition-colors"
+            title="Cek saldo di web report Rajabiller"
+          >
             <Wallet className="w-4 h-4 text-emerald-600" />
             <div>
               <p className="text-[10px] text-emerald-600 font-bold uppercase">Saldo Raja Biller</p>
-              <p className="text-sm font-bold text-emerald-700">{formatRupiah(balance?.balance ?? 0)}</p>
+              <p className="text-sm font-bold text-emerald-700">
+                {balance?.balance > 0 ? formatRupiah(balance.balance) : 'Cek di Web Report ↗'}
+              </p>
             </div>
-          </div>
+          </a>
         </div>
       </div>
 
@@ -286,8 +294,8 @@ function StatusBadge({ status }) {
     success     : ['Berhasil',  'emerald'],
     failed      : ['Gagal',     'red'],
     refundable  : ['Perlu Refund', 'amber'],
-    refunded    : ['Direfund',  'slate'],
-    canceled    : ['Dibatalkan','slate'],
+    refunded    : ['Direfund',  'red'],
+    canceled    : ['Dibatalkan','red'],
   }
   const [label, color] = map[status] || [status, 'slate']
   return (

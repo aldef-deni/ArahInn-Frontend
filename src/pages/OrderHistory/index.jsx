@@ -1,24 +1,42 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { bookingApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah, formatDateShort, statusBadgeClass, statusLabel, getImageUrl } from '@/utils'
-import { ShoppingBag, Calendar, ChevronRight, XCircle, ChevronLeft } from 'lucide-react'
-
-const TABS = [
-  { value: '',          label: 'Semua' },
-  { value: 'pending',   label: 'Menunggu Bayar' },
-  { value: 'issued',    label: 'Dikonfirmasi' },
-  { value: 'canceled',  label: 'Dibatalkan' },
-]
+import { ShoppingBag, Calendar, ChevronRight, XCircle, ChevronLeft, Hotel, Receipt } from 'lucide-react'
+import PpobTransactionList from '@/pages/Ppob/PpobTransactionList'
 
 export default function OrderHistory() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const qc       = useQueryClient()
   const { toast } = useToast()
+
+  const TABS = [
+    { value: '',          label: t('orderHistory.statusAll') },
+    { value: 'pending',   label: t('orderHistory.statusPending') },
+    { value: 'issued',    label: t('orderHistory.statusIssued') },
+    { value: 'canceled',  label: t('orderHistory.statusCanceled') },
+  ]
+
+  const MAIN_TABS = [
+    { value: 'akomodasi', label: t('orderHistory.tabAkomodasi'), Icon: Hotel },
+    { value: 'ppob',      label: t('orderHistory.tabPpob'),      Icon: Receipt },
+  ]
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialMain = searchParams.get('jenis') === 'ppob' ? 'ppob' : 'akomodasi'
+  const [activeMain, setActiveMain] = useState(initialMain)
   const [activeTab, setActiveTab] = useState('')
   const [page, setPage] = useState(1)
+
+  const handleMainTab = (v) => {
+    setActiveMain(v)
+    if (v === 'ppob') searchParams.set('jenis', 'ppob')
+    else searchParams.delete('jenis')
+    setSearchParams(searchParams, { replace: true })
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['my-orders', activeTab, page],
@@ -29,27 +47,59 @@ export default function OrderHistory() {
     mutationFn: (id) => bookingApi.cancel(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['my-orders'] })
-      toast({ title: 'Booking dibatalkan.' })
+      toast({ title: t('orderHistory.cancelSuccess') })
     },
     onError: (e) => {
       qc.invalidateQueries({ queryKey: ['my-orders'] })
-      const msg = e?.response?.data?.message || 'Gagal membatalkan booking.'
-      toast({ title: 'Gagal membatalkan', description: msg, variant: 'destructive' })
+      const msg = e?.response?.data?.message || t('orderHistory.cancelFailedDefault')
+      toast({ title: t('orderHistory.cancelFailed'), description: msg, variant: 'destructive' })
     },
   })
 
   return (
     <div className="container py-4 sm:py-6 lg:py-8 max-w-3xl">
-      <div className="flex items-center gap-3 mb-5 sm:mb-8">
+      <div className="flex items-center gap-3 mb-4 sm:mb-6">
         <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
           <ShoppingBag className="w-5 h-5 sm:w-5.5 sm:h-5.5 text-brand-700" />
         </div>
         <div className="min-w-0">
-          <h1 className="font-display text-xl sm:text-2xl font-bold leading-tight">Riwayat Pesanan</h1>
-          <p className="text-muted-foreground text-xs sm:text-sm">Semua booking Anda</p>
+          <h1 className="font-display text-xl sm:text-2xl font-bold leading-tight">{t('orderHistory.title')}</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">{t('orderHistory.subtitle')}</p>
         </div>
       </div>
 
+      {/* ── Main tabs: Akomodasi | PPOB (underline style) ───────────── */}
+      <div className="relative border-b border-slate-200 mb-4 sm:mb-6">
+        <div className="flex gap-1 sm:gap-2">
+          {MAIN_TABS.map(tab => {
+            const TabIcon = tab.Icon
+            const active = activeMain === tab.value
+            return (
+              <button
+                key={tab.value}
+                onClick={() => handleMainTab(tab.value)}
+                className={`relative flex items-center gap-2 px-4 sm:px-5 py-3 text-sm font-semibold transition-colors ${
+                  active ? 'text-brand' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <TabIcon className={`w-4 h-4 transition-transform ${active ? 'scale-110' : ''}`} />
+                {tab.label}
+                {active && (
+                  <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-brand rounded-full" />
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── PPOB tab ─────────────────────────────────────── */}
+      {activeMain === 'ppob' && (
+        <PpobTransactionList limit={30} />
+      )}
+
+      {/* ── Akomodasi tab (existing content) ─────────────── */}
+      {activeMain === 'akomodasi' && (<>
       {/* Tabs — horizontal scroll on mobile */}
       <div className="-mx-4 px-4 sm:mx-0 sm:px-0 flex gap-2 mb-4 sm:mb-6 overflow-x-auto pb-1 scrollbar-thin">
         {TABS.map(tab => (
@@ -98,26 +148,26 @@ export default function OrderHistory() {
                           <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">{order.room?.name}</p>
                           <div className="flex items-center gap-1 sm:gap-1.5 mt-1 sm:mt-1.5 text-[11px] sm:text-xs text-muted-foreground">
                             <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                            <span className="truncate">{formatDateShort(order.checkIn)} – {formatDateShort(order.checkOut)} · {order.totalNights} mlm</span>
+                            <span className="truncate">{formatDateShort(order.checkIn)} – {formatDateShort(order.checkOut)} · {order.totalNights} {t('orderHistory.nights')}</span>
                           </div>
                         </div>
                       </div>
                       <div className="text-right shrink-0">
                         <p className="price-tag text-sm sm:text-base">{formatRupiah(order.totalPrice)}</p>
-                        <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">{order.guests} tamu</p>
+                        <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">{order.guests} {t('orderHistory.guests')}</p>
                       </div>
                     </div>
 
                     <div className="flex gap-2 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t">
                       <button onClick={() => navigate(`/orders/${order.bookingCode || order.id}`)}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2 border rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium hover:bg-muted active:scale-95 transition-all">
-                        Detail <ChevronRight className="w-4 h-4" />
+                        {t('orderHistory.detail')} <ChevronRight className="w-4 h-4" />
                       </button>
                       {order.status === 'pending' && (
                         <>
                           <button onClick={() => navigate(`/payment/${order.id}`)}
                             className="flex-1 py-2 bg-brand text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold hover:bg-brand-700 active:scale-95 transition-all">
-                            Bayar Sekarang
+                            {t('orderHistory.payNow')}
                           </button>
                           <button onClick={() => cancelMutation.mutate(order.id)}
                             disabled={cancelMutation.isPending}
@@ -133,11 +183,11 @@ export default function OrderHistory() {
             : (
               <div className="text-center py-12 sm:py-16 px-4">
                 <p className="text-5xl mb-3 sm:mb-4">📭</p>
-                <p className="font-semibold text-base sm:text-lg">Belum ada pesanan</p>
-                <p className="text-muted-foreground text-xs sm:text-sm mt-1 mb-5 sm:mb-6">Mulai pesan hotel impian Anda sekarang!</p>
+                <p className="font-semibold text-base sm:text-lg">{t('orderHistory.emptyTitle')}</p>
+                <p className="text-muted-foreground text-xs sm:text-sm mt-1 mb-5 sm:mb-6">{t('orderHistory.emptySubtitle')}</p>
                 <button onClick={() => navigate('/search')}
                   className="px-5 sm:px-6 py-2.5 bg-brand text-white rounded-xl font-semibold text-sm hover:bg-brand-700 active:scale-95 transition-all">
-                  Cari Hotel
+                  {t('orderHistory.findHotel')}
                 </button>
               </div>
             )}
@@ -151,6 +201,7 @@ export default function OrderHistory() {
           onChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
         />
       )}
+      </>)}
     </div>
   )
 }

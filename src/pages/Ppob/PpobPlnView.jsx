@@ -74,12 +74,23 @@ function classifySubtype(name) {
   return null
 }
 
-// Pilih produk channel default (skip variant H2H / ADMIN 2500 / 3000) supaya UI bersih.
+// Pilih produk channel default.
+// Strategi: prefer code dengan suffix H (granted production), skip ADMIN variants.
+// Tidak filter by H2H name karena PLN Pascabayar granted-nya justru PLNPASCH (name "PLN PASCABAYAR H2H").
 function pickMainProduct(productsInSubtype) {
   if (productsInSubtype.length === 0) return null
-  const main = productsInSubtype.find(p => {
+  // Priority 1: code berakhir 'H' (PLNPRAH, PLNPASCH) — granted
+  const hSuffix = productsInSubtype.find(p => {
+    const c = (p.raja_biller_code || p.rajaBillerCode || '').toUpperCase()
     const n = (p.name || '').toUpperCase()
-    return !/H2H|ADMIN\s*\d+/.test(n)
+    return c.endsWith('H') && !c.includes('H2H') && !/ADMIN\s*\d+/.test(n)
+  })
+  if (hSuffix) return hSuffix
+  // Fallback: produk non-admin, non-H2H code
+  const main = productsInSubtype.find(p => {
+    const c = (p.raja_biller_code || p.rajaBillerCode || '').toUpperCase()
+    const n = (p.name || '').toUpperCase()
+    return !c.includes('H2H') && !/ADMIN\s*\d+/.test(n)
   })
   return main || productsInSubtype[0]
 }

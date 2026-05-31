@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast'
 import {
   Hotel, Search, List, User, LogOut, Menu, X,
   ChevronDown, Globe, Settings, LayoutDashboard,
-  Phone, Mail, Smartphone, Building2, Sofa, Tag,
+  Phone, Mail, Smartphone, Building2, Sofa, Tag, Receipt,
 } from 'lucide-react'
 import { cn, getImageUrl } from '@/utils'
 import {
@@ -57,7 +57,8 @@ export default function UserLayout() {
     { to: '/search',    label: t('nav.search'),  icon: Search },
     { to: '/properti',  label: t('nav.properti'), icon: Building2 },
     { to: '/interior',  label: t('nav.interior'), icon: Sofa },
-    { to: '/promo',     label: 'Promo',           icon: Tag },
+    { to: '/topup-tagihan', label: t('nav.topUpTagihan'), icon: Receipt },
+    { to: '/promo',         label: t('nav.promo'),        icon: Tag },
     ...(token ? [
       { to: '/orders',  label: t('nav.orders'),  icon: List },
       { to: '/profile', label: t('nav.profile'), icon: User },

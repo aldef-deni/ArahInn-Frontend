@@ -194,8 +194,8 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <SEO
-        title="Cari Hotel & Villa"
-        description="Cari dan bandingkan ribuan hotel, villa, dan akomodasi di seluruh Indonesia. Filter berdasarkan lokasi, harga, dan fasilitas. Pesan instan di ArahInn."
+        title={t('search.seoTitle')}
+        description={t('search.seoDescription')}
         url="/search"
       />
 
@@ -205,11 +205,11 @@ export default function SearchPage() {
           <form onSubmit={handleSearch} className="flex flex-col gap-2">
             {/* Destination — always full width */}
             <div className="relative">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">KOTA / NAMA HOTEL</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('search.cityHotelLabel')}</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input value={form.q} onChange={e => setForm({...form, q: e.target.value})}
-                  placeholder="Kota, nama hotel..."
+                  placeholder={t('search.cityHotelPlaceholder')}
                   className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand bg-slate-50" />
               </div>
             </div>
@@ -217,12 +217,12 @@ export default function SearchPage() {
             {/* Other fields: 2-col grid on mobile, single row on lg */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">TIPE</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('search.typeLabel')}</label>
                 <select value={form.category} onChange={e => setForm({...form, category: e.target.value})}
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/30">
-                  <option value="">Semua Tipe</option>
+                  <option value="">{t('search.allTypes')}</option>
                   {['Hotel','Villa','Kosan','Apartment','Guest House','Resort','Glamping'].map(c => (
-                    <option key={c} value={c}>{c === 'Apartment' ? 'Apartemen' : c}</option>
+                    <option key={c} value={c}>{t(`search.hotelTypes.${c}`)}</option>
                   ))}
                 </select>
               </div>
@@ -349,12 +349,12 @@ export default function SearchPage() {
               <div className="mx-auto w-10 h-1 rounded-full bg-slate-300 mb-3" />
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Filter</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t('search.filterMobileLabel')}</p>
                   <h2 className="font-display text-lg font-bold text-slate-900">{t('search.filter')}</h2>
                 </div>
                 <button onClick={() => setMobileFilter(false)}
                   className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center"
-                  aria-label="Tutup">
+                  aria-label={t('search.close')}>
                   <X className="w-4 h-4 text-slate-600" />
                 </button>
               </div>
@@ -365,7 +365,7 @@ export default function SearchPage() {
             <div className="shrink-0 p-4 bg-white border-t border-slate-200">
               <button onClick={() => setMobileFilter(false)}
                 className="w-full py-3 bg-orange-500 text-white rounded-xl font-bold text-sm hover:bg-orange-600 active:scale-[0.98] transition-all shadow-sm">
-                Terapkan Filter
+                {t('search.applyFilter')}
               </button>
             </div>
           </div>

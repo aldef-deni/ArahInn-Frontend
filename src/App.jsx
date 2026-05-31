@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/toaster'
 import { useAuthStore } from '@/store/authStore'
+import { maintenanceApi } from '@/services/index'
 
 // Layouts
 import UserLayout from '@/components/layout/UserLayout'
@@ -27,6 +29,8 @@ import PpobLanding from '@/pages/Ppob/PpobLanding'
 import PpobCategoryPage from '@/pages/Ppob/PpobCategoryPage'
 import PpobHistory from '@/pages/Ppob/PpobHistory'
 import PpobPayment from '@/pages/Ppob/PpobPayment'
+import TravelLanding from '@/pages/Travel/TravelLanding'
+import TravelEmbed from '@/pages/Travel/TravelEmbed'
 import Maintenance from '@/pages/Maintenance'
 import AdminPpob from '@/pages/admin/Ppob'
 import TermsAndConditions from '@/pages/Legal/TermsAndConditions'
@@ -54,11 +58,6 @@ import {
 const extranetMode = isExtranet()
 const managementMode = isManagementPortal()
 const ownerMode = isOwnerPortal()
-
-// Maintenance mode — toggle via VITE_MAINTENANCE_MODE=true di .env, rebuild dist.
-// Saat aktif: homepage + semua route transaksi customer di-redirect ke /maintenance.
-// Admin (kelola.*), owner (extranet.*), login, dan legal pages tetap accessible.
-const maintenanceMode = String(import.meta.env.VITE_MAINTENANCE_MODE || '').toLowerCase() === 'true'
 
 // Admin Pages
 import Dashboard from '@/pages/admin/Dashboard'
@@ -115,6 +114,13 @@ function ExternalRedirect({ to }) {
   }, [to])
 
   return null
+}
+
+// Internal redirect yang preserve dynamic param (mis. /ppob/:group → /topup-tagihan/:group)
+function RedirectWithParams({ to, param }) {
+  const params = useParams()
+  const value = params[param] || ''
+  return <Navigate to={`${to}/${value}`} replace />
 }
 
 function DashboardSwitch() {
@@ -200,6 +206,16 @@ function GuestRoute({ children }) {
 }
 
 export default function App() {
+  // Maintenance mode runtime check — admin toggle via /admin/settings.
+  // Refresh tiap 30 detik supaya toggle cepat propagate ke customer.
+  const { data: mData } = useQuery({
+    queryKey: ['maintenance-status'],
+    queryFn : () => maintenanceApi.status().then(r => r.data?.data ?? { enabled: false }),
+    refetchInterval: 30_000,
+    staleTime: 20_000,
+  })
+  const maintenanceMode = !!mData?.enabled
+
   return (
     <>
       <Routes>
@@ -226,10 +242,18 @@ export default function App() {
             <Route path="/interior" element={<InteriorPage />} />
             <Route path="/promo" element={<PromoPage />} />
             <Route path="/coming-soon" element={<ComingSoon />} />
-            <Route path="/ppob" element={<PpobLanding />} />
-            <Route path="/ppob/history" element={<PrivateRoute><PpobHistory /></PrivateRoute>} />
-            <Route path="/ppob/pay/:trxCode" element={<PrivateRoute><PpobPayment /></PrivateRoute>} />
-            <Route path="/ppob/:group" element={<PpobCategoryPage />} />
+            {/* Top Up & Tagihan — canonical URL */}
+            <Route path="/topup-tagihan" element={<PpobLanding />} />
+            <Route path="/topup-tagihan/history" element={<PrivateRoute><PpobHistory /></PrivateRoute>} />
+            <Route path="/topup-tagihan/pay/:trxCode" element={<PrivateRoute><PpobPayment /></PrivateRoute>} />
+            <Route path="/topup-tagihan/:group" element={<PpobCategoryPage />} />
+            {/* Legacy /ppob/* → redirect ke /topup-tagihan/* untuk preserve bookmark */}
+            <Route path="/ppob" element={<Navigate to="/topup-tagihan" replace />} />
+            <Route path="/ppob/history" element={<Navigate to="/topup-tagihan/history" replace />} />
+            <Route path="/ppob/pay/:trxCode" element={<RedirectWithParams to="/topup-tagihan/pay" param="trxCode" />} />
+            <Route path="/ppob/:group" element={<RedirectWithParams to="/topup-tagihan" param="group" />} />
+            <Route path="/tiket" element={<TravelLanding />} />
+            <Route path="/tiket/:page" element={<PrivateRoute><TravelEmbed /></PrivateRoute>} />
             <Route path="/checkout/:roomId" element={<PrivateRoute><Checkout /></PrivateRoute>} />
             <Route path="/payment/:bookingId" element={<PrivateRoute><Payment /></PrivateRoute>} />
             <Route path="/orders" element={<PrivateRoute><OrderHistory /></PrivateRoute>} />

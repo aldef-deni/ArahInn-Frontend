@@ -14,6 +14,18 @@ export const bookingApi = {
   updateStatus : (id, d)  => api.put(`/orders/${id}/status`, d),
 }
 
+// Public maintenance status — buat App.jsx check runtime
+export const maintenanceApi = {
+  status: () => api.get('/maintenance/status'),
+}
+
+// ── XAS Travel (Tiket Pesawat/Kereta/Bus/Pelni via Rajabiller Checkout Page) ──
+export const xasApi = {
+  // Body: { page: 'kereta'|'pesawat'|'dlu'|'pelni', phone?: string }
+  // Return: { success, data: { embed_fe_url, expired_time, token_mitra, page } }
+  createCredential: (d) => api.post('/xas/credential', d),
+}
+
 export const paymentApi = {
   mode        : ()       => api.get('/payments/mode'),
   initiate    : (d)      => api.post('/payments/initiate', d),
@@ -73,6 +85,9 @@ export const adminApi = {
   setPaymentMode    : (d)   => api.post('/admin/settings/payment-mode', d),
   getPaymentManual  : ()    => api.get('/admin/settings/payment-manual'),
   setPaymentManual  : (d)   => api.post('/admin/settings/payment-manual', d),
+  // Maintenance mode
+  getMaintenance    : ()    => api.get('/admin/settings/maintenance'),
+  setMaintenance    : (d)   => api.post('/admin/settings/maintenance', d),
   // Hotels CRUD
   hotels         : (p)      => api.get('/admin/hotels', { params: p }),
   pendingHotels  : ()       => api.get('/admin/hotels/pending'),

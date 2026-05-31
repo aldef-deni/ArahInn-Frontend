@@ -8,7 +8,12 @@ export const isManagementPortal = () => {
 
 export const isOwnerPortal = () => {
   const host = window.location.hostname
-  return host === 'extranet.arahinn.com' || host.startsWith('extranet.')
+  // New canonical: my.arahinn.com. Old extranet.arahinn.com tetap di-handle
+  // selama transition period.
+  return (
+    host === 'my.arahinn.com' || host.startsWith('my.') ||
+    host === 'extranet.arahinn.com' || host.startsWith('extranet.')
+  )
 }
 
 export const isExtranet = () => isManagementPortal() || isOwnerPortal()
@@ -40,7 +45,7 @@ export const getManagementPortalUrl = (path = '/login') => {
 }
 
 export const getOwnerPortalUrl = (path = '/login') => {
-  const base = (import.meta.env.VITE_OWNER_URL || 'https://extranet.arahinn.com').replace(/\/$/, '')
+  const base = (import.meta.env.VITE_OWNER_URL || 'https://my.arahinn.com').replace(/\/$/, '')
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   return `${base}${normalizedPath}`
 }

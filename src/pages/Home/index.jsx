@@ -24,18 +24,19 @@ import SEO from '@/components/SEO'
  * Pattern umum di booking site: tap kategori → ke landing page kategori itu.
  */
 function ServiceCategoryTabs() {
+  const { t } = useTranslation()
   const items = [
-    { label: 'Akomodasi',     Icon: Hotel,        to: '/search',                              accent: '#ffffff' },
-    { label: 'Tiket Pesawat', Icon: Plane,        to: '/coming-soon?feature=tiket-pesawat',   accent: '#7dd3fc' },
-    { label: 'Tiket Bus',     Icon: Bus,          to: '/coming-soon?feature=tiket-bus',       accent: '#86efac' },
-    { label: 'Tiket Kereta',  Icon: TrainFront,   to: '/coming-soon?feature=tiket-kereta',    accent: '#fdba74' },
-    { label: 'Pulsa & Data',  Icon: Smartphone,   to: '/ppob/pulsa-data',                     accent: '#60a5fa' },
-    { label: 'Listrik PLN',   Icon: Lightbulb,    to: '/ppob/pln',                            accent: '#fbbf24' },
-    { label: 'Bayar Tagihan', Icon: Receipt,      to: '/ppob/tagihan',                        accent: '#34d399' },
-    { label: 'E-Wallet',      Icon: Wallet,       to: '/ppob/ewallet',                        accent: '#a78bfa' },
-    { label: 'Properti',      Icon: Building2,    to: '/properti',                            accent: '#f87171' },
-    { label: 'Interior',      Icon: Sofa,         to: '/interior',                            accent: '#fb923c' },
-    { label: 'Promo',         Icon: BadgePercent, to: '/promo',                               accent: '#fbbf24' },
+    { label: t('services.akomodasi'),     Icon: Hotel,        to: '/search',                            accent: '#ffffff' },
+    { label: t('services.tiketPesawat'),  Icon: Plane,        to: '/tiket/pesawat',                     accent: '#7dd3fc' },
+    { label: t('services.tiketBus'),      Icon: Bus,          to: '/tiket/dlu',                         accent: '#86efac' },
+    { label: t('services.tiketKereta'),   Icon: TrainFront,   to: '/tiket/kereta',                      accent: '#fdba74' },
+    { label: t('services.pulsaData'),     Icon: Smartphone,   to: '/topup-tagihan/pulsa-data',          accent: '#60a5fa' },
+    { label: t('services.listrikPln'),    Icon: Lightbulb,    to: '/topup-tagihan/pln',                 accent: '#fbbf24' },
+    { label: t('services.bayarTagihan'),  Icon: Receipt,      to: '/topup-tagihan/tagihan',             accent: '#34d399' },
+    { label: t('services.eWallet'),       Icon: Wallet,       to: '/topup-tagihan/ewallet',             accent: '#a78bfa' },
+    { label: t('services.properti'),      Icon: Building2,    to: '/properti',                          accent: '#f87171' },
+    { label: t('services.interior'),      Icon: Sofa,         to: '/interior',                          accent: '#fb923c' },
+    { label: t('services.promo'),         Icon: BadgePercent, to: '/promo',                             accent: '#fbbf24' },
   ]
   return (
     <div className="overflow-x-auto scrollbar-thin">
@@ -231,14 +232,14 @@ export default function Home() {
   const popularCities = ['Jakarta','Bali','Yogyakarta','Surabaya','Bandung','Lombok']
 
   const ACCOMMODATION_TYPES = [
-    { value: '',             label: 'Semua Tipe' },
-    { value: 'Hotel',        label: 'Hotel' },
-    { value: 'Villa',        label: 'Villa' },
-    { value: 'Kosan',        label: 'Kosan' },
-    { value: 'Apartment',    label: 'Apartemen' },
-    { value: 'Guest House',  label: 'Guest House' },
-    { value: 'Resort',       label: 'Resort' },
-    { value: 'Glamping',     label: 'Glamping' },
+    { value: '',             label: t('search.allTypes') },
+    { value: 'Hotel',        label: t('search.hotelTypes.Hotel') },
+    { value: 'Villa',        label: t('search.hotelTypes.Villa') },
+    { value: 'Kosan',        label: t('search.hotelTypes.Kosan') },
+    { value: 'Apartment',    label: t('search.hotelTypes.Apartment') },
+    { value: 'Guest House',  label: t('search.hotelTypes.Guest House') },
+    { value: 'Resort',       label: t('search.hotelTypes.Resort') },
+    { value: 'Glamping',     label: t('search.hotelTypes.Glamping') },
   ]
 
   const features = [
@@ -290,11 +291,11 @@ export default function Home() {
               <div className="lg:flex-[2] flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-4 hover:bg-white/5 transition-colors cursor-text">
                 <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-white/50 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[9px] sm:text-[10px] font-bold text-white/50 uppercase tracking-widest mb-0.5 sm:mb-1">KOTA / NAMA HOTEL</p>
+                  <p className="text-[9px] sm:text-[10px] font-bold text-white/50 uppercase tracking-widest mb-0.5 sm:mb-1">{t('hero.cityHotelLabel')}</p>
                   <input
                     value={form.q}
                     onChange={e => setForm({...form, q: e.target.value})}
-                    placeholder="Jakarta, Bali, nama hotel..."
+                    placeholder={t('hero.cityHotelPlaceholder')}
                     className="w-full bg-transparent text-white placeholder:text-white/35 text-sm font-medium focus:outline-none"
                   />
                 </div>
@@ -307,14 +308,14 @@ export default function Home() {
                 <div className="lg:flex-[1.2] flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-3 sm:py-4 hover:bg-white/5 transition-colors">
                   <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-white/50 shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[9px] sm:text-[10px] font-bold text-white/50 uppercase tracking-widest mb-0.5 sm:mb-1">TIPE</p>
+                    <p className="text-[9px] sm:text-[10px] font-bold text-white/50 uppercase tracking-widest mb-0.5 sm:mb-1">{t('hero.typeLabel')}</p>
                     <select
                       value={form.category}
                       onChange={e => setForm({...form, category: e.target.value})}
                       className="w-full bg-transparent text-sm font-medium focus:outline-none [color-scheme:dark] cursor-pointer text-white"
                     >
-                      {ACCOMMODATION_TYPES.map(t => (
-                        <option key={t.value} value={t.value}>{t.label}</option>
+                      {ACCOMMODATION_TYPES.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
                     </select>
                   </div>
@@ -407,7 +408,7 @@ export default function Home() {
           <button onClick={() => navigate('/search')}
             className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-medium text-brand hover:text-brand-700 transition-colors shrink-0">
             <span className="hidden sm:inline">{t('home.viewAll')}</span>
-            <span className="sm:hidden">Lihat</span>
+            <span className="sm:hidden">{t('home.viewAll')}</span>
             <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </div>
@@ -444,7 +445,7 @@ export default function Home() {
                     ? 'bg-orange-500 text-white shadow-md'
                     : 'bg-white/20 text-white border border-white/30 hover:bg-white/30'
                 }`}>
-                Jual Property
+                {t('property.sellTab')}
               </button>
               <button
                 onClick={() => setPropForm(p => ({ ...p, listingType: 'rent' }))}
@@ -453,7 +454,7 @@ export default function Home() {
                     ? 'bg-orange-500 text-white shadow-md'
                     : 'bg-white/20 text-white border border-white/30 hover:bg-white/30'
                 }`}>
-                Beli
+                {t('property.buyTab')}
               </button>
             </div>
 
@@ -463,11 +464,11 @@ export default function Home() {
               <div className="flex items-center gap-2.5 px-3.5 sm:px-4 py-2.5 sm:py-3 flex-[2] border-b lg:border-b-0 lg:border-r border-slate-100">
                 <MapPin className="w-4 h-4 text-blue-400 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] text-slate-400 mb-0.5">Cari lokasi property</p>
+                  <p className="text-[10px] text-slate-400 mb-0.5">{t('property.locationLabel')}</p>
                   <input
                     value={propForm.location}
                     onChange={e => setPropForm(p => ({ ...p, location: e.target.value }))}
-                    placeholder="Masukan Lokasi Property"
+                    placeholder={t('property.locationPlaceholder')}
                     className="w-full text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
                   />
                 </div>
@@ -477,12 +478,12 @@ export default function Home() {
               <div className="flex items-center gap-2 px-3.5 sm:px-4 py-2.5 sm:py-3 flex-[2] border-b lg:border-b-0 lg:border-r border-slate-100">
                 <Building2 className="w-4 h-4 text-blue-400 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] text-slate-400 mb-0.5">Jenis Property</p>
+                  <p className="text-[10px] text-slate-400 mb-0.5">{t('property.categoryLabel')}</p>
                   <select
                     value={propForm.category}
                     onChange={e => setPropForm(p => ({ ...p, category: e.target.value }))}
                     className="w-full text-sm text-slate-700 focus:outline-none bg-transparent cursor-pointer">
-                    <option value="">Semua Jenis</option>
+                    <option value="">{t('property.allCategories')}</option>
                     {PROP_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
@@ -493,11 +494,11 @@ export default function Home() {
               <div className="flex items-center gap-2 px-3.5 sm:px-4 py-2.5 sm:py-3 flex-[2] border-b lg:border-b-0 lg:border-r border-slate-100">
                 <Wallet className="w-4 h-4 text-blue-400 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] text-slate-400 mb-0.5">Range Harga</p>
+                  <p className="text-[10px] text-slate-400 mb-0.5">{t('property.priceRangeLabel')}</p>
                   <input
                     value={propForm.priceRange}
                     onChange={e => setPropForm(p => ({ ...p, priceRange: e.target.value }))}
-                    placeholder="Masukan range harga"
+                    placeholder={t('property.priceRangePlaceholder')}
                     className="w-full text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
                   />
                 </div>
@@ -508,24 +509,24 @@ export default function Home() {
                 onClick={handlePropertySearch}
                 className="flex items-center justify-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-600 active:scale-[0.98] text-white transition-all shrink-0 text-sm font-bold">
                 <Search className="w-5 h-5" />
-                <span className="lg:hidden">Cari Property</span>
+                <span className="lg:hidden">{t('property.searchCta')}</span>
               </button>
             </div>
           </div>
 
           {/* Title */}
           <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 mb-4 sm:mb-5 leading-tight">
-            Property dengan harga terbaik untuk investasimu!
+            {t('property.sectionTitle')}
           </h2>
 
           {/* Category pills — horizontal scroll on mobile */}
           <div className="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto scrollbar-thin mb-5 sm:mb-7">
             <div className="flex sm:flex-wrap gap-2 min-w-max sm:min-w-0">
               {[
-                { label: '🏨 Hotel & Apartemen',       cats: ['Hotel','Apartment'] },
-                { label: '🏠 Guest House & Kosan',      cats: ['Guest House','Kosan'] },
-                { label: '🌴 Villa, Resort & Glamping', cats: ['Villa','Resort','Glamping'] },
-                { label: '🏡 Hunian Keluarga',          cats: [] },
+                { label: t('property.pillHotel'),      cats: ['Hotel','Apartment'] },
+                { label: t('property.pillGuestHouse'), cats: ['Guest House','Kosan'] },
+                { label: t('property.pillVilla'),      cats: ['Villa','Resort','Glamping'] },
+                { label: t('property.pillFamily'),     cats: [] },
               ].map((g) => (
                 <button key={g.label}
                   onClick={() => {
@@ -570,7 +571,7 @@ export default function Home() {
                       <MapPin className="w-3 h-3 text-orange-400 shrink-0" />
                       <span className="truncate">{listing.city}</span>
                     </div>
-                    <p className="text-[11px] sm:text-xs text-slate-500">Start: <span className="text-orange-500 font-bold">{formatRupiah(listing.price)}</span></p>
+                    <p className="text-[11px] sm:text-xs text-slate-500">{t('property.startsFrom')}: <span className="text-orange-500 font-bold">{formatRupiah(listing.price)}</span></p>
                   </div>
                 </div>
               )
@@ -593,10 +594,10 @@ export default function Home() {
       <section className="bg-orange-50 py-10 sm:py-12 lg:py-14">
         <div className="container">
           <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 bg-orange-100 text-orange-700 text-[11px] sm:text-xs font-semibold rounded-full mb-2 sm:mb-3">
-            ✨ Layanan Premium
+            {t('interiorHome.premiumBadge')}
           </div>
           <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 mb-4 sm:mb-5 leading-tight">
-            Furnish &amp; Design Interior
+            {t('interiorHome.sectionTitle')}
           </h2>
           <InteriorPenawaran noCard />
         </div>
