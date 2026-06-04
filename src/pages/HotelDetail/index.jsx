@@ -51,6 +51,7 @@ const facilityIcons = {
 }
 
 function GalleryLightbox({ open, images, startIdx = 0, onClose, hotelName }) {
+  const { t } = useTranslation()
   const [idx, setIdx] = useState(startIdx)
   const stripRef = useRef(null)
 
@@ -174,6 +175,7 @@ function GalleryLightbox({ open, images, startIdx = 0, onClose, hotelName }) {
 }
 
 function RoomCard({ room, nights, onBook }) {
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const [imgIdx, setImgIdx] = useState(0)
 
@@ -486,6 +488,7 @@ function BookingModal({
   onClose,
   onSubmit,
 }) {
+  const { t } = useTranslation()
   const [draft, setDraft] = useState({
     checkIn: initialDates.checkIn,
     checkOut: initialDates.checkOut,

@@ -132,7 +132,7 @@ export default function OrderDetail() {
             <span className="text-right whitespace-nowrap">{formatRupiah(parseFloat(booking.basePrice) || 0)}</span>
           </div>
           <div className="flex justify-between gap-3">
-            <span className="text-muted-foreground">PPN &amp; Others</span>
+            <span className="text-muted-foreground">{(parseFloat(booking.taxAmount) || 0) > 0 ? 'PPN & Others' : 'Biaya Lainnya'}</span>
             <span className="text-right whitespace-nowrap">{formatRupiah(
               (parseFloat(booking.markupAmount) || 0) +
               (parseFloat(booking.taxAmount) || 0) +

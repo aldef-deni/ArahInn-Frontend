@@ -336,7 +336,9 @@ export default function Checkout() {
                   </div>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('checkout.taxOthers')}</span>
+                  <span className="text-muted-foreground">
+                    {(pricing.taxAmount || 0) > 0 ? t('checkout.taxOthers') : t('checkout.othersOnly')}
+                  </span>
                   <span>{formatRupiah((pricing.markupAmount || 0) + (pricing.taxAmount || 0) + (pricing.priceSuffix || 0))}</span>
                 </div>
                 {/* Hanya tampilkan baris diskon promo terpisah kalau pakai KODE MANUAL.

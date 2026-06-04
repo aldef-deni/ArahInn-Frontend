@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast'
 import {
   Settings as SettingsIcon, Landmark, CreditCard, Save, RefreshCw,
   Building2, User, Hash, Clock, CheckCircle2, AlertTriangle, Info,
-  ToggleLeft, ToggleRight, Wrench, Power,
+  ToggleLeft, ToggleRight, Wrench, Power, Receipt, Percent,
 } from 'lucide-react'
 
 const BANK_OPTIONS = [
@@ -54,6 +54,31 @@ export default function AdminSettings() {
   })
 
   const maintEnabled = !!maintData?.enabled
+
+  /* ── PPN Tax ──────────────────────────────────────────────────────── */
+  const { data: ppnData, isLoading: ppnLoading } = useQuery({
+    queryKey: ['admin-ppn-tax'],
+    queryFn : () => adminApi.getPpnTax().then(r => r.data?.data),
+  })
+
+  const [ppnPercent, setPpnPercent] = useState(11)
+  useEffect(() => {
+    if (ppnData?.percent != null) setPpnPercent(ppnData.percent)
+  }, [ppnData])
+
+  const ppnMutation = useMutation({
+    mutationFn: (payload) => adminApi.setPpnTax(payload),
+    onSuccess: (r) => {
+      toast({
+        title: r.data?.data?.enabled ? `PPN ${r.data?.data?.percent}% AKTIF` : 'PPN dimatikan',
+        description: r.data?.message,
+      })
+      qc.invalidateQueries({ queryKey: ['admin-ppn-tax'] })
+    },
+    onError: (e) => toast({ title: 'Gagal update PPN', description: e?.response?.data?.message, variant: 'destructive' }),
+  })
+
+  const ppnEnabled = !!ppnData?.enabled
 
   /* ── Local form state ────────────────────────────────────────────── */
   const [bank, setBank] = useState({
@@ -204,6 +229,112 @@ export default function AdminSettings() {
                   Jangan lupa <strong>matikan</strong> setelah operasi selesai.
                 </p>
               </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* ── PPN Tax Toggle ───────────────────────────────────────────── */}
+      <div className={`bg-white rounded-xl sm:rounded-2xl border-2 p-4 sm:p-6 shadow-sm transition-all ${
+        ppnEnabled ? 'border-emerald-400 ring-2 ring-emerald-100' : 'border-slate-200'
+      }`}>
+        <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-5">
+          <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl text-white flex items-center justify-center shrink-0 ${
+            ppnEnabled ? 'bg-gradient-to-br from-emerald-500 to-green-600' : 'bg-gradient-to-br from-slate-500 to-slate-700'
+          }`}>
+            <Receipt className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900">Pajak PPN</h2>
+              {ppnEnabled ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Aktif {ppnData?.percent}%
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                  Nonaktif
+                </span>
+              )}
+            </div>
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5 leading-relaxed">
+              PPN ditambahkan ke total setiap booking baru. Saat dimatikan, customer tidak dikenakan PPN.
+              <strong className="text-slate-600"> Tidak memengaruhi</strong> komponen "Pajak &amp; Others" (komisi properti).
+            </p>
+          </div>
+        </div>
+
+        {ppnLoading ? (
+          <div className="skeleton h-20 rounded-xl" />
+        ) : (
+          <>
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+              {/* Percent input */}
+              <div className="sm:w-44">
+                <label className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide block mb-2">
+                  Persentase PPN
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step="0.5"
+                    value={ppnPercent}
+                    onChange={e => setPpnPercent(e.target.value)}
+                    className="w-full pl-3 pr-9 py-3 border border-slate-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-500"
+                  />
+                  <Percent className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
+                </div>
+              </div>
+
+              {/* Toggle button */}
+              <button
+                onClick={() => ppnMutation.mutate({ enabled: !ppnEnabled, percent: parseFloat(ppnPercent) || 0 })}
+                disabled={ppnMutation.isPending}
+                className={`flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all active:scale-[0.97] disabled:opacity-50 ${
+                  ppnEnabled
+                    ? 'bg-slate-700 hover:bg-slate-800 text-white shadow-md shadow-slate-500/20'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/30'
+                }`}
+              >
+                <Power className="w-4 h-4" />
+                {ppnMutation.isPending
+                  ? 'Memproses...'
+                  : ppnEnabled
+                    ? 'Matikan PPN'
+                    : 'Aktifkan PPN'}
+              </button>
+
+              {/* Save percent only (while enabled) */}
+              {ppnEnabled && (
+                <button
+                  onClick={() => ppnMutation.mutate({ enabled: true, percent: parseFloat(ppnPercent) || 0 })}
+                  disabled={ppnMutation.isPending || parseFloat(ppnPercent) === ppnData?.percent}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-200 text-slate-700 font-semibold text-sm hover:bg-slate-50 active:scale-[0.97] transition-all disabled:opacity-40"
+                >
+                  <Save className="w-4 h-4" />
+                  Simpan %
+                </button>
+              )}
+            </div>
+
+            <div className={`mt-4 flex items-start gap-2 p-3 rounded-lg border ${
+              ppnEnabled ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'
+            }`}>
+              <Info className={`w-4 h-4 shrink-0 mt-0.5 ${ppnEnabled ? 'text-emerald-700' : 'text-slate-500'}`} />
+              <p className={`text-xs leading-relaxed ${ppnEnabled ? 'text-emerald-800' : 'text-slate-600'}`}>
+                {ppnEnabled
+                  ? <>PPN <strong>{ppnData?.percent}%</strong> aktif. Setiap booking baru otomatis dikenakan PPN. Booking yang sudah pending tetap pakai nilai lama.</>
+                  : <>PPN <strong>nonaktif</strong>. Booking baru tidak dikenakan PPN. Aktifkan kembali kapan saja tanpa kehilangan setelan persen.</>}
+              </p>
+            </div>
+
+            {ppnData?.updated_at && (
+              <p className="text-[10px] sm:text-xs text-slate-400 mt-2">
+                Terakhir diperbarui: {new Date(ppnData.updated_at).toLocaleString('id-ID')}
+              </p>
             )}
           </>
         )}

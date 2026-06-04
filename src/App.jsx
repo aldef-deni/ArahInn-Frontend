@@ -31,6 +31,8 @@ import PpobHistory from '@/pages/Ppob/PpobHistory'
 import PpobPayment from '@/pages/Ppob/PpobPayment'
 import TravelLanding from '@/pages/Travel/TravelLanding'
 import TravelEmbed from '@/pages/Travel/TravelEmbed'
+import TrainSearch from '@/pages/Travel/TrainSearch'
+import TrainBooking from '@/pages/Travel/TrainBooking'
 import Maintenance from '@/pages/Maintenance'
 import AdminPpob from '@/pages/admin/Ppob'
 import TermsAndConditions from '@/pages/Legal/TermsAndConditions'
@@ -253,6 +255,10 @@ export default function App() {
             <Route path="/ppob/pay/:trxCode" element={<RedirectWithParams to="/topup-tagihan/pay" param="trxCode" />} />
             <Route path="/ppob/:group" element={<RedirectWithParams to="/topup-tagihan" param="group" />} />
             <Route path="/tiket" element={<TravelLanding />} />
+            {/* Kereta — API langsung (search publik, booking butuh login) */}
+            <Route path="/tiket/kereta" element={<TrainSearch />} />
+            <Route path="/tiket/kereta/pesan" element={<PrivateRoute><TrainBooking /></PrivateRoute>} />
+            {/* Pesawat/Pelni/DLU sementara masih embed/landing */}
             <Route path="/tiket/:page" element={<PrivateRoute><TravelEmbed /></PrivateRoute>} />
             <Route path="/checkout/:roomId" element={<PrivateRoute><Checkout /></PrivateRoute>} />
             <Route path="/payment/:bookingId" element={<PrivateRoute><Payment /></PrivateRoute>} />

@@ -191,7 +191,7 @@ export default function Payment() {
             <span className="text-right">{formatRupiah(parseFloat(booking?.basePrice) || 0)}</span>
           </div>
           <div className="flex justify-between items-start gap-3 text-muted-foreground">
-            <span>{t('payment.tax')}</span>
+            <span>{(parseFloat(booking?.taxAmount) || 0) > 0 ? t('payment.tax') : t('payment.othersOnly')}</span>
             <span className="text-right">{formatRupiah((parseFloat(booking?.markupAmount) || 0) + (parseFloat(booking?.taxAmount) || 0) + (parseFloat(booking?.priceSuffix) || 0))}</span>
           </div>
 
@@ -237,7 +237,7 @@ export default function Payment() {
           className="w-full py-3.5 sm:py-4 bg-brand text-white rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 transition-all shadow-brand/30 shadow-lg">
           {initMutation.isPending
             ? t('payment.loading')
-            : `t('payment.continueInstructions') — ${formatRupiah(booking?.totalPrice)}`}
+            : `${t('payment.continueInstructions')} — ${formatRupiah(booking?.totalPrice)}`}
         </button>
       )}
 

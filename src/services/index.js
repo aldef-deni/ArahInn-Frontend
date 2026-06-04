@@ -26,6 +26,19 @@ export const xasApi = {
   createCredential: (d) => api.post('/xas/credential', d),
 }
 
+// ── Travel KERETA (Rajabiller API langsung) ──────────────────────────────
+export const travelApi = {
+  // Public (read-only)
+  stations    : ()  => api.get('/travel/train/stations'),
+  searchTrain : (d) => api.post('/travel/train/search', d),      // { origin, destination, date, adult, infant }
+  seatLayout  : (d) => api.post('/travel/train/seat-layout', d), // { origin, destination, date, trainNumber }
+  // Auth (booking flow)
+  bookTrain   : (d) => api.post('/travel/train/book', d),
+  changeSeat  : (d) => api.post('/travel/train/change-seat', d),
+  cancelBook  : (d) => api.post('/travel/train/cancel', d),
+  trainStatus : (bookCode) => api.get(`/travel/train/status/${bookCode}`),
+}
+
 export const paymentApi = {
   mode        : ()       => api.get('/payments/mode'),
   initiate    : (d)      => api.post('/payments/initiate', d),
@@ -88,6 +101,9 @@ export const adminApi = {
   // Maintenance mode
   getMaintenance    : ()    => api.get('/admin/settings/maintenance'),
   setMaintenance    : (d)   => api.post('/admin/settings/maintenance', d),
+  // PPN tax toggle
+  getPpnTax         : ()    => api.get('/admin/settings/ppn-tax'),
+  setPpnTax         : (d)   => api.post('/admin/settings/ppn-tax', d),
   // Hotels CRUD
   hotels         : (p)      => api.get('/admin/hotels', { params: p }),
   pendingHotels  : ()       => api.get('/admin/hotels/pending'),
