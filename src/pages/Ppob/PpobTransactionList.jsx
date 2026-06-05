@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { ppobApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
-import { Receipt, Clock, CheckCircle, XCircle, RotateCcw, Zap } from 'lucide-react'
+import { Receipt, Clock, CheckCircle, XCircle, RotateCcw, Zap, Download, Loader2 } from 'lucide-react'
 
 /**
  * Reusable PPOB transaction list — dipakai di PpobHistory page + OrderHistory tab.
@@ -21,11 +22,24 @@ const STATUS_META = {
 }
 
 export default function PpobTransactionList({ limit = 30, emptyCta = true }) {
+  const [downloading, setDownloading] = useState(null)
   const { data: response, isLoading } = useQuery({
     queryKey: ['ppob-my-trx', limit],
     queryFn : () => ppobApi.myTransactions({ limit }).then(r => r.data?.data ?? { data: [] }),
   })
   const trxList = response?.data ?? []
+
+  const downloadStruk = async (e, trxCode) => {
+    e.preventDefault(); e.stopPropagation()
+    setDownloading(trxCode)
+    try {
+      const res = await ppobApi.downloadReceipt(trxCode)
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
+      Object.assign(document.createElement('a'), { href: url, download: `E-Struk-${trxCode}.pdf` }).click()
+      URL.revokeObjectURL(url)
+    } catch { /* noop */ }
+    finally { setDownloading(null) }
+  }
 
   if (isLoading) {
     return (
@@ -67,6 +81,8 @@ export default function PpobTransactionList({ limit = 30, emptyCta = true }) {
 
         const target = trxCode ? `/topup-tagihan/pay/${trxCode}` : null
 
+        const isSuccess = trx.status === 'success'
+        const isDownloading = downloading === trxCode
         const CardBody = (
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
@@ -103,14 +119,23 @@ export default function PpobTransactionList({ limit = 30, emptyCta = true }) {
           </div>
         )
 
+        const StrukBtn = isSuccess && trxCode ? (
+          <button onClick={(e) => downloadStruk(e, trxCode)} disabled={isDownloading}
+            className="mt-3 w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-xl border border-emerald-200 text-emerald-700 text-xs font-semibold hover:bg-emerald-50 active:scale-[0.98] transition-all disabled:opacity-60">
+            {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} Unduh Struk PDF
+          </button>
+        ) : null
+
         return target ? (
           <Link key={trx.id || trxCode} to={target}
             className="block bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 hover:border-brand active:scale-[0.99] transition-all">
             {CardBody}
+            {StrukBtn}
           </Link>
         ) : (
           <div key={trx.id || trxCode} className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 hover:border-brand transition-colors">
             {CardBody}
+            {StrukBtn}
           </div>
         )
       })}

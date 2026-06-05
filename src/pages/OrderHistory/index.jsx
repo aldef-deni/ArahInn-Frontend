@@ -5,8 +5,9 @@ import { useTranslation } from 'react-i18next'
 import { bookingApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah, formatDateShort, statusBadgeClass, statusLabel, getImageUrl } from '@/utils'
-import { ShoppingBag, Calendar, ChevronRight, XCircle, ChevronLeft, Hotel, Receipt } from 'lucide-react'
+import { ShoppingBag, Calendar, ChevronRight, XCircle, ChevronLeft, Hotel, Receipt, Ticket } from 'lucide-react'
 import PpobTransactionList from '@/pages/Ppob/PpobTransactionList'
+import TravelBookingList from '@/pages/Travel/TravelBookingList'
 
 export default function OrderHistory() {
   const { t } = useTranslation()
@@ -23,18 +24,20 @@ export default function OrderHistory() {
 
   const MAIN_TABS = [
     { value: 'akomodasi', label: t('orderHistory.tabAkomodasi'), Icon: Hotel },
+    { value: 'travel',    label: t('orderHistory.tabTravel'),    Icon: Ticket },
     { value: 'ppob',      label: t('orderHistory.tabPpob'),      Icon: Receipt },
   ]
   const [searchParams, setSearchParams] = useSearchParams()
-  const initialMain = searchParams.get('jenis') === 'ppob' ? 'ppob' : 'akomodasi'
+  const jenisParam = searchParams.get('jenis')
+  const initialMain = jenisParam === 'ppob' ? 'ppob' : jenisParam === 'travel' ? 'travel' : 'akomodasi'
   const [activeMain, setActiveMain] = useState(initialMain)
   const [activeTab, setActiveTab] = useState('')
   const [page, setPage] = useState(1)
 
   const handleMainTab = (v) => {
     setActiveMain(v)
-    if (v === 'ppob') searchParams.set('jenis', 'ppob')
-    else searchParams.delete('jenis')
+    if (v === 'akomodasi') searchParams.delete('jenis')
+    else searchParams.set('jenis', v)
     setSearchParams(searchParams, { replace: true })
   }
 
@@ -92,6 +95,11 @@ export default function OrderHistory() {
           })}
         </div>
       </div>
+
+      {/* ── Travel tab (pesawat / kereta / pelni) ────────── */}
+      {activeMain === 'travel' && (
+        <TravelBookingList />
+      )}
 
       {/* ── PPOB tab ─────────────────────────────────────── */}
       {activeMain === 'ppob' && (

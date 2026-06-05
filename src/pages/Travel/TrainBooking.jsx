@@ -7,6 +7,7 @@ import {
 import { travelApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
+import DateField from '@/components/ui/DateField'
 
 const gradeLabel = (g) => ({ E: 'Eksekutif', B: 'Bisnis', K: 'Ekonomi' }[g] || g || '-')
 const formatDMY = (ymd) => { if (!ymd) return '-'; const [y,m,d] = ymd.split('-'); return `${d}/${m}/${y}` }
@@ -36,7 +37,11 @@ export default function TrainBooking() {
 
   const { origin, destination, date, train, seat } = sel
   const priceAdult = Number(seat?.priceAdult) || 0
-  const total = priceAdult * (sel.adult || 1) // bayi tidak kena kursi
+  const markup     = Number(sel.markup) || 0
+  const pax        = sel.adult || 1            // bayi tidak kena kursi
+  const ticketSub  = priceAdult * pax
+  const markupSub  = markup * pax
+  const total      = ticketSub + markupSub
 
   const setAdultField  = (i, k, v) => setAdults(a => a.map((p, idx) => idx === i ? { ...p, [k]: v } : p))
   const setInfantField = (i, k, v) => setInfants(a => a.map((p, idx) => idx === i ? { ...p, [k]: v } : p))
@@ -48,7 +53,8 @@ export default function TrainBooking() {
     if (!valid) { setError('Lengkapi semua data penumpang.'); return }
     setLoading(true); setError(null)
     try {
-      const res = await travelApi.bookTrain({
+      const res = await travelApi.checkout({
+        moda: 'kereta',
         origin: origin.idStasiun,
         destination: destination.idStasiun,
         date,
@@ -56,9 +62,9 @@ export default function TrainBooking() {
         grade: seat.grade,
         class: seat.class,
         adult: sel.adult || 1,
-        child: 0,
         infant: sel.infant || 0,
         priceAdult: priceAdult,
+        markup,
         trainName: train.trainName,
         departureStation: origin.namaStasiun,
         departureTime: train.departureTime,
@@ -69,7 +75,9 @@ export default function TrainBooking() {
           infants: infants.map(p => ({ name: p.name, birthdate: p.birthdate, idNumber: p.idNumber || '' })),
         },
       })
-      setBooked(res.data?.data || null)
+      const booking = res.data?.data
+      if (booking?.id) navigate(`/tiket/bayar/${booking.id}`)
+      else setError('Gagal membuat pesanan.')
     } catch (e) {
       setError(e?.response?.data?.message || 'Gagal membuat booking. Coba lagi.')
     } finally {
@@ -160,7 +168,7 @@ export default function TrainBooking() {
             <div className="space-y-2.5">
               <Field label="Nama Lengkap (sesuai KTP)" icon={User} value={p.name} onChange={v => setAdultField(i, 'name', v)} placeholder="Nama sesuai identitas" />
               <div className="grid grid-cols-2 gap-2.5">
-                <Field label="Tanggal Lahir" type="date" value={p.birthdate} onChange={v => setAdultField(i, 'birthdate', v)} />
+                <DateField label="Tanggal Lahir" value={p.birthdate} onChange={v => setAdultField(i, 'birthdate', v)} />
                 <Field label="No. HP" icon={Phone} value={p.phone} onChange={v => setAdultField(i, 'phone', v.replace(/[^0-9]/g, ''))} placeholder="08xxx" inputMode="numeric" />
               </div>
               <Field label="No. KTP / NIK" icon={CreditCard} value={p.idNumber} onChange={v => setAdultField(i, 'idNumber', v.replace(/[^0-9]/g, ''))} placeholder="16 digit NIK" inputMode="numeric" />
@@ -174,12 +182,24 @@ export default function TrainBooking() {
             <div className="space-y-2.5">
               <Field label="Nama Lengkap" icon={User} value={p.name} onChange={v => setInfantField(i, 'name', v)} placeholder="Nama bayi" />
               <div className="grid grid-cols-2 gap-2.5">
-                <Field label="Tanggal Lahir" type="date" value={p.birthdate} onChange={v => setInfantField(i, 'birthdate', v)} />
+                <DateField label="Tanggal Lahir" value={p.birthdate} onChange={v => setInfantField(i, 'birthdate', v)} />
                 <Field label="NIK (opsional)" icon={CreditCard} value={p.idNumber} onChange={v => setInfantField(i, 'idNumber', v.replace(/[^0-9]/g, ''))} placeholder="opsional" inputMode="numeric" />
               </div>
             </div>
           </div>
         ))}
+
+        {/* Rincian harga */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
+          <p className="font-bold text-sm text-slate-900 mb-2.5">Rincian Harga</p>
+          <div className="space-y-1.5 text-sm">
+            <div className="flex justify-between"><span className="text-slate-500">Harga tiket ({pax} × {formatRupiah(priceAdult)})</span><span className="text-slate-900">{formatRupiah(ticketSub)}</span></div>
+            {markup > 0 && (
+              <div className="flex justify-between"><span className="text-slate-500">Biaya layanan ({pax} × {formatRupiah(markup)})</span><span className="text-slate-900">{formatRupiah(markupSub)}</span></div>
+            )}
+            <div className="flex justify-between pt-1.5 border-t border-slate-100"><span className="font-bold text-slate-900">Total</span><span className="font-bold text-orange-600">{formatRupiah(total)}</span></div>
+          </div>
+        </div>
 
         {/* Price + submit */}
         <div className="bg-white rounded-2xl border border-slate-200 p-4 sticky bottom-2 shadow-lg">

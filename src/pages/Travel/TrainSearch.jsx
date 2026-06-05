@@ -116,6 +116,12 @@ export default function TrainSearch() {
     queryFn : () => travelApi.stations().then(r => r.data?.data || []),
     staleTime: 86400_000,
   })
+  // Markup per pax (camelCase: markupPerPax)
+  const { data: markup = 0 } = useQuery({
+    queryKey: ['travel-markup'],
+    queryFn : () => travelApi.settings().then(r => r.data?.data?.markupPerPax ?? 0),
+    staleTime: 3600_000,
+  })
 
   const swap = () => { setOrigin(destination); setDestination(origin) }
 
@@ -144,7 +150,7 @@ export default function TrainSearch() {
   const selectTrain = (train, seat) => {
     // Simpan pilihan untuk langkah booking (penumpang) — dibangun di langkah berikut
     const payload = {
-      origin, destination, date, adult, infant, train, seat,
+      origin, destination, date, adult, infant, train, seat, markup,
     }
     sessionStorage.setItem('train_selection', JSON.stringify(payload))
     navigate('/tiket/kereta/pesan')
@@ -326,7 +332,7 @@ export default function TrainSearch() {
 
                       {/* Price + select */}
                       <div className="text-right shrink-0 w-[26%] sm:w-[22%]">
-                        <p className="font-display text-sm sm:text-lg font-bold text-orange-600 leading-tight">{formatRupiah(Number(seat.priceAdult) || 0)}<span className="text-[10px] font-normal text-slate-400">/pax</span></p>
+                        <p className="font-display text-sm sm:text-lg font-bold text-orange-600 leading-tight">{formatRupiah((Number(seat.priceAdult) || 0) + markup)}<span className="text-[10px] font-normal text-slate-400">/pax</span></p>
                         {!soldOut && (seat.availability ?? 0) <= 50 && (
                           <p className="text-[10px] text-red-500 font-semibold mt-0.5">Sisa {seat.availability} kursi</p>
                         )}

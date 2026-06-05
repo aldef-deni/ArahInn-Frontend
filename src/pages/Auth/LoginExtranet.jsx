@@ -27,7 +27,8 @@ export default function LoginExtranet() {
   const { register, handleSubmit, formState: { errors }, setError } = useForm()
 
   const mutation = useMutation({
-    mutationFn: (d) => authApi.login(d),
+    // Portal owner → backend pilih akun primary_role='owner' (model akun terpisah)
+    mutationFn: (d) => authApi.login(ownerMode ? { ...d, portal: 'owner' } : d),
     onSuccess: (r) => {
       const { user, accessToken, refreshToken } = r.data.data
 

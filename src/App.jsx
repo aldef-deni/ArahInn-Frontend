@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/toaster'
 import { useAuthStore } from '@/store/authStore'
-import { maintenanceApi } from '@/services/index'
+import { maintenanceApi, authApi } from '@/services/index'
 
 // Layouts
 import UserLayout from '@/components/layout/UserLayout'
@@ -33,6 +33,11 @@ import TravelLanding from '@/pages/Travel/TravelLanding'
 import TravelEmbed from '@/pages/Travel/TravelEmbed'
 import TrainSearch from '@/pages/Travel/TrainSearch'
 import TrainBooking from '@/pages/Travel/TrainBooking'
+import FlightSearch from '@/pages/Travel/FlightSearch'
+import FlightBooking from '@/pages/Travel/FlightBooking'
+import PelniSearch from '@/pages/Travel/PelniSearch'
+import PelniBooking from '@/pages/Travel/PelniBooking'
+import TravelPayment from '@/pages/Travel/TravelPayment'
 import Maintenance from '@/pages/Maintenance'
 import AdminPpob from '@/pages/admin/Ppob'
 import TermsAndConditions from '@/pages/Legal/TermsAndConditions'
@@ -208,6 +213,26 @@ function GuestRoute({ children }) {
 }
 
 export default function App() {
+  // Token handoff dari app My ArahInn: jika URL punya ?app_token=...,
+  // auto-login (tanpa minta login lagi) lalu strip param dari URL.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const appToken = params.get('app_token')
+    if (!appToken) return
+    params.delete('app_token')
+    const qs = params.toString()
+    const clean = window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash
+    window.history.replaceState({}, '', clean)
+    const store = useAuthStore.getState()
+    store.setAuth(store.user, appToken, null)   // set token → interceptor pakai ini
+    authApi.me()
+      .then(r => {
+        const u = r.data?.data?.user ?? r.data?.data ?? r.data?.user ?? r.data
+        store.setAuth(u, appToken, null)
+      })
+      .catch(() => { /* token invalid → biarkan flow login normal */ })
+  }, [])
+
   // Maintenance mode runtime check — admin toggle via /admin/settings.
   // Refresh tiap 30 detik supaya toggle cepat propagate ke customer.
   const { data: mData } = useQuery({
@@ -258,7 +283,15 @@ export default function App() {
             {/* Kereta — API langsung (search publik, booking butuh login) */}
             <Route path="/tiket/kereta" element={<TrainSearch />} />
             <Route path="/tiket/kereta/pesan" element={<PrivateRoute><TrainBooking /></PrivateRoute>} />
-            {/* Pesawat/Pelni/DLU sementara masih embed/landing */}
+            {/* Pesawat — API langsung */}
+            <Route path="/tiket/pesawat" element={<FlightSearch />} />
+            <Route path="/tiket/pesawat/pesan" element={<PrivateRoute><FlightBooking /></PrivateRoute>} />
+            {/* Pelni — API langsung */}
+            <Route path="/tiket/pelni" element={<PelniSearch />} />
+            <Route path="/tiket/pelni/pesan" element={<PrivateRoute><PelniBooking /></PrivateRoute>} />
+            {/* Pembayaran travel (kereta + pesawat + pelni) */}
+            <Route path="/tiket/bayar/:id" element={<PrivateRoute><TravelPayment /></PrivateRoute>} />
+            {/* DLU sementara masih embed/landing */}
             <Route path="/tiket/:page" element={<PrivateRoute><TravelEmbed /></PrivateRoute>} />
             <Route path="/checkout/:roomId" element={<PrivateRoute><Checkout /></PrivateRoute>} />
             <Route path="/payment/:bookingId" element={<PrivateRoute><Payment /></PrivateRoute>} />

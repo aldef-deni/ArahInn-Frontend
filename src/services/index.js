@@ -28,6 +28,8 @@ export const xasApi = {
 
 // ── Travel KERETA (Rajabiller API langsung) ──────────────────────────────
 export const travelApi = {
+  // Settings publik (markup per pax)
+  settings    : ()  => api.get('/travel/settings'),
   // Public (read-only)
   stations    : ()  => api.get('/travel/train/stations'),
   searchTrain : (d) => api.post('/travel/train/search', d),      // { origin, destination, date, adult, infant }
@@ -37,6 +39,27 @@ export const travelApi = {
   changeSeat  : (d) => api.post('/travel/train/change-seat', d),
   cancelBook  : (d) => api.post('/travel/train/cancel', d),
   trainStatus : (bookCode) => api.get(`/travel/train/status/${bookCode}`),
+
+  // ── Pelni ──
+  pelniOrigins      : ()  => api.get('/travel/pelni/origins'),
+  pelniDestinations : ()  => api.get('/travel/pelni/destinations'),
+  searchPelni       : (d) => api.post('/travel/pelni/search', d), // { origin, destination, startDate, endDate }
+  pelniCheckAvail   : (d) => api.post('/travel/pelni/check-availability', d),
+
+  // ── Booking + Payment (checkout → pay → e-tiket) ──
+  checkout      : (d)  => api.post('/travel/checkout', d),
+  myBookings    : ()   => api.get('/travel/bookings'),
+  getBooking    : (id) => api.get(`/travel/bookings/${id}`),
+  payBooking    : (id, d) => api.post(`/travel/bookings/${id}/pay`, d),
+  downloadEtiket: (id) => api.get(`/travel/bookings/${id}/etiket`, { responseType: 'blob' }),
+
+  // ── Pesawat ──
+  airports      : ()  => api.get('/travel/flight/airports'),
+  airlines      : ()  => api.get('/travel/flight/airlines'),
+  searchFlight    : (d) => api.post('/travel/flight/search', d), // 1 maskapai
+  searchAllFlights: (d) => api.post('/travel/flight/search-all', d), // semua maskapai (ala Traveloka)
+  flightFare      : (d) => api.post('/travel/flight/fare', d),
+  bookFlight    : (d) => api.post('/travel/flight/book', d),
 }
 
 export const paymentApi = {
@@ -104,6 +127,9 @@ export const adminApi = {
   // PPN tax toggle
   getPpnTax         : ()    => api.get('/admin/settings/ppn-tax'),
   setPpnTax         : (d)   => api.post('/admin/settings/ppn-tax', d),
+  // Markup travel
+  getTravelMarkup   : ()    => api.get('/admin/settings/travel-markup'),
+  setTravelMarkup   : (d)   => api.post('/admin/settings/travel-markup', d),
   // Hotels CRUD
   hotels         : (p)      => api.get('/admin/hotels', { params: p }),
   pendingHotels  : ()       => api.get('/admin/hotels/pending'),
@@ -219,6 +245,7 @@ export const ppobApi = {
   confirmPay      : (code)    => api.post(`/ppob/transactions/${code}/confirm-pay`),
   myTransactions  : (p)       => api.get('/ppob/my-transactions', { params: p }),
   getTrx          : (code)    => api.get(`/ppob/transactions/${code}`),
+  downloadReceipt : (code)    => api.get(`/ppob/transactions/${code}/receipt`, { responseType: 'blob' }),
   // Admin
   adminTrx        : (p)       => api.get('/admin/ppob/transactions', { params: p }),
   adminMarkPaid   : (code, d) => api.post(`/admin/ppob/transactions/${code}/mark-paid`, d),

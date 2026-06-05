@@ -80,6 +80,23 @@ export default function AdminSettings() {
 
   const ppnEnabled = !!ppnData?.enabled
 
+  /* ── Markup Travel ────────────────────────────────────────────────── */
+  const { data: mkData, isLoading: mkLoading } = useQuery({
+    queryKey: ['admin-travel-markup'],
+    queryFn : () => adminApi.getTravelMarkup().then(r => r.data?.data),
+  })
+  const [mkAmount, setMkAmount] = useState(7500)
+  useEffect(() => { if (mkData?.amount != null) setMkAmount(mkData.amount) }, [mkData])
+
+  const mkMutation = useMutation({
+    mutationFn: (payload) => adminApi.setTravelMarkup(payload),
+    onSuccess: (r) => {
+      toast({ title: 'Markup travel diperbarui', description: r.data?.message })
+      qc.invalidateQueries({ queryKey: ['admin-travel-markup'] })
+    },
+    onError: (e) => toast({ title: 'Gagal update markup', description: e?.response?.data?.message, variant: 'destructive' }),
+  })
+
   /* ── Local form state ────────────────────────────────────────────── */
   const [bank, setBank] = useState({
     bank_name: '', account_number: '', account_name: '', expires_hours: 24,
@@ -337,6 +354,46 @@ export default function AdminSettings() {
               </p>
             )}
           </>
+        )}
+      </div>
+
+      {/* ── Markup Travel ────────────────────────────────────────────── */}
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
+        <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-5">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-white flex items-center justify-center shrink-0">
+            <Receipt className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">Markup Travel (Biaya Layanan)</h2>
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5 leading-relaxed">
+              Margin flat ArahInn per penumpang di atas harga vendor — berlaku untuk <strong>kereta, pesawat, bus, pelni</strong>.
+            </p>
+          </div>
+        </div>
+        {mkLoading ? <div className="skeleton h-20 rounded-xl" /> : (
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+            <div className="sm:w-56">
+              <label className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide block mb-2">Biaya Layanan / Penumpang</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-semibold">Rp</span>
+                <input type="number" min={0} step={500} value={mkAmount} onChange={e => setMkAmount(e.target.value)}
+                  className="w-full pl-9 pr-3 py-3 border border-slate-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-500" />
+              </div>
+            </div>
+            <button
+              onClick={() => mkMutation.mutate({ amount: parseInt(mkAmount) || 0 })}
+              disabled={mkMutation.isPending || parseInt(mkAmount) === mkData?.amount}
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm active:scale-[0.97] transition-all disabled:opacity-40"
+            >
+              <Save className="w-4 h-4" /> {mkMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+            </button>
+            <p className="text-[11px] sm:text-xs text-slate-500 sm:flex-1 leading-snug">
+              Contoh: harga KAI Rp 100.000 + markup Rp {Number(mkAmount).toLocaleString('id-ID')} = customer bayar Rp {(100000 + (parseInt(mkAmount) || 0)).toLocaleString('id-ID')}/pax.
+            </p>
+          </div>
+        )}
+        {mkData?.updated_at && (
+          <p className="text-[10px] sm:text-xs text-slate-400 mt-3">Terakhir diperbarui: {new Date(mkData.updated_at).toLocaleString('id-ID')}</p>
         )}
       </div>
 

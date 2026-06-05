@@ -10,7 +10,7 @@ import {
   Search, MapPin, Calendar, Users, ArrowRight,
   Zap, Shield, Headphones, Award, TrendingUp, Tag, Copy, Check, Clock, Building2,
   ChevronDown, Wallet, Hotel, Smartphone, Lightbulb, Receipt, Sofa, BadgePercent,
-  Plane, Bus, TrainFront,
+  Plane, Ship, TrainFront,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { format, addDays, parseISO } from 'date-fns'
@@ -28,7 +28,7 @@ function ServiceCategoryTabs() {
   const items = [
     { label: t('services.akomodasi'),     Icon: Hotel,        to: '/search',                            accent: '#ffffff' },
     { label: t('services.tiketPesawat'),  Icon: Plane,        to: '/tiket/pesawat',                     accent: '#7dd3fc' },
-    { label: t('services.tiketBus'),      Icon: Bus,          to: '/tiket/dlu',                         accent: '#86efac' },
+    { label: t('services.tiketPelni'),    Icon: Ship,         to: '/tiket/pelni',                       accent: '#67e8f9' },
     { label: t('services.tiketKereta'),   Icon: TrainFront,   to: '/tiket/kereta',                      accent: '#fdba74' },
     { label: t('services.pulsaData'),     Icon: Smartphone,   to: '/topup-tagihan/pulsa-data',          accent: '#60a5fa' },
     { label: t('services.listrikPln'),    Icon: Lightbulb,    to: '/topup-tagihan/pln',                 accent: '#fbbf24' },
