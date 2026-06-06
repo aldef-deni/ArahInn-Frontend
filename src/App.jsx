@@ -40,6 +40,7 @@ import PelniBooking from '@/pages/Travel/PelniBooking'
 import TravelPayment from '@/pages/Travel/TravelPayment'
 import Maintenance from '@/pages/Maintenance'
 import AdminPpob from '@/pages/admin/Ppob'
+import AdminTravel from '@/pages/admin/Travel'
 import TermsAndConditions from '@/pages/Legal/TermsAndConditions'
 import PrivacyPolicy from '@/pages/Legal/PrivacyPolicy'
 import AccountDeletion from '@/pages/Legal/AccountDeletion'
@@ -235,13 +236,18 @@ export default function App() {
 
   // Maintenance mode runtime check — admin toggle via /admin/settings.
   // Refresh tiap 30 detik supaya toggle cepat propagate ke customer.
+  // Staging memakai backend yang sama dgn produksi → kecualikan dari maintenance.
+  // Maintenance hanya berlaku untuk host produksi (arahinn.com), bukan staging/preview/localhost.
+  const host = typeof window !== 'undefined' ? window.location.hostname : ''
+  const isNonProdHost = /(^|\.)staging\.|^staging\.|preview\.|localhost|127\.0\.0\.1|\.local$/i.test(host)
   const { data: mData } = useQuery({
     queryKey: ['maintenance-status'],
     queryFn : () => maintenanceApi.status().then(r => r.data?.data ?? { enabled: false }),
     refetchInterval: 30_000,
     staleTime: 20_000,
+    enabled: !isNonProdHost,
   })
-  const maintenanceMode = !!mData?.enabled
+  const maintenanceMode = !isNonProdHost && !!mData?.enabled
 
   return (
     <>
@@ -342,6 +348,7 @@ export default function App() {
           <Route path="reviews" element={<BlockRoles roles={['design_interior']}><AdminReviews /></BlockRoles>} />
           <Route path="interior" element={<AdminInterior />} />
           <Route path="ppob" element={<AdminPpob />} />
+          <Route path="travel" element={<AdminTravel />} />
           <Route path="customer-chat" element={<BlockRoles roles={['design_interior']}><AdminCustomerChat /></BlockRoles>} />
           <Route path="harga" element={<BlockRoles roles={['design_interior']}><AdminHarga /></BlockRoles>}>
             <Route index element={<Navigate to="pricing-model" replace />} />

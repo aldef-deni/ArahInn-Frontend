@@ -50,8 +50,10 @@ export const travelApi = {
   checkout      : (d)  => api.post('/travel/checkout', d),
   myBookings    : ()   => api.get('/travel/bookings'),
   getBooking    : (id) => api.get(`/travel/bookings/${id}`),
-  payBooking    : (id, d) => api.post(`/travel/bookings/${id}/pay`, d),
   downloadEtiket: (id) => api.get(`/travel/bookings/${id}/etiket`, { responseType: 'blob' }),
+  // Admin: verifikasi pembayaran travel → terbitkan e-tiket
+  adminBookings : (p)  => api.get('/admin/travel/bookings', { params: p }),
+  adminIssue    : (id, d) => api.post(`/admin/travel/bookings/${id}/issue`, d),
 
   // ── Pesawat ──
   airports      : ()  => api.get('/travel/flight/airports'),

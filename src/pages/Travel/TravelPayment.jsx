@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import {
   TrainFront, Plane, Ship, ArrowRight, Clock, Loader2, AlertCircle,
-  CheckCircle2, Ticket, ShieldCheck, Wallet, ChevronLeft, Download,
+  CheckCircle2, Ticket, ChevronLeft, Download, Building2, Copy, Check,
 } from 'lucide-react'
-import { travelApi } from '@/services/index'
+import { travelApi, paymentApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 
@@ -15,19 +15,25 @@ export default function TravelPayment() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [err, setErr] = useState(null)
+  const [downloading, setDownloading] = useState(false)
+  const [copied, setCopied] = useState('')
 
-  const { data: b, isLoading, refetch } = useQuery({
+  const { data: b, isLoading } = useQuery({
     queryKey: ['travel-booking', id],
     queryFn: () => travelApi.getBooking(id).then(r => r.data?.data),
+    refetchInterval: (q) => (['pending_payment', 'paid'].includes(q.state.data?.status) ? 10000 : false),
   })
 
-  const [downloading, setDownloading] = useState(false)
-
-  const payMut = useMutation({
-    mutationFn: () => travelApi.payBooking(id, { simulate: true }),
-    onSuccess: () => { setErr(null); refetch() },
-    onError: (e) => setErr(e?.response?.data?.message || 'Pembayaran gagal. Coba lagi.'),
+  const { data: mode } = useQuery({
+    queryKey: ['payment-mode'],
+    queryFn: () => paymentApi.mode().then(r => r.data?.data),
   })
+  const bank = mode?.bank
+
+  const copy = (text, field) => {
+    try { navigator.clipboard?.writeText(String(text)) } catch { /* noop */ }
+    setCopied(field); setTimeout(() => setCopied(''), 1500)
+  }
 
   const downloadEtiket = async () => {
     setDownloading(true)
@@ -46,6 +52,7 @@ export default function TravelPayment() {
   const Icon = b.moda === 'pesawat' ? Plane : b.moda === 'pelni' ? Ship : TrainFront
   const accent = b.moda === 'pesawat' ? 'sky' : b.moda === 'pelni' ? 'cyan' : 'orange'
   const issued = b.status === 'issued'
+  const failed = ['failed', 'canceled', 'expired'].includes(b.status)
 
   return (
     <div className="min-h-[70vh] bg-slate-50">
@@ -70,10 +77,16 @@ export default function TravelPayment() {
               )}
             </div>
           </div>
+        ) : failed ? (
+          <div className="bg-white rounded-2xl border border-rose-200 p-6 text-center mb-4">
+            <div className="w-14 h-14 rounded-2xl bg-rose-100 flex items-center justify-center mx-auto mb-3"><AlertCircle className="w-7 h-7 text-rose-600" /></div>
+            <h1 className="font-display text-xl font-bold text-slate-900">Pesanan {b.status === 'expired' ? 'Kedaluwarsa' : 'Dibatalkan'}</h1>
+            <p className="text-sm text-slate-500 mt-1">Silakan buat pesanan baru.</p>
+          </div>
         ) : (
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 mb-4 flex items-start gap-2.5">
             <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-800">Selesaikan pembayaran untuk menerbitkan e-tiket{b.timeLimit ? ` sebelum ${new Date(b.timeLimit).toLocaleString('id-ID')}` : ''}.</p>
+            <p className="text-xs text-amber-800">Selesaikan transfer agar e-tiket diterbitkan{b.timeLimit ? ` sebelum ${new Date(b.timeLimit).toLocaleString('id-ID')}` : ''}. Status diperbarui otomatis.</p>
           </div>
         )}
 
@@ -82,7 +95,7 @@ export default function TravelPayment() {
           <div className="flex items-center gap-2 mb-3">
             <div className={`w-9 h-9 rounded-lg bg-${accent}-100 flex items-center justify-center`}><Icon className={`w-4.5 h-4.5 text-${accent}-600`} /></div>
             <div className="min-w-0">
-              <p className="font-bold text-sm text-slate-900 truncate">{b.serviceName || (b.moda === 'pesawat' ? 'Penerbangan' : 'Kereta')}</p>
+              <p className="font-bold text-sm text-slate-900 truncate">{b.serviceName || (b.moda === 'pesawat' ? 'Penerbangan' : b.moda === 'pelni' ? 'Kapal Laut' : 'Kereta')}</p>
               <p className="text-[11px] text-slate-500">Kode: <span className="font-mono font-bold">{b.code}</span></p>
             </div>
           </div>
@@ -106,17 +119,40 @@ export default function TravelPayment() {
 
         {err && <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl mb-4"><AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" /><p className="text-sm text-red-700">{err}</p></div>}
 
-        {/* Pay button */}
-        {!issued && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 sticky bottom-2 shadow-lg">
-            <div className="flex items-center justify-between mb-3">
-              <div><p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold">Total Bayar</p><p className="font-display text-xl font-bold text-brand">{formatRupiah(b.totalPrice)}</p></div>
-              <div className="flex items-center gap-1 text-[10px] text-emerald-600"><ShieldCheck className="w-3.5 h-3.5" /> Aman</div>
+        {/* Transfer instructions (pending) */}
+        {!issued && !failed && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-4">
+            <div className="flex items-center gap-2 mb-3"><Building2 className="w-4.5 h-4.5 text-brand" /><p className="font-bold text-sm text-slate-900">Transfer Bank</p></div>
+
+            <div className="bg-brand/5 rounded-xl p-3.5 mb-3">
+              <p className="text-[11px] text-slate-500 mb-0.5">Nominal Transfer (tepat)</p>
+              <div className="flex items-center justify-between">
+                <p className="font-display text-2xl font-bold text-brand">{formatRupiah(b.totalPrice)}</p>
+                <button onClick={() => copy(Math.round(b.totalPrice), 'amt')} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-brand/30 text-brand text-xs font-semibold bg-white">
+                  {copied === 'amt' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />} {copied === 'amt' ? 'Tersalin' : 'Salin'}
+                </button>
+              </div>
             </div>
-            <button onClick={() => payMut.mutate()} disabled={payMut.isPending} className="w-full py-3.5 rounded-xl bg-brand hover:bg-brand-700 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50">
-              {payMut.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Memproses pembayaran...</> : <><Wallet className="w-4 h-4" /> Bayar Sekarang</>}
-            </button>
-            <p className="text-[10px] text-slate-400 text-center mt-2">Setelah bayar, e-tiket otomatis diterbitkan.</p>
+
+            {bank ? (
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-slate-500">Bank</span><span className="font-semibold text-slate-900">{bank.bankName}</span></div>
+                <div className="flex justify-between items-center"><span className="text-slate-500">No. Rekening</span>
+                  <span className="flex items-center gap-2"><span className="font-bold text-slate-900">{bank.accountNumber}</span>
+                    <button onClick={() => copy(bank.accountNumber, 'rek')} className="text-brand">{copied === 'rek' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}</button>
+                  </span>
+                </div>
+                <div className="flex justify-between"><span className="text-slate-500">Atas Nama</span><span className="font-semibold text-slate-900">{bank.accountName}</span></div>
+              </div>
+            ) : <div className="py-4 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-brand" /></div>}
+
+            <div className="mt-3 bg-slate-50 rounded-xl p-3 text-xs text-slate-600 leading-relaxed">
+              <p className="font-bold text-slate-700 mb-1">Cara bayar:</p>
+              1. Transfer <strong>tepat {formatRupiah(b.totalPrice)}</strong> ke rekening di atas.<br/>
+              2. Gunakan 1 rekening yang sama agar cepat terverifikasi.<br/>
+              3. Admin verifikasi mutasi (1–15 menit jam kerja) → e-tiket otomatis terbit.<br/>
+              4. Halaman ini update otomatis — tak perlu konfirmasi.
+            </div>
           </div>
         )}
       </div>
