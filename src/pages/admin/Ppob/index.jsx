@@ -36,10 +36,10 @@ export default function AdminPpob() {
   })
   const trxList = txResp?.data ?? []
 
-  const { data: balance } = useQuery({
+  const { data: balance, refetch: refetchBalance, isFetching: balanceFetching } = useQuery({
     queryKey: ['admin-ppob-balance'],
     queryFn : () => ppobApi.adminBalance().then(r => r.data),
-    refetchInterval: 60_000,
+    refetchInterval: 120_000, // auto-refresh tiap 2 menit
   })
 
   const refundMutation = useMutation({
@@ -89,21 +89,37 @@ export default function AdminPpob() {
           <p className="text-sm text-slate-500 mt-1">Pantau transaksi PPOB, refund manual, retry yang failed.</p>
         </div>
         <div className="flex items-center gap-3">
-          <a
-            href="https://wr.rajabiller.com/login?callbackUrl=https%3A%2F%2Fwr.rajabiller.com%2Fhome"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 hover:bg-emerald-100 transition-colors"
-            title="Cek saldo di web report Rajabiller"
-          >
-            <Wallet className="w-4 h-4 text-emerald-600" />
-            <div>
+          <div className="px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3">
+            <Wallet className="w-4 h-4 text-emerald-600 shrink-0" />
+            <div className="leading-tight">
               <p className="text-[10px] text-emerald-600 font-bold uppercase">Saldo Raja Biller</p>
               <p className="text-sm font-bold text-emerald-700">
-                {balance?.balance > 0 ? formatRupiah(balance.balance) : 'Cek di Web Report ↗'}
+                {balance?.balance > 0 ? formatRupiah(balance.balance) : '—'}
               </p>
+              {balance?.updatedAt && (
+                <p className="text-[9px] text-emerald-600/70">
+                  per {new Date(balance.updatedAt).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </p>
+              )}
             </div>
-          </a>
+            <button
+              onClick={() => refetchBalance()}
+              disabled={balanceFetching}
+              title="Muat ulang saldo"
+              className="p-1.5 rounded-lg hover:bg-emerald-100 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 text-emerald-600 ${balanceFetching ? 'animate-spin' : ''}`} />
+            </button>
+            <a
+              href="https://wr.rajabiller.com/login?callbackUrl=https%3A%2F%2Fwr.rajabiller.com%2Fhome"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Buka web report Rajabiller"
+              className="text-[10px] text-emerald-700 font-semibold hover:underline whitespace-nowrap"
+            >
+              Web Report ↗
+            </a>
+          </div>
         </div>
       </div>
 
