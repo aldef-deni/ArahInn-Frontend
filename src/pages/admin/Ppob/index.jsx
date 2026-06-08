@@ -81,7 +81,7 @@ export default function AdminPpob() {
     onError: (e) => toast({ title: 'Gagal batalkan', description: e?.response?.data?.message, variant: 'destructive' }),
   })
 
-  const LOW_BALANCE = 1_000_000
+  const LOW_BALANCE = 5_000_000
   const bal = balance?.balance ?? 0
   const isLow = bal > 0 && bal < LOW_BALANCE
 
