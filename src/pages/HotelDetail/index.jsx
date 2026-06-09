@@ -743,6 +743,15 @@ export default function HotelDetail() {
   const [dates, setDates] = useState({ checkIn: today, checkOut: tomorrow })
   const [guests, setGuests] = useState(2)
   const [roomCount, setRoomCount] = useState(1)
+
+  // Ref ke input check-in (untuk tombol "Pilih Tanggal Lain" → scroll + buka date picker)
+  const checkInRef = useRef(null)
+  const pickOtherDates = () => {
+    checkInRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setTimeout(() => {
+      try { checkInRef.current?.focus(); checkInRef.current?.showPicker?.() } catch {}
+    }, 450)
+  }
   const [selImg, setSelImg] = useState(0)
   const [bookingRoom, setBookingRoom] = useState(null)
   const [sidebarRoomId, setSidebarRoomId] = useState(null)
@@ -1181,6 +1190,22 @@ export default function HotelDetail() {
                 {availData?.map(room => (
                   <RoomCard key={room.id} room={room} nights={nights} onBook={handleBook} />
                 ))}
+
+                {/* Card: cari ketersediaan tanggal lain (berguna saat kamar penuh) */}
+                <button
+                  type="button"
+                  onClick={pickOtherDates}
+                  className="flex w-full items-center gap-4 rounded-[24px] border-2 border-dashed border-blue-200 bg-blue-50/50 p-5 text-left transition-colors hover:border-blue-400 hover:bg-blue-50"
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-100 text-blue-600">
+                    <CalendarDays className="h-6 w-6" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-slate-900">Pilih Tanggal Lain</p>
+                    <p className="mt-0.5 text-xs text-slate-500">Kamar penuh atau terbatas di tanggal ini? Cek ketersediaan untuk tanggal menginap lainnya.</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 shrink-0 text-blue-400" />
+                </button>
               </div>
             </section>
 
@@ -1259,6 +1284,7 @@ export default function HotelDetail() {
                       Check-in
                     </label>
                     <input
+                      ref={checkInRef}
                       type="date"
                       value={dates.checkIn}
                       min={today}

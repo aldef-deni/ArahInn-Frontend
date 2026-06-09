@@ -4,7 +4,7 @@
     "profile": "Profil", "login": "Masuk", "register": "Daftar", "logout": "Keluar", "admin": "Panel Admin",
     "logoutSuccess": "Berhasil keluar.", "logoutBye": "Sampai jumpa!",
     "properti": "Properti", "interior": "Design Interior",
-    "topUpTagihan": "Top Up & Tagihan", "promo": "Promo"
+    "topUpTagihan": "Top Up & Ticketing", "promo": "Promo"
   },
   "services": {
     "sectionTitle": "Pilih Layanan",
@@ -456,6 +456,10 @@
     "overview": "Ringkasan",
     "facilities": "Fasilitas",
     "rooms": "Pilihan Kamar",
+    "viewRoom": "Lihat Kamar",
+    "hideRoom": "Sembunyikan",
+    "roomFull": "Kamar penuh",
+    "noDescription": "Tidak ada deskripsi.",
     "reviews": "Ulasan",
     "location": "Lokasi",
     "policies": "Kebijakan",

@@ -4,7 +4,7 @@
     "profile": "Profile", "login": "Sign In", "register": "Register", "logout": "Sign Out", "admin": "Admin Panel",
     "logoutSuccess": "Signed out successfully.", "logoutBye": "See you soon!",
     "properti": "Properties", "interior": "Interior Design",
-    "topUpTagihan": "Top Up & Bills", "promo": "Promo"
+    "topUpTagihan": "Top Up & Ticketing", "promo": "Promo"
   },
   "services": {
     "sectionTitle": "Choose a Service",
@@ -456,6 +456,10 @@
     "overview": "Overview",
     "facilities": "Facilities",
     "rooms": "Room Options",
+    "viewRoom": "View Room",
+    "hideRoom": "Hide",
+    "roomFull": "Sold out",
+    "noDescription": "No description.",
     "reviews": "Reviews",
     "location": "Location",
     "policies": "Policies",
