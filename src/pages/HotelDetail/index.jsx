@@ -744,13 +744,17 @@ export default function HotelDetail() {
   const [guests, setGuests] = useState(2)
   const [roomCount, setRoomCount] = useState(1)
 
-  // Ref ke input check-in (untuk tombol "Pilih Tanggal Lain" → scroll + buka date picker)
-  const checkInRef = useRef(null)
-  const pickOtherDates = () => {
-    checkInRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    setTimeout(() => {
-      try { checkInRef.current?.focus(); checkInRef.current?.showPicker?.() } catch {}
-    }, 450)
+  // Modal "Pilih Tanggal Lain" — ganti tanggal untuk cek ketersediaan lain (saat kamar penuh)
+  const [showDateModal, setShowDateModal] = useState(false)
+  const [draftDates, setDraftDates] = useState({ checkIn: today, checkOut: tomorrow })
+  const openDateModal = () => {
+    setDraftDates({ checkIn: dates.checkIn, checkOut: dates.checkOut })
+    setShowDateModal(true)
+  }
+  const applyDraftDates = () => {
+    if (!draftDates.checkIn || !draftDates.checkOut || draftDates.checkOut <= draftDates.checkIn) return
+    setDates({ checkIn: draftDates.checkIn, checkOut: draftDates.checkOut })
+    setShowDateModal(false)
   }
   const [selImg, setSelImg] = useState(0)
   const [bookingRoom, setBookingRoom] = useState(null)
@@ -1194,7 +1198,7 @@ export default function HotelDetail() {
                 {/* Card: cari ketersediaan tanggal lain (berguna saat kamar penuh) */}
                 <button
                   type="button"
-                  onClick={pickOtherDates}
+                  onClick={openDateModal}
                   className="flex w-full items-center gap-4 rounded-[24px] border-2 border-dashed border-blue-200 bg-blue-50/50 p-5 text-left transition-colors hover:border-blue-400 hover:bg-blue-50"
                 >
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-100 text-blue-600">
@@ -1208,6 +1212,83 @@ export default function HotelDetail() {
                 </button>
               </div>
             </section>
+
+            {/* Modal: Pilih Tanggal Lain */}
+            {showDateModal && (
+              <div
+                className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+                onClick={() => setShowDateModal(false)}
+              >
+                <div
+                  className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-100 text-blue-600">
+                        <CalendarDays className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-slate-900">Pilih Tanggal Lain</h3>
+                        <p className="text-xs text-slate-500">Cek ketersediaan kamar untuk tanggal menginap lain.</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowDateModal(false)}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  <div className="mt-5 space-y-4">
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Check-in</label>
+                      <input
+                        type="date"
+                        value={draftDates.checkIn}
+                        min={today}
+                        onChange={e => {
+                          const ci = e.target.value
+                          setDraftDates(prev => {
+                            let co = prev.checkOut
+                            if (!co || co <= ci) {
+                              const d = new Date(ci)
+                              d.setDate(d.getDate() + 1)
+                              co = d.toISOString().split('T')[0]
+                            }
+                            return { checkIn: ci, checkOut: co }
+                          })
+                        }}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Check-out</label>
+                      <input
+                        type="date"
+                        value={draftDates.checkOut}
+                        min={draftDates.checkIn || today}
+                        onChange={e => setDraftDates(prev => ({ ...prev, checkOut: e.target.value }))}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+                    {draftDates.checkIn && draftDates.checkOut && diffDays(draftDates.checkIn, draftDates.checkOut) > 0 && (
+                      <p className="text-xs font-medium text-slate-500">{diffDays(draftDates.checkIn, draftDates.checkOut)} malam menginap</p>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={applyDraftDates}
+                    className="mt-6 w-full rounded-2xl bg-orange-500 px-5 py-3.5 text-sm font-bold text-white transition-colors hover:bg-orange-600"
+                  >
+                    Cek Ketersediaan
+                  </button>
+                </div>
+              </div>
+            )}
 
             <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1284,7 +1365,6 @@ export default function HotelDetail() {
                       Check-in
                     </label>
                     <input
-                      ref={checkInRef}
                       type="date"
                       value={dates.checkIn}
                       min={today}
