@@ -8,6 +8,7 @@ import { format } from 'date-fns'
 import { useTranslation } from 'react-i18next'
 import HotelCardRow from '@/components/hotel/HotelCardRow'
 import SEO from '@/components/SEO'
+import DateField from '@/components/ui/DateField'
 
 const MAX_PRICE = 7000000
 const STAR_OPTIONS = [5, 4, 3, 2, 1]
@@ -233,18 +234,22 @@ export default function SearchPage() {
                   {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} {t('search.guestUnit')}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('search.checkin')}</label>
-                <input type="date" value={form.checkIn} min={today}
-                  onChange={e => setForm({...form, checkIn: e.target.value})}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand bg-slate-50" />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('search.checkout')}</label>
-                <input type="date" value={form.checkOut} min={form.checkIn}
-                  onChange={e => setForm({...form, checkOut: e.target.value})}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand bg-slate-50" />
-              </div>
+              <DateField
+                label={t('search.checkin')}
+                value={form.checkIn}
+                min={today}
+                onChange={v => setForm({...form, checkIn: v})}
+                className="relative flex w-full cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/30"
+                labelClassName="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1"
+              />
+              <DateField
+                label={t('search.checkout')}
+                value={form.checkOut}
+                min={form.checkIn}
+                onChange={v => setForm({...form, checkOut: v})}
+                className="relative flex w-full cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/30"
+                labelClassName="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1"
+              />
             </div>
 
             <button type="submit"

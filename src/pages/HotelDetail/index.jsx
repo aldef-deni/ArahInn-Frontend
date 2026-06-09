@@ -35,6 +35,7 @@ import {
   X,
 } from 'lucide-react'
 import MapEmbed from '@/components/ui/MapEmbed'
+import DateField from '@/components/ui/DateField'
 import ReviewForm from '@/components/ReviewForm'
 import InquiryChatModal from '@/components/chat/InquiryChatModal'
 import SEO from '@/components/SEO'
@@ -594,30 +595,22 @@ function BookingModal({
         <div className="overflow-y-auto grid gap-5 sm:gap-6 px-4 sm:px-6 py-4 sm:py-6 md:grid-cols-[minmax(0,1fr)_260px] md:px-7">
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                  Check-in
-                </label>
-                <input
-                  type="date"
-                  value={draft.checkIn}
-                  min={today}
-                  onChange={e => handleCheckInChange(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                  Check-out
-                </label>
-                <input
-                  type="date"
-                  value={draft.checkOut}
-                  min={draft.checkIn || today}
-                  onChange={e => setDraft(current => ({ ...current, checkOut: e.target.value }))}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
+              <DateField
+                label="Check-in"
+                value={draft.checkIn}
+                min={today}
+                onChange={v => handleCheckInChange(v)}
+                className="relative flex w-full cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100"
+                labelClassName="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"
+              />
+              <DateField
+                label="Check-out"
+                value={draft.checkOut}
+                min={draft.checkIn || today}
+                onChange={v => setDraft(current => ({ ...current, checkOut: v }))}
+                className="relative flex w-full cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100"
+                labelClassName="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"
+              />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -1243,37 +1236,32 @@ export default function HotelDetail() {
                   </div>
 
                   <div className="mt-5 space-y-4">
-                    <div>
-                      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Check-in</label>
-                      <input
-                        type="date"
-                        value={draftDates.checkIn}
-                        min={today}
-                        onChange={e => {
-                          const ci = e.target.value
-                          setDraftDates(prev => {
-                            let co = prev.checkOut
-                            if (!co || co <= ci) {
-                              const d = new Date(ci)
-                              d.setDate(d.getDate() + 1)
-                              co = d.toISOString().split('T')[0]
-                            }
-                            return { checkIn: ci, checkOut: co }
-                          })
-                        }}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Check-out</label>
-                      <input
-                        type="date"
-                        value={draftDates.checkOut}
-                        min={draftDates.checkIn || today}
-                        onChange={e => setDraftDates(prev => ({ ...prev, checkOut: e.target.value }))}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                      />
-                    </div>
+                    <DateField
+                      label="Check-in"
+                      value={draftDates.checkIn}
+                      min={today}
+                      onChange={ci => {
+                        setDraftDates(prev => {
+                          let co = prev.checkOut
+                          if (!co || co <= ci) {
+                            const d = new Date(ci)
+                            d.setDate(d.getDate() + 1)
+                            co = d.toISOString().split('T')[0]
+                          }
+                          return { checkIn: ci, checkOut: co }
+                        })
+                      }}
+                      className="relative flex w-full cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100"
+                      labelClassName="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"
+                    />
+                    <DateField
+                      label="Check-out"
+                      value={draftDates.checkOut}
+                      min={draftDates.checkIn || today}
+                      onChange={v => setDraftDates(prev => ({ ...prev, checkOut: v }))}
+                      className="relative flex w-full cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100"
+                      labelClassName="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"
+                    />
                     {draftDates.checkIn && draftDates.checkOut && diffDays(draftDates.checkIn, draftDates.checkOut) > 0 && (
                       <p className="text-xs font-medium text-slate-500">{diffDays(draftDates.checkIn, draftDates.checkOut)} malam menginap</p>
                     )}
@@ -1360,43 +1348,34 @@ export default function HotelDetail() {
                 </div>
 
                 <div className="mt-5 space-y-3">
-                  <div>
-                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                      Check-in
-                    </label>
-                    <input
-                      type="date"
-                      value={dates.checkIn}
-                      min={today}
-                      onChange={e => {
-                        const newCheckIn = e.target.value
-                        // Auto-adjust check-out: kalau check-out lama <= check-in baru,
-                        // set check-out = check-in + 1 hari (default 1 malam)
-                        setDates(prev => {
-                          let nextCheckOut = prev.checkOut
-                          if (!nextCheckOut || nextCheckOut <= newCheckIn) {
-                            const d = new Date(newCheckIn)
-                            d.setDate(d.getDate() + 1)
-                            nextCheckOut = d.toISOString().split('T')[0]
-                          }
-                          return { ...prev, checkIn: newCheckIn, checkOut: nextCheckOut }
-                        })
-                      }}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                      Check-out
-                    </label>
-                    <input
-                      type="date"
-                      value={dates.checkOut}
-                      min={dates.checkIn}
-                      onChange={e => setDates({ ...dates, checkOut: e.target.value })}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                    />
-                  </div>
+                  <DateField
+                    label="Check-in"
+                    value={dates.checkIn}
+                    min={today}
+                    onChange={newCheckIn => {
+                      // Auto-adjust check-out: kalau check-out lama <= check-in baru,
+                      // set check-out = check-in + 1 hari (default 1 malam)
+                      setDates(prev => {
+                        let nextCheckOut = prev.checkOut
+                        if (!nextCheckOut || nextCheckOut <= newCheckIn) {
+                          const d = new Date(newCheckIn)
+                          d.setDate(d.getDate() + 1)
+                          nextCheckOut = d.toISOString().split('T')[0]
+                        }
+                        return { ...prev, checkIn: newCheckIn, checkOut: nextCheckOut }
+                      })
+                    }}
+                    className="relative flex w-full cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100"
+                    labelClassName="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"
+                  />
+                  <DateField
+                    label="Check-out"
+                    value={dates.checkOut}
+                    min={dates.checkIn}
+                    onChange={v => setDates({ ...dates, checkOut: v })}
+                    className="relative flex w-full cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100"
+                    labelClassName="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"
+                  />
 
                   <div>
                     <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
