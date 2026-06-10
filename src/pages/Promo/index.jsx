@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { promoApi } from '@/services/index'
+import { promoApi, campaignApi } from '@/services/index'
 import { formatRupiah, formatDateShort, getImageUrl } from '@/utils'
 import { useToast } from '@/hooks/use-toast'
 import {
-  Clock, CheckCircle2, X, Tag, Copy, Check, Sparkles, CalendarDays, Wallet, Percent, Search,
+  Clock, CheckCircle2, X, Tag, Copy, Check, Sparkles, CalendarDays, Wallet, Percent, Search, Megaphone,
 } from 'lucide-react'
 import SEO from '@/components/SEO'
 
@@ -134,24 +134,121 @@ function PromoDetailModal({ promo, onClose }) {
   )
 }
 
+function CampaignDetailModal({ campaign, onClose }) {
+  if (!campaign) return null
+  const isUpcoming = checkIsUpcoming(campaign.startDate)
+  const discount = Number(campaign.discountPercent || 0)
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
+      onClick={onClose}>
+      <div className="bg-white w-full max-w-lg sm:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden max-h-[92vh] sm:max-h-[90vh] overflow-y-auto animate-slide-up-promo"
+        onClick={(e) => e.stopPropagation()}>
+
+        <div className="relative bg-slate-50">
+          {campaign.image ? (
+            <img src={getImageUrl(campaign.image)} alt={campaign.title} className="w-full h-auto block" />
+          ) : (
+            <div className="w-full aspect-[16/9] bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center">
+              <Megaphone className="w-16 h-16 text-white/80" />
+            </div>
+          )}
+          <button onClick={onClose}
+            className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 backdrop-blur flex items-center justify-center hover:bg-white active:scale-90 transition-all shadow-md">
+            <X className="w-4 h-4 text-slate-700" />
+          </button>
+          {isUpcoming ? (
+            <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-amber-500 text-white rounded-full text-[10px] sm:text-xs font-bold shadow-md">
+              <Clock className="w-3 h-3" /> Segera Hadir
+            </span>
+          ) : (
+            <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-emerald-500 text-white rounded-full text-[10px] sm:text-xs font-bold shadow-md">
+              <CheckCircle2 className="w-3 h-3" /> Sedang Berjalan
+            </span>
+          )}
+        </div>
+
+        <div className="p-5 sm:p-6 space-y-4 sm:space-y-5">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight">{campaign.title}</h2>
+            <p className="mt-1 sm:mt-1.5 text-[11px] sm:text-xs text-purple-500 uppercase tracking-wide font-semibold">Campaign ArahInn</p>
+          </div>
+
+          {discount > 0 && (
+            <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-100 p-4 sm:p-5">
+              <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-emerald-600">Diskon</p>
+              <p className="mt-1 text-3xl sm:text-4xl font-black text-emerald-600">{discount}%</p>
+            </div>
+          )}
+
+          <div className="space-y-2.5 text-sm">
+            {campaign.startDate && (
+              <div className="flex items-center gap-3 text-slate-600">
+                <CalendarDays className="w-4 h-4 text-slate-400 shrink-0" />
+                <span>Mulai berlaku <strong className="text-slate-900">{formatDateShort(campaign.startDate)}</strong></span>
+              </div>
+            )}
+            {campaign.endDate && (
+              <div className="flex items-center gap-3 text-slate-600">
+                <CalendarDays className="w-4 h-4 text-slate-400 shrink-0" />
+                <span>Berakhir <strong className="text-slate-900">{formatDateShort(campaign.endDate)}</strong></span>
+              </div>
+            )}
+          </div>
+
+          {campaign.description && (
+            <div className="border-t pt-4">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Detail</p>
+              <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{campaign.description}</p>
+            </div>
+          )}
+
+          {discount > 0 && (
+            <div className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3 text-xs text-blue-700">
+              Diskon ini berlaku otomatis untuk akomodasi yang mengikuti campaign ini — tampil sebagai harga coret saat Anda memesan.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function PromoPage() {
   const [selected, setSelected] = useState(null)
   const [filter, setFilter] = useState('all')  // all | running | upcoming
 
-  const { data: promos = [], isLoading } = useQuery({
-    queryKey: ['promo-flyers'],
-    queryFn: () => promoApi.flyers().then(r => r.data?.data || []),
+  const { data: promos = [], isLoading: loadingPromos } = useQuery({
+    queryKey: ['promo-active-all'],
+    queryFn: () => promoApi.getActive().then(r => r.data?.data || []),
   })
+  const { data: campaigns = [], isLoading: loadingCampaigns } = useQuery({
+    queryKey: ['promo-campaigns'],
+    queryFn: () => campaignApi.active().then(r => r.data?.data || []),
+  })
+  const isLoading = loadingPromos || loadingCampaigns
 
-  const filtered = promos.filter(p => {
+  // Gabungkan promo + campaign jadi satu daftar item
+  const items = [
+    ...promos.map(p => ({
+      kind: 'promo', key: `p${p.id}`, raw: p,
+      title: p.name, image: p.image, startDate: p.startDate, endDate: p.endDate,
+    })),
+    ...campaigns.map(c => ({
+      kind: 'campaign', key: `c${c.id}`, raw: c,
+      title: c.title, image: c.image, startDate: c.startDate, endDate: c.endDate,
+    })),
+  ]
+
+  const filtered = items.filter(it => {
     if (filter === 'all') return true
-    const upcoming = checkIsUpcoming(p.startDate)
+    const upcoming = checkIsUpcoming(it.startDate)
     return filter === 'upcoming' ? upcoming : !upcoming
   })
 
   const stats = {
-    total: promos.length,
-    upcoming: promos.filter(p => checkIsUpcoming(p.startDate)).length,
+    total: items.length,
+    upcoming: items.filter(it => checkIsUpcoming(it.startDate)).length,
   }
   const running = stats.total - stats.upcoming
 
@@ -205,7 +302,7 @@ export default function PromoPage() {
               <span className="tracking-wide">PROMO ARAHINN</span>
             </div>
             <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.25)]">
-              Promo dari{' '}
+              Promo &amp; Campaign dari{' '}
               <span className="bg-gradient-to-r from-amber-200 via-orange-100 to-yellow-200 bg-clip-text text-transparent">
                 ArahInn
               </span>
@@ -215,7 +312,7 @@ export default function PromoPage() {
             </p>
 
             {/* Stats */}
-            {!isLoading && promos.length > 0 && (
+            {!isLoading && items.length > 0 && (
               <div className="mt-5 sm:mt-8 grid grid-cols-2 sm:flex sm:flex-wrap gap-2.5 sm:gap-3">
                 <div className="bg-white/15 backdrop-blur-md border border-white/25 rounded-xl sm:rounded-2xl px-3 sm:px-5 py-2.5 sm:py-3.5 flex items-center gap-2.5 sm:gap-3 shadow-lg shadow-black/10">
                   <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-400/30 backdrop-blur flex items-center justify-center shrink-0">
@@ -277,26 +374,49 @@ export default function PromoPage() {
             <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-100 flex items-center justify-center mb-3 sm:mb-4">
               <Percent className="w-8 h-8 sm:w-10 sm:h-10 text-slate-300" />
             </div>
-            <h3 className="text-lg sm:text-xl font-bold text-slate-900">Belum ada promo</h3>
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900">Belum ada promo atau campaign</h3>
             <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-slate-500">Pantau halaman ini untuk update penawaran terbaru.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {filtered.map(promo => {
-              const isUpcoming = checkIsUpcoming(promo.startDate)
+            {filtered.map(it => {
+              const isUpcoming = checkIsUpcoming(it.startDate)
+              const img = getImageUrl(it.image)
+              const isCampaign = it.kind === 'campaign'
               return (
                 <button
-                  key={promo.id}
-                  onClick={() => setSelected(promo)}
+                  key={it.key}
+                  onClick={() => setSelected(it)}
                   className="group relative rounded-2xl sm:rounded-3xl overflow-hidden bg-white border border-slate-200 hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all text-left"
                 >
                   <div className="relative bg-slate-50 overflow-hidden">
-                    <img
-                      src={getImageUrl(promo.image)}
-                      alt={promo.name}
-                      className="w-full h-auto block group-hover:scale-[1.02] transition-transform duration-500"
-                      onError={(e) => { e.currentTarget.style.display = 'none' }}
-                    />
+                    {img ? (
+                      <img
+                        src={img}
+                        alt={it.title}
+                        className="w-full h-auto block group-hover:scale-[1.02] transition-transform duration-500"
+                        onError={(e) => { e.currentTarget.style.display = 'none' }}
+                      />
+                    ) : (
+                      <div className={`w-full aspect-[16/9] flex flex-col items-center justify-center text-white p-4 text-center ${
+                        isCampaign ? 'bg-gradient-to-br from-purple-600 to-indigo-600' : 'bg-gradient-to-br from-orange-500 to-red-500'
+                      }`}>
+                        {isCampaign ? <Megaphone className="w-9 h-9 mb-2 text-white/90" /> : <Tag className="w-9 h-9 mb-2 text-white/90" />}
+                        <p className="font-bold text-base leading-snug line-clamp-2">{it.title}</p>
+                        {isCampaign && Number(it.raw.discountPercent) > 0 && (
+                          <p className="mt-1 text-sm font-black">{Number(it.raw.discountPercent)}% OFF</p>
+                        )}
+                        {!isCampaign && it.raw.code && (
+                          <p className="mt-1 font-mono text-sm tracking-wider bg-white/20 px-2 py-0.5 rounded">{it.raw.code}</p>
+                        )}
+                      </div>
+                    )}
+                    {/* Tag jenis */}
+                    <span className={`absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-md ${
+                      isCampaign ? 'bg-purple-600 text-white' : 'bg-orange-500 text-white'
+                    }`}>
+                      {isCampaign ? 'Campaign' : 'Promo'}
+                    </span>
                     {isUpcoming ? (
                       <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500 text-white rounded-full text-[10px] sm:text-[11px] font-bold shadow-md">
                         <Clock className="w-3 h-3" /> Segera Hadir
@@ -315,7 +435,8 @@ export default function PromoPage() {
       </section>
 
       {/* Detail modal */}
-      {selected && <PromoDetailModal promo={selected} onClose={() => setSelected(null)} />}
+      {selected?.kind === 'promo'    && <PromoDetailModal    promo={selected.raw}    onClose={() => setSelected(null)} />}
+      {selected?.kind === 'campaign' && <CampaignDetailModal campaign={selected.raw} onClose={() => setSelected(null)} />}
 
       <style>{`
         @keyframes slide-up-promo {
