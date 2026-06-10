@@ -43,9 +43,9 @@ export default function CampaignBanner() {
       {hasBanners && (
         <section className="container pt-5 sm:pt-7">
           <div className="relative rounded-2xl overflow-hidden shadow-sm border border-slate-100">
-            <button onClick={() => setSelected(current)} className="block w-full active:scale-[0.995] transition-transform">
+            <button onClick={() => setSelected(current)} className="block w-full bg-slate-50 active:scale-[0.995] transition-transform">
               <img src={getImageUrl(current.banner)} alt={current.title}
-                className="w-full h-[140px] sm:h-[200px] lg:h-[280px] object-cover block" />
+                className="w-full h-[140px] sm:h-[200px] lg:h-[280px] object-contain block mx-auto" />
             </button>
 
             {banners.length > 1 && (
