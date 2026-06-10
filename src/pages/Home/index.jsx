@@ -42,16 +42,18 @@ function ServiceCategoryTabs() {
     { label: t('services.promo'),         Icon: BadgePercent, to: '/promo',                             accent: '#fbbf24' },
   ]
   return (
-    <div className="overflow-x-auto scrollbar-hide">
-      <div className="flex items-stretch gap-2 lg:gap-3 lg:justify-center min-w-max lg:min-w-0 pb-1">
+    <div className="overflow-x-auto scrollbar-hide lg:overflow-visible">
+      <div className="flex lg:flex-wrap items-start justify-start lg:justify-center gap-1 sm:gap-2 lg:gap-x-3 lg:gap-y-4 min-w-max lg:min-w-0">
         {items.map(({ label, Icon, to, accent }) => (
           <Link
             key={to}
             to={to}
-            className="group flex flex-col items-center justify-center gap-1.5 min-w-[72px] sm:min-w-[88px] lg:min-w-[100px] px-2.5 sm:px-3 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 hover:border-white/30 backdrop-blur-sm active:scale-95 transition-all"
+            className="group flex flex-col items-center gap-2 w-[72px] sm:w-[84px] lg:w-[92px] shrink-0 py-1.5 rounded-2xl hover:bg-white/5 transition-colors active:scale-95"
           >
-            <Icon className="w-5 h-5 lg:w-6 lg:h-6 transition-transform group-hover:scale-110" style={{ color: accent }} />
-            <span className="text-[10px] sm:text-[11px] lg:text-xs font-semibold text-white text-center leading-tight">{label}</span>
+            <span className="w-12 h-12 sm:w-[52px] sm:h-[52px] rounded-2xl bg-white/12 group-hover:bg-white/22 border border-white/15 group-hover:border-white/30 backdrop-blur-md shadow-sm flex items-center justify-center group-hover:-translate-y-0.5 group-hover:shadow-md transition-all">
+              <Icon className="w-5 h-5 sm:w-6 sm:h-6 transition-transform group-hover:scale-110" style={{ color: accent }} />
+            </span>
+            <span className="text-[10px] sm:text-[11px] lg:text-xs font-semibold text-white/95 text-center leading-tight line-clamp-2">{label}</span>
           </Link>
         ))}
       </div>
