@@ -7,7 +7,7 @@ import {
   Calendar, Users, AlertTriangle,
   MousePointerClick, Eye,
 } from 'lucide-react'
-import { promoApi, campaignApi } from '@/services/index'
+import { campaignApi } from '@/services/index'
 import PriceInput from '@/components/ui/PriceInput'
 
 
@@ -35,7 +35,6 @@ const STATUS_META = {
 const INIT_FORM = {
   title: '', type: 'banner', target: 'all', status: 'draft',
   startDate: '', endDate: '', budget: '', description: '',
-  ownerScope: 'all', ownerId: '',
 }
 
 function CampaignFormDrawer({ campaign, onSave, onClose, isSaving }) {
@@ -49,14 +48,7 @@ function CampaignFormDrawer({ campaign, onSave, onClose, isSaving }) {
     endDate    : campaign.endDate?.slice(0, 10) || '',
     budget     : campaign.budget || '',
     description: campaign.description || '',
-    ownerScope : campaign.ownerId != null ? 'specific' : 'all',
-    ownerId    : campaign.ownerId ? String(campaign.ownerId) : '',
   } : { ...INIT_FORM })
-
-  const { data: ownerList = [] } = useQuery({
-    queryKey: ['owners-list'],
-    queryFn : () => promoApi.ownersList().then(r => r.data?.data || []),
-  })
 
   const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }))
 
@@ -70,7 +62,6 @@ function CampaignFormDrawer({ campaign, onSave, onClose, isSaving }) {
       endDate    : form.endDate || null,
       budget     : form.budget || 0,
       description: form.description || null,
-      ownerId    : form.ownerScope === 'specific' && form.ownerId ? Number(form.ownerId) : null,
     })
   }
 
@@ -123,36 +114,10 @@ function CampaignFormDrawer({ campaign, onSave, onClose, isSaving }) {
             </div>
           </div>
 
-          {/* Target Owner */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Target Owner</label>
-            <div className="flex gap-3 mb-3">
-              {[
-                { val: 'all',      label: 'Semua Owner' },
-                { val: 'specific', label: 'Owner Tertentu' },
-              ].map(({ val, label }) => (
-                <label key={val}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border cursor-pointer text-sm transition-colors ${
-                    form.ownerScope === val
-                      ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
-                      : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                  }`}>
-                  <input type="radio" name="ownerScope" value={val}
-                    checked={form.ownerScope === val}
-                    onChange={f('ownerScope')}
-                    className="accent-indigo-600" />
-                  {label}
-                </label>
-              ))}
-            </div>
-            {form.ownerScope === 'specific' && (
-              <select value={form.ownerId} onChange={f('ownerId')} className={inputCls + ' bg-white'}>
-                <option value="">— Pilih Owner —</option>
-                {ownerList.map(o => (
-                  <option key={o.id} value={String(o.id)}>{o.name} ({o.email})</option>
-                ))}
-              </select>
-            )}
+          {/* Campaign bersifat global — semua owner bisa memilih ikut lewat extranet */}
+          <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 text-xs text-indigo-700">
+            Campaign ini otomatis tampil ke <b>semua owner</b> di extranet. Owner memilih sendiri
+            ikut atau tidak, dan campaign yang diikuti akan tampil di halaman properti mereka.
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -384,15 +349,9 @@ export default function AdminCampaigns() {
                             <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                             {targetMeta.label}
                           </span>
-                          {c.ownerId != null ? (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[10px] font-semibold">
-                              {c.owner?.name || `Owner #${c.ownerId}`}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px]">
-                              Semua Owner
-                            </span>
-                          )}
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[10px] font-semibold">
+                            {(c.followersCount || 0)} owner ikut
+                          </span>
                         </div>
                       </td>
 

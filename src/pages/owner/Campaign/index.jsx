@@ -1,8 +1,9 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useToast } from '@/hooks/use-toast'
 import { formatDateShort } from '@/utils'
 import {
   Megaphone, Calendar, Users, Eye, MousePointerClick,
-  ShieldCheck, Mail, BellRing, Image as ImageIcon, Layout,
+  ShieldCheck, Mail, BellRing, Image as ImageIcon, Layout, Check, Plus,
 } from 'lucide-react'
 import { campaignApi } from '@/services/index'
 
@@ -20,15 +21,13 @@ const TARGET_META = {
   inactive : 'Tidak Aktif',
 }
 
-function CampaignCard({ campaign }) {
+function CampaignCard({ campaign, onToggle, pending }) {
   const type = TYPE_META[campaign.type] || TYPE_META.banner
   const Icon = type.icon
-  const ctr  = campaign.views > 0
-    ? ((campaign.clicks / campaign.views) * 100).toFixed(1)
-    : '0.0'
+  const followed = !!campaign.followed
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col">
       <div className={`bg-gradient-to-r ${type.grad} px-5 py-4 flex items-center gap-3`}>
         <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
           <Icon className="w-5 h-5 text-white" />
@@ -41,12 +40,14 @@ function CampaignCard({ campaign }) {
             <span className="text-xs text-white/75">{TARGET_META[campaign.target] || campaign.target}</span>
           </div>
         </div>
-        <span className="px-2 py-0.5 bg-emerald-400/30 text-white text-[10px] font-bold rounded-full shrink-0">
-          Aktif
-        </span>
+        {followed && (
+          <span className="px-2 py-0.5 bg-emerald-400/30 text-white text-[10px] font-bold rounded-full shrink-0">
+            Diikuti
+          </span>
+        )}
       </div>
 
-      <div className="p-5">
+      <div className="p-5 flex flex-col flex-1">
         {campaign.description && (
           <p className="text-xs text-slate-500 leading-relaxed mb-4 line-clamp-2">
             {campaign.description}
@@ -60,42 +61,42 @@ function CampaignCard({ campaign }) {
           <span>{campaign.endDate ? formatDateShort(campaign.endDate) : '—'}</span>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 pt-3 border-t border-slate-100">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-0.5">
-              <Eye className="w-3.5 h-3.5 text-blue-400" />
-            </div>
-            <p className="text-sm font-bold text-slate-900">{(campaign.views || 0).toLocaleString('id')}</p>
-            <p className="text-[10px] text-slate-400">Views</p>
-          </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-0.5">
-              <MousePointerClick className="w-3.5 h-3.5 text-orange-400" />
-            </div>
-            <p className="text-sm font-bold text-slate-900">{(campaign.clicks || 0).toLocaleString('id')}</p>
-            <p className="text-[10px] text-slate-400">Klik</p>
-          </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-0.5">
-              <Megaphone className="w-3.5 h-3.5 text-indigo-400" />
-            </div>
-            <p className="text-sm font-bold text-slate-900">{ctr}%</p>
-            <p className="text-[10px] text-slate-400">CTR</p>
-          </div>
-        </div>
+        <button
+          onClick={() => onToggle(campaign)}
+          disabled={pending}
+          className={`mt-auto w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-60 ${
+            followed
+              ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              : 'bg-indigo-600 text-white hover:bg-indigo-700'
+          }`}
+        >
+          {followed
+            ? <><Check className="w-4 h-4" /> Ikut Campaign — Hentikan</>
+            : <><Plus className="w-4 h-4" /> Ikut Campaign Ini</>}
+        </button>
       </div>
     </div>
   )
 }
 
 export default function OwnerCampaign() {
+  const qc = useQueryClient()
+  const { toast } = useToast()
   const { data: campaigns = [], isLoading } = useQuery({
     queryKey: ['owner-campaigns'],
     queryFn : () => campaignApi.myList().then(r => r.data?.data || []),
   })
 
-  const totalViews  = campaigns.reduce((s, c) => s + (c.views  || 0), 0)
-  const totalClicks = campaigns.reduce((s, c) => s + (c.clicks || 0), 0)
+  const toggle = useMutation({
+    mutationFn: (c) => c.followed ? campaignApi.unfollow(c.id) : campaignApi.follow(c.id),
+    onSuccess : (r) => {
+      toast({ title: r.data?.message || 'Berhasil' })
+      qc.invalidateQueries({ queryKey: ['owner-campaigns'] })
+    },
+    onError   : (e) => toast({ title: e.response?.data?.message || 'Gagal memperbarui campaign', variant: 'destructive' }),
+  })
+
+  const followedCount = campaigns.filter(c => c.followed).length
 
   return (
     <div className="space-y-6">
@@ -106,17 +107,17 @@ export default function OwnerCampaign() {
         <div>
           <p className="text-sm font-semibold text-indigo-800">Campaign dari Platform Arahinn</p>
           <p className="text-xs text-indigo-600 mt-0.5">
-            Campaign berikut dibuat oleh tim Arahinn. Properti Anda berpeluang mendapat eksposur lebih saat campaign aktif.
+            Campaign berikut dibuat oleh tim Arahinn. Pilih <b>Ikut Campaign</b> agar properti Anda
+            disertakan dalam campaign tersebut. Anda bisa berhenti kapan saja.
           </p>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         {[
-          { label: 'Campaign Aktif', value: campaigns.length,                  cls: 'text-indigo-600', bg: 'bg-indigo-50', icon: Megaphone        },
-          { label: 'Total Views',    value: totalViews.toLocaleString('id'),    cls: 'text-blue-600',   bg: 'bg-blue-50',   icon: Eye              },
-          { label: 'Total Klik',     value: totalClicks.toLocaleString('id'),   cls: 'text-orange-600', bg: 'bg-orange-50', icon: MousePointerClick },
+          { label: 'Campaign Tersedia', value: campaigns.length,  cls: 'text-indigo-600', bg: 'bg-indigo-50',  icon: Megaphone },
+          { label: 'Anda Ikuti',        value: followedCount,     cls: 'text-emerald-600', bg: 'bg-emerald-50', icon: Check    },
         ].map(({ label, value, cls, bg, icon: Icon }) => (
           <div key={label} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
             <div className={`w-11 h-11 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
@@ -137,7 +138,14 @@ export default function OwnerCampaign() {
         </div>
       ) : campaigns.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {campaigns.map(c => <CampaignCard key={c.id} campaign={c} />)}
+          {campaigns.map(c => (
+            <CampaignCard
+              key={c.id}
+              campaign={c}
+              onToggle={toggle.mutate}
+              pending={toggle.isPending && toggle.variables?.id === c.id}
+            />
+          ))}
         </div>
       ) : (
         <div className="py-20 text-center bg-white rounded-2xl border border-slate-200">
