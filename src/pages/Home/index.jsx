@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
-import { promoApi } from '@/services/index'
+import { promoApi, campaignApi } from '@/services/index'
 import { propertyApi } from '@/services/propertyApi'
 import { formatRupiah, formatDateShort, getImageUrl } from '@/utils'
 import {
   Search, MapPin, Calendar, Users, ArrowRight,
   Zap, Shield, Headphones, Award, TrendingUp, Tag, Copy, Check, Clock, Building2,
   ChevronDown, Wallet, Hotel, Smartphone, Lightbulb, Receipt, Sofa, BadgePercent,
-  Plane, Ship, TrainFront,
+  Plane, Ship, TrainFront, Megaphone,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { format, addDays, parseISO } from 'date-fns'
@@ -208,6 +208,11 @@ export default function Home() {
   const { data: activePromos } = useQuery({
     queryKey: ['active-promos'],
     queryFn : () => promoApi.getActive().then(r => r.data?.data),
+  })
+
+  const { data: activeCampaigns } = useQuery({
+    queryKey: ['active-campaigns'],
+    queryFn : () => campaignApi.active().then(r => r.data?.data ?? []),
   })
 
   const { data: featuredProperties } = useQuery({
@@ -417,6 +422,40 @@ export default function Home() {
             {activePromos.map(promo => (
               <PromoCard key={promo.id} promo={promo} t={t} onShop={() => navigate('/search')} />
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Campaign Banners (dari ArahInn) ──────────────── */}
+      {activeCampaigns?.length > 0 && (
+        <section className="container py-4 sm:py-6">
+          <div className="flex flex-col gap-3">
+            {activeCampaigns.map(c => {
+              const _t = new Date(); _t.setHours(0, 0, 0, 0)
+              const _s = c.startDate ? new Date(c.startDate) : null
+              if (_s) _s.setHours(0, 0, 0, 0)
+              const upcoming = !!(_s && _s > _t)
+              return (
+                <div key={c.id} className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md p-5 lg:p-6 flex items-center gap-4">
+                  {upcoming && (
+                    <span className="absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 bg-amber-400 text-amber-900 rounded-full text-[10px] font-bold shadow-sm">
+                      <Clock className="w-3 h-3" /> Segera Hadir
+                    </span>
+                  )}
+                  <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                    <Megaphone className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-bold text-base leading-snug">{c.title}</p>
+                    {c.description && <p className="text-purple-100 text-sm mt-0.5 line-clamp-2">{c.description}</p>}
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-purple-200 mt-1.5">
+                      {upcoming && c.startDate && <span className="font-semibold text-white">Mulai {formatDateShort(c.startDate)}</span>}
+                      {c.endDate && <span>s/d {formatDateShort(c.endDate)}</span>}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </section>
       )}

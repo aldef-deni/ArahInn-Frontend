@@ -170,6 +170,7 @@ export const userApi = {
 
 export const campaignApi = {
   getAll   : ()      => api.get('/admin/campaigns'),
+  active   : ()      => api.get('/campaigns/active'),
   myList   : ()      => api.get('/campaigns/my'),
   forHotel : (id)    => api.get(`/hotels/${id}/campaigns`),
   create   : (d)     => api.post('/admin/campaigns', d),
