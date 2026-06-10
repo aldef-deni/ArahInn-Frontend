@@ -17,7 +17,6 @@ import { format, addDays, parseISO } from 'date-fns'
 import HotelCard from '@/components/hotel/HotelCard'
 import InteriorPenawaran from '@/components/InteriorPenawaran'
 import PromoFlyerCarousel from '@/components/PromoFlyerCarousel'
-import CampaignFlyerCarousel from '@/components/CampaignFlyerCarousel'
 import CampaignBanner from '@/components/CampaignBanner'
 import SEO from '@/components/SEO'
 
@@ -412,9 +411,6 @@ export default function Home() {
 
       {/* ── Promo Flyer Carousel (dari ArahInn) ──────────── */}
       <PromoFlyerCarousel />
-
-      {/* ── Campaign Carousel (dari ArahInn) ──────────────── */}
-      <CampaignFlyerCarousel />
 
       {/* ── Featured Hotels ───────────────────────────────── */}
       <section className="container py-8 sm:py-10 lg:py-12">
