@@ -136,13 +136,12 @@ function PromoDetailModal({ promo, onClose }) {
 
 function CampaignDetailModal({ campaign, onClose }) {
   if (!campaign) return null
-  const isUpcoming = checkIsUpcoming(campaign.startDate)
   const discount = Number(campaign.discountPercent || 0)
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm"
       onClick={onClose}>
-      <div className="bg-white w-full max-w-lg sm:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden max-h-[92vh] sm:max-h-[90vh] overflow-y-auto animate-slide-up-promo"
+      <div className="bg-white w-full max-w-lg sm:rounded-3xl rounded-t-3xl shadow-2xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto scrollbar-hide animate-slide-up-promo"
         onClick={(e) => e.stopPropagation()}>
 
         <div className="relative bg-slate-50">
@@ -157,15 +156,6 @@ function CampaignDetailModal({ campaign, onClose }) {
             className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 backdrop-blur flex items-center justify-center hover:bg-white active:scale-90 transition-all shadow-md">
             <X className="w-4 h-4 text-slate-700" />
           </button>
-          {isUpcoming ? (
-            <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-amber-500 text-white rounded-full text-[10px] sm:text-xs font-bold shadow-md">
-              <Clock className="w-3 h-3" /> Segera Hadir
-            </span>
-          ) : (
-            <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-emerald-500 text-white rounded-full text-[10px] sm:text-xs font-bold shadow-md">
-              <CheckCircle2 className="w-3 h-3" /> Sedang Berjalan
-            </span>
-          )}
         </div>
 
         <div className="p-5 sm:p-6 space-y-4 sm:space-y-5">

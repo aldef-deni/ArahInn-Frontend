@@ -16,13 +16,12 @@ function checkIsUpcoming(startDate) {
 }
 
 function CampaignDetailModal({ campaign, onClose }) {
-  const isUpcoming = checkIsUpcoming(campaign.startDate)
   const discount = Number(campaign.discountPercent || 0)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={onClose}>
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-hide"
         onClick={(e) => e.stopPropagation()}>
 
         {/* Hero image */}
@@ -38,15 +37,6 @@ function CampaignDetailModal({ campaign, onClose }) {
             className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 backdrop-blur flex items-center justify-center hover:bg-white transition-colors shadow-md">
             <X className="w-4 h-4 text-slate-700" />
           </button>
-          {isUpcoming ? (
-            <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-3 py-1.5 bg-amber-500 text-white rounded-full text-xs font-bold shadow-md">
-              <Clock className="w-3 h-3" /> Segera Hadir
-            </span>
-          ) : (
-            <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-500 text-white rounded-full text-xs font-bold shadow-md">
-              <CheckCircle2 className="w-3 h-3" /> Sedang Berjalan
-            </span>
-          )}
         </div>
 
         {/* Content */}
