@@ -8,6 +8,7 @@ import { travelApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 import DateField from '@/components/ui/DateField'
+import PromoField from '@/components/travel/PromoField'
 
 const ymd8 = (s) => s && s.length === 8 ? `${s.slice(6,8)}/${s.slice(4,6)}/${s.slice(0,4)}` : s
 const hhmm = (s) => s && s.length === 4 ? `${s.slice(0,2)}:${s.slice(2,4)}` : s
@@ -25,6 +26,7 @@ export default function PelniBooking() {
   const [contact, setContact]   = useState({ email: '', phone: '' })
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState(null)
+  const [promoCode, setPromoCode] = useState('')
 
   useEffect(() => {
     if (!sel) { navigate('/tiket/pelni', { replace: true }); return }
@@ -68,6 +70,7 @@ export default function PelniBooking() {
         shipNumber: sel.shipNumber, shipName: sel.shipName, subClass: sel.subClass,
         pelabuhanAsal: sel.originName, pelabuhanTujuan: sel.destinationName,
         hargaDewasa, hargaAnak, hargaInfant, markup,
+        promoCode: promoCode || undefined,
         male, female, adult, child, infant,
         contact: { email: contact.email, phone: contact.phone },
         passengers: { adults, children, infants },
@@ -131,6 +134,10 @@ export default function PelniBooking() {
           <Field label="Email" icon={Mail} value={contact.email} onChange={v => setContact(c => ({ ...c, email: v }))} />
           <Field label="No. HP" icon={Phone} value={contact.phone} onChange={v => setContact(c => ({ ...c, phone: v.replace(/[^0-9]/g,'') }))} inputMode="numeric" />
         </PaxCard>
+
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
+          <PromoField value={promoCode} onChange={setPromoCode} />
+        </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
           <p className="font-bold text-sm text-slate-900 mb-2.5">Rincian Harga</p>

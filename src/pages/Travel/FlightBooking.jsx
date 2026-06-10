@@ -9,6 +9,7 @@ import { travelApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 import DateField from '@/components/ui/DateField'
+import PromoField from '@/components/travel/PromoField'
 
 const formatDMY = (ymd) => { if (!ymd) return '-'; const [y,m,d] = ymd.split('-'); return `${d}/${m}/${y}` }
 const emptyAdult = () => ({ title: 'MR', firstName: '', lastName: '', birthdate: '', idNumber: '', phone: '', email: '' })
@@ -24,6 +25,7 @@ export default function FlightBooking() {
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
   const [booked, setBooked]   = useState(null)
+  const [promoCode, setPromoCode] = useState('')
 
   useEffect(() => {
     if (!sel) { navigate('/tiket/pesawat', { replace: true }); return }
@@ -72,6 +74,7 @@ export default function FlightBooking() {
         departureDate: date,
         adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0,
         price, markup,
+        promoCode: promoCode || undefined,
         flightCode: cls.flightCode, departureTime: cls.departureTime, arrivalTime: cls.arrivalTime, class: cls.class,
         flights: [cls.seat],
         passengers: { adults, children, infants },
@@ -164,6 +167,10 @@ export default function FlightBooking() {
             <DateField label="Tanggal Lahir" value={p.birthdate} onChange={v => setI(i, "birthdate", v)} />
           </PaxCard>
         ))}
+
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
+          <PromoField value={promoCode} onChange={setPromoCode} />
+        </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
           <p className="font-bold text-sm text-slate-900 mb-2.5">Rincian Harga</p>

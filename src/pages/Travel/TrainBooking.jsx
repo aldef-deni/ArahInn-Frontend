@@ -8,6 +8,7 @@ import { travelApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 import DateField from '@/components/ui/DateField'
+import PromoField from '@/components/travel/PromoField'
 
 const gradeLabel = (g) => ({ E: 'Eksekutif', B: 'Bisnis', K: 'Ekonomi' }[g] || g || '-')
 const formatDMY = (ymd) => { if (!ymd) return '-'; const [y,m,d] = ymd.split('-'); return `${d}/${m}/${y}` }
@@ -26,6 +27,7 @@ export default function TrainBooking() {
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
   const [booked, setBooked]   = useState(null)  // hasil book
+  const [promoCode, setPromoCode] = useState('')
 
   useEffect(() => {
     if (!sel) { navigate('/tiket/kereta', { replace: true }); return }
@@ -65,6 +67,7 @@ export default function TrainBooking() {
         infant: sel.infant || 0,
         priceAdult: priceAdult,
         markup,
+        promoCode: promoCode || undefined,
         trainName: train.trainName,
         departureStation: origin.namaStasiun,
         departureTime: train.departureTime,
@@ -189,6 +192,11 @@ export default function TrainBooking() {
           </div>
         ))}
 
+        {/* Kode promo */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
+          <PromoField value={promoCode} onChange={setPromoCode} />
+        </div>
+
         {/* Rincian harga */}
         <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
           <p className="font-bold text-sm text-slate-900 mb-2.5">Rincian Harga</p>
@@ -199,6 +207,7 @@ export default function TrainBooking() {
             )}
             <div className="flex justify-between pt-1.5 border-t border-slate-100"><span className="font-bold text-slate-900">Total</span><span className="font-bold text-orange-600">{formatRupiah(total)}</span></div>
           </div>
+          <p className="text-[11px] text-slate-400 mt-2">Jika kode promo valid, potongan otomatis dihitung saat checkout.</p>
         </div>
 
         {/* Price + submit */}
