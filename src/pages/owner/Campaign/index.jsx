@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/hooks/use-toast'
-import { formatDateShort } from '@/utils'
+import { formatDateShort, getImageUrl } from '@/utils'
 import {
   Megaphone, Calendar, Users, Eye, MousePointerClick,
   ShieldCheck, Mail, BellRing, Image as ImageIcon, Layout, Check, Plus,
@@ -27,9 +27,20 @@ function CampaignCard({ campaign, onToggle, pending }) {
   const Icon = type.icon
   const followed = !!campaign.followed
   const discount = Number(campaign.discountPercent || 0)
+  const img = getImageUrl(campaign.image)
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col">
+      {img && (
+        <div className="relative h-32 w-full">
+          <img src={img} alt={campaign.title} className="absolute inset-0 w-full h-full object-cover" />
+          {discount > 0 && (
+            <span className="absolute top-2 right-2 px-2.5 py-1 bg-emerald-600 text-white text-xs font-black rounded-lg shadow">
+              {discount}% OFF
+            </span>
+          )}
+        </div>
+      )}
       <div className={`bg-gradient-to-r ${type.grad} px-5 py-4 flex items-center gap-3`}>
         <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
           <Icon className="w-5 h-5 text-white" />

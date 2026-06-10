@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '@/hooks/use-toast'
-import { formatDateShort } from '@/utils'
+import { formatDateShort, getImageUrl } from '@/utils'
 import {
   Plus, Megaphone, Pencil, Trash2, X, Save,
   Calendar, Users, AlertTriangle,
-  MousePointerClick, Eye,
+  MousePointerClick, Eye, Image as ImageIcon, Upload,
 } from 'lucide-react'
 import { campaignApi } from '@/services/index'
 
@@ -55,6 +55,9 @@ function CampaignFormDrawer({ campaign, onSave, onClose, isSaving }) {
     description    : campaign.description || '',
   } : { ...INIT_FORM })
 
+  const [imageFile, setImageFile]       = useState(null)
+  const [imagePreview, setImagePreview] = useState(isEdit ? getImageUrl(campaign.image) : null)
+
   const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }))
 
   const toggleType = (t) => setForm(p => ({
@@ -62,8 +65,33 @@ function CampaignFormDrawer({ campaign, onSave, onClose, isSaving }) {
     type: p.type.includes(t) ? p.type.filter(x => x !== t) : [...p.type, t],
   }))
 
+  const onPickImage = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+  }
+
   const handleSave = () => {
     if (form.type.length === 0) return
+    const pct = form.discountPercent === '' ? 0 : Number(form.discountPercent)
+
+    // Kalau ada file image baru → FormData (key snake_case, tidak dikonversi interceptor)
+    if (imageFile) {
+      const fd = new FormData()
+      fd.append('title', form.title)
+      form.type.forEach(t => fd.append('type[]', t))
+      fd.append('target', form.target)
+      fd.append('status', form.status)
+      if (form.startDate) fd.append('start_date', form.startDate)
+      if (form.endDate)   fd.append('end_date', form.endDate)
+      fd.append('discount_percent', pct)
+      if (form.description) fd.append('description', form.description)
+      fd.append('image', imageFile)
+      onSave(fd)
+      return
+    }
+
     onSave({
       title          : form.title,
       type           : form.type,
@@ -71,7 +99,7 @@ function CampaignFormDrawer({ campaign, onSave, onClose, isSaving }) {
       status         : form.status,
       startDate      : form.startDate || null,
       endDate        : form.endDate || null,
-      discountPercent: form.discountPercent === '' ? 0 : Number(form.discountPercent),
+      discountPercent: pct,
       description    : form.description || null,
     })
   }
@@ -104,6 +132,23 @@ function CampaignFormDrawer({ campaign, onSave, onClose, isSaving }) {
             <input value={form.title} onChange={f('title')}
               placeholder="contoh: Promo Akhir Tahun 2025"
               className={inputCls} />
+          </div>
+
+          {/* Banner / Gambar */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Banner / Gambar Campaign</label>
+            <div className="flex items-center gap-4">
+              {imagePreview
+                ? <img src={imagePreview} alt="" className="w-28 h-20 rounded-xl object-cover border border-slate-200 shrink-0" />
+                : <div className="w-28 h-20 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300 shrink-0"><ImageIcon className="w-6 h-6" /></div>}
+              <div className="flex-1 min-w-0">
+                <input type="file" accept="image/jpeg,image/png,image/webp" id="campaign-image" onChange={onPickImage} className="hidden" />
+                <label htmlFor="campaign-image" className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-semibold cursor-pointer hover:bg-indigo-100 transition-colors">
+                  <Upload className="w-4 h-4" /> {imagePreview ? 'Ganti Gambar' : 'Pilih Gambar'}
+                </label>
+                <p className="text-xs text-slate-400 mt-1.5">JPG, PNG, WEBP — maks 4MB. Ditampilkan sebagai banner/pop-up di home & halaman promo.</p>
+              </div>
+            </div>
           </div>
 
           <div>
@@ -347,9 +392,13 @@ export default function AdminCampaigns() {
                       {/* Campaign */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
+                          {c.image ? (
+                            <img src={getImageUrl(c.image)} alt="" className="w-12 h-9 rounded-lg object-cover border border-slate-200 shrink-0" />
+                          ) : (
                           <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
                             <Megaphone className="w-4 h-4 text-indigo-500" />
                           </div>
+                          )}
                           <div className="min-w-0">
                             <p className="font-semibold text-slate-900 truncate max-w-[180px]">{c.title}</p>
                             {c.discountPercent > 0 && (

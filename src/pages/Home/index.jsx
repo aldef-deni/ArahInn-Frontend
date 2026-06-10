@@ -435,23 +435,34 @@ export default function Home() {
               const _s = c.startDate ? new Date(c.startDate) : null
               if (_s) _s.setHours(0, 0, 0, 0)
               const upcoming = !!(_s && _s > _t)
+              const img = getImageUrl(c.image)
+              const discount = Number(c.discountPercent || 0)
               return (
-                <div key={c.id} className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md p-5 lg:p-6 flex items-center gap-4">
-                  {upcoming && (
-                    <span className="absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 bg-amber-400 text-amber-900 rounded-full text-[10px] font-bold shadow-sm">
-                      <Clock className="w-3 h-3" /> Segera Hadir
-                    </span>
-                  )}
-                  <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                    <Megaphone className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-bold text-base leading-snug">{c.title}</p>
-                    {c.description && <p className="text-purple-100 text-sm mt-0.5 line-clamp-2">{c.description}</p>}
-                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-purple-200 mt-1.5">
-                      {upcoming && c.startDate && <span className="font-semibold text-white">Mulai {formatDateShort(c.startDate)}</span>}
-                      {c.endDate && <span>s/d {formatDateShort(c.endDate)}</span>}
+                <div key={c.id} className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md flex items-center gap-4 min-h-[112px]">
+                  {img && <img src={img} alt={c.title} className="absolute inset-0 w-full h-full object-cover" />}
+                  {img && <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/45 to-black/20" />}
+                  <div className="relative flex items-center gap-4 p-5 lg:p-6 w-full">
+                    {upcoming && (
+                      <span className="absolute top-0 right-0 flex items-center gap-1 px-2 py-0.5 bg-amber-400 text-amber-900 rounded-full text-[10px] font-bold shadow-sm">
+                        <Clock className="w-3 h-3" /> Segera Hadir
+                      </span>
+                    )}
+                    {!img && (
+                      <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                        <Megaphone className="w-6 h-6 text-white" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-bold text-base leading-snug">{c.title}</p>
+                      {c.description && <p className="text-purple-100 text-sm mt-0.5 line-clamp-2">{c.description}</p>}
+                      <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-purple-200 mt-1.5">
+                        {upcoming && c.startDate && <span className="font-semibold text-white">Mulai {formatDateShort(c.startDate)}</span>}
+                        {c.endDate && <span>s/d {formatDateShort(c.endDate)}</span>}
+                      </div>
                     </div>
+                    {discount > 0 && (
+                      <span className="shrink-0 px-3 py-1.5 bg-emerald-500 text-white text-sm font-black rounded-xl shadow">{discount}% OFF</span>
+                    )}
                   </div>
                 </div>
               )

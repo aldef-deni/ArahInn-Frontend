@@ -175,8 +175,16 @@ export const campaignApi = {
   forHotel : (id)    => api.get(`/hotels/${id}/campaigns`),
   follow   : (id)    => api.post(`/campaigns/${id}/follow`),
   unfollow : (id)    => api.delete(`/campaigns/${id}/follow`),
-  create   : (d)     => api.post('/admin/campaigns', d),
-  update   : (id, d) => api.put(`/admin/campaigns/${id}`, d),
+  create   : (d)     => d instanceof FormData
+    ? api.post('/admin/campaigns', d, { headers: { 'Content-Type': 'multipart/form-data' } })
+    : api.post('/admin/campaigns', d),
+  update   : (id, d) => {
+    if (d instanceof FormData) {
+      d.append('_method', 'PUT')
+      return api.post(`/admin/campaigns/${id}`, d, { headers: { 'Content-Type': 'multipart/form-data' } })
+    }
+    return api.put(`/admin/campaigns/${id}`, d)
+  },
   remove   : (id)    => api.delete(`/admin/campaigns/${id}`),
 }
 
