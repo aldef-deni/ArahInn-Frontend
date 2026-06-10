@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import {
   Sparkles, ArrowRight, ArrowLeft, Bell, CheckCircle2,
   Plane, Bus, TrainFront, Smartphone, Lightbulb, Receipt, Wallet,
-  Calendar, MessageCircle, Mail,
+  Calendar, MessageCircle, Mail, Mountain, Dumbbell,
 } from 'lucide-react'
 import SEO from '@/components/SEO'
 
@@ -62,6 +62,22 @@ const FEATURE_MAP = {
     color: 'from-violet-500 to-purple-600',
     accent: 'violet',
     description: 'Top up saldo GoPay, OVO, DANA, ShopeePay, LinkAja, dan e-wallet lainnya. Saldo masuk dalam hitungan detik.',
+    target: 'Segera hadir',
+  },
+  'wisata': {
+    label: 'Wisata',
+    Icon: Mountain,
+    color: 'from-green-500 to-emerald-600',
+    accent: 'emerald',
+    description: 'Jelajahi paket wisata, tiket atraksi, tour, dan aktivitas seru di destinasi favorit seluruh Indonesia — semua dalam satu tempat.',
+    target: 'Segera hadir',
+  },
+  'sports': {
+    label: 'Sports',
+    Icon: Dumbbell,
+    color: 'from-rose-500 to-red-600',
+    accent: 'rose',
+    description: 'Pesan tiket event olahraga, sewa lapangan, dan booking aktivitas olahraga favoritmu dengan mudah dan praktis.',
     target: 'Segera hadir',
   },
   'default': {
