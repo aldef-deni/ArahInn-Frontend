@@ -18,6 +18,7 @@ import HotelCard from '@/components/hotel/HotelCard'
 import InteriorPenawaran from '@/components/InteriorPenawaran'
 import PromoFlyerCarousel from '@/components/PromoFlyerCarousel'
 import CampaignBanner from '@/components/CampaignBanner'
+import BlurSelect from '@/components/ui/BlurSelect'
 import SEO from '@/components/SEO'
 
 /**
@@ -275,8 +276,8 @@ export default function Home() {
         </video>
         {/* Overlay: transparan di atas (logo di video tetap terlihat), makin gelap
             ke bawah supaya search box & teks tetap terbaca. */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/25 to-black/55" />
-        <div className="absolute inset-0 opacity-10"
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/25 to-black/55 pointer-events-none" />
+        <div className="absolute inset-0 opacity-10 pointer-events-none"
           style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}
         />
         <div className="container relative py-6 sm:py-8 lg:py-12 flex flex-col gap-6 sm:gap-8 lg:gap-12">
@@ -331,15 +332,11 @@ export default function Home() {
                   <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-white/50 shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="text-[9px] sm:text-[10px] font-bold text-white/50 uppercase tracking-widest mb-0.5 sm:mb-1">{t('hero.typeLabel')}</p>
-                    <select
+                    <BlurSelect
                       value={form.category}
-                      onChange={e => setForm({...form, category: e.target.value})}
-                      className="w-full bg-transparent text-sm font-medium focus:outline-none [color-scheme:dark] cursor-pointer text-white"
-                    >
-                      {ACCOMMODATION_TYPES.map(opt => (
-                        <option key={opt.value} value={opt.value} style={{ background: '#0f172a', color: '#ffffff' }}>{opt.label}</option>
-                      ))}
-                    </select>
+                      onChange={v => setForm({ ...form, category: v })}
+                      options={ACCOMMODATION_TYPES}
+                    />
                   </div>
                 </div>
 
@@ -354,6 +351,7 @@ export default function Home() {
                       </span>
                       <input type="date" value={form.checkIn} min={today}
                         onChange={e => setForm({...form, checkIn: e.target.value})}
+                        onClick={e => e.currentTarget.showPicker?.()}
                         className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                       />
                     </div>
@@ -371,6 +369,7 @@ export default function Home() {
                       </span>
                       <input type="date" value={form.checkOut} min={form.checkIn}
                         onChange={e => setForm({...form, checkOut: e.target.value})}
+                        onClick={e => e.currentTarget.showPicker?.()}
                         className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                       />
                     </div>
@@ -382,10 +381,11 @@ export default function Home() {
                   <Users className="w-4 h-4 sm:w-5 sm:h-5 text-white/50 shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="text-[9px] sm:text-[10px] font-bold text-white/50 uppercase tracking-widest mb-0.5 sm:mb-1">{t('search.guests')}</p>
-                    <select value={form.guests} onChange={e => setForm({...form, guests: e.target.value})}
-                      className="w-full bg-transparent text-white text-sm font-medium focus:outline-none [color-scheme:dark] cursor-pointer">
-                      {[1,2,3,4,5,6].map(n => <option key={n} value={n} style={{ background: '#0f172a', color: '#ffffff' }}>{n} {t('search.guestUnit')}</option>)}
-                    </select>
+                    <BlurSelect
+                      value={form.guests}
+                      onChange={v => setForm({ ...form, guests: v })}
+                      options={[1,2,3,4,5,6].map(n => ({ value: n, label: `${n} ${t('search.guestUnit')}` }))}
+                    />
                   </div>
                 </div>
               </div>
