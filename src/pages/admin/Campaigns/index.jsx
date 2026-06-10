@@ -163,7 +163,7 @@ function CampaignFormDrawer({ campaign, onSave, onClose, isSaving }) {
                 <label htmlFor="campaign-banner" className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-semibold cursor-pointer hover:bg-indigo-100 transition-colors">
                   <Upload className="w-4 h-4" /> {bannerPreview ? 'Ganti Banner' : 'Pilih Banner'}
                 </label>
-                <p className="text-xs text-slate-400 mt-1.5">Rasio landscape/memanjang (mis. 1200×300). JPG, PNG, WEBP — maks 6MB. Tampil di bawah banner utama home.</p>
+                <p className="text-xs text-slate-500 mt-1.5">Ukuran disarankan <b className="text-slate-700">1440 × 300 px</b> (landscape). Taruh konten penting di tengah. JPG, PNG, WEBP — maks 6MB. Tampil memanjang di bawah banner utama home.</p>
                 {err && <p className="text-xs text-red-500 mt-1 font-semibold">{err}</p>}
               </div>
             </div>
