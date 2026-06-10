@@ -29,9 +29,15 @@ export default function AdminPromos() {
   })
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm({
-    defaultValues: { discountType: 'percent', discountValue: 0, minPurchase: 0 }
+    defaultValues: { discountType: 'percent', discountValue: 0, minPurchase: 0, dayType: '', hotelTypes: [], location: '' }
   })
   const discountType = watch('discountType')
+  const hotelTypes   = watch('hotelTypes') || []
+
+  const toggleHotelType = (val) => {
+    const cur = watch('hotelTypes') || []
+    setValue('hotelTypes', cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val])
+  }
 
   const saveMutation = useMutation({
     mutationFn: (d) => {
@@ -47,6 +53,10 @@ export default function AdminPromos() {
         quota         : d.quota || undefined,
         start_date    : d.startDate || undefined,
         end_date      : d.endDate || undefined,
+        // Kondisi opsional
+        day_type      : d.dayType || undefined,
+        hotel_types   : (d.hotelTypes && d.hotelTypes.length) ? d.hotelTypes : undefined,
+        location      : d.location || undefined,
         // owner_id sengaja tidak dikirim → backend set null (promo platform untuk semua customer)
       }
 
@@ -54,7 +64,9 @@ export default function AdminPromos() {
       if (imageFile) {
         const fd = new FormData()
         Object.entries(fields).forEach(([k, v]) => {
-          if (v !== undefined && v !== null && v !== '') fd.append(k, v)
+          if (v === undefined || v === null || v === '') return
+          if (Array.isArray(v)) v.forEach(item => fd.append(`${k}[]`, item))
+          else fd.append(k, v)
         })
         fd.append('image', imageFile)
         return editing ? promoApi.update(editing.id, fd) : promoApi.create(fd)
@@ -115,6 +127,9 @@ export default function AdminPromos() {
       quota        : promo.quota,
       startDate    : promo.startDate?.slice(0, 10),
       endDate      : promo.endDate?.slice(0, 10),
+      dayType      : promo.dayType ?? '',
+      hotelTypes   : Array.isArray(promo.hotelTypes) ? promo.hotelTypes : [],
+      location     : promo.location ?? '',
     })
   }
 
@@ -342,10 +357,50 @@ export default function AdminPromos() {
                 </div>
               </div>
 
+              {/* Kondisi opsional */}
+              <div className="border border-slate-200 rounded-xl p-4 space-y-4 bg-slate-50/60">
+                <p className="text-sm font-semibold text-slate-700">
+                  Kondisi Promo <span className="font-normal text-slate-400">(opsional — kosongkan jika tanpa syarat)</span>
+                </p>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Hari Berlaku</label>
+                  <select {...register('dayType')} className="w-full px-3 py-2.5 border rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/50">
+                    <option value="">Semua hari</option>
+                    <option value="weekday">Hari kerja (Senin–Jumat)</option>
+                    <option value="weekend">Akhir pekan (Sabtu–Minggu)</option>
+                  </select>
+                  <p className="text-[11px] text-slate-400 mt-1">Berdasarkan tanggal check-in.</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Jenis Akomodasi</label>
+                  <div className="flex flex-wrap gap-2">
+                    {['Hotel', 'Villa', 'Apartment', 'Guest House', 'Kosan', 'Resort', 'Glamping'].map(tp => {
+                      const active = hotelTypes.includes(tp)
+                      return (
+                        <button type="button" key={tp} onClick={() => toggleHotelType(tp)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${active ? 'bg-brand text-white border-brand' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+                          {tp}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1.5">Kosong = berlaku untuk semua jenis akomodasi.</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Lokasi (Kota / Area)</label>
+                  <input {...register('location')} placeholder="mis. Bandung"
+                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                  <p className="text-[11px] text-slate-400 mt-1.5">Kosong = semua lokasi. Dicocokkan dengan kota/area hotel.</p>
+                </div>
+              </div>
+
               {/* Info: promo berlaku untuk semua customer via kode di checkout */}
               <div className="col-span-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700">
                 Voucher ini berlaku untuk <b>semua customer</b>. Saat customer memasukkan kode di halaman
-                pembayaran, potongan langsung diterapkan sesuai diskon di atas.
+                pembayaran, potongan langsung diterapkan sesuai diskon &amp; kondisi di atas.
               </div>
 
               <div className="flex gap-3 pt-2">
