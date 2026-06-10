@@ -8,7 +8,6 @@ import {
   MousePointerClick, Eye,
 } from 'lucide-react'
 import { campaignApi } from '@/services/index'
-import PriceInput from '@/components/ui/PriceInput'
 
 
 const TYPE_META = {
@@ -17,6 +16,12 @@ const TYPE_META = {
   push     : { label: 'Push Notif', cls: 'bg-orange-100 text-orange-700' },
   popup    : { label: 'Pop-up',    cls: 'bg-pink-100 text-pink-700'   },
 }
+
+// Pilihan tipe yang bisa dibuat (multi-select): banner &/atau popup
+const TYPE_OPTIONS = ['banner', 'popup']
+
+// "banner,popup" → ['banner','popup']
+const parseTypes = (t) => (Array.isArray(t) ? t : String(t || '').split(',')).map(s => s.trim()).filter(Boolean)
 
 const TARGET_META = {
   all      : { label: 'Semua Pengguna' },
@@ -33,35 +38,41 @@ const STATUS_META = {
 }
 
 const INIT_FORM = {
-  title: '', type: 'banner', target: 'all', status: 'draft',
-  startDate: '', endDate: '', budget: '', description: '',
+  title: '', type: ['banner'], target: 'all', status: 'draft',
+  startDate: '', endDate: '', discountPercent: '', description: '',
 }
 
 function CampaignFormDrawer({ campaign, onSave, onClose, isSaving }) {
   const isEdit = !!campaign
   const [form, setForm] = useState(isEdit ? {
-    title      : campaign.title || '',
-    type       : campaign.type || 'banner',
-    target     : campaign.target || 'all',
-    status     : campaign.status || 'draft',
-    startDate  : campaign.startDate?.slice(0, 10) || '',
-    endDate    : campaign.endDate?.slice(0, 10) || '',
-    budget     : campaign.budget || '',
-    description: campaign.description || '',
+    title          : campaign.title || '',
+    type           : parseTypes(campaign.type).filter(t => TYPE_OPTIONS.includes(t)),
+    target         : campaign.target || 'all',
+    status         : campaign.status || 'draft',
+    startDate      : campaign.startDate?.slice(0, 10) || '',
+    endDate        : campaign.endDate?.slice(0, 10) || '',
+    discountPercent: campaign.discountPercent ?? '',
+    description    : campaign.description || '',
   } : { ...INIT_FORM })
 
   const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }))
 
+  const toggleType = (t) => setForm(p => ({
+    ...p,
+    type: p.type.includes(t) ? p.type.filter(x => x !== t) : [...p.type, t],
+  }))
+
   const handleSave = () => {
+    if (form.type.length === 0) return
     onSave({
-      title      : form.title,
-      type       : form.type,
-      target     : form.target,
-      status     : form.status,
-      startDate  : form.startDate || null,
-      endDate    : form.endDate || null,
-      budget     : form.budget || 0,
-      description: form.description || null,
+      title          : form.title,
+      type           : form.type,
+      target         : form.target,
+      status         : form.status,
+      startDate      : form.startDate || null,
+      endDate        : form.endDate || null,
+      discountPercent: form.discountPercent === '' ? 0 : Number(form.discountPercent),
+      description    : form.description || null,
     })
   }
 
@@ -95,23 +106,33 @@ function CampaignFormDrawer({ campaign, onSave, onClose, isSaving }) {
               className={inputCls} />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Tipe Campaign *</label>
-              <select value={form.type} onChange={f('type')} className={inputCls + ' bg-white'}>
-                {Object.entries(TYPE_META).map(([k, v]) => (
-                  <option key={k} value={k}>{v.label}</option>
-                ))}
-              </select>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Tipe Campaign * <span className="font-normal text-slate-400">(boleh pilih keduanya)</span></label>
+            <div className="grid grid-cols-2 gap-3">
+              {TYPE_OPTIONS.map(t => {
+                const active = form.type.includes(t)
+                return (
+                  <label key={t}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border cursor-pointer text-sm transition-colors ${
+                      active
+                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold'
+                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}>
+                    <input type="checkbox" checked={active} onChange={() => toggleType(t)} className="accent-indigo-600" />
+                    {TYPE_META[t].label}
+                  </label>
+                )
+              })}
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Target Pengguna *</label>
-              <select value={form.target} onChange={f('target')} className={inputCls + ' bg-white'}>
-                {Object.entries(TARGET_META).map(([k, v]) => (
-                  <option key={k} value={k}>{v.label}</option>
-                ))}
-              </select>
-            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Target Pengguna *</label>
+            <select value={form.target} onChange={f('target')} className={inputCls + ' bg-white'}>
+              {Object.entries(TARGET_META).map(([k, v]) => (
+                <option key={k} value={k}>{v.label}</option>
+              ))}
+            </select>
           </div>
 
           {/* Campaign bersifat global — semua owner bisa memilih ikut lewat extranet */}
@@ -132,12 +153,17 @@ function CampaignFormDrawer({ campaign, onSave, onClose, isSaving }) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Budget</label>
-            <PriceInput
-              value={form.budget}
-              onChange={v => setForm(p => ({ ...p, budget: v }))}
-              placeholder="0 = tidak ada budget"
-            />
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Diskon Campaign (%)</label>
+            <div className="relative">
+              <input
+                type="number" min="0" max="100" step="0.1"
+                value={form.discountPercent}
+                onChange={f('discountPercent')}
+                placeholder="0"
+                className={inputCls + ' pr-10'} />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-semibold">%</span>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">Persentase diskon yang berlaku saat owner mengikuti campaign ini.</p>
           </div>
 
           <div>
@@ -311,7 +337,7 @@ export default function AdminCampaigns() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {campaigns.map(c => {
-                  const typeMeta   = TYPE_META[c.type]    || { label: c.type,   cls: 'bg-slate-100 text-slate-600' }
+                  const types      = parseTypes(c.type)
                   const statusMeta = STATUS_META[c.status] || STATUS_META.draft
                   const targetMeta = TARGET_META[c.target] || { label: c.target }
                   const ctr = c.views > 0 ? ((c.clicks / c.views) * 100).toFixed(1) : '0.0'
@@ -326,9 +352,9 @@ export default function AdminCampaigns() {
                           </div>
                           <div className="min-w-0">
                             <p className="font-semibold text-slate-900 truncate max-w-[180px]">{c.title}</p>
-                            {c.budget > 0 && (
-                              <p className="text-xs text-slate-400">
-                                Budget: Rp {Number(c.budget).toLocaleString('id')}
+                            {c.discountPercent > 0 && (
+                              <p className="text-xs text-emerald-600 font-semibold">
+                                Diskon {Number(c.discountPercent)}%
                               </p>
                             )}
                           </div>
@@ -337,9 +363,16 @@ export default function AdminCampaigns() {
 
                       {/* Tipe */}
                       <td className="px-5 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${typeMeta.cls}`}>
-                          {typeMeta.label}
-                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {types.map(t => {
+                            const tm = TYPE_META[t] || { label: t, cls: 'bg-slate-100 text-slate-600' }
+                            return (
+                              <span key={t} className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${tm.cls}`}>
+                                {tm.label}
+                              </span>
+                            )
+                          })}
+                        </div>
                       </td>
 
                       {/* Target */}

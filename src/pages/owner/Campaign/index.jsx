@@ -22,9 +22,11 @@ const TARGET_META = {
 }
 
 function CampaignCard({ campaign, onToggle, pending }) {
-  const type = TYPE_META[campaign.type] || TYPE_META.banner
+  const types = String(campaign.type || 'banner').split(',').map(s => s.trim()).filter(Boolean)
+  const type = TYPE_META[types[0]] || TYPE_META.banner
   const Icon = type.icon
   const followed = !!campaign.followed
+  const discount = Number(campaign.discountPercent || 0)
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col">
@@ -35,7 +37,7 @@ function CampaignCard({ campaign, onToggle, pending }) {
         <div className="flex-1 min-w-0">
           <p className="text-white font-bold text-sm leading-snug truncate">{campaign.title}</p>
           <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-xs text-white/75">{type.label}</span>
+            <span className="text-xs text-white/75">{types.map(t => TYPE_META[t]?.label || t).join(' + ')}</span>
             <span className="w-1 h-1 rounded-full bg-white/40" />
             <span className="text-xs text-white/75">{TARGET_META[campaign.target] || campaign.target}</span>
           </div>
@@ -48,6 +50,12 @@ function CampaignCard({ campaign, onToggle, pending }) {
       </div>
 
       <div className="p-5 flex flex-col flex-1">
+        {discount > 0 && (
+          <div className="inline-flex self-start items-center gap-1.5 mb-3 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-lg">
+            <span className="text-emerald-700 font-black text-sm">{discount}%</span>
+            <span className="text-emerald-600 text-xs font-semibold">diskon saat diikuti</span>
+          </div>
+        )}
         {campaign.description && (
           <p className="text-xs text-slate-500 leading-relaxed mb-4 line-clamp-2">
             {campaign.description}
