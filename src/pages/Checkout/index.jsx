@@ -322,7 +322,7 @@ export default function Checkout() {
               const originalBase      = Number(pricing.originalBasePrice ?? pricing.basePrice) || 0
               const basePriceFinal    = Number(pricing.basePrice) || 0
               const promoDiscount     = Number(pricing.promoDiscount) || 0
-              const showInlineDiscount = hasPromo && !form.promoCode
+              const showInlineDiscount = hasPromo && !appliedPromo
 
               // Persen: prioritaskan nilai dari promo (sumber kebenaran owner),
               // fallback ke hitungan rasio kalau bukan tipe percent.
@@ -359,7 +359,7 @@ export default function Checkout() {
                 </div>
                 {/* Hanya tampilkan baris diskon promo terpisah kalau pakai KODE MANUAL.
                     Untuk promo otomatis, diskon sudah tergabung di baris "Harga hotel" di atas */}
-                {hasPromo && form.promoCode && (
+                {hasPromo && appliedPromo && (
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex flex-col">
                       <span className="text-muted-foreground">{t('checkout.promoDiscount')}</span>
@@ -384,9 +384,9 @@ export default function Checkout() {
                     <span>{t('checkout.total')}</span>
                     <span className="price-tag">{formatRupiah(pricing.totalPrice)}</span>
                   </div>
-                  {showInlineDiscount && pricing.promo?.name && (
+                  {showInlineDiscount && (pricing.promo?.name || pricing.campaign?.title) && (
                     <p className="mt-1 text-[11px] text-orange-600 font-semibold">
-                      ✦ {pricing.promo.name} otomatis diterapkan
+                      ✦ {pricing.promo?.name || pricing.campaign?.title} otomatis diterapkan
                     </p>
                   )}
                 </div>
