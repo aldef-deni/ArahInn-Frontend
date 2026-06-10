@@ -209,11 +209,6 @@ export default function Home() {
     queryFn : () => hotelApi.search({ page: 1, limit: 6 }).then(r => r.data),
   })
 
-  const { data: activePromos } = useQuery({
-    queryKey: ['active-promos'],
-    queryFn : () => promoApi.getActive().then(r => r.data?.data),
-  })
-
   const { data: featuredProperties } = useQuery({
     queryKey: ['home-properties'],
     queryFn : () => propertyApi.search({ limit: 4, status: 'approved' }).then(r => r.data),
@@ -413,17 +408,6 @@ export default function Home() {
 
       {/* ── Promo Flyer Carousel (dari ArahInn) ──────────── */}
       <PromoFlyerCarousel />
-
-      {/* ── Promos & Campaigns ───────────────────────────── */}
-      {activePromos?.length > 0 && (
-        <section className="container py-8 sm:py-10">
-          <div className="flex flex-col gap-3">
-            {activePromos.map(promo => (
-              <PromoCard key={promo.id} promo={promo} t={t} onShop={() => navigate('/search')} />
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* ── Campaign Carousel (dari ArahInn) ──────────────── */}
       <CampaignFlyerCarousel />
