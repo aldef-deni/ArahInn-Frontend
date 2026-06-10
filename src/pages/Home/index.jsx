@@ -337,7 +337,7 @@ export default function Home() {
                       className="w-full bg-transparent text-sm font-medium focus:outline-none [color-scheme:dark] cursor-pointer text-white"
                     >
                       {ACCOMMODATION_TYPES.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        <option key={opt.value} value={opt.value} style={{ background: '#0f172a', color: '#ffffff' }}>{opt.label}</option>
                       ))}
                     </select>
                   </div>
@@ -384,7 +384,7 @@ export default function Home() {
                     <p className="text-[9px] sm:text-[10px] font-bold text-white/50 uppercase tracking-widest mb-0.5 sm:mb-1">{t('search.guests')}</p>
                     <select value={form.guests} onChange={e => setForm({...form, guests: e.target.value})}
                       className="w-full bg-transparent text-white text-sm font-medium focus:outline-none [color-scheme:dark] cursor-pointer">
-                      {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} {t('search.guestUnit')}</option>)}
+                      {[1,2,3,4,5,6].map(n => <option key={n} value={n} style={{ background: '#0f172a', color: '#ffffff' }}>{n} {t('search.guestUnit')}</option>)}
                     </select>
                   </div>
                 </div>
