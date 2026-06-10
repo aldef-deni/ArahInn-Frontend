@@ -54,11 +54,17 @@ export default function AdminPpob() {
 
   const retryMutation = useMutation({
     mutationFn: (code) => ppobApi.adminRetry(code),
-    onSuccess: () => {
-      toast({ title: 'Retry dieksekusi.' })
+    onSuccess: (res) => {
+      const st = res?.data?.data?.status
+      const map = {
+        success    : 'Re-hit BERHASIL ✅',
+        refundable : 'Re-hit masih gagal — perlu refund',
+        processing : 'Re-hit terkirim, sedang diproses (tunggu callback)',
+      }
+      toast({ title: map[st] || 'Re-hit dieksekusi.' })
       qc.invalidateQueries({ queryKey: ['admin-ppob'] })
     },
-    onError: (e) => toast({ title: 'Gagal retry', description: e?.response?.data?.message, variant: 'destructive' }),
+    onError: (e) => toast({ title: 'Gagal re-hit', description: e?.response?.data?.message, variant: 'destructive' }),
   })
 
   const markPaidMutation = useMutation({
@@ -196,10 +202,14 @@ export default function AdminPpob() {
                         <CheckCircle className="w-4 h-4" />
                       </button>
                     )}
-                    {(trx.status === 'failed' || trx.status === 'paid') && (
-                      <button onClick={() => retryMutation.mutate(trx.trxCode || trx.trx_code)}
+                    {(trx.status === 'failed' || trx.status === 'paid' || trx.status === 'refundable') && (
+                      <button onClick={() => {
+                        const code = trx.trxCode || trx.trx_code
+                        if (window.confirm(`Re-hit transaksi ${code} (${trx.productName || trx.product_name}) ke Raja Biller?\n\nSistem akan kirim ulang dengan nomor referensi BARU. Lakukan hanya jika produk sudah open kembali.`))
+                          retryMutation.mutate(code)
+                      }}
                         disabled={retryMutation.isPending}
-                        title="Retry ke Raja Biller"
+                        title="Re-hit ke Raja Biller (kirim ulang, ref baru)"
                         className="p-2 rounded-lg hover:bg-blue-50 text-blue-600">
                         <RotateCcw className="w-4 h-4" />
                       </button>
