@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore'
 import {
   Smartphone, Zap, Receipt, Wallet, Gamepad2,
   History, ChevronRight, ShieldCheck, Sparkles, ArrowRight,
+  Plane, TrainFront, Ship,
 } from 'lucide-react'
 import SEO from '@/components/SEO'
 
@@ -29,6 +30,13 @@ export default function PpobLanding() {
     { id: 'ewallet',    label: t('topupLanding.ewallet'),     desc: t('topupLanding.ewalletDesc'),     path: '/topup-tagihan/ewallet',    Icon: Wallet,     gradient: 'from-violet-500 to-purple-600', iconBg: 'bg-violet-100', iconColor: 'text-violet-600' },
     { id: 'tagihan',    label: t('topupLanding.tagihan'),     desc: t('topupLanding.tagihanDesc'),     path: '/topup-tagihan/tagihan',    Icon: Receipt,    gradient: 'from-emerald-500 to-green-600', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
     { id: 'game',       label: t('topupLanding.game'),        desc: t('topupLanding.gameDesc'),        path: '/topup-tagihan/game',       Icon: Gamepad2,   gradient: 'from-rose-500 to-pink-600', iconBg: 'bg-rose-100',     iconColor: 'text-rose-600' },
+  ]
+
+  // Ticketing — tiket perjalanan
+  const TICKETS = [
+    { id: 'pesawat', label: 'Tiket Pesawat',    desc: 'Semua maskapai domestik', path: '/tiket/pesawat', Icon: Plane,      gradient: 'from-sky-500 to-blue-600',  iconBg: 'bg-sky-100',  iconColor: 'text-sky-600' },
+    { id: 'kereta',  label: 'Tiket Kereta',     desc: 'KAI antarkota',           path: '/tiket/kereta',  Icon: TrainFront, gradient: 'from-amber-500 to-orange-600', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
+    { id: 'pelni',   label: 'Tiket Kapal Laut', desc: 'PELNI semua rute',        path: '/tiket/pelni',   Icon: Ship,       gradient: 'from-cyan-500 to-blue-600', iconBg: 'bg-cyan-100', iconColor: 'text-cyan-600' },
   ]
 
   // Recent trx untuk shortcut "Riwayat" (kalau ada)
@@ -131,6 +139,32 @@ export default function PpobLanding() {
                 </p>
 
                 {/* Chevron */}
+                <ChevronRight className="w-4 h-4 text-slate-300 absolute bottom-3 right-3 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
+              </Link>
+            )
+          })}
+        </div>
+
+        {/* ── Ticketing (tiket perjalanan) ──────────────────── */}
+        <div className="flex items-center justify-between mb-3 sm:mb-4 mt-7 sm:mt-9">
+          <h2 className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Ticketing</h2>
+          <span className="text-[10px] sm:text-xs text-slate-400">{TICKETS.length} layanan</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+          {TICKETS.map((group) => {
+            const Icon = group.Icon
+            return (
+              <Link
+                key={group.id}
+                to={group.path}
+                className="group relative bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-5 hover:border-brand hover:shadow-lg active:scale-[0.97] transition-all overflow-hidden flex flex-col min-h-[120px] sm:min-h-[150px]"
+              >
+                <div className={`absolute top-0 right-0 w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br ${group.gradient} opacity-10 rounded-bl-full pointer-events-none`} />
+                <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl ${group.iconBg} flex items-center justify-center mb-2.5 sm:mb-3 relative shrink-0`}>
+                  <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${group.iconColor}`} strokeWidth={2.25} />
+                </div>
+                <p className="font-bold text-slate-900 text-sm sm:text-base leading-tight relative">{group.label}</p>
+                <p className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 sm:mt-1 line-clamp-2 leading-snug relative">{group.desc}</p>
                 <ChevronRight className="w-4 h-4 text-slate-300 absolute bottom-3 right-3 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
               </Link>
             )
