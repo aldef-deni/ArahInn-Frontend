@@ -273,8 +273,9 @@ export default function Home() {
         >
           <source src="/banner-arahinn.mp4" type="video/mp4" />
         </video>
-        {/* Overlay gelap agar teks & search box tetap terbaca di atas video */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/30 to-black/55" />
+        {/* Overlay: transparan di atas (logo di video tetap terlihat), makin gelap
+            ke bawah supaya search box & teks tetap terbaca. */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/25 to-black/55" />
         <div className="absolute inset-0 opacity-10"
           style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}
         />
@@ -282,7 +283,7 @@ export default function Home() {
 
           {/* Kategori akomodasi */}
           <div className="text-center">
-            <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-4 sm:mb-6 leading-tight px-2">
+            <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-4 sm:mb-6 leading-tight px-2 drop-shadow-[0_2px_10px_rgba(0,0,0,0.6)]">
               {t('hero.categoryTitle')}
             </h2>
             <div className="grid grid-cols-3 gap-2.5 sm:flex sm:flex-wrap sm:justify-center sm:gap-4">
