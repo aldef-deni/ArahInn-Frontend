@@ -398,6 +398,17 @@ export default function Home() {
       {/* ── Promo Flyer Carousel (dari ArahInn) ──────────── */}
       <PromoFlyerCarousel />
 
+      {/* ── Promos & Campaigns ───────────────────────────── */}
+      {activePromos?.length > 0 && (
+        <section className="container py-8 sm:py-10">
+          <div className="flex flex-col gap-3">
+            {activePromos.map(promo => (
+              <PromoCard key={promo.id} promo={promo} t={t} onShop={() => navigate('/search')} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* ── Featured Hotels ───────────────────────────────── */}
       <section className="container py-8 sm:py-10 lg:py-12">
         <div className="flex items-end justify-between gap-3 mb-5 sm:mb-7 lg:mb-8">
