@@ -352,14 +352,12 @@ export default function Home() {
                       <input type="date" value={form.checkIn} min={today}
                         onChange={e => {
                           const ci = e.target.value
-                          setForm(f => {
-                            const next = { ...f, checkIn: ci }
-                            // Check-out otomatis 1 hari setelah check-in kalau kosong / tidak valid
-                            if (ci && (!f.checkOut || f.checkOut <= ci)) {
-                              next.checkOut = format(addDays(parseISO(ci), 1), 'yyyy-MM-dd')
-                            }
-                            return next
-                          })
+                          setForm(f => ({
+                            ...f,
+                            checkIn: ci,
+                            // Check-out SELALU di-set 1 hari setelah check-in
+                            checkOut: ci ? format(addDays(parseISO(ci), 1), 'yyyy-MM-dd') : f.checkOut,
+                          }))
                         }}
                         onClick={e => e.currentTarget.showPicker?.()}
                         className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
