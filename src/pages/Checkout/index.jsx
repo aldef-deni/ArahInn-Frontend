@@ -33,6 +33,8 @@ export default function Checkout() {
     usePoints: false,
   })
   const [pricing, setPricing] = useState(null)
+  const [basePricing, setBasePricing] = useState(null)   // harga tanpa promo (untuk reset instan)
+  const [appliedPromo, setAppliedPromo] = useState('')   // kode yang BENAR-BENAR diterapkan
   const [promoApplied, setPromoApplied] = useState(false)
   const [promoError, setPromoError] = useState('')
 
@@ -44,18 +46,22 @@ export default function Checkout() {
   const room = hotel?.rooms?.find(r => String(r.id) === String(roomId))
 
   const calcMutation = useMutation({
+    // Auto-calc SELALU tanpa promo → ini "harga dasar". Promo hanya via tombol "Gunakan".
     mutationFn: () =>
       bookingApi.calcPrice({
         roomId,
         checkIn,
         checkOut,
         roomCount,
-        promoCode: form.promoCode,
         usePoints: form.usePoints,
       }),
     onSuccess: (r) => {
-      setPricing(r.data.data)
-      setPromoApplied(!!form.promoCode)
+      const data = r.data.data
+      setPricing(data)
+      setBasePricing(data)
+      // Ganti tanggal/jumlah kamar → promo yang sudah diterapkan direset (harus apply ulang)
+      setAppliedPromo('')
+      setPromoApplied(false)
     },
     onError: (e) =>
       toast({
@@ -78,7 +84,7 @@ export default function Checkout() {
         guestEmail: form.guestEmail,
         guestPhone: form.guestPhone,
         notes: form.notes,
-        promoCode: form.promoCode || undefined,
+        promoCode: appliedPromo || undefined,
         usePoints: form.usePoints,
       }),
     onSuccess: (r) => navigate(`/payment/${r.data.data.booking.id}`),
@@ -110,12 +116,12 @@ export default function Checkout() {
         return
       }
       setPricing(data)
+      setAppliedPromo(form.promoCode.trim())  // tandai kode yang diterapkan
       setPromoApplied(true)
       setPromoError('')
     },
     onError: (e) => {
       setPromoError(e?.response?.data?.message || 'Kode promo salah.')
-      setForm(prev => ({ ...prev, promoCode: '' }))
     },
   })
 
@@ -125,14 +131,13 @@ export default function Checkout() {
     applyPromoMutation.mutate(form.promoCode.trim())
   }
 
-  // Saat kode promo diedit setelah diterapkan → batalkan diskon & hitung ulang
-  // harga normal. Diskon baru hanya muncul setelah klik "Gunakan" lagi.
+  // Saat kode promo diedit setelah diterapkan → batalkan diskon SEKETIKA
+  // (kembalikan ke harga dasar). Diskon baru hanya muncul setelah klik "Gunakan" lagi.
   const resetAppliedPromo = () => {
     setPromoApplied(false)
-    bookingApi
-      .calcPrice({ roomId, checkIn, checkOut, roomCount, usePoints: form.usePoints })
-      .then(r => setPricing(r.data.data))
-      .catch(() => {})
+    setAppliedPromo('')
+    setPromoError('')
+    if (basePricing) setPricing(basePricing)
   }
 
   // Auto-calc harga saat halaman pertama dibuka & saat roomCount/tanggal berubah
@@ -276,7 +281,7 @@ export default function Checkout() {
                 onChange={e => {
                   setForm({ ...form, promoCode: e.target.value })
                   if (promoError) setPromoError('')
-                  if (promoApplied) resetAppliedPromo()
+                  if (appliedPromo) resetAppliedPromo()
                 }}
                 placeholder={t('checkout.promoPh')}
                 className={`flex-1 min-w-0 rounded-xl border px-3 sm:px-4 py-2.5 text-sm uppercase focus:outline-none focus:ring-2 ${
