@@ -39,7 +39,6 @@ function ServiceCategoryTabs() {
     { label: t('services.interior'),      Icon: Sofa,         to: '/interior',                          accent: '#fb923c' },
     { label: t('services.wisata'),        Icon: Mountain,     to: '/coming-soon?feature=wisata',        accent: '#86efac' },
     { label: t('services.sports'),        Icon: Dumbbell,     to: '/sports',                            accent: '#fca5a5' },
-    { label: t('services.promo'),         Icon: BadgePercent, to: '/promo',                             accent: '#fbbf24' },
   ]
   return (
     <div className="overflow-x-auto scrollbar-hide lg:overflow-visible">
