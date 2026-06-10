@@ -24,6 +24,7 @@ import PropertyMarket from '@/pages/PropertyMarket'
 import PropertyDetail from '@/pages/PropertyDetail'
 import InteriorPage from '@/pages/Interior'
 import PromoPage from '@/pages/Promo'
+import Sports from '@/pages/Sports'
 import ComingSoon from '@/pages/ComingSoon'
 import PpobLanding from '@/pages/Ppob/PpobLanding'
 import PpobCategoryPage from '@/pages/Ppob/PpobCategoryPage'
@@ -274,6 +275,7 @@ export default function App() {
             <Route path="/properti/:id" element={<PropertyDetail />} />
             <Route path="/interior" element={<InteriorPage />} />
             <Route path="/promo" element={<PromoPage />} />
+            <Route path="/sports" element={<Sports />} />
             <Route path="/coming-soon" element={<ComingSoon />} />
             {/* Top Up & Tagihan — canonical URL */}
             <Route path="/topup-tagihan" element={<PpobLanding />} />

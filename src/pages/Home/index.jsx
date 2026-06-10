@@ -38,7 +38,7 @@ function ServiceCategoryTabs() {
     { label: t('services.properti'),      Icon: Building2,    to: '/properti',                          accent: '#f87171' },
     { label: t('services.interior'),      Icon: Sofa,         to: '/interior',                          accent: '#fb923c' },
     { label: t('services.wisata'),        Icon: Mountain,     to: '/coming-soon?feature=wisata',        accent: '#86efac' },
-    { label: t('services.sports'),        Icon: Dumbbell,     to: '/coming-soon?feature=sports',        accent: '#fca5a5' },
+    { label: t('services.sports'),        Icon: Dumbbell,     to: '/sports',                            accent: '#fca5a5' },
     { label: t('services.promo'),         Icon: BadgePercent, to: '/promo',                             accent: '#fbbf24' },
   ]
   return (
