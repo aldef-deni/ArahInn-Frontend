@@ -125,6 +125,16 @@ export default function Checkout() {
     applyPromoMutation.mutate(form.promoCode.trim())
   }
 
+  // Saat kode promo diedit setelah diterapkan → batalkan diskon & hitung ulang
+  // harga normal. Diskon baru hanya muncul setelah klik "Gunakan" lagi.
+  const resetAppliedPromo = () => {
+    setPromoApplied(false)
+    bookingApi
+      .calcPrice({ roomId, checkIn, checkOut, roomCount, usePoints: form.usePoints })
+      .then(r => setPricing(r.data.data))
+      .catch(() => {})
+  }
+
   // Auto-calc harga saat halaman pertama dibuka & saat roomCount/tanggal berubah
   useEffect(() => {
     if (roomId && checkIn && checkOut) {
@@ -266,6 +276,7 @@ export default function Checkout() {
                 onChange={e => {
                   setForm({ ...form, promoCode: e.target.value })
                   if (promoError) setPromoError('')
+                  if (promoApplied) resetAppliedPromo()
                 }}
                 placeholder={t('checkout.promoPh')}
                 className={`flex-1 min-w-0 rounded-xl border px-3 sm:px-4 py-2.5 text-sm uppercase focus:outline-none focus:ring-2 ${
