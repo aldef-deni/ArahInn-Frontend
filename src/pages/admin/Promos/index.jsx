@@ -29,14 +29,19 @@ export default function AdminPromos() {
   })
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm({
-    defaultValues: { discountType: 'percent', discountValue: 0, minPurchase: 0, dayType: '', hotelTypes: [], location: '' }
+    defaultValues: { discountType: 'percent', discountValue: 0, minPurchase: 0, dayType: '', hotelTypes: [], location: '', productTypes: [] }
   })
   const discountType = watch('discountType')
   const hotelTypes   = watch('hotelTypes') || []
+  const productTypes = watch('productTypes') || []
 
   const toggleHotelType = (val) => {
     const cur = watch('hotelTypes') || []
     setValue('hotelTypes', cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val])
+  }
+  const toggleProductType = (val) => {
+    const cur = watch('productTypes') || []
+    setValue('productTypes', cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val])
   }
 
   const saveMutation = useMutation({
@@ -57,6 +62,7 @@ export default function AdminPromos() {
         day_type      : d.dayType || undefined,
         hotel_types   : (d.hotelTypes && d.hotelTypes.length) ? d.hotelTypes : undefined,
         location      : d.location || undefined,
+        product_types : (d.productTypes && d.productTypes.length) ? d.productTypes : undefined,
         // owner_id sengaja tidak dikirim → backend set null (promo platform untuk semua customer)
       }
 
@@ -130,6 +136,7 @@ export default function AdminPromos() {
       dayType      : promo.dayType ?? '',
       hotelTypes   : Array.isArray(promo.hotelTypes) ? promo.hotelTypes : [],
       location     : promo.location ?? '',
+      productTypes : Array.isArray(promo.productTypes) ? promo.productTypes : [],
     })
   }
 
@@ -362,6 +369,27 @@ export default function AdminPromos() {
                 <p className="text-sm font-semibold text-slate-700">
                   Kondisi Promo <span className="font-normal text-slate-400">(opsional — kosongkan jika tanpa syarat)</span>
                 </p>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Berlaku untuk</label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { v: 'accommodation', l: 'Akomodasi' },
+                      { v: 'pesawat',       l: 'Tiket Pesawat' },
+                      { v: 'pelni',         l: 'Tiket PELNI' },
+                      { v: 'kereta',        l: 'Tiket KAI' },
+                    ].map(({ v, l }) => {
+                      const active = productTypes.includes(v)
+                      return (
+                        <button type="button" key={v} onClick={() => toggleProductType(v)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${active ? 'bg-brand text-white border-brand' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+                          {l}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1.5">Kosong = berlaku untuk semua produk (akomodasi & tiket).</p>
+                </div>
 
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1.5">Hari Berlaku</label>
