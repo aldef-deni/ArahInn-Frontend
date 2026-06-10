@@ -75,46 +75,15 @@
     "accountName": "Account Name",
     "howToPay": "How to Pay:",
     "selectBank": "Select Bank",
-    "loading": "Loading..."
-  },
-  "checkout": {
-    "title": "Complete Booking Information",
-    "guestData": "Guest Information",
-    "guestName": "Full Name",
-    "guestEmail": "Email",
-    "guestPhone": "Phone Number",
-    "notes": "Notes for hotel (optional)",
-    "promoCode": "Promo Code",
-    "applyPromo": "Apply",
-    "usePoints": "Use Loyalty Points",
-    "totalPay": "Total Payment",
-    "continue": "Continue to Payment",
-    "processing": "Processing..."
-  },
-  "hotelDetail": {
-    "rooms": "Room Options",
-    "facilities": "Facilities",
-    "reviews": "Reviews",
-    "policy": "Hotel Policy",
-    "location": "Location",
-    "description": "Description",
-    "viewRoom": "View Room",
-    "hideRoom": "Hide",
-    "roomFull": "Sold Out",
-    "noDescription": "No description available for this room type.",
-    "guestRating": "Guest Rating",
-    "roomChoices": "Room Choices",
-    "notAvailable": "Not available",
-    "bookNow": "Book Now",
-    "roomCount": "Number of rooms",
-    "guestCount": "Number of guests",
-    "prevPhoto": "Previous photo",
-    "nextPhoto": "Next photo",
-    "showMore": "Show All",
-    "showLess": "Show Less",
-    "contactHotel": "Contact Hotel",
-    "checkAvailability": "Check Availability",
-    "amenities": "Room Amenities"
+    "loading": "Loading...",
+    "method": "Payment Method",
+    "virtualAccount": "Virtual Account",
+    "transfer": "Bank Transfer",
+    "ewallet": "E-Wallet",
+    "pay": "Pay Now",
+    "timeLeft": "Payment Deadline",
+    "success": "Payment Successful!",
+    "failed": "Payment Failed"
   },
   "profile": {
     "personalInfo": "Account Information",
@@ -135,7 +104,10 @@
     "noWishlist": "Wishlist is empty",
     "paymentMethods": "Payment Methods",
     "support": "Support",
-    "logout": "Sign Out"
+    "logout": "Sign Out",
+    "title": "My Profile",
+    "edit": "Edit Profile",
+    "loyalty": "My Points"
   },
   "topupLanding": {
     "badge": "Safe & Convenient",
@@ -323,11 +295,6 @@
     "nights": "nights", "basePrice": "Base Price", "tax": "Tax (11%)",
     "discount": "Discount", "markup": "Service Fee", "loyalty": "Loyalty Points"
   },
-  "payment": {
-    "title": "Payment", "method": "Payment Method", "virtualAccount": "Virtual Account",
-    "transfer": "Bank Transfer", "ewallet": "E-Wallet", "pay": "Pay Now",
-    "timeLeft": "Payment Deadline", "success": "Payment Successful!", "failed": "Payment Failed"
-  },
   "order": {
     "history": "Order History", "detail": "Order Detail", "cancel": "Cancel",
     "reschedule": "Reschedule", "all": "All", "status": "Status"
@@ -337,9 +304,6 @@
     "name": "Full Name", "phone": "Phone Number", "forgot": "Forgot Password?",
     "orWith": "or sign in with", "haveAccount": "Already have an account?", "noAccount": "Don't have an account?",
     "welcome": "Welcome, {{name}}! 👋"
-  },
-  "profile": {
-    "title": "My Profile", "edit": "Edit Profile", "loyalty": "My Points", "save": "Save"
   },
   "footer": {
     "services": "Services", "help": "Help", "followUs": "Follow Us",
@@ -426,7 +390,15 @@
     "processing": "Processing...",
     "proceedPayment": "Proceed to Payment",
     "agreement": "By continuing, you agree to our terms & conditions.",
-    "bookingFailed": "Failed to create booking"
+    "bookingFailed": "Failed to create booking",
+    "guestData": "Guest Information",
+    "guestName": "Full Name",
+    "guestEmail": "Email",
+    "guestPhone": "Phone Number",
+    "applyPromo": "Apply",
+    "usePoints": "Use Loyalty Points",
+    "totalPay": "Total Payment",
+    "continue": "Continue to Payment"
   },
   "interior": {
     "badge": "Arahinn Premium Service",
@@ -479,6 +451,17 @@
     "maxGuests": "Max. {{count}} guests",
     "totalNights": "{{count}} nights",
     "showFacilities": "Show all facilities",
-    "noReviews": "No reviews yet."
+    "noReviews": "No reviews yet.",
+    "policy": "Hotel Policy",
+    "guestRating": "Guest Rating",
+    "roomChoices": "Room Choices",
+    "notAvailable": "Not available",
+    "prevPhoto": "Previous photo",
+    "nextPhoto": "Next photo",
+    "showMore": "Show All",
+    "showLess": "Show Less",
+    "contactHotel": "Contact Hotel",
+    "checkAvailability": "Check Availability",
+    "amenities": "Room Amenities"
   }
 }

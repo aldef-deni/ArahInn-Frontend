@@ -104,46 +104,15 @@
     "accountName": "Atas Nama",
     "howToPay": "Cara Pembayaran:",
     "selectBank": "Pilih Bank",
-    "loading": "Memuat..."
-  },
-  "checkout": {
-    "title": "Lengkapi Data Pemesanan",
-    "guestData": "Data Tamu",
-    "guestName": "Nama Lengkap",
-    "guestEmail": "Email",
-    "guestPhone": "Nomor HP",
-    "notes": "Catatan untuk hotel (opsional)",
-    "promoCode": "Kode Promo",
-    "applyPromo": "Pakai",
-    "usePoints": "Gunakan Poin Loyalitas",
-    "totalPay": "Total Bayar",
-    "continue": "Lanjut ke Pembayaran",
-    "processing": "Memproses..."
-  },
-  "hotelDetail": {
-    "rooms": "Pilihan Kamar",
-    "facilities": "Fasilitas",
-    "reviews": "Ulasan",
-    "policy": "Kebijakan Hotel",
-    "location": "Lokasi",
-    "description": "Deskripsi",
-    "viewRoom": "Lihat Kamar",
-    "hideRoom": "Sembunyikan",
-    "roomFull": "Kamar penuh",
-    "noDescription": "Belum ada deskripsi untuk tipe kamar ini.",
-    "guestRating": "Rating Tamu",
-    "roomChoices": "Pilihan Kamar",
-    "notAvailable": "Belum tersedia",
-    "bookNow": "Pesan Sekarang",
-    "roomCount": "Jumlah kamar",
-    "guestCount": "Jumlah tamu",
-    "prevPhoto": "Foto sebelumnya",
-    "nextPhoto": "Foto selanjutnya",
-    "showMore": "Tampilkan Semua",
-    "showLess": "Sembunyikan",
-    "contactHotel": "Hubungi Hotel",
-    "checkAvailability": "Periksa Ketersediaan",
-    "amenities": "Fasilitas Kamar"
+    "loading": "Memuat...",
+    "method": "Metode Pembayaran",
+    "virtualAccount": "Virtual Account",
+    "transfer": "Transfer Bank",
+    "ewallet": "E-Wallet",
+    "pay": "Bayar Sekarang",
+    "timeLeft": "Batas Waktu Pembayaran",
+    "success": "Pembayaran Berhasil!",
+    "failed": "Pembayaran Gagal"
   },
   "profile": {
     "personalInfo": "Informasi Akun",
@@ -164,7 +133,10 @@
     "noWishlist": "Wishlist masih kosong",
     "paymentMethods": "Metode Pembayaran",
     "support": "Bantuan",
-    "logout": "Keluar"
+    "logout": "Keluar",
+    "title": "Profil Saya",
+    "edit": "Edit Profil",
+    "loyalty": "Poin Saya"
   },
   "topupLanding": {
     "badge": "Aman & Praktis",
@@ -323,11 +295,6 @@
     "nights": "malam", "basePrice": "Harga Dasar", "tax": "Pajak (11%)",
     "discount": "Diskon", "markup": "Biaya Layanan", "loyalty": "Poin Loyalitas"
   },
-  "payment": {
-    "title": "Pembayaran", "method": "Metode Pembayaran", "virtualAccount": "Virtual Account",
-    "transfer": "Transfer Bank", "ewallet": "E-Wallet", "pay": "Bayar Sekarang",
-    "timeLeft": "Batas Waktu Pembayaran", "success": "Pembayaran Berhasil!", "failed": "Pembayaran Gagal"
-  },
   "order": {
     "history": "Riwayat Pesanan", "detail": "Detail Pesanan", "cancel": "Batalkan",
     "reschedule": "Jadwal Ulang", "all": "Semua", "status": "Status"
@@ -337,9 +304,6 @@
     "name": "Nama Lengkap", "phone": "Nomor Telepon", "forgot": "Lupa Password?",
     "orWith": "atau masuk dengan", "haveAccount": "Sudah punya akun?", "noAccount": "Belum punya akun?",
     "welcome": "Selamat datang, {{name}}! 👋"
-  },
-  "profile": {
-    "title": "Profil Saya", "edit": "Edit Profil", "loyalty": "Poin Saya", "save": "Simpan"
   },
   "footer": {
     "services": "Layanan", "help": "Bantuan", "followUs": "Ikuti Kami",
@@ -426,7 +390,15 @@
     "processing": "Memproses...",
     "proceedPayment": "Lanjutkan Pembayaran",
     "agreement": "Dengan melanjutkan, Anda menyetujui syarat & ketentuan kami.",
-    "bookingFailed": "Gagal membuat booking"
+    "bookingFailed": "Gagal membuat booking",
+    "guestData": "Data Tamu",
+    "guestName": "Nama Lengkap",
+    "guestEmail": "Email",
+    "guestPhone": "Nomor HP",
+    "applyPromo": "Pakai",
+    "usePoints": "Gunakan Poin Loyalitas",
+    "totalPay": "Total Bayar",
+    "continue": "Lanjut ke Pembayaran"
   },
   "interior": {
     "badge": "Layanan Premium Arahinn",
@@ -479,6 +451,17 @@
     "maxGuests": "Maks. {{count}} tamu",
     "totalNights": "{{count}} malam",
     "showFacilities": "Lihat semua fasilitas",
-    "noReviews": "Belum ada ulasan."
+    "noReviews": "Belum ada ulasan.",
+    "policy": "Kebijakan Hotel",
+    "guestRating": "Rating Tamu",
+    "roomChoices": "Pilihan Kamar",
+    "notAvailable": "Belum tersedia",
+    "prevPhoto": "Foto sebelumnya",
+    "nextPhoto": "Foto selanjutnya",
+    "showMore": "Tampilkan Semua",
+    "showLess": "Sembunyikan",
+    "contactHotel": "Hubungi Hotel",
+    "checkAvailability": "Periksa Ketersediaan",
+    "amenities": "Fasilitas Kamar"
   }
 }
