@@ -192,6 +192,16 @@ export default function AdminPpob() {
                 </td>
                 <td className="px-4 py-3 text-center">
                   <StatusBadge status={trx.status} />
+                  {['failed', 'refundable', 'processing'].includes(trx.status) && (() => {
+                    const reason = trx.paymentResponse?.status || trx.failureReason || trx.rcMessage
+                    if (!reason) return null
+                    return (
+                      <p className="text-[10px] text-slate-400 mt-1 mx-auto max-w-[170px] leading-tight line-clamp-2"
+                        title={`RC ${trx.rc || '-'}: ${reason}`}>
+                        {trx.rc ? <span className="font-mono text-slate-500">RC {trx.rc}</span> : null} {reason}
+                      </p>
+                    )
+                  })()}
                 </td>
                 <td className="px-4 py-3 text-center">
                   <div className="flex items-center justify-center gap-1">
@@ -291,10 +301,21 @@ export default function AdminPpob() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-sm text-slate-600 mb-4">
+            <p className="text-sm text-slate-600 mb-3">
               Refund transaksi <b className="font-mono">{refundTrx.trxCode || refundTrx.trx_code}</b> sebesar <b>{formatRupiah(refundTrx.totalAmount || refundTrx.total_amount)}</b>?
               <br/>Pastikan transfer manual ke customer sudah dilakukan via bank.
             </p>
+            {(() => {
+              const reason = refundTrx.paymentResponse?.status || refundTrx.failureReason || refundTrx.rcMessage
+              if (!reason) return null
+              const processing = /(SEDANG DIPROSES|DALAM PROSES|MASIH DIPROSES|PENDING|MENUNGGU)/i.test(reason)
+              return (
+                <div className={`rounded-xl px-3 py-2.5 mb-4 text-xs border ${processing ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                  <span className="font-semibold">Alasan gagal {refundTrx.rc ? `(RC ${refundTrx.rc})` : ''}:</span> {reason}
+                  {processing && <p className="mt-1 font-semibold">⚠️ Vendor menyatakan masih DIPROSES — sebaiknya jangan refund dulu, tunggu hasil akhir agar tidak double.</p>}
+                </div>
+              )
+            })()}
             <textarea
               value={refundNotes}
               onChange={e => setRefundNotes(e.target.value)}
