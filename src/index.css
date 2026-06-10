@@ -74,6 +74,10 @@
   .custom-scroll::-webkit-scrollbar-track { @apply bg-muted rounded-full; }
   .custom-scroll::-webkit-scrollbar-thumb { @apply bg-muted-foreground/30 rounded-full hover:bg-muted-foreground/50; }
 
+  /* Sembunyikan scrollbar (tetap bisa di-scroll) */
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
   /* Star rating */
   .star-filled { @apply text-gold fill-gold; }
   .star-empty  { @apply text-muted-foreground; }

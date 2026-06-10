@@ -42,7 +42,7 @@ function ServiceCategoryTabs() {
     { label: t('services.promo'),         Icon: BadgePercent, to: '/promo',                             accent: '#fbbf24' },
   ]
   return (
-    <div className="overflow-x-auto scrollbar-thin">
+    <div className="overflow-x-auto scrollbar-hide">
       <div className="flex items-stretch gap-2 lg:gap-3 lg:justify-center min-w-max lg:min-w-0 pb-1">
         {items.map(({ label, Icon, to, accent }) => (
           <Link
