@@ -28,23 +28,17 @@ export default function AdminPromos() {
     queryFn : () => promoApi.getAll().then(r => r.data.data),
   })
 
-  const { data: ownersList } = useQuery({
-    queryKey: ['promo-owners-list'],
-    queryFn : () => promoApi.ownersList().then(r => r.data.data),
-  })
-
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm({
-    defaultValues: { type: 'voucher', discountType: 'percent', discountValue: 0, minPurchase: 0, ownerScope: 'all', ownerId: '' }
+    defaultValues: { discountType: 'percent', discountValue: 0, minPurchase: 0 }
   })
   const discountType = watch('discountType')
-  const ownerScope   = watch('ownerScope')
 
   const saveMutation = useMutation({
     mutationFn: (d) => {
       const fields = {
         name          : d.name,
-        code          : d.code || undefined,
-        type          : d.type,
+        code          : d.code,                 // wajib — voucher tanpa kode tidak berguna
+        type          : 'voucher',              // semua promo = voucher (kode di checkout)
         description   : d.description || undefined,
         discount_type : d.discountType,
         discount_value: d.discountValue,
@@ -53,7 +47,7 @@ export default function AdminPromos() {
         quota         : d.quota || undefined,
         start_date    : d.startDate || undefined,
         end_date      : d.endDate || undefined,
-        owner_id      : d.ownerScope === 'specific' ? (d.ownerId || null) : null,
+        // owner_id sengaja tidak dikirim → backend set null (promo platform untuk semua customer)
       }
 
       // Kalau ada image baru → kirim sebagai FormData
@@ -113,7 +107,6 @@ export default function AdminPromos() {
     reset({
       name         : promo.name,
       code         : promo.code,
-      type         : promo.type,
       description  : promo.description ?? '',
       discountType : promo.discountType,
       discountValue: promo.discountValue,
@@ -122,8 +115,6 @@ export default function AdminPromos() {
       quota        : promo.quota,
       startDate    : promo.startDate?.slice(0, 10),
       endDate      : promo.endDate?.slice(0, 10),
-      ownerScope   : promo.ownerId ? 'specific' : 'all',
-      ownerId      : promo.ownerId ? String(promo.ownerId) : '',
     })
   }
 
@@ -297,18 +288,13 @@ export default function AdminPromos() {
                   <textarea {...register('description')} rows={3} placeholder="Detail promo, syarat & ketentuan, dll..."
                     className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50 resize-none" />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Tipe</label>
-                  <select {...register('type')} className="w-full px-3 py-2.5 border rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/50">
-                    <option value="voucher">Voucher</option>
-                    <option value="flash_sale">Flash Sale</option>
-                    <option value="loyalty">Loyalty</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Kode (opsional)</label>
-                  <input {...register('code')} placeholder="HEMAT50"
-                    className="w-full px-3 py-2.5 border rounded-xl text-sm uppercase focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-1.5">Kode Voucher <span className="text-red-500">*</span></label>
+                  <input {...register('code', { required: true })} placeholder="HEMAT50"
+                    className={`w-full px-3 py-2.5 border rounded-xl text-sm uppercase focus:outline-none focus:ring-2 focus:ring-brand/50 ${errors.code ? 'border-red-400' : ''}`} />
+                  {errors.code
+                    ? <p className="text-xs text-red-500 mt-1">Kode voucher wajib diisi.</p>
+                    : <p className="text-xs text-muted-foreground mt-1">Kode ini yang dimasukkan customer saat pembayaran untuk dapat potongan.</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Tipe Diskon</label>
@@ -356,34 +342,10 @@ export default function AdminPromos() {
                 </div>
               </div>
 
-              {/* Owner scope */}
-              <div className="col-span-2 border border-slate-200 rounded-xl p-4 space-y-3 bg-slate-50">
-                <p className="text-sm font-semibold text-slate-700">Target Owner</p>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" value="all" {...register('ownerScope')}
-                      className="w-4 h-4 text-brand cursor-pointer" />
-                    <span className="text-sm text-slate-700 flex items-center gap-1.5">
-                      <Users className="w-4 h-4 text-slate-400" /> Semua Owner
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" value="specific" {...register('ownerScope')}
-                      className="w-4 h-4 text-brand cursor-pointer" />
-                    <span className="text-sm text-slate-700 flex items-center gap-1.5">
-                      <User className="w-4 h-4 text-slate-400" /> Owner Tertentu
-                    </span>
-                  </label>
-                </div>
-                {ownerScope === 'specific' && (
-                  <select {...register('ownerId')}
-                    className="w-full px-3 py-2.5 border rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/50">
-                    <option value="">-- Pilih Owner --</option>
-                    {ownersList?.map(o => (
-                      <option key={o.id} value={o.id}>{o.name} ({o.email})</option>
-                    ))}
-                  </select>
-                )}
+              {/* Info: promo berlaku untuk semua customer via kode di checkout */}
+              <div className="col-span-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-blue-700">
+                Voucher ini berlaku untuk <b>semua customer</b>. Saat customer memasukkan kode di halaman
+                pembayaran, potongan langsung diterapkan sesuai diskon di atas.
               </div>
 
               <div className="flex gap-3 pt-2">
