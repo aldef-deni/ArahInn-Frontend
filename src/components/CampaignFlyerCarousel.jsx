@@ -185,12 +185,9 @@ export default function CampaignFlyerCarousel() {
                   {discount > 0 && <p className="mt-2 text-base font-black bg-white/25 px-3 py-1 rounded-lg">{discount}% OFF</p>}
                 </div>
               )}
-              {discount > 0 && img && (
-                <span className="absolute top-2.5 right-2.5 px-2.5 py-1 bg-orange-600 text-white rounded-lg text-xs font-black shadow">
-                  {discount}% OFF
-                </span>
-              )}
-              {isUpcoming ? (
+              {/* Badge status/diskon hanya untuk kartu fallback (tanpa image);
+                  kartu ber-image dibiarkan bersih karena flyer sudah punya info-nya. */}
+              {!img && (isUpcoming ? (
                 <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500 text-white rounded-full text-[10px] font-bold shadow">
                   <Clock className="w-3 h-3" /> Segera Hadir
                 </span>
@@ -198,7 +195,7 @@ export default function CampaignFlyerCarousel() {
                 <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500 text-white rounded-full text-[10px] font-bold shadow">
                   <CheckCircle2 className="w-3 h-3" /> Sedang Berjalan
                 </span>
-              )}
+              ))}
             </button>
           )
         })}
