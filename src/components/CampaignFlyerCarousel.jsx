@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { campaignApi } from '@/services/index'
@@ -96,14 +96,28 @@ function CampaignDetailModal({ campaign, onClose }) {
   )
 }
 
+// "banner,popup" → ['banner','popup']
+const parseTypes = (t) => String(t || 'banner').split(',').map(s => s.trim()).filter(Boolean)
+
 export default function CampaignFlyerCarousel() {
   const scrollRef = useRef(null)
   const [selected, setSelected] = useState(null)
+  const [popupOpen, setPopupOpen] = useState(false)
 
   const { data: campaigns = [], isLoading } = useQuery({
     queryKey: ['home-campaigns'],
     queryFn: () => campaignApi.active().then(r => r.data?.data || []),
   })
+
+  // Campaign tipe BANNER → tampil sebagai kartu carousel.
+  const bannerCampaigns = campaigns.filter(c => parseTypes(c.type).includes('banner'))
+  // Campaign tipe POPUP (punya image) → muncul otomatis sebagai pop-up saat load.
+  const popupCampaign = campaigns.find(c => parseTypes(c.type).includes('popup') && getImageUrl(c.image))
+
+  // Auto-buka pop-up tiap halaman dimuat (reload) — ditutup → tetap tertutup sampai reload.
+  useEffect(() => {
+    if (popupCampaign) setPopupOpen(true)
+  }, [popupCampaign?.id])
 
   const scroll = (dir) => {
     const el = scrollRef.current
@@ -113,17 +127,20 @@ export default function CampaignFlyerCarousel() {
   }
 
   if (isLoading) return null
-  if (!campaigns.length) return null
+  const hasSection = bannerCampaigns.length > 0
+  if (!hasSection && !popupOpen && !selected) return null
 
   return (
-    <section className="container py-12">
+    <>
+      {hasSection && (
+      <section className="container py-12">
       <div className="flex items-end justify-between mb-8 gap-4">
         <div>
           <h2 className="font-display text-2xl lg:text-3xl font-bold text-foreground">Campaign ArahInn</h2>
           <p className="text-muted-foreground mt-1">Penawaran spesial dari ArahInn untuk akomodasi pilihan</p>
         </div>
         <div className="flex items-center gap-3">
-          {campaigns.length > 1 && (
+          {bannerCampaigns.length > 1 && (
             <div className="hidden sm:flex items-center gap-2">
               <button onClick={() => scroll(-1)}
                 className="w-10 h-10 rounded-full border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-center shadow-sm transition-colors">
@@ -145,7 +162,7 @@ export default function CampaignFlyerCarousel() {
       <div ref={scrollRef}
         className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 -mx-1 px-1"
         style={{ scrollbarWidth: 'thin' }}>
-        {campaigns.map(c => {
+        {bannerCampaigns.map(c => {
           const isUpcoming = checkIsUpcoming(c.startDate)
           const img = getImageUrl(c.image)
           const discount = Number(c.discountPercent || 0)
@@ -186,10 +203,34 @@ export default function CampaignFlyerCarousel() {
           )
         })}
       </div>
+      </section>
+      )}
+
+      {/* Pop-up otomatis (image only) — campaign tipe popup, muncul saat load */}
+      {popupOpen && popupCampaign && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          onClick={() => setPopupOpen(false)}>
+          <div className="relative w-full max-w-md animate-slide-up-popup" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setPopupOpen(false)}
+              className="absolute -top-3 -right-3 z-10 w-9 h-9 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-slate-100 active:scale-90 transition-all">
+              <X className="w-4 h-4 text-slate-700" />
+            </button>
+            <button onClick={() => { setSelected(popupCampaign); setPopupOpen(false) }}
+              className="block w-full rounded-2xl overflow-hidden shadow-2xl active:scale-[0.99] transition-transform">
+              <img src={getImageUrl(popupCampaign.image)} alt={popupCampaign.title} className="w-full h-auto block" />
+            </button>
+            <p className="text-center text-white/85 text-xs mt-3 font-medium">Ketuk gambar untuk lihat detail</p>
+          </div>
+          <style>{`
+            @keyframes slide-up-popup { from { transform: scale(0.92); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+            .animate-slide-up-popup { animation: slide-up-popup 0.28s cubic-bezier(0.32,0.72,0,1) }
+          `}</style>
+        </div>
+      )}
 
       {selected && (
         <CampaignDetailModal campaign={selected} onClose={() => setSelected(null)} />
       )}
-    </section>
+    </>
   )
 }
