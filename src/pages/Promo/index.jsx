@@ -149,7 +149,7 @@ function CampaignDetailModal({ campaign, onClose }) {
           {campaign.image ? (
             <img src={getImageUrl(campaign.image)} alt={campaign.title} className="w-full h-auto block" />
           ) : (
-            <div className="w-full aspect-[16/9] bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center">
+            <div className="w-full aspect-[16/9] bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
               <Megaphone className="w-16 h-16 text-white/80" />
             </div>
           )}
@@ -171,13 +171,13 @@ function CampaignDetailModal({ campaign, onClose }) {
         <div className="p-5 sm:p-6 space-y-4 sm:space-y-5">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight">{campaign.title}</h2>
-            <p className="mt-1 sm:mt-1.5 text-[11px] sm:text-xs text-purple-500 uppercase tracking-wide font-semibold">Campaign ArahInn</p>
+            <p className="mt-1 sm:mt-1.5 text-[11px] sm:text-xs text-orange-500 uppercase tracking-wide font-semibold">Campaign ArahInn</p>
           </div>
 
           {discount > 0 && (
-            <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-100 p-4 sm:p-5">
-              <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-emerald-600">Diskon</p>
-              <p className="mt-1 text-3xl sm:text-4xl font-black text-emerald-600">{discount}%</p>
+            <div className="rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100 p-4 sm:p-5">
+              <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-orange-500">Diskon</p>
+              <p className="mt-1 text-3xl sm:text-4xl font-black text-orange-600">{discount}%</p>
             </div>
           )}
 
@@ -399,7 +399,7 @@ export default function PromoPage() {
                       />
                     ) : (
                       <div className={`w-full aspect-[16/9] flex flex-col items-center justify-center text-white p-4 text-center ${
-                        isCampaign ? 'bg-gradient-to-br from-purple-600 to-indigo-600' : 'bg-gradient-to-br from-orange-500 to-red-500'
+                        isCampaign ? 'bg-gradient-to-br from-orange-500 to-red-500' : 'bg-gradient-to-br from-orange-500 to-red-500'
                       }`}>
                         {isCampaign ? <Megaphone className="w-9 h-9 mb-2 text-white/90" /> : <Tag className="w-9 h-9 mb-2 text-white/90" />}
                         <p className="font-bold text-base leading-snug line-clamp-2">{it.title}</p>
@@ -413,7 +413,7 @@ export default function PromoPage() {
                     )}
                     {/* Tag jenis */}
                     <span className={`absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-md ${
-                      isCampaign ? 'bg-purple-600 text-white' : 'bg-orange-500 text-white'
+                      isCampaign ? 'bg-orange-600 text-white' : 'bg-amber-500 text-white'
                     }`}>
                       {isCampaign ? 'Campaign' : 'Promo'}
                     </span>
