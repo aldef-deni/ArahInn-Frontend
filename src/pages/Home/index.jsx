@@ -265,6 +265,16 @@ export default function Home() {
       <SEO url="/" />
       {/* ── Hero ─────────────────────────────────────────── */}
       <section className="hero-gradient relative overflow-hidden">
+        {/* Background video (loop) */}
+        <video
+          autoPlay loop muted playsInline preload="auto"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          aria-hidden="true"
+        >
+          <source src="/banner-arahinn.mp4" type="video/mp4" />
+        </video>
+        {/* Overlay gelap agar teks & search box tetap terbaca di atas video */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/30 to-black/55" />
         <div className="absolute inset-0 opacity-10"
           style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}
         />
