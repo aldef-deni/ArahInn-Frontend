@@ -268,7 +268,7 @@ export default function Home() {
         {/* Background video (loop) */}
         <video
           autoPlay loop muted playsInline preload="auto"
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover object-top pointer-events-none"
           aria-hidden="true"
         >
           <source src="/banner-arahinn.mp4" type="video/mp4" />
