@@ -112,8 +112,19 @@ function PromoCard({ promo, onShop, t }) {
     ? `${promo.discountValue}% OFF`
     : `${formatRupiah(promo.discountValue)} OFF`
 
+  // Promo "akan datang" (start_date di masa depan) — tetap ditampilkan sebagai info
+  const _today = new Date(); _today.setHours(0, 0, 0, 0)
+  const _start = promo.startDate ? new Date(promo.startDate) : null
+  if (_start) _start.setHours(0, 0, 0, 0)
+  const isUpcoming = !!(_start && _start > _today)
+
   return (
     <div className={`relative rounded-2xl overflow-hidden bg-gradient-to-r ${style.grad} shadow-md hover:shadow-lg transition-shadow`}>
+      {isUpcoming && (
+        <span className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 px-2 py-0.5 bg-amber-400 text-amber-900 rounded-full text-[10px] font-bold shadow-sm">
+          <Clock className="w-3 h-3" /> Segera Hadir
+        </span>
+      )}
       <div className="flex items-center gap-0 p-5 lg:p-6">
 
         {/* Icon */}
@@ -135,6 +146,7 @@ function PromoCard({ promo, onShop, t }) {
 
           <div className={`flex flex-wrap gap-x-4 gap-y-0.5 text-xs ${style.sub} mb-2.5`}>
             {promo.minPurchase > 0 && <span>{t('home.promoMinPurchase')} {formatRupiah(promo.minPurchase)}</span>}
+            {isUpcoming && promo.startDate && <span className="font-semibold text-white">Mulai {formatDateShort(promo.startDate)}</span>}
             {promo.endDate         && <span>{t('home.promoUntil')} {formatDateShort(promo.endDate)}</span>}
             {promo.quota           && <span>{t('home.promoQuota')} {Math.max(0, promo.quota - (promo.usedCount || 0))} / {promo.quota}</span>}
           </div>
