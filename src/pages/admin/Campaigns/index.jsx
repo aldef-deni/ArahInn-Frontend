@@ -57,6 +57,9 @@ function CampaignFormDrawer({ campaign, onSave, onClose, isSaving }) {
 
   const [imageFile, setImageFile]       = useState(null)
   const [imagePreview, setImagePreview] = useState(isEdit ? getImageUrl(campaign.image) : null)
+  const [bannerFile, setBannerFile]     = useState(null)
+  const [bannerPreview, setBannerPreview] = useState(isEdit ? getImageUrl(campaign.banner) : null)
+  const [err, setErr] = useState('')
 
   const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }))
 
@@ -72,12 +75,25 @@ function CampaignFormDrawer({ campaign, onSave, onClose, isSaving }) {
     setImagePreview(URL.createObjectURL(file))
   }
 
+  const onPickBanner = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setBannerFile(file)
+    setBannerPreview(URL.createObjectURL(file))
+    setErr('')
+  }
+
   const handleSave = () => {
     if (form.type.length === 0) return
+    // Banner landscape WAJIB (file baru atau yang sudah ada saat edit)
+    if (!bannerFile && !bannerPreview) {
+      setErr('Banner landscape wajib diupload.')
+      return
+    }
     const pct = form.discountPercent === '' ? 0 : Number(form.discountPercent)
 
-    // Kalau ada file image baru → FormData (key snake_case, tidak dikonversi interceptor)
-    if (imageFile) {
+    // Ada file baru (image/banner) → kirim FormData (key snake_case, tdk dikonversi interceptor)
+    if (imageFile || bannerFile) {
       const fd = new FormData()
       fd.append('title', form.title)
       form.type.forEach(t => fd.append('type[]', t))
@@ -87,7 +103,8 @@ function CampaignFormDrawer({ campaign, onSave, onClose, isSaving }) {
       if (form.endDate)   fd.append('end_date', form.endDate)
       fd.append('discount_percent', pct)
       if (form.description) fd.append('description', form.description)
-      fd.append('image', imageFile)
+      if (imageFile)  fd.append('image', imageFile)
+      if (bannerFile) fd.append('banner', bannerFile)
       onSave(fd)
       return
     }
@@ -134,19 +151,37 @@ function CampaignFormDrawer({ campaign, onSave, onClose, isSaving }) {
               className={inputCls} />
           </div>
 
-          {/* Banner / Gambar */}
+          {/* Banner Landscape (WAJIB) — tampil memanjang di bawah banner utama */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Banner / Gambar Campaign</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Banner Landscape <span className="text-red-500">*</span></label>
+            <div className="flex items-center gap-4">
+              {bannerPreview
+                ? <img src={bannerPreview} alt="" className="w-40 h-16 rounded-xl object-cover border border-slate-200 shrink-0" />
+                : <div className="w-40 h-16 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300 shrink-0"><ImageIcon className="w-6 h-6" /></div>}
+              <div className="flex-1 min-w-0">
+                <input type="file" accept="image/jpeg,image/png,image/webp" id="campaign-banner" onChange={onPickBanner} className="hidden" />
+                <label htmlFor="campaign-banner" className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-semibold cursor-pointer hover:bg-indigo-100 transition-colors">
+                  <Upload className="w-4 h-4" /> {bannerPreview ? 'Ganti Banner' : 'Pilih Banner'}
+                </label>
+                <p className="text-xs text-slate-400 mt-1.5">Rasio landscape/memanjang (mis. 1200×300). JPG, PNG, WEBP — maks 6MB. Tampil di bawah banner utama home.</p>
+                {err && <p className="text-xs text-red-500 mt-1 font-semibold">{err}</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Gambar flyer/pop-up (opsional) — untuk kartu carousel & pop-up */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Gambar Flyer / Pop-up <span className="font-normal text-slate-400">(opsional)</span></label>
             <div className="flex items-center gap-4">
               {imagePreview
-                ? <img src={imagePreview} alt="" className="w-28 h-20 rounded-xl object-cover border border-slate-200 shrink-0" />
-                : <div className="w-28 h-20 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300 shrink-0"><ImageIcon className="w-6 h-6" /></div>}
+                ? <img src={imagePreview} alt="" className="w-20 h-20 rounded-xl object-cover border border-slate-200 shrink-0" />
+                : <div className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300 shrink-0"><ImageIcon className="w-6 h-6" /></div>}
               <div className="flex-1 min-w-0">
                 <input type="file" accept="image/jpeg,image/png,image/webp" id="campaign-image" onChange={onPickImage} className="hidden" />
-                <label htmlFor="campaign-image" className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-semibold cursor-pointer hover:bg-indigo-100 transition-colors">
+                <label htmlFor="campaign-image" className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold cursor-pointer hover:bg-slate-200 transition-colors">
                   <Upload className="w-4 h-4" /> {imagePreview ? 'Ganti Gambar' : 'Pilih Gambar'}
                 </label>
-                <p className="text-xs text-slate-400 mt-1.5">JPG, PNG, WEBP — maks 4MB. Ditampilkan sebagai banner/pop-up di home & halaman promo.</p>
+                <p className="text-xs text-slate-400 mt-1.5">JPG, PNG, WEBP — maks 4MB. Dipakai untuk kartu carousel & pop-up campaign.</p>
               </div>
             </div>
           </div>

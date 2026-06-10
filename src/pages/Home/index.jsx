@@ -18,6 +18,7 @@ import HotelCard from '@/components/hotel/HotelCard'
 import InteriorPenawaran from '@/components/InteriorPenawaran'
 import PromoFlyerCarousel from '@/components/PromoFlyerCarousel'
 import CampaignFlyerCarousel from '@/components/CampaignFlyerCarousel'
+import CampaignBanner from '@/components/CampaignBanner'
 import SEO from '@/components/SEO'
 
 /**
@@ -405,6 +406,9 @@ export default function Home() {
           <ServiceCategoryTabs />
         </div>
       </section>
+
+      {/* ── Campaign Banner Landscape (di bawah banner utama) ── */}
+      <CampaignBanner />
 
       {/* ── Promo Flyer Carousel (dari ArahInn) ──────────── */}
       <PromoFlyerCarousel />
