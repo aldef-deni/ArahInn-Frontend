@@ -48,6 +48,7 @@ export const travelApi = {
 
   // ── Booking + Payment (checkout → pay → e-tiket) ──
   checkout      : (d)  => api.post('/travel/checkout', d),
+  validatePromo : (d)  => api.post('/travel/promo/validate', d),
   myBookings    : ()   => api.get('/travel/bookings'),
   getBooking    : (id) => api.get(`/travel/bookings/${id}`),
   downloadEtiket: (id) => api.get(`/travel/bookings/${id}/etiket`, { responseType: 'blob' }),

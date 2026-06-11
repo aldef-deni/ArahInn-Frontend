@@ -28,7 +28,7 @@ export default function TrainBooking() {
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
   const [booked, setBooked]   = useState(null)  // hasil book
-  const [promoCode, setPromoCode] = useState('')
+  const [appliedPromo, setAppliedPromo] = useState(null)   // { code, discount }
 
   useEffect(() => {
     if (!sel) { navigate('/tiket/kereta', { replace: true }); return }
@@ -45,6 +45,8 @@ export default function TrainBooking() {
   const ticketSub  = priceAdult * pax
   const markupSub  = markup * pax
   const total      = ticketSub + markupSub
+  const promoDiscount = appliedPromo?.discount || 0
+  const finalTotal    = Math.max(0, total - promoDiscount)
 
   const setAdultField  = (i, k, v) => setAdults(a => a.map((p, idx) => idx === i ? { ...p, [k]: v } : p))
   const setInfantField = (i, k, v) => setInfants(a => a.map((p, idx) => idx === i ? { ...p, [k]: v } : p))
@@ -68,7 +70,7 @@ export default function TrainBooking() {
         infant: sel.infant || 0,
         priceAdult: priceAdult,
         markup,
-        promoCode: promoCode || undefined,
+        promoCode: appliedPromo?.code || undefined,
         trainName: train.trainName,
         departureStation: origin.namaStasiun,
         departureTime: train.departureTime,
@@ -111,7 +113,7 @@ export default function TrainBooking() {
               <div className="border-t border-dashed border-slate-200 my-1" />
               <div className="flex justify-between items-center">
                 <span className="text-sm font-semibold text-slate-500">Total</span>
-                <span className="font-display text-lg font-bold text-orange-600">{formatRupiah(total)}</span>
+                <span className="font-display text-lg font-bold text-orange-600">{formatRupiah(finalTotal)}</span>
               </div>
             </div>
 
@@ -195,7 +197,7 @@ export default function TrainBooking() {
 
         {/* Kode promo */}
         <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
-          <PromoField value={promoCode} onChange={setPromoCode} />
+          <PromoField moda="kereta" total={total} departDate={date} onApplied={setAppliedPromo} />
         </div>
 
         {/* Rincian harga */}
@@ -206,9 +208,11 @@ export default function TrainBooking() {
             {markup > 0 && (
               <div className="flex justify-between"><span className="text-slate-500">Biaya layanan ({pax} × {formatRupiah(markup)})</span><span className="text-slate-900">{formatRupiah(markupSub)}</span></div>
             )}
-            <div className="flex justify-between pt-1.5 border-t border-slate-100"><span className="font-bold text-slate-900">Total</span><span className="font-bold text-orange-600">{formatRupiah(total)}</span></div>
+            {promoDiscount > 0 && (
+              <div className="flex justify-between"><span className="text-slate-500">Diskon Promo {appliedPromo?.code ? `(${appliedPromo.code})` : ''}</span><span className="font-medium text-green-600">- {formatRupiah(promoDiscount)}</span></div>
+            )}
+            <div className="flex justify-between pt-1.5 border-t border-slate-100"><span className="font-bold text-slate-900">Total</span><span className="font-bold text-orange-600">{formatRupiah(finalTotal)}</span></div>
           </div>
-          <p className="text-[11px] text-slate-400 mt-2">Jika kode promo valid, potongan otomatis dihitung saat checkout.</p>
         </div>
 
         {/* Price + submit */}
@@ -216,7 +220,7 @@ export default function TrainBooking() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold">Total ({sel.adult} dewasa)</p>
-              <p className="font-display text-xl font-bold text-orange-600">{formatRupiah(total)}</p>
+              <p className="font-display text-xl font-bold text-orange-600">{formatRupiah(finalTotal)}</p>
             </div>
             <div className="flex items-center gap-1 text-[10px] text-emerald-600"><ShieldCheck className="w-3.5 h-3.5" /> Resmi KAI</div>
           </div>

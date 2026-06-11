@@ -26,7 +26,7 @@ export default function FlightBooking() {
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
   const [booked, setBooked]   = useState(null)
-  const [promoCode, setPromoCode] = useState('')
+  const [appliedPromo, setAppliedPromo] = useState(null)   // { code, discount }
 
   useEffect(() => {
     if (!sel) { navigate('/tiket/pesawat', { replace: true }); return }
@@ -62,6 +62,8 @@ export default function FlightBooking() {
   const ticketSub = price * payingPax
   const markupSub = markup * payingPax
   const total     = ticketSub + markupSub
+  const promoDiscount = appliedPromo?.discount || 0
+  const finalTotal    = Math.max(0, total - promoDiscount)
 
   const upd = (setter) => (i, k, v) => setter(a => a.map((p, idx) => idx === i ? { ...p, [k]: v } : p))
   const setA = upd(setAdults), setC = upd(setChildren), setI = upd(setInfants)
@@ -81,7 +83,7 @@ export default function FlightBooking() {
         departureDate: date,
         adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0,
         price, markup,
-        promoCode: promoCode || undefined,
+        promoCode: appliedPromo?.code || undefined,
         flightCode: cls.flightCode, departureTime: cls.departureTime, arrivalTime: cls.arrivalTime, class: cls.class,
         flights: [cls.seat],
         passengers: { adults, children, infants },
@@ -190,7 +192,7 @@ export default function FlightBooking() {
         ))}
 
         <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
-          <PromoField value={promoCode} onChange={setPromoCode} />
+          <PromoField moda="pesawat" total={total} departDate={date} onApplied={setAppliedPromo} />
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
@@ -198,13 +200,14 @@ export default function FlightBooking() {
           <div className="space-y-1.5 text-sm">
             <div className="flex justify-between"><span className="text-slate-500">Harga tiket ({payingPax} × {formatRupiah(price)})</span><span className="text-slate-900">{formatRupiah(ticketSub)}</span></div>
             {markup > 0 && <div className="flex justify-between"><span className="text-slate-500">Biaya layanan ({payingPax} × {formatRupiah(markup)})</span><span className="text-slate-900">{formatRupiah(markupSub)}</span></div>}
-            <div className="flex justify-between pt-1.5 border-t border-slate-100"><span className="font-bold text-slate-900">Total</span><span className="font-bold text-sky-600">{formatRupiah(total)}</span></div>
+            {promoDiscount > 0 && <div className="flex justify-between"><span className="text-slate-500">Diskon Promo {appliedPromo?.code ? `(${appliedPromo.code})` : ''}</span><span className="font-medium text-green-600">- {formatRupiah(promoDiscount)}</span></div>}
+            <div className="flex justify-between pt-1.5 border-t border-slate-100"><span className="font-bold text-slate-900">Total</span><span className="font-bold text-sky-600">{formatRupiah(finalTotal)}</span></div>
           </div>
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 p-4 sticky bottom-2 shadow-lg">
           <div className="flex items-center justify-between mb-3">
-            <div><p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold">Total</p><p className="font-display text-xl font-bold text-sky-600">{formatRupiah(total)}</p></div>
+            <div><p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold">Total</p><p className="font-display text-xl font-bold text-sky-600">{formatRupiah(finalTotal)}</p></div>
             <div className="flex items-center gap-1 text-[10px] text-emerald-600"><ShieldCheck className="w-3.5 h-3.5" /> E-tiket resmi</div>
           </div>
           <button onClick={submit} disabled={!valid || loading || fareFailed} className="w-full py-3.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50">
