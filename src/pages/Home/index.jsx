@@ -19,6 +19,7 @@ import InteriorPenawaran from '@/components/InteriorPenawaran'
 import PromoFlyerCarousel from '@/components/PromoFlyerCarousel'
 import CampaignBanner from '@/components/CampaignBanner'
 import BlurSelect from '@/components/ui/BlurSelect'
+import Racket from '@/components/icons/Racket'
 import SEO from '@/components/SEO'
 
 /**
@@ -39,7 +40,7 @@ function ServiceCategoryTabs() {
     { label: t('services.properti'),      Icon: Building2,    to: '/properti',                          accent: '#f87171' },
     { label: t('services.interior'),      Icon: Sofa,         to: '/interior',                          accent: '#fb923c' },
     { label: t('services.wisata'),        Icon: Mountain,     to: '/coming-soon?feature=wisata',        accent: '#86efac' },
-    { label: t('services.sports'),        Icon: Dumbbell,     to: '/sports',                            accent: '#fca5a5' },
+    { label: t('services.sports'),        Icon: Racket,       to: '/sports',                            accent: '#fca5a5' },
   ]
   return (
     <div className="overflow-x-auto scrollbar-hide lg:overflow-visible">
