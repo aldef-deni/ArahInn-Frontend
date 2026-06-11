@@ -304,9 +304,9 @@ export default function Checkout() {
                 <span>{promoError}</span>
               </div>
             )}
-            {promoApplied && pricing?.promoDiscount > 0 && !promoError && (
+            {promoApplied && pricing?.codeDiscount > 0 && !promoError && (
               <div className="mt-3 rounded-xl border border-green-200 bg-green-50 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-green-700">
-                {t('checkout.promoSuccess', { amount: formatRupiah(pricing.promoDiscount) })}
+                {t('checkout.promoSuccess', { amount: formatRupiah(pricing.codeDiscount) })}
               </div>
             )}
           </div>
@@ -318,38 +318,18 @@ export default function Checkout() {
             {pricing ? (() => {
               // BE sekarang return original_base_price (sebelum promo) & base_price (setelah promo).
               // Promo discount diaplikasikan di base price agar konsisten dengan card.
-              const hasPromo          = (pricing.promoDiscount || 0) > 0
-              const originalBase      = Number(pricing.originalBasePrice ?? pricing.basePrice) || 0
+              const promoDiscount     = Number(pricing.promoDiscount) || 0     // total (campaign + kode)
+              const campaignDiscount  = Number(pricing.campaignDiscount) || 0  // bagian campaign otomatis
+              const codeDiscount      = Number(pricing.codeDiscount) || 0      // bagian kode promo
+              const hasPromo          = promoDiscount > 0
               const basePriceFinal    = Number(pricing.basePrice) || 0
-              const promoDiscount     = Number(pricing.promoDiscount) || 0
-              const showInlineDiscount = hasPromo && !appliedPromo
-
-              // Persen: prioritaskan nilai dari promo (sumber kebenaran owner),
-              // fallback ke hitungan rasio kalau bukan tipe percent.
-              const promoPct = pricing.promo?.discountType === 'percent'
-                ? Math.round(Number(pricing.promo.discountValue) || 0)
-                : (originalBase > 0 ? Math.round((promoDiscount / originalBase) * 100) : 0)
 
               return (
               <div className="space-y-2 text-sm">
-                {/* Harga hotel — tampilkan coret + harga diskon kalau ada promo otomatis */}
-                <div className="flex justify-between items-start gap-3">
+                {/* Harga hotel (sudah termasuk semua diskon; rincian diskon di bawah) */}
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">{t('checkout.hotelPrice')}</span>
-                  <div className="text-right">
-                    {showInlineDiscount ? (
-                      <>
-                        <p className="text-xs text-slate-400 line-through leading-tight">
-                          {formatRupiah(originalBase)}
-                        </p>
-                        <p className="font-bold text-orange-600">{formatRupiah(basePriceFinal)}</p>
-                        <span className="inline-block mt-1 px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-700 text-[10px] font-bold">
-                          {promoPct}% OFF
-                        </span>
-                      </>
-                    ) : (
-                      <p>{formatRupiah(basePriceFinal)}</p>
-                    )}
-                  </div>
+                  <span>{formatRupiah(basePriceFinal)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">
@@ -357,14 +337,18 @@ export default function Checkout() {
                   </span>
                   <span>{formatRupiah((pricing.markupAmount || 0) + (pricing.taxAmount || 0) + (pricing.priceSuffix || 0))}</span>
                 </div>
-                {/* Hanya tampilkan baris diskon promo terpisah kalau pakai KODE MANUAL.
-                    Untuk promo otomatis, diskon sudah tergabung di baris "Harga hotel" di atas */}
-                {hasPromo && appliedPromo && (
+                {/* Diskon CAMPAIGN otomatis (owner ikut campaign) — selalu tampil kalau ada */}
+                {campaignDiscount > 0 && (
                   <div className="flex justify-between items-start gap-2">
-                    <div className="flex flex-col">
-                      <span className="text-muted-foreground">{t('checkout.promoDiscount')}</span>
-                    </div>
-                    <span className="font-medium text-green-600 whitespace-nowrap">- {formatRupiah(promoDiscount)}</span>
+                    <span className="text-muted-foreground">Diskon Campaign</span>
+                    <span className="font-medium text-green-600 whitespace-nowrap">- {formatRupiah(campaignDiscount)}</span>
+                  </div>
+                )}
+                {/* Diskon KODE PROMO — hanya saat kode sudah di-Gunakan */}
+                {appliedPromo && codeDiscount > 0 && (
+                  <div className="flex justify-between items-start gap-2">
+                    <span className="text-muted-foreground">{t('checkout.promoDiscount')}</span>
+                    <span className="font-medium text-green-600 whitespace-nowrap">- {formatRupiah(codeDiscount)}</span>
                   </div>
                 )}
                 {pricing.loyaltyDiscount > 0 && (
@@ -384,9 +368,9 @@ export default function Checkout() {
                     <span>{t('checkout.total')}</span>
                     <span className="price-tag">{formatRupiah(pricing.totalPrice)}</span>
                   </div>
-                  {showInlineDiscount && (pricing.promo?.name || pricing.campaign?.title) && (
+                  {campaignDiscount > 0 && pricing.campaign?.title && (
                     <p className="mt-1 text-[11px] text-orange-600 font-semibold">
-                      ✦ {pricing.promo?.name || pricing.campaign?.title} otomatis diterapkan
+                      ✦ {pricing.campaign.title} otomatis diterapkan
                     </p>
                   )}
                 </div>
