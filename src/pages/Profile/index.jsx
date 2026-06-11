@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
@@ -43,28 +44,29 @@ function getTier(points = 0) {
 }
 
 const ORDER_TABS = [
-  { value: '',         label: 'Semua' },
-  { value: 'pending',  label: 'Menunggu Bayar' },
-  { value: 'issued',   label: 'Dikonfirmasi' },
-  { value: 'canceled', label: 'Dibatalkan' },
+  { value: '',         labelKey: 'profilePage.filterAll' },
+  { value: 'pending',  labelKey: 'profilePage.filterPending' },
+  { value: 'issued',   labelKey: 'profilePage.filterIssued' },
+  { value: 'canceled', labelKey: 'profilePage.filterCanceled' },
 ]
 
 // ── Sub-components ────────────────────────────────────────
 function SectionAccount({ user, updateUser }) {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const qc        = useQueryClient()
   const { register, handleSubmit } = useForm({ defaultValues: { name: user?.name, phone: user?.phone } })
 
   const profileMutation = useMutation({
     mutationFn: (d) => userApi.update(d),
-    onSuccess : (r) => { updateUser(r.data.data); toast({ title: 'Profil berhasil diperbarui.' }); qc.invalidateQueries({ queryKey: ['profile'] }) },
-    onError   : () => toast({ title: 'Gagal memperbarui profil.', variant: 'destructive' }),
+    onSuccess : (r) => { updateUser(r.data.data); toast({ title: t('profilePage.toastProfileUpdated') }); qc.invalidateQueries({ queryKey: ['profile'] }) },
+    onError   : () => toast({ title: t('profilePage.toastProfileFailed'), variant: 'destructive' }),
   })
 
   const avatarMutation = useMutation({
     mutationFn: (file) => { const fd = new FormData(); fd.append('avatar', file); return userApi.avatar(fd) },
-    onSuccess : (r) => { updateUser(r.data.data); toast({ title: 'Foto profil diperbarui.' }) },
-    onError   : (e) => toast({ title: 'Gagal upload foto', description: e?.response?.data?.message || 'Terjadi kesalahan.', variant: 'destructive' }),
+    onSuccess : (r) => { updateUser(r.data.data); toast({ title: t('profilePage.toastAvatarUpdated') }) },
+    onError   : (e) => toast({ title: t('profilePage.toastAvatarFailed'), description: e?.response?.data?.message || t('profilePage.errorGeneric'), variant: 'destructive' }),
   })
 
   const handleAvatarChange = async (file) => {
@@ -72,27 +74,27 @@ function SectionAccount({ user, updateUser }) {
     const allowed = ['jpg', 'jpeg', 'png']
     const ext = file.name.split('.').pop().toLowerCase()
     if (!allowed.includes(ext)) {
-      toast({ title: 'Format tidak didukung', description: 'Hanya file .jpg, .jpeg, dan .png yang diizinkan.', variant: 'destructive' })
+      toast({ title: t('profilePage.toastFormatTitle'), description: t('profilePage.toastFormatDesc'), variant: 'destructive' })
       return
     }
     const result = await validateImageFile(file, { minResolution: MIN_AVATAR_RESOLUTION_PX })
     if (!result.valid) {
-      toast({ title: 'Foto avatar ditolak', description: result.error, variant: 'destructive' })
+      toast({ title: t('profilePage.toastAvatarRejected'), description: result.error, variant: 'destructive' })
       return
     }
     try {
       const prepared = await prepareAvatarFile(file, { size: 512, quality: 0.85 })
       avatarMutation.mutate(prepared)
     } catch (e) {
-      toast({ title: 'Gagal memproses foto', description: e?.message || 'Terjadi kesalahan.', variant: 'destructive' })
+      toast({ title: t('profilePage.toastAvatarProcessFailed'), description: e?.message || t('profilePage.errorGeneric'), variant: 'destructive' })
     }
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-1">Akun</h2>
-        <p className="text-xs sm:text-sm text-slate-500">Kelola informasi profil Anda.</p>
+        <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-1">{t('profilePage.accountTitle')}</h2>
+        <p className="text-xs sm:text-sm text-slate-500">{t('profilePage.accountSubtitle')}</p>
       </div>
 
       {/* Avatar card */}
@@ -118,18 +120,18 @@ function SectionAccount({ user, updateUser }) {
             </div>
             <p className="text-xs sm:text-sm text-slate-500 truncate">{user?.email}</p>
             <p className="text-[11px] sm:text-xs text-slate-400 mt-1 capitalize">{user?.role?.replace('_', ' ')}</p>
-            <p className="text-[10px] sm:text-xs text-slate-400 mt-1 leading-relaxed">Foto avatar: min. 256 px · maks. 5 MB.</p>
+            <p className="text-[10px] sm:text-xs text-slate-400 mt-1 leading-relaxed">{t('profilePage.avatarHint')}</p>
           </div>
         </div>
       </div>
 
       {/* Edit form */}
       <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
-        <h3 className="font-semibold text-slate-900 mb-5">Informasi Profil</h3>
+        <h3 className="font-semibold text-slate-900 mb-5">{t('profilePage.profileInfo')}</h3>
         <form onSubmit={handleSubmit(d => profileMutation.mutate(d))} className="space-y-4">
           {[
-            { name: 'name',  label: 'Nama Lengkap', icon: User,  type: 'text', placeholder: 'Nama Anda' },
-            { name: 'phone', label: 'Nomor Telepon', icon: Phone, type: 'tel',  placeholder: '08xxxxxxxxxx' },
+            { name: 'name',  label: t('profilePage.fullName'),  icon: User,  type: 'text', placeholder: t('profilePage.namePlaceholder') },
+            { name: 'phone', label: t('profilePage.phoneLabel'), icon: Phone, type: 'tel',  placeholder: '08xxxxxxxxxx' },
           ].map(({ name, label, icon: Icon, type, placeholder }) => (
             <div key={name}>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
@@ -141,18 +143,18 @@ function SectionAccount({ user, updateUser }) {
             </div>
           ))}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('profilePage.emailLabel')}</label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input type="email" value={user?.email} disabled
                 className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-400 cursor-not-allowed" />
             </div>
-            <p className="text-xs text-slate-400 mt-1">Email tidak dapat diubah.</p>
+            <p className="text-xs text-slate-400 mt-1">{t('profilePage.emailLocked')}</p>
           </div>
           <button type="submit" disabled={profileMutation.isPending}
             className="flex items-center gap-2 px-6 py-2.5 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 disabled:opacity-50 transition-colors">
             <Save className="w-4 h-4" />
-            {profileMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
+            {profileMutation.isPending ? t('profilePage.saving') : t('profilePage.saveChanges')}
           </button>
         </form>
       </div>
@@ -161,29 +163,30 @@ function SectionAccount({ user, updateUser }) {
 }
 
 function SectionSecurity() {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [showPass, setShowPass] = useState(false)
   const { register, handleSubmit, reset, watch } = useForm()
 
   const passMutation = useMutation({
     mutationFn: (d) => userApi.password(d),
-    onSuccess : () => { toast({ title: 'Password berhasil diubah.' }); reset() },
-    onError   : (e) => toast({ title: 'Gagal', description: e?.response?.data?.message, variant: 'destructive' }),
+    onSuccess : () => { toast({ title: t('profilePage.toastPasswordChanged') }); reset() },
+    onError   : (e) => toast({ title: t('profilePage.failed'), description: e?.response?.data?.message, variant: 'destructive' }),
   })
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-1">Keamanan</h2>
-        <p className="text-xs sm:text-sm text-slate-500">Kelola password akun Anda.</p>
+        <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-1">{t('profilePage.securityTitle')}</h2>
+        <p className="text-xs sm:text-sm text-slate-500">{t('profilePage.securitySubtitle')}</p>
       </div>
       <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
-        <h3 className="font-semibold text-slate-900 mb-5">Ubah Password</h3>
+        <h3 className="font-semibold text-slate-900 mb-5">{t('profilePage.changePasswordTitle')}</h3>
         <form onSubmit={handleSubmit(d => passMutation.mutate(d))} className="space-y-4 max-w-sm">
           {[
-            { name: 'oldPassword', label: 'Password Lama',       rules: { required: 'Wajib diisi' } },
-            { name: 'newPassword', label: 'Password Baru',       rules: { required: 'Wajib diisi', minLength: { value: 6, message: 'Minimal 6 karakter' } } },
-            { name: 'confirm',     label: 'Konfirmasi Password', rules: { required: 'Wajib diisi', validate: v => v === watch('newPassword') || 'Password tidak cocok' } },
+            { name: 'oldPassword', label: t('profilePage.oldPassword'),     rules: { required: t('profilePage.required') } },
+            { name: 'newPassword', label: t('profilePage.newPassword'),     rules: { required: t('profilePage.required'), minLength: { value: 6, message: t('profilePage.minChars') } } },
+            { name: 'confirm',     label: t('profilePage.confirmPassword'), rules: { required: t('profilePage.required'), validate: v => v === watch('newPassword') || t('profilePage.passwordMismatch') } },
           ].map(({ name, label, rules }) => (
             <div key={name}>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
@@ -203,7 +206,7 @@ function SectionSecurity() {
           <button type="submit" disabled={passMutation.isPending}
             className="flex items-center gap-2 px-6 py-2.5 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 disabled:opacity-50 transition-colors">
             <Shield className="w-4 h-4" />
-            {passMutation.isPending ? 'Menyimpan...' : 'Ubah Password'}
+            {passMutation.isPending ? t('profilePage.saving') : t('profilePage.changePasswordTitle')}
           </button>
         </form>
       </div>
@@ -213,15 +216,16 @@ function SectionSecurity() {
 
 // Status dot color tints — soft palette
 const STATUS_TINT = {
-  pending:    { dot: 'bg-amber-400',   chip: 'bg-amber-50  text-amber-700',   label: 'Menunggu Bayar' },
-  paid:       { dot: 'bg-emerald-400', chip: 'bg-emerald-50 text-emerald-700', label: 'Dibayar' },
-  issued:     { dot: 'bg-blue-400',    chip: 'bg-blue-50   text-blue-700',    label: 'Dikonfirmasi' },
-  rescheduled:{ dot: 'bg-indigo-400',  chip: 'bg-indigo-50 text-indigo-700',  label: 'Dijadwal Ulang' },
-  canceled:   { dot: 'bg-rose-400',    chip: 'bg-rose-50   text-rose-700',    label: 'Dibatalkan' },
-  refunded:   { dot: 'bg-slate-400',   chip: 'bg-slate-100 text-slate-600',   label: 'Refund' },
+  pending:    { dot: 'bg-amber-400',   chip: 'bg-amber-50  text-amber-700',   labelKey: 'profilePage.statusPending' },
+  paid:       { dot: 'bg-emerald-400', chip: 'bg-emerald-50 text-emerald-700', labelKey: 'profilePage.statusPaid' },
+  issued:     { dot: 'bg-blue-400',    chip: 'bg-blue-50   text-blue-700',    labelKey: 'profilePage.statusIssued' },
+  rescheduled:{ dot: 'bg-indigo-400',  chip: 'bg-indigo-50 text-indigo-700',  labelKey: 'profilePage.statusRescheduled' },
+  canceled:   { dot: 'bg-rose-400',    chip: 'bg-rose-50   text-rose-700',    labelKey: 'profilePage.statusCanceled' },
+  refunded:   { dot: 'bg-slate-400',   chip: 'bg-slate-100 text-slate-600',   labelKey: 'profilePage.statusRefunded' },
 }
 
 function OrderRow({ order, onDetail, onPay, onCancel, onChat, chatUnread = 0, canceling }) {
+  const { t } = useTranslation()
   const tint = STATUS_TINT[order.status] || STATUS_TINT.pending
   return (
     <div className="group rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 hover:border-blue-200 hover:shadow-sm transition-all">
@@ -238,7 +242,7 @@ function OrderRow({ order, onDetail, onPay, onCancel, onChat, chatUnread = 0, ca
           <div className="flex items-start justify-between gap-2 mb-1">
             <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${tint.chip}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${tint.dot}`} />
-              {tint.label}
+              {t(tint.labelKey)}
             </span>
             <span className="text-[10px] font-mono text-slate-400 tracking-wider">{order.bookingCode}</span>
           </div>
@@ -247,7 +251,7 @@ function OrderRow({ order, onDetail, onPay, onCancel, onChat, chatUnread = 0, ca
           <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-slate-400">
             <Calendar className="w-3 h-3 shrink-0" />
             <span className="truncate">
-              {formatDateShort(order.checkIn)} – {formatDateShort(order.checkOut)} · {order.totalNights} mlm · {order.guests} tamu
+              {formatDateShort(order.checkIn)} – {formatDateShort(order.checkOut)} · {order.totalNights} {t('profilePage.nightsUnit')} · {order.guests} {t('profilePage.guestsUnit')}
             </span>
           </div>
         </div>
@@ -256,7 +260,7 @@ function OrderRow({ order, onDetail, onPay, onCancel, onChat, chatUnread = 0, ca
       {/* Footer: price + actions */}
       <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">Total</p>
+          <p className="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">{t('profilePage.total')}</p>
           <p className="text-base sm:text-lg font-black text-slate-900 leading-tight">{formatRupiah(order.totalPrice)}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -264,7 +268,7 @@ function OrderRow({ order, onDetail, onPay, onCancel, onChat, chatUnread = 0, ca
             <button onClick={onChat}
               className="relative inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-sm shadow-blue-200 transition-all">
               <MessageSquare className="w-3.5 h-3.5" />
-              Chat Penginapan
+              {t('profilePage.chatStay')}
               {chatUnread > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center bg-red-500 text-white text-[10px] font-extrabold rounded-full border-2 border-white shadow-sm">
                   {chatUnread > 99 ? '99+' : chatUnread}
@@ -274,17 +278,17 @@ function OrderRow({ order, onDetail, onPay, onCancel, onChat, chatUnread = 0, ca
           )}
           <button onClick={onDetail}
             className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 transition-colors">
-            Detail
+            {t('profilePage.detail')}
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
           {order.status === 'pending' && (
             <>
               <button onClick={onPay}
                 className="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-sm shadow-orange-200 transition-all">
-                Bayar Sekarang
+                {t('profilePage.payNow')}
               </button>
               <button onClick={onCancel} disabled={canceling}
-                title="Batalkan booking"
+                title={t('profilePage.cancelBooking')}
                 className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 transition-colors disabled:opacity-50">
                 <XCircle className="w-4 h-4" />
               </button>
@@ -293,7 +297,7 @@ function OrderRow({ order, onDetail, onPay, onCancel, onChat, chatUnread = 0, ca
           {order.status === 'issued' && (
             <button onClick={onPay}
               className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors">
-              <RefreshCw className="w-3.5 h-3.5" /> Jadwal Ulang
+              <RefreshCw className="w-3.5 h-3.5" /> {t('profilePage.reschedule')}
             </button>
           )}
         </div>
@@ -303,6 +307,7 @@ function OrderRow({ order, onDetail, onPay, onCancel, onChat, chatUnread = 0, ca
 }
 
 function SectionOrders() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const qc       = useQueryClient()
   const { toast } = useToast()
@@ -334,12 +339,12 @@ function SectionOrders() {
     mutationFn: (id) => bookingApi.cancel(id),
     onSuccess : () => {
       qc.invalidateQueries({ queryKey: ['my-orders'] })
-      toast({ title: 'Booking dibatalkan.' })
+      toast({ title: t('profilePage.toastBookingCanceled') })
     },
     onError: (e) => {
       qc.invalidateQueries({ queryKey: ['my-orders'] })
-      const msg = e?.response?.data?.message || 'Gagal membatalkan booking.'
-      toast({ title: 'Gagal membatalkan', description: msg, variant: 'destructive' })
+      const msg = e?.response?.data?.message || t('profilePage.toastCancelFailedDesc')
+      toast({ title: t('profilePage.toastCancelFailedTitle'), description: msg, variant: 'destructive' })
     },
   })
 
@@ -350,12 +355,12 @@ function SectionOrders() {
       {/* Header */}
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">Pesanan Saya</h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Semua riwayat booking & transaksi PPOB.</p>
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">{t('profilePage.ordersTitle')}</h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">{t('profilePage.ordersSubtitle')}</p>
         </div>
         {activeMain === 'akomodasi' && totalOrders > 0 && (
           <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-            {totalOrders} pesanan
+            {t('profilePage.ordersCount', { count: totalOrders })}
           </span>
         )}
       </div>
@@ -364,8 +369,8 @@ function SectionOrders() {
       <div className="relative border-b border-slate-200">
         <div className="flex gap-1 sm:gap-2">
           {[
-            { value: 'akomodasi', label: 'Akomodasi', Icon: HotelIcon },
-            { value: 'ppob',      label: 'PPOB',      Icon: Receipt },
+            { value: 'akomodasi', label: t('profilePage.tabAkomodasi'), Icon: HotelIcon },
+            { value: 'ppob',      label: t('profilePage.tabPpob'),      Icon: Receipt },
           ].map(tab => {
             const TabIcon = tab.Icon
             const active = activeMain === tab.value
@@ -409,7 +414,7 @@ function SectionOrders() {
                   : 'text-slate-500 hover:text-slate-700'
               }`}
             >
-              {tab.label}
+              {t(tab.labelKey)}
             </button>
           )
         })}
@@ -441,7 +446,7 @@ function SectionOrders() {
                   onChat={(order.hotelId || order.hotel?.id) ? () => setChatBooking({
                     id: order.id,
                     hotelId: order.hotelId || order.hotel?.id,
-                    hotelName: order.hotel?.name || 'Penginapan',
+                    hotelName: order.hotel?.name || t('profilePage.accommodationFallback'),
                     bookingCode: order.bookingCode,
                   }) : undefined}
                   chatUnread={bookingUnreadMap[order.id] || 0}
@@ -453,11 +458,11 @@ function SectionOrders() {
                 <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-4">
                   <ShoppingBag className="w-8 h-8 text-slate-300" />
                 </div>
-                <p className="font-semibold text-lg text-slate-800">Belum ada pesanan</p>
-                <p className="text-sm text-slate-400 mt-1 mb-6">Mulai pesan hotel impian Anda!</p>
+                <p className="font-semibold text-lg text-slate-800">{t('profilePage.ordersEmptyTitle')}</p>
+                <p className="text-sm text-slate-400 mt-1 mb-6">{t('profilePage.ordersEmptyDesc')}</p>
                 <button onClick={() => navigate('/search')}
                   className="inline-flex items-center gap-2 px-6 py-2.5 bg-brand text-white rounded-xl text-sm font-semibold hover:bg-brand-700 transition-colors shadow-sm">
-                  Cari Hotel
+                  {t('profilePage.findHotel')}
                 </button>
               </div>
             )
@@ -515,12 +520,13 @@ function SectionOrders() {
 }
 
 function SectionLoyalty({ loyalty }) {
+  const { t } = useTranslation()
   const tier = getTier(loyalty?.balance)
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-1">Poin Loyalitas</h2>
-        <p className="text-sm text-slate-500">Kumpulkan poin dari setiap transaksi.</p>
+        <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-1">{t('profilePage.loyaltyTitle')}</h2>
+        <p className="text-sm text-slate-500">{t('profilePage.loyaltySubtitle')}</p>
       </div>
       <div className={`bg-gradient-to-br ${tier.color} rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white shadow-lg`}>
         <div className="flex items-center justify-between mb-3 sm:mb-4">
@@ -528,16 +534,16 @@ function SectionLoyalty({ loyalty }) {
           <Star className="w-5 h-5 sm:w-6 sm:h-6 fill-white/40 text-white/40" />
         </div>
         <p className="font-display text-4xl sm:text-5xl font-bold break-all">{(loyalty?.balance || 0).toLocaleString('id-ID')}</p>
-        <p className="text-xs sm:text-sm opacity-80 mt-1">Poin tersedia</p>
-        <p className="text-[11px] sm:text-xs opacity-60 mt-2 sm:mt-3 leading-relaxed">≈ {formatRupiah(loyalty?.balance || 0)} nilai tukar · 1 poin = Rp 1</p>
+        <p className="text-xs sm:text-sm opacity-80 mt-1">{t('profilePage.pointsAvailable')}</p>
+        <p className="text-[11px] sm:text-xs opacity-60 mt-2 sm:mt-3 leading-relaxed">{t('profilePage.exchangeNote', { value: formatRupiah(loyalty?.balance || 0) })}</p>
       </div>
       <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm">
-        <h3 className="font-semibold text-slate-900 mb-4">Cara Mendapatkan Poin</h3>
+        <h3 className="font-semibold text-slate-900 mb-4">{t('profilePage.howToEarn')}</h3>
         <ul className="space-y-3">
           {[
-            ['🏨', 'Selesaikan booking', '1 poin per Rp 1.000'],
-            ['⭐', 'Beri ulasan hotel',  'Bonus 50 poin'],
-            ['🎁', 'Referral teman baru','Bonus 100 poin'],
+            ['🏨', t('profilePage.earnBooking'), t('profilePage.earnBookingDesc')],
+            ['⭐', t('profilePage.earnReview'),  t('profilePage.earnReviewDesc')],
+            ['🎁', t('profilePage.earnReferral'),t('profilePage.earnReferralDesc')],
           ].map(([icon, title, desc]) => (
             <li key={title} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
               <span className="text-2xl">{icon}</span>
@@ -556,6 +562,7 @@ function SectionLoyalty({ loyalty }) {
 
 // ── Section: Ulasan Anda ──────────────────────────────────
 function SectionReviews() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { data: reviews = [], isLoading } = useQuery({
     queryKey: ['my-reviews'],
@@ -573,12 +580,12 @@ function SectionReviews() {
     <div className="space-y-4">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">Ulasan Anda</h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Riwayat semua ulasan yang Anda kirim.</p>
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">{t('profilePage.reviewsTitle')}</h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">{t('profilePage.reviewsSubtitle')}</p>
         </div>
         {stats.total > 0 && (
           <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-            {stats.total} ulasan
+            {t('profilePage.reviewsCount', { count: stats.total })}
           </span>
         )}
       </div>
@@ -587,9 +594,9 @@ function SectionReviews() {
       {stats.total > 0 && (
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Tayang',    val: stats.approved, color: 'from-emerald-50 to-emerald-100/40 text-emerald-700', icon: CheckCircle2 },
-            { label: 'Menunggu',  val: stats.pending,  color: 'from-amber-50 to-amber-100/40 text-amber-700',       icon: Clock },
-            { label: 'Ditolak',   val: stats.rejected, color: 'from-red-50 to-red-100/40 text-red-700',             icon: XCircle },
+            { label: t('profilePage.statApproved'), val: stats.approved, color: 'from-emerald-50 to-emerald-100/40 text-emerald-700', icon: CheckCircle2 },
+            { label: t('profilePage.statPending'),  val: stats.pending,  color: 'from-amber-50 to-amber-100/40 text-amber-700',       icon: Clock },
+            { label: t('profilePage.statRejected'), val: stats.rejected, color: 'from-red-50 to-red-100/40 text-red-700',             icon: XCircle },
           ].map(s => {
             const Icon = s.icon
             return (
@@ -612,8 +619,8 @@ function SectionReviews() {
       ) : reviews.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center shadow-sm">
           <MessageSquare className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-          <p className="font-semibold text-slate-700">Belum ada ulasan</p>
-          <p className="text-sm text-slate-400 mt-1">Setelah Anda menginap atau membeli properti, Anda dapat memberikan ulasan.</p>
+          <p className="font-semibold text-slate-700">{t('profilePage.reviewsEmptyTitle')}</p>
+          <p className="text-sm text-slate-400 mt-1">{t('profilePage.reviewsEmptyDesc')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -625,13 +632,14 @@ function SectionReviews() {
 }
 
 function UserReviewCard({ review, navigate }) {
+  const { t, i18n } = useTranslation()
   const created = review.createdAt ? new Date(review.createdAt) : null
-  const dateStr = created ? created.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
+  const dateStr = created ? created.toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
 
   const statusConfig = {
-    approved: { label: 'Tayang',   bg: 'bg-emerald-100', text: 'text-emerald-700', Icon: CheckCircle2 },
-    pending:  { label: 'Menunggu', bg: 'bg-amber-100',   text: 'text-amber-700',   Icon: Clock },
-    rejected: { label: 'Ditolak',  bg: 'bg-red-100',     text: 'text-red-700',     Icon: XCircle },
+    approved: { label: t('profilePage.statApproved'), bg: 'bg-emerald-100', text: 'text-emerald-700', Icon: CheckCircle2 },
+    pending:  { label: t('profilePage.statPending'),  bg: 'bg-amber-100',   text: 'text-amber-700',   Icon: Clock },
+    rejected: { label: t('profilePage.statRejected'), bg: 'bg-red-100',     text: 'text-red-700',     Icon: XCircle },
   }[review.status] || { label: review.status, bg: 'bg-slate-100', text: 'text-slate-700', Icon: AlertCircle }
 
   const StatusIcon = statusConfig.Icon
@@ -667,7 +675,7 @@ function UserReviewCard({ review, navigate }) {
               <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
                 isHotel ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
               }`}>
-                {isHotel ? 'Penginapan' : 'Properti'}
+                {isHotel ? t('profilePage.tagStay') : t('profilePage.tagProperty')}
               </span>
             </div>
             {review.targetCity && (
@@ -697,14 +705,14 @@ function UserReviewCard({ review, navigate }) {
         {review.status === 'rejected' && review.rejectedReason && (
           <div className="mt-3 flex items-start gap-2 rounded-xl bg-red-50 border border-red-100 px-3 py-2 text-xs">
             <AlertCircle className="w-3.5 h-3.5 text-red-500 mt-0.5 shrink-0" />
-            <p className="text-red-700"><strong>Alasan ditolak:</strong> {review.rejectedReason}</p>
+            <p className="text-red-700"><strong>{t('profilePage.rejectedReason')}</strong> {review.rejectedReason}</p>
           </div>
         )}
 
         {/* Pending hint */}
         {review.status === 'pending' && (
           <p className="mt-3 text-xs text-amber-700/80 italic">
-            Ulasan Anda sedang ditinjau oleh tim ArahInn dan akan tayang setelah disetujui.
+            {t('profilePage.pendingHint')}
           </p>
         )}
       </div>
@@ -714,18 +722,19 @@ function UserReviewCard({ review, navigate }) {
 
 // ── Section: Metode Pembayaran ────────────────────────────
 const BANKS = [
-  { key: 'bca',     label: 'BCA Virtual Account',     logo: '/banks/bca.png',      desc: "Bayar via m-BCA, KlikBCA, atau ATM BCA" },
-  { key: 'mandiri', label: 'Mandiri Virtual Account', logo: '/banks/mandiri.png',  desc: "Bayar via Livin' by Mandiri atau ATM Mandiri" },
-  { key: 'bri',     label: 'BRI Virtual Account',     logo: '/banks/bri.svg',      desc: 'Bayar via BRImo atau ATM BRI' },
-  { key: 'bsi',     label: 'BSI Virtual Account',     logo: '/banks/bank_bsi.png', desc: 'Bayar via BSI Mobile atau ATM BSI' },
+  { key: 'bca',     label: 'BCA Virtual Account',     logo: '/banks/bca.png',      descKey: 'profilePage.bankBcaDesc' },
+  { key: 'mandiri', label: 'Mandiri Virtual Account', logo: '/banks/mandiri.png',  descKey: 'profilePage.bankMandiriDesc' },
+  { key: 'bri',     label: 'BRI Virtual Account',     logo: '/banks/bri.svg',      descKey: 'profilePage.bankBriDesc' },
+  { key: 'bsi',     label: 'BSI Virtual Account',     logo: '/banks/bank_bsi.png', descKey: 'profilePage.bankBsiDesc' },
 ]
 
 function SectionPayment() {
+  const { t } = useTranslation()
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-bold text-slate-900">Metode Pembayaran</h2>
-        <p className="text-sm text-slate-500 mt-0.5">Bank yang didukung untuk transaksi.</p>
+        <h2 className="text-xl font-bold text-slate-900">{t('profilePage.paymentTitle')}</h2>
+        <p className="text-sm text-slate-500 mt-0.5">{t('profilePage.paymentSubtitle')}</p>
       </div>
 
       {/* Hero — security */}
@@ -734,16 +743,16 @@ function SectionPayment() {
           <ShieldCheck className="w-6 h-6 text-white" />
         </div>
         <div>
-          <p className="text-white font-bold">Transaksi 100% Aman</p>
+          <p className="text-white font-bold">{t('profilePage.secureTitle')}</p>
           <p className="text-white/80 text-xs mt-1 leading-relaxed">
-            Pembayaran diproses melalui gateway terenkripsi & terverifikasi otomatis.
+            {t('profilePage.secureDesc')}
           </p>
         </div>
       </div>
 
       {/* VA Bank list */}
       <div>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Virtual Account Bank</p>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">{t('profilePage.vaBankTitle')}</p>
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           {BANKS.map((b, i) => (
             <div key={b.key}>
@@ -754,11 +763,11 @@ function SectionPayment() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-slate-900 text-sm">{b.label}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{b.desc}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{t(b.descKey)}</p>
                 </div>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 rounded-full">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span className="text-[10px] font-bold text-emerald-700">Aktif</span>
+                  <span className="text-[10px] font-bold text-emerald-700">{t('profilePage.active')}</span>
                 </span>
               </div>
               {i < BANKS.length - 1 && <div className="h-px bg-slate-100 mx-4" />}
@@ -769,11 +778,11 @@ function SectionPayment() {
 
       {/* Coming soon */}
       <div>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Segera Hadir</p>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">{t('profilePage.comingSoon')}</p>
         <div className="grid grid-cols-2 gap-3">
           {[
-            { Icon: Zap, label: 'E-Wallet', desc: 'GoPay, OVO, DANA' },
-            { Icon: Building2, label: 'Kartu Kredit', desc: 'Visa, Mastercard' },
+            { Icon: Zap, label: t('profilePage.ewallet'), desc: t('profilePage.ewalletDesc') },
+            { Icon: Building2, label: t('profilePage.creditCard'), desc: t('profilePage.creditCardDesc') },
           ].map(({ Icon, label, desc }) => (
             <div key={label} className="bg-white rounded-2xl border border-slate-200 p-4 opacity-80">
               <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mb-3">
@@ -782,7 +791,7 @@ function SectionPayment() {
               <p className="font-semibold text-sm text-slate-900">{label}</p>
               <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
               <span className="inline-block mt-2 px-2 py-0.5 bg-orange-50 text-orange-600 rounded-full text-[10px] font-bold">
-                Segera
+                {t('profilePage.soon')}
               </span>
             </div>
           ))}
@@ -791,14 +800,14 @@ function SectionPayment() {
 
       {/* How to pay */}
       <div>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Cara Pembayaran</p>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">{t('profilePage.howToPay')}</p>
         <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
           {[
-            'Pilih akomodasi & lakukan pemesanan.',
-            'Pilih metode pembayaran (Virtual Account).',
-            'Pilih bank, sistem akan generate nomor VA.',
-            'Transfer sesuai nominal & nomor VA dalam batas waktu.',
-            'Pembayaran terverifikasi otomatis dalam 1–2 menit.',
+            t('profilePage.payStep1'),
+            t('profilePage.payStep2'),
+            t('profilePage.payStep3'),
+            t('profilePage.payStep4'),
+            t('profilePage.payStep5'),
           ].map((step, i) => (
             <div key={i} className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
@@ -815,12 +824,13 @@ function SectionPayment() {
 
 // ── Section: Wishlist (Coming Soon) ───────────────────────
 function SectionWishlist() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-bold text-slate-900">Wishlist</h2>
-        <p className="text-sm text-slate-500 mt-0.5">Hotel & properti favorit Anda.</p>
+        <h2 className="text-xl font-bold text-slate-900">{t('profilePage.wishlistTitle')}</h2>
+        <p className="text-sm text-slate-500 mt-0.5">{t('profilePage.wishlistSubtitle')}</p>
       </div>
 
       {/* Hero Coming Soon with pulse */}
@@ -831,27 +841,27 @@ function SectionWishlist() {
             <Heart className="w-12 h-12 text-white" fill="white" />
           </div>
         </div>
-        <h3 className="mt-5 text-2xl font-black text-slate-900">Coming Soon</h3>
-        <p className="mt-1.5 text-sm text-slate-500">Fitur Wishlist sedang dalam pengembangan</p>
+        <h3 className="mt-5 text-2xl font-black text-slate-900">{t('profilePage.comingSoon')}</h3>
+        <p className="mt-1.5 text-sm text-slate-500">{t('profilePage.wishlistDevNote')}</p>
       </div>
 
       {/* Description */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5">
-        <h3 className="text-sm font-bold text-slate-900 mb-2">Apa Itu Wishlist?</h3>
+        <h3 className="text-sm font-bold text-slate-900 mb-2">{t('profilePage.whatIsWishlist')}</h3>
         <p className="text-sm text-slate-600 leading-relaxed">
-          Simpan hotel & properti favorit Anda untuk diakses lagi nanti. Cocok untuk rencana liburan, atau properti incaran yang ingin Anda pantau harga & ketersediaannya.
+          {t('profilePage.whatIsWishlistDesc')}
         </p>
       </div>
 
       {/* Features preview */}
       <div>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Yang Akan Hadir</p>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">{t('profilePage.whatsComing')}</p>
         <div className="space-y-2">
           {[
-            { Icon: Heart,    title: 'Simpan Sekali Klik',         desc: 'Tambah ke wishlist langsung dari kartu hotel atau properti.' },
-            { Icon: BedDouble,title: 'Pantau Ketersediaan Kamar',  desc: 'Dapat notifikasi saat hotel favorit punya promo.' },
-            { Icon: Building2,title: 'Properti Favorit',           desc: 'Simpan properti dijual atau disewa untuk dipertimbangkan.' },
-            { Icon: Search,   title: 'Akses Cepat',                desc: 'Buka kembali tanpa harus mencari ulang.' },
+            { Icon: Heart,    title: t('profilePage.wlFeat1Title'), desc: t('profilePage.wlFeat1Desc') },
+            { Icon: BedDouble,title: t('profilePage.wlFeat2Title'), desc: t('profilePage.wlFeat2Desc') },
+            { Icon: Building2,title: t('profilePage.wlFeat3Title'), desc: t('profilePage.wlFeat3Desc') },
+            { Icon: Search,   title: t('profilePage.wlFeat4Title'), desc: t('profilePage.wlFeat4Desc') },
           ].map(({ Icon, title, desc }) => (
             <div key={title} className="bg-white rounded-2xl border border-slate-200 p-4 flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center shrink-0">
@@ -872,7 +882,7 @@ function SectionWishlist() {
         className="w-full flex items-center justify-center gap-2 py-3.5 bg-brand text-white rounded-2xl text-sm font-bold hover:bg-brand-700 transition-colors shadow-md shadow-brand/30"
       >
         <Search className="w-4 h-4" />
-        Telusuri Hotel & Properti
+        {t('profilePage.browseHotelsProps')}
         <ArrowRight className="w-4 h-4" />
       </button>
     </div>
@@ -881,6 +891,7 @@ function SectionWishlist() {
 
 // ── Section: Customer Care ────────────────────────────────
 function SectionCustomerCare() {
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState({ help: false, about: false })
   const [settings, setSettings] = useState({
     language: 'id',
@@ -901,19 +912,19 @@ function SectionCustomerCare() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-bold text-slate-900">Customer Care</h2>
-        <p className="text-sm text-slate-500 mt-0.5">Hubungi kami atau atur preferensi akun.</p>
+        <h2 className="text-xl font-bold text-slate-900">{t('profilePage.careTitle')}</h2>
+        <p className="text-sm text-slate-500 mt-0.5">{t('profilePage.careSubtitle')}</p>
       </div>
 
       {/* ─── Section 1: Customer Support ──────────── */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Customer Support</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">{t('profilePage.customerSupport')}</p>
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${
             supportOpen ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
           }`}>
             <span className={`w-1.5 h-1.5 rounded-full ${supportOpen ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
-            {supportOpen ? 'Online' : 'Offline'} · 09:00 – 00:00 WIB
+            {supportOpen ? t('profilePage.online') : t('profilePage.offline')} · {t('profilePage.supportHours')}
           </span>
         </div>
 
@@ -925,8 +936,8 @@ function SectionCustomerCare() {
               <Info className="w-5 h-5 text-blue-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-slate-900">Pusat Bantuan</p>
-              <p className="text-xs text-slate-500 mt-0.5">FAQ & panduan halo ArahInn</p>
+              <p className="font-semibold text-sm text-slate-900">{t('profilePage.helpCenter')}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{t('profilePage.helpCenterDesc')}</p>
             </div>
             <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${expanded.help ? 'rotate-180' : ''}`} />
           </button>
@@ -934,10 +945,10 @@ function SectionCustomerCare() {
             <div className="px-5 pb-4 bg-slate-50/50 border-t border-slate-100">
               <div className="space-y-2 pt-3">
                 {[
-                  { q: 'Bagaimana cara memesan kamar?',          a: 'Pilih hotel → pilih tanggal & kamar → checkout → bayar via Virtual Account.' },
-                  { q: 'Bagaimana cara membatalkan booking?',    a: 'Buka menu Pesanan Saya → pilih booking → klik Batalkan. Refund mengikuti kebijakan hotel.' },
-                  { q: 'Berapa lama pembayaran terverifikasi?',  a: 'Pembayaran via VA terverifikasi otomatis dalam 1–2 menit setelah transfer.' },
-                  { q: 'Bagaimana mengubah jadwal menginap?',    a: 'Buka detail booking → Jadwal Ulang. Tersedia untuk booking dengan status Dikonfirmasi.' },
+                  { q: t('profilePage.faq1Q'), a: t('profilePage.faq1A') },
+                  { q: t('profilePage.faq2Q'), a: t('profilePage.faq2A') },
+                  { q: t('profilePage.faq3Q'), a: t('profilePage.faq3A') },
+                  { q: t('profilePage.faq4Q'), a: t('profilePage.faq4A') },
                 ].map((f, i) => (
                   <div key={i} className="bg-white rounded-xl border border-slate-100 p-3.5">
                     <p className="text-sm font-semibold text-slate-900">{f.q}</p>
@@ -976,8 +987,8 @@ function SectionCustomerCare() {
               <MessageSquare className="w-5 h-5 text-purple-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-slate-900">Live Chat</p>
-              <p className="text-xs text-slate-500 mt-0.5">Chat langsung dengan tim kami</p>
+              <p className="font-semibold text-sm text-slate-900">{t('profilePage.liveChat')}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{t('profilePage.liveChatDesc')}</p>
             </div>
             <ArrowRight className="w-4 h-4 text-slate-400" />
           </button>
@@ -1004,7 +1015,7 @@ function SectionCustomerCare() {
 
       {/* ─── Section 2: Pengaturan ──────────────── */}
       <div>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Pengaturan</p>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">{t('profilePage.settings')}</p>
 
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           {/* Bahasa */}
@@ -1013,8 +1024,8 @@ function SectionCustomerCare() {
               <Globe className="w-5 h-5 text-blue-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-slate-900">Bahasa</p>
-              <p className="text-xs text-slate-500 mt-0.5">Pilih bahasa antarmuka</p>
+              <p className="font-semibold text-sm text-slate-900">{t('profilePage.language')}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{t('profilePage.languageDesc')}</p>
             </div>
             <select
               value={settings.language}
@@ -1034,8 +1045,8 @@ function SectionCustomerCare() {
               <DollarSign className="w-5 h-5 text-orange-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-slate-900">Mata Uang</p>
-              <p className="text-xs text-slate-500 mt-0.5">Tampilan harga</p>
+              <p className="font-semibold text-sm text-slate-900">{t('profilePage.currency')}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{t('profilePage.currencyDesc')}</p>
             </div>
             <select
               value={settings.currency}
@@ -1057,18 +1068,18 @@ function SectionCustomerCare() {
               <MapPin className="w-5 h-5 text-emerald-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-slate-900">Negara</p>
-              <p className="text-xs text-slate-500 mt-0.5">Region akun & promo</p>
+              <p className="font-semibold text-sm text-slate-900">{t('profilePage.country')}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{t('profilePage.countryDesc')}</p>
             </div>
             <select
               value={settings.country}
               onChange={(e) => setSettings(p => ({ ...p, country: e.target.value }))}
               className="text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand/30"
             >
-              <option value="ID">🇮🇩 Indonesia</option>
-              <option value="SG">🇸🇬 Singapura</option>
-              <option value="MY">🇲🇾 Malaysia</option>
-              <option value="TH">🇹🇭 Thailand</option>
+              <option value="ID">🇮🇩 {t('profilePage.countryID')}</option>
+              <option value="SG">🇸🇬 {t('profilePage.countrySG')}</option>
+              <option value="MY">🇲🇾 {t('profilePage.countryMY')}</option>
+              <option value="TH">🇹🇭 {t('profilePage.countryTH')}</option>
             </select>
           </div>
 
@@ -1080,8 +1091,8 @@ function SectionCustomerCare() {
               <MapPin className="w-5 h-5 text-purple-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-slate-900">Lokasi</p>
-              <p className="text-xs text-slate-500 mt-0.5">Aktifkan untuk rekomendasi hotel terdekat</p>
+              <p className="font-semibold text-sm text-slate-900">{t('profilePage.location')}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{t('profilePage.locationDesc')}</p>
             </div>
             <button
               onClick={() => setSettings(p => ({ ...p, locationEnabled: !p.locationEnabled }))}
@@ -1095,7 +1106,7 @@ function SectionCustomerCare() {
 
       {/* ─── Section 3: Lainnya ──────────────────── */}
       <div>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Lainnya</p>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">{t('profilePage.others')}</p>
 
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           {/* Tentang ArahInn — expandable */}
@@ -1105,8 +1116,8 @@ function SectionCustomerCare() {
               <Info className="w-5 h-5 text-blue-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-slate-900">Tentang ArahInn</p>
-              <p className="text-xs text-slate-500 mt-0.5">Profil & informasi perusahaan</p>
+              <p className="font-semibold text-sm text-slate-900">{t('profilePage.aboutArahinn')}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{t('profilePage.aboutArahinnDesc')}</p>
             </div>
             <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${expanded.about ? 'rotate-180' : ''}`} />
           </button>
@@ -1116,15 +1127,14 @@ function SectionCustomerCare() {
                 <div className="mb-3">
                   <p className="text-sm font-bold text-slate-900">ArahInn.com</p>
                   <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                    Platform terpadu untuk akomodasi, transportasi, dan aktivitas wisata di Indonesia.
-                    Hadir untuk memudahkan perjalanan Anda dengan harga terbaik dari ribuan partner hotel & properti.
+                    {t('profilePage.aboutDesc')}
                   </p>
                 </div>
                 <div className="grid grid-cols-3 gap-2 mt-3">
                   {[
-                    { label: '1.000+', sub: 'Hotel Partner' },
-                    { label: '50+',    sub: 'Kota di Indonesia' },
-                    { label: '24/7',   sub: 'Sistem Booking' },
+                    { label: '1.000+', sub: t('profilePage.statHotelPartner') },
+                    { label: '50+',    sub: t('profilePage.statCities') },
+                    { label: '24/7',   sub: t('profilePage.statBookingSystem') },
                   ].map(stat => (
                     <div key={stat.sub} className="bg-white border border-slate-100 rounded-xl p-2.5 text-center">
                       <p className="font-bold text-brand text-sm">{stat.label}</p>
@@ -1144,8 +1154,8 @@ function SectionCustomerCare() {
               <FileText className="w-5 h-5 text-purple-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-slate-900">Kebijakan Privasi</p>
-              <p className="text-xs text-slate-500 mt-0.5">Cara kami menggunakan data Anda</p>
+              <p className="font-semibold text-sm text-slate-900">{t('profilePage.privacyPolicy')}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{t('profilePage.privacyPolicyDesc')}</p>
             </div>
             <ArrowRight className="w-4 h-4 text-slate-400" />
           </a>
@@ -1158,8 +1168,8 @@ function SectionCustomerCare() {
               <ScrollText className="w-5 h-5 text-amber-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-slate-900">Syarat & Ketentuan</p>
-              <p className="text-xs text-slate-500 mt-0.5">Aturan penggunaan platform</p>
+              <p className="font-semibold text-sm text-slate-900">{t('profilePage.terms')}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{t('profilePage.termsDesc')}</p>
             </div>
             <ArrowRight className="w-4 h-4 text-slate-400" />
           </a>
@@ -1171,13 +1181,14 @@ function SectionCustomerCare() {
 }
 
 function ComingSoon({ title }) {
+  const { t } = useTranslation()
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-slate-900">{title}</h2>
       <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center shadow-sm">
         <p className="text-5xl mb-4">🚧</p>
-        <p className="font-semibold text-slate-700">Segera Hadir</p>
-        <p className="text-sm text-slate-400 mt-1">Fitur ini sedang dalam pengembangan.</p>
+        <p className="font-semibold text-slate-700">{t('profilePage.comingSoon')}</p>
+        <p className="text-sm text-slate-400 mt-1">{t('profilePage.csDevNote')}</p>
       </div>
     </div>
   )
@@ -1185,24 +1196,25 @@ function ComingSoon({ title }) {
 
 // ── Menu definitions ──────────────────────────────────────
 const MENU_USER = [
-  { id: 'account',  label: 'Akun',             icon: User          },
-  { id: 'orders',   label: 'Pesanan Saya',      icon: ShoppingBag   },
-  { id: 'security', label: 'Keamanan',          icon: Shield        },
-  { id: 'loyalty',  label: 'Poin Loyalitas',    icon: Star          },
-  { id: 'reviews',  label: 'Ulasan Anda',       icon: MessageSquare },
-  { id: 'payment',  label: 'Metode Pembayaran', icon: CreditCard    },
-  { id: 'wishlist', label: 'Wishlist',          icon: Heart         },
-  { id: 'care',     label: 'Customer Care',     icon: Headphones    },
+  { id: 'account',  labelKey: 'profilePage.menuAccount',  icon: User          },
+  { id: 'orders',   labelKey: 'profilePage.menuOrders',   icon: ShoppingBag   },
+  { id: 'security', labelKey: 'profilePage.menuSecurity', icon: Shield        },
+  { id: 'loyalty',  labelKey: 'profilePage.menuLoyalty',  icon: Star          },
+  { id: 'reviews',  labelKey: 'profilePage.menuReviews',  icon: MessageSquare },
+  { id: 'payment',  labelKey: 'profilePage.menuPayment',  icon: CreditCard    },
+  { id: 'wishlist', labelKey: 'profilePage.menuWishlist', icon: Heart         },
+  { id: 'care',     labelKey: 'profilePage.menuCare',     icon: Headphones    },
 ]
 
 const MENU_PENGELOLA = [
-  { id: 'account',  label: 'Akun',      icon: User   },
-  { id: 'security', label: 'Keamanan',  icon: Shield },
+  { id: 'account',  labelKey: 'profilePage.menuAccount',  icon: User   },
+  { id: 'security', labelKey: 'profilePage.menuSecurity', icon: Shield },
 ]
 
 const PENGELOLA_ROLES = ['superadmin', 'admin', 'owner', 'finance', 'admin_property', 'design_interior']
 
 export default function Profile() {
+  const { t } = useTranslation()
   const { user, updateUser } = useAuthStore()
   const [active, setActive]  = useState('account')
 
@@ -1268,7 +1280,7 @@ export default function Profile() {
                     : 'bg-white text-slate-700 border-slate-200'
                 }`}>
                 <item.icon className="w-3.5 h-3.5" />
-                {item.label}
+                {t(item.labelKey)}
               </button>
             ))}
           </div>
@@ -1302,7 +1314,7 @@ export default function Profile() {
                   </div>
                   <div className="flex items-baseline gap-1 mt-2">
                     <span className="text-2xl font-bold text-white">{(loyalty?.balance || 0).toLocaleString('id-ID')}</span>
-                    <span className="text-xs text-white/70">Poin</span>
+                    <span className="text-xs text-white/70">{t('profilePage.pointsLabel')}</span>
                   </div>
                 </div>
               )}
@@ -1319,7 +1331,7 @@ export default function Profile() {
                       : 'text-slate-700 hover:bg-slate-50'
                     }`}>
                   <item.icon className={`w-4.5 h-4.5 shrink-0 ${active === item.id ? 'text-blue-600' : 'text-slate-400'}`} />
-                  {item.label}
+                  {t(item.labelKey)}
                   {active === item.id && (
                     <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600" />
                   )}

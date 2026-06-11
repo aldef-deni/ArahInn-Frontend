@@ -343,7 +343,7 @@ export default function UserLayout() {
               <img src="/logo-arahin.png" alt="Arahinn" className="h-10 w-auto" />
             </div>
             <p className="text-slate-500 text-sm leading-relaxed text-justify">
-              ArahInn.com hadir sebagai platform terpadu yang memudahkan Anda dalam merencanakan perjalanan sekaligus memenuhi berbagai kebutuhan harian. Mulai dari pemesanan akomodasi, tiket transportasi, hingga layanan penunjang lainnya, semua dirancang untuk memberikan pengalaman yang praktis, aman, dan terpercaya. Dengan harga kompetitif dan pilihan yang telah dikurasi, ArahInn menjadi partner terpercaya dalam setiap perjalanan Anda.
+              {t('footer.description')}
             </p>
           </div>
           <div className="md:ml-auto flex flex-col sm:flex-row gap-12 lg:gap-16">
@@ -415,7 +415,7 @@ export default function UserLayout() {
             <div>
               <div className="flex items-center gap-2 mb-5">
                 <span className="h-px flex-1 bg-gradient-to-r from-brand/30 to-transparent" />
-                <h4 className="text-xs font-bold text-brand-800 uppercase tracking-[0.18em]">Our Partners</h4>
+                <h4 className="text-xs font-bold text-brand-800 uppercase tracking-[0.18em]">{t('footer.ourPartners')}</h4>
                 <span className="h-px flex-1 bg-gradient-to-l from-brand/30 to-transparent" />
               </div>
               <div className="flex flex-wrap items-center justify-center gap-3">
@@ -439,7 +439,7 @@ export default function UserLayout() {
             <div>
               <div className="flex items-center gap-2 mb-5">
                 <span className="h-px flex-1 bg-gradient-to-r from-amber-400/40 to-transparent" />
-                <h4 className="text-xs font-bold text-brand-800 uppercase tracking-[0.18em]">Transaksi Pembayaran</h4>
+                <h4 className="text-xs font-bold text-brand-800 uppercase tracking-[0.18em]">{t('footer.paymentTransaction')}</h4>
                 <span className="h-px flex-1 bg-gradient-to-l from-amber-400/40 to-transparent" />
               </div>
               <div className="flex flex-wrap items-center justify-center gap-3">
@@ -463,7 +463,7 @@ export default function UserLayout() {
                 ))}
               </div>
               <p className="text-[11px] text-slate-400 text-center mt-4">
-                Pembayaran aman & terenkripsi via <span className="font-semibold text-slate-500">DOKU Payment Gateway</span>
+                {t('footer.paymentSecure')} <span className="font-semibold text-slate-500">DOKU Payment Gateway</span>
               </p>
             </div>
           </div>
