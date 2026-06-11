@@ -128,9 +128,16 @@ export default function FlightSearch() {
         departure: departure.code, arrival: arrival.code,
         departureDate: date, adult, child, infant,
       })
-      setResults(res.data?.data || [])
-      setShowForm(false)
-      setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+      const data = res.data?.data || []
+      setResults(data)
+      // Kalau ADA penerbangan → tutup form & scroll ke hasil.
+      // Kalau KOSONG → biarkan form tetap tampil supaya user bisa ubah tanggal/rute.
+      if (data.length > 0) {
+        setShowForm(false)
+        setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+      } else {
+        setShowForm(true)
+      }
     } catch (e) {
       setError(e?.response?.data?.message || 'Gagal mencari penerbangan. Coba lagi.')
     } finally { setSearching(false) }
