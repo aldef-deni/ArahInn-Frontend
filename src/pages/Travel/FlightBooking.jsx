@@ -39,7 +39,7 @@ export default function FlightBooking() {
   const { departure, arrival, date, airline, cls } = sel
 
   // Ambil harga real via fare (banyak maskapai kasih harga di fare, bukan search)
-  const { data: fare, isLoading: fareLoading } = useQuery({
+  const { data: fare, isLoading: fareLoading, isError: fareFailed, error: fareErr } = useQuery({
     queryKey: ['flight-fare', cls?.seat],
     queryFn: () => travelApi.flightFare({
       airline, departure: departure.code, arrival: arrival.code,
@@ -48,7 +48,12 @@ export default function FlightBooking() {
       seats: [cls.seat],
     }).then(r => r.data?.data),
     enabled: !!cls?.seat,
+    retry: 1,
   })
+  // Pesan vendor kalau fare gagal (mis. penerbangan tdk tersedia / harga kadaluarsa)
+  const fareErrorMsg = fareFailed
+    ? (fareErr?.response?.data?.message || 'Harga penerbangan ini tidak bisa dimuat. Mungkin sudah tidak tersedia atau harga berubah.')
+    : null
 
   const price     = Number(fare?.price ?? cls?.price) || 0
   const baggage   = fare?.baggage
@@ -66,6 +71,7 @@ export default function FlightBooking() {
              && infants.every(p => p.firstName && p.birthdate)
 
   const submit = async () => {
+    if (fareFailed) { setError(`${fareErrorMsg} Silakan cari ulang penerbangan.`); return }
     if (!valid) { setError('Lengkapi data semua penumpang.'); return }
     setLoading(true); setError(null)
     try {
@@ -134,6 +140,20 @@ export default function FlightBooking() {
 
         {error && <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl mb-4"><AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" /><p className="text-sm text-red-700">{error}</p></div>}
 
+        {/* Banner kalau fare/harga gagal dari vendor → wajib cari ulang */}
+        {fareFailed && (
+          <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-300 rounded-xl mb-4">
+            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-amber-800">Penerbangan tidak bisa dipesan</p>
+              <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">{fareErrorMsg} Harga & ketersediaan tiket pesawat berubah cepat — mohon cari ulang untuk dapat harga terbaru.</p>
+              <button onClick={() => navigate('/tiket/pesawat')} className="mt-2.5 inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition-colors">
+                Cari Ulang Penerbangan <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {adults.map((p, i) => (
           <PaxCard key={`a${i}`} title={`Penumpang Dewasa ${i + 1}`} color="text-sky-500">
             <TitleSelect value={p.title} onChange={v => setA(i, 'title', v)} opts={['MR','MRS','MS']} />
@@ -187,7 +207,7 @@ export default function FlightBooking() {
             <div><p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold">Total</p><p className="font-display text-xl font-bold text-sky-600">{formatRupiah(total)}</p></div>
             <div className="flex items-center gap-1 text-[10px] text-emerald-600"><ShieldCheck className="w-3.5 h-3.5" /> E-tiket resmi</div>
           </div>
-          <button onClick={submit} disabled={!valid || loading} className="w-full py-3.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50">
+          <button onClick={submit} disabled={!valid || loading || fareFailed} className="w-full py-3.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50">
             {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Memproses...</> : <>Lanjutkan ke Pembayaran <ArrowRight className="w-4 h-4" /></>}
           </button>
         </div>
