@@ -9,6 +9,7 @@ import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 import DateField from '@/components/ui/DateField'
 import PromoField from '@/components/travel/PromoField'
+import { travelCheckoutError } from '@/utils/travelCheckoutError'
 
 const ymd8 = (s) => s && s.length === 8 ? `${s.slice(6,8)}/${s.slice(4,6)}/${s.slice(0,4)}` : s
 const hhmm = (s) => s && s.length === 4 ? `${s.slice(0,2)}:${s.slice(2,4)}` : s
@@ -79,7 +80,7 @@ export default function PelniBooking() {
       if (booking?.id) navigate(`/tiket/bayar/${booking.id}`)
       else setError('Gagal membuat pesanan.')
     } catch (e) {
-      setError(e?.response?.data?.message || 'Gagal membuat booking kapal. Coba lagi.')
+      setError(travelCheckoutError(e))
     } finally { setLoading(false) }
   }
 

@@ -10,6 +10,7 @@ import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 import DateField from '@/components/ui/DateField'
 import PromoField from '@/components/travel/PromoField'
+import { travelCheckoutError } from '@/utils/travelCheckoutError'
 
 const formatDMY = (ymd) => { if (!ymd) return '-'; const [y,m,d] = ymd.split('-'); return `${d}/${m}/${y}` }
 const emptyAdult = () => ({ title: 'MR', firstName: '', lastName: '', birthdate: '', idNumber: '', phone: '', email: '' })
@@ -83,7 +84,7 @@ export default function FlightBooking() {
       if (booking?.id) navigate(`/tiket/bayar/${booking.id}`)
       else setError('Gagal membuat pesanan.')
     } catch (e) {
-      setError(e?.response?.data?.message || 'Gagal membuat booking pesawat. Coba lagi.')
+      setError(travelCheckoutError(e))
     } finally { setLoading(false) }
   }
 
