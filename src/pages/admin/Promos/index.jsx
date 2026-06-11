@@ -319,17 +319,28 @@ export default function AdminPromos() {
                     : <p className="text-xs text-muted-foreground mt-1">Kode ini yang dimasukkan customer saat pembayaran untuk dapat potongan.</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">Tipe Diskon</label>
+                  <label className="block text-sm font-medium mb-1.5">Tipe Diskon <span className="text-red-500">*</span></label>
                   <select {...register('discountType')} className="w-full px-3 py-2.5 border rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/50">
                     <option value="percent">Persentase (%)</option>
                     <option value="fixed">Nominal (Rp)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">Nilai Diskon</label>
-                  <input type="number" {...register('discountValue')}
-                    placeholder={discountType === 'percent' ? '20' : '50000'}
-                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                  <label className="block text-sm font-medium mb-1.5">
+                    Nilai Diskon ({discountType === 'percent' ? '%' : 'Rp'}) <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold pointer-events-none">
+                      {discountType === 'percent' ? '%' : 'Rp'}
+                    </span>
+                    <input type="number" min="0" step={discountType === 'percent' ? '0.1' : '1000'}
+                      {...register('discountValue', { required: true, min: 0.01, max: discountType === 'percent' ? 100 : undefined, valueAsNumber: true })}
+                      placeholder={discountType === 'percent' ? 'mis. 20' : 'mis. 50000'}
+                      className={`w-full pl-10 pr-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50 ${errors.discountValue ? 'border-red-400' : ''}`} />
+                  </div>
+                  {errors.discountValue
+                    ? <p className="text-xs text-red-500 mt-1">Nilai diskon wajib diisi & lebih dari 0{discountType === 'percent' ? ' (maks 100%)' : ''}.</p>
+                    : <p className="text-xs text-muted-foreground mt-1">{discountType === 'percent' ? 'Potongan dalam persen (mis. 20 = 20%).' : 'Potongan nominal rupiah (mis. 50000 = Rp 50.000).'}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Min. Pembelian</label>
