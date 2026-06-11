@@ -1,24 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import {
   Plane, ArrowLeftRight, Calendar, Users, Search, X,
   MapPin, ArrowRight, Loader2, AlertCircle,
 } from 'lucide-react'
+import i18n from '@/i18n'
 import { travelApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 
 const todayStr = () => new Date().toISOString().slice(0, 10)
-const MONTHS_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
-const DAYS_ID = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']
-const formatDateSlash = (ymd) => { if (!ymd) return '-'; const [y,m,d] = ymd.split('-'); return `${d}/${MONTHS_ID[+m-1]}/${y}` }
-const formatDateFull = (ymd) => { if (!ymd) return '-'; const [y,m,d] = ymd.split('-'); const dt = new Date(`${ymd}T00:00:00`); return `${DAYS_ID[dt.getDay()]}, ${+d} ${MONTHS_ID[+m-1]} ${y}` }
+const dateLocale = () => (i18n.language === 'en' ? 'en-US' : 'id-ID')
+const formatDateSlash = (ymd) => { if (!ymd) return '-'; const dt = new Date(`${ymd}T00:00:00`); return dt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) }
+const formatDateFull = (ymd) => { if (!ymd) return '-'; const dt = new Date(`${ymd}T00:00:00`); return dt.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) }
 const titleCase = (s) => (s || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
 const airlineLogo = (code) => `https://api.fastravel.co.id/assets/maskapai/${code}.png`
 
 /* ── Airport picker ───────────────────────────────────────────────────── */
 function AirportPicker({ open, airports, title, onPick, onClose }) {
+  const { t } = useTranslation()
   const [q, setQ] = useState('')
   useEffect(() => { if (open) setQ('') }, [open])
   if (!open) return null
@@ -36,12 +38,12 @@ function AirportPicker({ open, airports, title, onPick, onClose }) {
           </div>
           <div className="relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Cari kota / bandara..."
+            <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder={t('travel.searchCityAirport')}
               className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-300" />
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {filtered.length === 0 && <p className="text-center text-sm text-slate-400 py-8">Bandara tidak ditemukan</p>}
+          {filtered.length === 0 && <p className="text-center text-sm text-slate-400 py-8">{t('travel.airportNotFound')}</p>}
           {filtered.map(a => (
             <button key={a.code} onClick={() => { onPick(a); onClose() }}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 active:bg-slate-100 text-left border-b border-slate-50">
@@ -67,6 +69,7 @@ function AirlineLogo({ code, name }) {
 
 /* ── Main ─────────────────────────────────────────────────────────────── */
 export default function FlightSearch() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [departure, setDeparture] = useState(null)
   const [arrival, setArrival]     = useState(null)
@@ -139,7 +142,7 @@ export default function FlightSearch() {
         setShowForm(true)
       }
     } catch (e) {
-      setError(e?.response?.data?.message || 'Gagal mencari penerbangan. Coba lagi.')
+      setError(e?.response?.data?.message || t('travel.flightSearchError'))
     } finally { setSearching(false) }
   }
 
@@ -153,7 +156,7 @@ export default function FlightSearch() {
 
   return (
     <div className="min-h-[70vh] bg-slate-50">
-      <SEO title="Tiket Pesawat — Cari Penerbangan Murah" description="Pesan tiket pesawat semua maskapai di ArahInn." url="/tiket/pesawat" />
+      <SEO title={t('travel.flightSeoTitle')} description={t('travel.flightSeoDesc')} url="/tiket/pesawat" />
 
       {showForm && (
       <section className="bg-gradient-to-br from-sky-500 to-blue-600 text-white">
@@ -161,8 +164,8 @@ export default function FlightSearch() {
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center"><Plane className="w-5 h-5" /></div>
             <div>
-              <h1 className="font-display text-lg sm:text-xl font-bold leading-tight">Tiket Pesawat</h1>
-              <p className="text-[11px] sm:text-xs text-white/80">Semua maskapai, harga terbaik</p>
+              <h1 className="font-display text-lg sm:text-xl font-bold leading-tight">{t('travel.flightTitle')}</h1>
+              <p className="text-[11px] sm:text-xs text-white/80">{t('travel.flightTagline')}</p>
             </div>
           </div>
 
@@ -171,15 +174,15 @@ export default function FlightSearch() {
               <button onClick={() => setPicker('departure')} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-sky-400 text-left transition-colors">
                 <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Dari</p>
-                  <p className={`text-sm font-semibold truncate ${departure ? 'text-slate-900' : 'text-slate-400'}`}>{departure ? `${departure.name} (${departure.code})` : 'Pilih bandara asal'}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{t('travel.from')}</p>
+                  <p className={`text-sm font-semibold truncate ${departure ? 'text-slate-900' : 'text-slate-400'}`}>{departure ? `${departure.name} (${departure.code})` : t('travel.pickDeparture')}</p>
                 </div>
               </button>
               <button onClick={() => setPicker('arrival')} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-sky-400 text-left transition-colors">
                 <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Ke</p>
-                  <p className={`text-sm font-semibold truncate ${arrival ? 'text-slate-900' : 'text-slate-400'}`}>{arrival ? `${arrival.name} (${arrival.code})` : 'Pilih bandara tujuan'}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{t('travel.to')}</p>
+                  <p className={`text-sm font-semibold truncate ${arrival ? 'text-slate-900' : 'text-slate-400'}`}>{arrival ? `${arrival.name} (${arrival.code})` : t('travel.pickArrival')}</p>
                 </div>
               </button>
               <button onClick={swap} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-sky-500 text-white shadow-md flex items-center justify-center active:scale-90 transition-transform z-10"><ArrowLeftRight className="w-4 h-4 rotate-90" /></button>
@@ -187,22 +190,22 @@ export default function FlightSearch() {
 
             <div className="grid grid-cols-2 gap-2.5 mt-2.5">
               <div className="relative p-3 rounded-xl border border-slate-200 cursor-pointer" onClick={openDatePicker}>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Calendar className="w-3 h-3" /> Tanggal</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Calendar className="w-3 h-3" /> {t('travel.date')}</p>
                 <p className="text-sm font-semibold text-slate-900 mt-0.5">{formatDateSlash(date)}</p>
                 <input ref={dateRef} type="date" value={date} min={todayStr()} onChange={e => setDate(e.target.value)} className="absolute bottom-1 left-3 w-px h-px opacity-0 pointer-events-none" tabIndex={-1} />
               </div>
               <div className="p-3 rounded-xl border border-slate-200">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Users className="w-3 h-3" /> Penumpang</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Users className="w-3 h-3" /> {t('travel.passengers')}</p>
                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                  <select value={adult} onChange={e => setAdult(+e.target.value)} className="text-sm font-semibold bg-transparent focus:outline-none">{[1,2,3,4,5,6,7].map(n => <option key={n} value={n}>{n} Dws</option>)}</select>
-                  <select value={child} onChange={e => setChild(+e.target.value)} className="text-xs text-slate-500 bg-transparent focus:outline-none">{[0,1,2,3,4].map(n => <option key={n} value={n}>{n} Anak</option>)}</select>
-                  <select value={infant} onChange={e => setInfant(+e.target.value)} className="text-xs text-slate-500 bg-transparent focus:outline-none">{[0,1,2,3,4].map(n => <option key={n} value={n}>{n} Bayi</option>)}</select>
+                  <select value={adult} onChange={e => setAdult(+e.target.value)} className="text-sm font-semibold bg-transparent focus:outline-none">{[1,2,3,4,5,6,7].map(n => <option key={n} value={n}>{n} {t('travel.adultShort')}</option>)}</select>
+                  <select value={child} onChange={e => setChild(+e.target.value)} className="text-xs text-slate-500 bg-transparent focus:outline-none">{[0,1,2,3,4].map(n => <option key={n} value={n}>{n} {t('travel.childShort')}</option>)}</select>
+                  <select value={infant} onChange={e => setInfant(+e.target.value)} className="text-xs text-slate-500 bg-transparent focus:outline-none">{[0,1,2,3,4].map(n => <option key={n} value={n}>{n} {t('travel.infantShort')}</option>)}</select>
                 </div>
               </div>
             </div>
 
             <button onClick={doSearch} disabled={!canSearch || searching} className="w-full mt-3 py-3.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50">
-              {searching ? <><Loader2 className="w-4 h-4 animate-spin" /> Mencari semua maskapai...</> : <><Search className="w-4 h-4" /> Cari Penerbangan</>}
+              {searching ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('travel.searchingAirlines')}</> : <><Search className="w-4 h-4" /> {t('travel.searchFlights')}</>}
             </button>
           </div>
         </div>
@@ -220,15 +223,15 @@ export default function FlightSearch() {
             <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-bold text-slate-900 text-base sm:text-lg flex items-center gap-2 flex-wrap leading-tight">{titleCase(departure?.name)} <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" /> {titleCase(arrival?.name)}</p>
-                <p className="text-xs text-slate-500 mt-1">{formatDateFull(date)} · {adult} Dewasa{child>0?`, ${child} Anak`:''}{infant>0?`, ${infant} Bayi`:''}</p>
+                <p className="text-xs text-slate-500 mt-1">{formatDateFull(date)} · {adult} {t('travel.adultLabel')}{child>0?`, ${child} ${t('travel.childLabel')}`:''}{infant>0?`, ${infant} ${t('travel.infantLabel')}`:''}</p>
               </div>
-              <button onClick={() => { setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="shrink-0 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold active:scale-95 transition-all">Ubah Pencarian</button>
+              <button onClick={() => { setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="shrink-0 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold active:scale-95 transition-all">{t('travel.changeSearch')}</button>
             </div>
 
             {/* Sort + airline filter */}
             <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-1">
-              <span className="text-xs font-bold text-slate-500 shrink-0">Urutkan:</span>
-              {[['price','Termurah'],['departure','Paling Pagi']].map(([k,l]) => (
+              <span className="text-xs font-bold text-slate-500 shrink-0">{t('travel.sortLabel')}</span>
+              {[['price',t('travel.sortCheapest')],['departure',t('travel.sortEarliest')]].map(([k,l]) => (
                 <button key={k} onClick={() => setSortBy(k)} className={`px-3 py-1.5 rounded-full text-xs font-bold border shrink-0 ${sortBy===k?'bg-sky-50 border-sky-500 text-sky-700':'bg-white border-slate-200 text-slate-500'}`}>{l}</button>
               ))}
             </div>

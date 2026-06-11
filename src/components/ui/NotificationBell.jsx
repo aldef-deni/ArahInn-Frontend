@@ -7,6 +7,7 @@ import {
   Bell, BellRing, CheckCheck, X,
   ShoppingBag, Hotel, CreditCard, Ban, Star, Building2,
   MessageSquare, Wallet, RotateCcw, Clock, CalendarCheck, ThumbsUp, ThumbsDown, Tag,
+  Receipt, Zap, UserPlus, FileCheck,
 } from 'lucide-react'
 
 const TYPE_META = {
@@ -22,6 +23,12 @@ const TYPE_META = {
   // Payment
   payment_pending          : { icon: CreditCard,     color: 'text-amber-500',   bg: 'bg-amber-50'   },
   payment_expired          : { icon: CreditCard,     color: 'text-red-500',     bg: 'bg-red-50'     },
+  payment_proof_uploaded   : { icon: FileCheck,      color: 'text-blue-500',    bg: 'bg-blue-50'    },
+  // PPOB (top-up & tagihan)
+  ppob_success             : { icon: Receipt,        color: 'text-emerald-500', bg: 'bg-emerald-50' },
+  ppob_failed              : { icon: Zap,            color: 'text-red-500',     bg: 'bg-red-50'     },
+  ppob_canceled            : { icon: Ban,            color: 'text-red-500',     bg: 'bg-red-50'     },
+  ppob_refunded            : { icon: Wallet,         color: 'text-emerald-500', bg: 'bg-emerald-50' },
   // Chat
   chat_message             : { icon: MessageSquare,  color: 'text-orange-500',  bg: 'bg-orange-50'  },
   inquiry_new              : { icon: MessageSquare,  color: 'text-orange-500',  bg: 'bg-orange-50'  },
@@ -29,6 +36,7 @@ const TYPE_META = {
   hotel_new                : { icon: Hotel,          color: 'text-amber-500',   bg: 'bg-amber-50'   },
   hotel_approved           : { icon: Star,           color: 'text-emerald-500', bg: 'bg-emerald-50' },
   hotel_blocked            : { icon: Ban,            color: 'text-red-500',     bg: 'bg-red-50'     },
+  hotel_created_by_admin   : { icon: Hotel,          color: 'text-blue-500',    bg: 'bg-blue-50'    },
   property_listing_new     : { icon: Building2,      color: 'text-blue-500',    bg: 'bg-blue-50'    },
   property_listing_approved: { icon: Building2,      color: 'text-emerald-500', bg: 'bg-emerald-50' },
   property_listing_rejected: { icon: Building2,      color: 'text-red-500',     bg: 'bg-red-50'     },
@@ -40,6 +48,8 @@ const TYPE_META = {
   review_invitation        : { icon: Star,           color: 'text-orange-500',  bg: 'bg-orange-50'  },
   // Promo
   promo_new                : { icon: Tag,            color: 'text-pink-500',    bg: 'bg-pink-50'    },
+  // Owner onboarding (untuk admin/superadmin)
+  owner_registered         : { icon: UserPlus,       color: 'text-blue-500',    bg: 'bg-blue-50'    },
 }
 
 const DEFAULT_META = { icon: Bell, color: 'text-slate-500', bg: 'bg-slate-50' }
@@ -85,6 +95,16 @@ function resolveRoute(type, role, data) {
     case 'payment_pending':
     case 'payment_expired':
       return bookingId ? `/payment/${bookingId}` : '/orders'
+    // Bukti bayar manual diunggah → admin/finance verifikasi di daftar pesanan
+    case 'payment_proof_uploaded':
+      return '/admin/orders'
+
+    // ── PPOB (top-up & tagihan) — customer ──────────────────
+    case 'ppob_success':
+    case 'ppob_failed':
+    case 'ppob_canceled':
+    case 'ppob_refunded':
+      return '/topup-tagihan/history'
 
     // ── Chat / Inquiry ───────────────────────────────────────
     case 'chat_message':
@@ -104,7 +124,12 @@ function resolveRoute(type, role, data) {
       return '/admin/hotels'
     case 'hotel_approved':
     case 'hotel_blocked':
+    case 'hotel_created_by_admin':   // admin buatkan hotel utk owner → owner cek propertinya
       return '/owner/properti'
+
+    // ── Owner onboarding (admin/superadmin) ─────────────────
+    case 'owner_registered':
+      return '/admin/owners'
 
     // ── Property listing ─────────────────────────────────────
     case 'property_listing_new':
