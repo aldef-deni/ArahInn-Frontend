@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
+import i18n from '@/i18n'
 import { propertyApi } from '@/services/propertyApi'
 import { formatRupiah, getImageUrl } from '@/utils'
 import { Search, MapPin, SlidersHorizontal, X, Building2, Home, Trees, Hotel, RotateCcw, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -31,29 +33,30 @@ const LISTING_TABS = [
 
 const MAX_PRICE = 5000000000 // 5 Miliar
 const FACILITY_OPTIONS = [
-  { key: 'taman', label: 'Taman Bermain' },
-  { key: 'kolam', label: 'Kolam Renang' },
-  { key: 'gym', label: 'Fitness Center' },
-  { key: 'parkir', label: 'Area Parkir' },
-  { key: 'security', label: 'Security 24 Jam' },
-  { key: 'ac', label: 'AC' },
-  { key: 'wifi', label: 'WiFi' },
-  { key: 'laundry', label: 'Laundry' },
+  { key: 'taman', labelKey: 'propertyMarket.facTaman' },
+  { key: 'kolam', labelKey: 'propertyMarket.facKolam' },
+  { key: 'gym', labelKey: 'propertyMarket.facGym' },
+  { key: 'parkir', labelKey: 'propertyMarket.facParkir' },
+  { key: 'security', labelKey: 'propertyMarket.facSecurity' },
+  { key: 'ac', labelKey: 'propertyMarket.facAc' },
+  { key: 'wifi', labelKey: 'propertyMarket.facWifi' },
+  { key: 'laundry', labelKey: 'propertyMarket.facLaundry' },
 ]
 
 const POPULAR_FILTERS = [
-  { key: 'best_price', label: 'Best Price' },
-  { key: 'promo_special', label: 'Promo Special' },
-  { key: 'bisa_nego', label: 'Bisa Nego' },
+  { key: 'best_price', labelKey: 'propertyMarket.popBestPrice' },
+  { key: 'promo_special', labelKey: 'propertyMarket.popPromo' },
+  { key: 'bisa_nego', labelKey: 'propertyMarket.popNego' },
 ]
 
 const RATING_OPTIONS = [5, 4, 3, 2, 1]
 
 function PropertyCard({ listing, onClick }) {
+  const { t } = useTranslation()
   const [imgErr, setImgErr] = useState(false)
   const img = listing.images?.[0]
 
-  const listingTypeLabel = listing.listingType === 'rent' ? 'Disewa' : 'Dijual'
+  const listingTypeLabel = listing.listingType === 'rent' ? t('propertyMarket.forRent') : t('propertyMarket.forSale')
   const listingTypeColor = listing.listingType === 'rent' ? 'bg-blue-500' : 'bg-orange-500'
 
   return (
@@ -104,12 +107,12 @@ function PropertyCard({ listing, onClick }) {
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {listing.bedrooms != null && (
                 <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-100 text-slate-700 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-medium">
-                  {listing.bedrooms} KT
+                  {listing.bedrooms} {t('propertyMarket.bedShort')}
                 </span>
               )}
               {listing.bathrooms != null && (
                 <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-100 text-slate-700 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-medium">
-                  {listing.bathrooms} KM
+                  {listing.bathrooms} {t('propertyMarket.bathShort')}
                 </span>
               )}
               {listing.area && (
@@ -127,7 +130,7 @@ function PropertyCard({ listing, onClick }) {
                 </p>
                 {listing.priceNegotiable && (
                   <span className="inline-block mt-1 text-[10px] sm:text-xs text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 sm:py-1 rounded-full">
-                    Bisa Nego
+                    {t('propertyMarket.nego')}
                   </span>
                 )}
               </div>
@@ -138,7 +141,7 @@ function PropertyCard({ listing, onClick }) {
                 }}
                 className="px-3 sm:px-4 py-2 bg-orange-500 text-white rounded-lg sm:rounded-xl font-semibold hover:bg-orange-600 active:scale-95 transition-all text-xs sm:text-sm whitespace-nowrap shrink-0"
               >
-                Detail
+                {t('propertyMarket.detail')}
               </button>
             </div>
           </div>
@@ -186,13 +189,14 @@ function PriceRangeSlider({ minVal, maxVal, onChange }) {
 }
 
 function SidebarSection({ title, onReset, children }) {
+  const { t } = useTranslation()
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-slate-900">{title}</h3>
         {onReset && (
           <button onClick={onReset} className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
-            <RotateCcw className="w-3 h-3" /> Reset
+            <RotateCcw className="w-3 h-3" /> {t('propertyMarket.reset')}
           </button>
         )}
       </div>
@@ -224,6 +228,7 @@ function SkeletonCard() {
 }
 
 export default function PropertyMarket() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const [mobileFilter, setMobileFilter] = useState(false)
@@ -329,8 +334,8 @@ export default function PropertyMarket() {
   const Sidebar = () => (
     <div className="space-y-4 w-full">
       {/* Range Harga */}
-      <SidebarSection title="Range Harga" onReset={resetPrice}>
-        <p className="text-xs text-slate-500 mb-3">Rentang harga properti</p>
+      <SidebarSection title={t('propertyMarket.priceRange')} onReset={resetPrice}>
+        <p className="text-xs text-slate-500 mb-3">{t('propertyMarket.priceRangeHint')}</p>
         <PriceRangeSlider
           minVal={priceRange[0]} maxVal={priceRange[1]}
           onChange={(min, max) => setPriceRange([min, max])}
@@ -338,34 +343,34 @@ export default function PropertyMarket() {
       </SidebarSection>
 
       {/* Filter Populer */}
-      <SidebarSection title="Filter Populer" onReset={() => setSelectedPopularFilters([])}>
+      <SidebarSection title={t('propertyMarket.popularFilter')} onReset={() => setSelectedPopularFilters([])}>
         <div className="space-y-2.5">
           {POPULAR_FILTERS.map(filter => (
             <label key={filter.key} className="flex items-center gap-2.5 cursor-pointer group">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 checked={selectedPopularFilters.includes(filter.key)}
                 onChange={() => togglePopularFilter(filter.key)}
-                className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" 
+                className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer"
               />
-              <span className="text-sm text-slate-700">{filter.label}</span>
+              <span className="text-sm text-slate-700">{t(filter.labelKey)}</span>
             </label>
           ))}
         </div>
       </SidebarSection>
 
       {/* Fasilitas */}
-      <SidebarSection title="Fasilitas" onReset={() => setSelectedFacilities([])}>
+      <SidebarSection title={t('propertyMarket.facilities')} onReset={() => setSelectedFacilities([])}>
         <div className="space-y-2.5">
-          {FACILITY_OPTIONS.map(({ key, label }) => (
+          {FACILITY_OPTIONS.map(({ key, labelKey }) => (
             <label key={key} className="flex items-center gap-2.5 cursor-pointer">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 checked={selectedFacilities.includes(key)}
                 onChange={() => toggleFacility(key)}
-                className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer" 
+                className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer"
               />
-              <span className="text-sm text-slate-700">{label}</span>
+              <span className="text-sm text-slate-700">{t(labelKey)}</span>
             </label>
           ))}
         </div>
@@ -376,8 +381,8 @@ export default function PropertyMarket() {
   return (
     <div className="min-h-screen bg-slate-50">
       <SEO
-        title="Jual Beli Properti"
-        description="Temukan rumah, villa, apartemen, dan tanah dijual di seluruh Indonesia. Listing properti terkurasi dengan harga transparan di ArahInn."
+        title={t('propertyMarket.seoTitle')}
+        description={t('propertyMarket.seoDesc')}
         url="/properti"
       />
 
@@ -387,13 +392,13 @@ export default function PropertyMarket() {
           <form onSubmit={handleSearch} className="flex flex-col gap-2">
             {/* City — always full width */}
             <div className="relative">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Kota / Lokasi</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('propertyMarket.cityLocation')}</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   value={form.city}
                   onChange={e => setForm({...form, city: e.target.value})}
-                  placeholder="Jakarta, Bali, Yogyakarta..."
+                  placeholder={t('propertyMarket.cityPlaceholder')}
                   className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500 bg-slate-50"
                 />
               </div>
@@ -402,34 +407,34 @@ export default function PropertyMarket() {
             {/* Category + Type: 2-col grid on mobile, inline on lg+ */}
             <div className="grid grid-cols-2 lg:grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Kategori</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('propertyMarket.category')}</label>
                 <select
                   value={form.category}
                   onChange={e => setForm({...form, category: e.target.value})}
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500"
                 >
                   {CATEGORIES.map(c => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
+                    <option key={c.value} value={c.value}>{c.value === '' ? t('propertyMarket.allCategories') : c.label}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tipe</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('propertyMarket.type')}</label>
                 <select
                   value={form.listingType}
                   onChange={e => setForm({...form, listingType: e.target.value})}
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500"
                 >
-                  <option value="">Semua</option>
-                  <option value="sell">Dijual</option>
-                  <option value="rent">Disewa</option>
+                  <option value="">{t('propertyMarket.all')}</option>
+                  <option value="sell">{t('propertyMarket.forSale')}</option>
+                  <option value="rent">{t('propertyMarket.forRent')}</option>
                 </select>
               </div>
             </div>
 
             <button type="submit"
               className="flex items-center justify-center gap-2 px-6 py-2.5 bg-orange-500 text-white rounded-xl font-semibold hover:bg-orange-600 active:scale-[0.98] transition-all shadow-sm text-sm whitespace-nowrap">
-              <Search className="w-4 h-4" /> Cari Properti
+              <Search className="w-4 h-4" /> {t('propertyMarket.searchProperty')}
             </button>
           </form>
         </div>
@@ -460,7 +465,7 @@ export default function PropertyMarket() {
                       : 'text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  {tab.label}
+                  {tab.value === '' ? t('propertyMarket.all') : tab.value === 'sell' ? t('propertyMarket.forSale') : t('propertyMarket.forRent')}
                 </button>
               ))}
             </div>
@@ -468,7 +473,7 @@ export default function PropertyMarket() {
             <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
               {/* Results count */}
               <p className="text-xs sm:text-sm text-slate-500 truncate">
-                {isLoading ? 'Mencari...' : `${total.toLocaleString('id')} properti`}
+                {isLoading ? t('propertyMarket.searching') : t('propertyMarket.propertiesCount', { n: total.toLocaleString(i18n.language === 'en' ? 'en-US' : 'id') })}
               </p>
 
               {/* Filter toggle mobile */}
@@ -476,7 +481,7 @@ export default function PropertyMarket() {
                 onClick={() => setMobileFilter(true)}
                 className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-600 hover:bg-slate-50 active:scale-95 shadow-sm lg:hidden transition-all"
               >
-                <SlidersHorizontal className="w-4 h-4" /> Filter
+                <SlidersHorizontal className="w-4 h-4" /> {t('propertyMarket.filter')}
               </button>
 
               {/* Clear filters */}
@@ -492,7 +497,7 @@ export default function PropertyMarket() {
                   }}
                   className="flex items-center gap-1 px-2.5 sm:px-3 py-2 bg-red-50 text-red-600 border border-red-100 rounded-xl text-xs sm:text-sm font-medium hover:bg-red-100 active:scale-95 transition-all"
                 >
-                  <X className="w-3.5 h-3.5" /> Reset
+                  <X className="w-3.5 h-3.5" /> {t('propertyMarket.reset')}
                 </button>
               )}
             </div>
@@ -515,7 +520,7 @@ export default function PropertyMarket() {
               )}
               {form.listingType && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                  {form.listingType === 'sell' ? 'Dijual' : 'Disewa'}
+                  {form.listingType === 'sell' ? t('propertyMarket.forSale') : t('propertyMarket.forRent')}
                   <button onClick={() => setForm({...form, listingType: ''})}><X className="w-3 h-3" /></button>
                 </span>
               )}
@@ -539,8 +544,8 @@ export default function PropertyMarket() {
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4 sm:mb-5">
                   <Building2 className="w-7 h-7 sm:w-8 sm:h-8 text-slate-300" />
                 </div>
-                <p className="font-semibold text-base sm:text-lg text-slate-700">Belum ada properti ditemukan</p>
-                <p className="text-slate-400 text-xs sm:text-sm mt-1">Coba ubah filter pencarian Anda</p>
+                <p className="font-semibold text-base sm:text-lg text-slate-700">{t('propertyMarket.noResults')}</p>
+                <p className="text-slate-400 text-xs sm:text-sm mt-1">{t('propertyMarket.noResultsHint')}</p>
                 {hasFilters && (
                   <button onClick={() => {
                     setForm({ city: '', category: '', listingType: '' })
@@ -551,7 +556,7 @@ export default function PropertyMarket() {
                     setPage(1)
                   }}
                     className="mt-4 px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 active:scale-95 transition-all">
-                    Reset Filter
+                    {t('propertyMarket.resetFilter')}
                   </button>
                 )}
               </div>
@@ -582,12 +587,12 @@ export default function PropertyMarket() {
               <div className="mx-auto w-10 h-1 rounded-full bg-slate-300 mb-3" />
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Filter</p>
-                  <h2 className="font-display text-lg font-bold text-slate-900">Filter Properti</h2>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t('propertyMarket.filter')}</p>
+                  <h2 className="font-display text-lg font-bold text-slate-900">{t('propertyMarket.filterProperty')}</h2>
                 </div>
                 <button onClick={() => setMobileFilter(false)}
                   className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center"
-                  aria-label="Tutup">
+                  aria-label={t('propertyMarket.close')}>
                   <X className="w-4 h-4 text-slate-600" />
                 </button>
               </div>
@@ -607,13 +612,13 @@ export default function PropertyMarket() {
                 }}
                 className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 active:scale-[0.98] transition-all"
               >
-                Reset
+                {t('propertyMarket.reset')}
               </button>
               <button
                 onClick={() => { setPage(1); setMobileFilter(false) }}
                 className="flex-[1.5] py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 active:scale-[0.98] transition-all shadow-sm"
               >
-                Terapkan Filter
+                {t('propertyMarket.applyFilter')}
               </button>
             </div>
           </div>

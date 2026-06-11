@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import {
   UserX, Mail, MessageCircle, Phone, AlertTriangle, CheckCircle2,
   Database, Clock, ShieldCheck, ArrowRight, FileText,
@@ -5,68 +6,31 @@ import {
 import SEO from '@/components/SEO'
 
 const STEPS = [
-  {
-    num: 1,
-    title: 'Kirim Permintaan',
-    desc: 'Kirim email permintaan penghapusan akun ke alamat di bawah, dengan subject: "Permintaan Hapus Akun ArahInn".',
-  },
-  {
-    num: 2,
-    title: 'Sertakan Informasi',
-    desc: 'Cantumkan email akun ArahInn yang ingin dihapus + alasan (opsional). Kami mungkin meminta verifikasi tambahan untuk keamanan.',
-  },
-  {
-    num: 3,
-    title: 'Verifikasi & Proses',
-    desc: 'Tim kami akan memverifikasi kepemilikan akun dan memproses permintaan dalam 7 hari kerja. Konfirmasi dikirim ke email Anda.',
-  },
-  {
-    num: 4,
-    title: 'Akun Terhapus',
-    desc: 'Setelah verifikasi selesai, akun Anda dan data pribadi akan dihapus sesuai ketentuan retensi di bawah.',
-  },
+  { num: 1, titleKey: 'accountDeletion.step1Title', descKey: 'accountDeletion.step1Desc' },
+  { num: 2, titleKey: 'accountDeletion.step2Title', descKey: 'accountDeletion.step2Desc' },
+  { num: 3, titleKey: 'accountDeletion.step3Title', descKey: 'accountDeletion.step3Desc' },
+  { num: 4, titleKey: 'accountDeletion.step4Title', descKey: 'accountDeletion.step4Desc' },
 ]
 
 const DATA_DELETED = [
-  'Nama, alamat email, nomor telepon',
-  'Foto profil dan avatar',
-  'Riwayat pencarian dan preferensi pribadi',
-  'Daftar wishlist dan riwayat lihat hotel/properti',
-  'Pesan chat dengan hotel (private messages)',
-  'Token notifikasi push dan device ID',
-  'Setting privasi & preferensi notifikasi',
-  'Saldo Poin Loyalty (tidak dapat dikembalikan setelah dihapus)',
+  'accountDeletion.del1', 'accountDeletion.del2', 'accountDeletion.del3', 'accountDeletion.del4',
+  'accountDeletion.del5', 'accountDeletion.del6', 'accountDeletion.del7', 'accountDeletion.del8',
 ]
 
 const DATA_RETAINED = [
-  {
-    label: 'Riwayat Transaksi & Booking',
-    period: '10 tahun',
-    reason: 'Kewajiban audit pajak & perlindungan konsumen sesuai UU No. 8 Tahun 1999 (UU Perlindungan Konsumen) dan UU No. 28 Tahun 2007 (Ketentuan Umum dan Tata Cara Perpajakan).',
-  },
-  {
-    label: 'Bukti Pembayaran & Invoice',
-    period: '10 tahun',
-    reason: 'Kewajiban penyimpanan dokumen keuangan sesuai UU Perpajakan.',
-  },
-  {
-    label: 'Ulasan Hotel (anonim)',
-    period: 'Selamanya',
-    reason: 'Ulasan akan diubah jadi anonim (nama diganti "Pengguna ArahInn") tapi konten ulasan tetap ditampilkan untuk membantu user lain.',
-  },
-  {
-    label: 'Log Aktivitas Keamanan',
-    period: '1 tahun',
-    reason: 'Untuk deteksi fraud, investigasi insiden keamanan, dan audit log.',
-  },
+  { labelKey: 'accountDeletion.ret1Label', periodKey: 'accountDeletion.ret1Period', reasonKey: 'accountDeletion.ret1Reason' },
+  { labelKey: 'accountDeletion.ret2Label', periodKey: 'accountDeletion.ret2Period', reasonKey: 'accountDeletion.ret2Reason' },
+  { labelKey: 'accountDeletion.ret3Label', periodKey: 'accountDeletion.ret3Period', reasonKey: 'accountDeletion.ret3Reason' },
+  { labelKey: 'accountDeletion.ret4Label', periodKey: 'accountDeletion.ret4Period', reasonKey: 'accountDeletion.ret4Reason' },
 ]
 
 export default function AccountDeletion() {
+  const { t } = useTranslation()
   return (
     <div className="bg-gradient-to-b from-slate-50 to-white min-h-screen">
       <SEO
-        title="Penghapusan Akun"
-        description="Cara menghapus akun ArahInn dan data pribadi Anda. Panduan lengkap, jenis data yang dihapus, dan ketentuan retensi data sesuai regulasi Indonesia."
+        title={t('accountDeletion.seoTitle')}
+        description={t('accountDeletion.seoDesc')}
         url="/account-deletion"
         type="article"
       />
@@ -81,10 +45,10 @@ export default function AccountDeletion() {
             <img src="/logo-arahin.png" alt="ArahInn" className="h-8 sm:h-10 md:h-12 w-auto" />
           </div>
           <h1 className="font-display text-2xl sm:text-3xl md:text-5xl font-bold mb-2 sm:mb-3 leading-tight">
-            Hapus Akun ArahInn
+            {t('accountDeletion.heroTitle')}
           </h1>
           <p className="text-white/90 text-xs sm:text-sm md:text-base max-w-2xl leading-relaxed px-2">
-            Anda berhak meminta penghapusan akun dan data pribadi Anda kapan saja. Berikut panduan lengkapnya.
+            {t('accountDeletion.heroSubtitle')}
           </p>
         </div>
       </section>
@@ -98,12 +62,12 @@ export default function AccountDeletion() {
               <AlertTriangle className="w-5 h-5 text-amber-700" />
             </div>
             <div className="min-w-0">
-              <h3 className="font-bold text-sm sm:text-base text-amber-900 mb-1.5">Perhatian Sebelum Menghapus Akun</h3>
+              <h3 className="font-bold text-sm sm:text-base text-amber-900 mb-1.5">{t('accountDeletion.noticeTitle')}</h3>
               <ul className="text-xs sm:text-sm text-amber-800 space-y-1 leading-relaxed list-disc pl-4">
-                <li>Penghapusan akun bersifat <strong>permanen</strong> dan tidak dapat dibatalkan.</li>
-                <li>Saldo Poin Loyalty Anda akan <strong>hangus</strong> setelah akun dihapus.</li>
-                <li>Booking yang sedang aktif (pending payment / belum check-out) <strong>tidak dapat dihapus</strong> sampai selesai atau dibatalkan.</li>
-                <li>Anda harus membuat akun baru jika ingin menggunakan ArahInn lagi di masa depan.</li>
+                <li>{t('accountDeletion.notice1')}</li>
+                <li>{t('accountDeletion.notice2')}</li>
+                <li>{t('accountDeletion.notice3')}</li>
+                <li>{t('accountDeletion.notice4')}</li>
               </ul>
             </div>
           </div>
@@ -114,7 +78,7 @@ export default function AccountDeletion() {
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
             <UserX className="w-4 h-4 sm:w-5 sm:h-5 text-brand" />
           </div>
-          Cara Menghapus Akun
+          {t('accountDeletion.howToTitle')}
         </h2>
 
         <div className="space-y-3 sm:space-y-4 mb-10 sm:mb-12">
@@ -124,8 +88,8 @@ export default function AccountDeletion() {
                 {step.num}
               </div>
               <div className="min-w-0">
-                <h3 className="font-bold text-sm sm:text-base text-slate-900 mb-1">{step.title}</h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{step.desc}</p>
+                <h3 className="font-bold text-sm sm:text-base text-slate-900 mb-1">{t(step.titleKey)}</h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{t(step.descKey)}</p>
               </div>
             </div>
           ))}
@@ -133,8 +97,8 @@ export default function AccountDeletion() {
 
         {/* Contact methods */}
         <div className="mb-10 sm:mb-12 bg-gradient-to-br from-brand/5 via-blue-50 to-orange-50 border border-brand/20 rounded-2xl p-5 sm:p-6 md:p-8">
-          <h3 className="font-display text-lg sm:text-xl font-bold text-slate-900 mb-1.5 sm:mb-2">Kirim Permintaan ke:</h3>
-          <p className="text-xs sm:text-sm text-slate-600 mb-5 sm:mb-6">Salah satu kontak di bawah ini. Tim kami merespons dalam 1×24 jam kerja.</p>
+          <h3 className="font-display text-lg sm:text-xl font-bold text-slate-900 mb-1.5 sm:mb-2">{t('accountDeletion.sendTo')}</h3>
+          <p className="text-xs sm:text-sm text-slate-600 mb-5 sm:mb-6">{t('accountDeletion.sendToHint')}</p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <a href="mailto:privacy@arahinn.com?subject=Permintaan%20Hapus%20Akun%20ArahInn"
@@ -143,7 +107,7 @@ export default function AccountDeletion() {
                 <Mail className="w-5 h-5 text-blue-600 group-hover:text-white" />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Email Privacy</p>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">{t('accountDeletion.emailPrivacy')}</p>
                 <p className="text-xs sm:text-sm font-bold text-slate-800 truncate">privacy@arahinn.com</p>
               </div>
             </a>
@@ -154,7 +118,7 @@ export default function AccountDeletion() {
                 <MessageCircle className="w-5 h-5 text-emerald-600 group-hover:text-white" />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">WhatsApp</p>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">{t('accountDeletion.whatsapp')}</p>
                 <p className="text-xs sm:text-sm font-bold text-slate-800 truncate">+62 851-8813-6009</p>
               </div>
             </a>
@@ -164,7 +128,7 @@ export default function AccountDeletion() {
                 <Phone className="w-5 h-5 text-orange-600 group-hover:text-white" />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Telepon</p>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">{t('accountDeletion.phone')}</p>
                 <p className="text-xs sm:text-sm font-bold text-slate-800 truncate">+62 851-8813-6009</p>
               </div>
             </a>
@@ -176,18 +140,18 @@ export default function AccountDeletion() {
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
             <Database className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-700" />
           </div>
-          Data yang Dihapus
+          {t('accountDeletion.dataDeletedTitle')}
         </h2>
 
         <div className="mb-10 sm:mb-12 bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-sm">
           <p className="text-xs sm:text-sm text-slate-600 mb-3 sm:mb-4 leading-relaxed">
-            Saat permintaan disetujui, data berikut akan <strong className="text-emerald-700">dihapus permanen</strong> dari sistem kami:
+            {t('accountDeletion.dataDeletedIntro')}
           </p>
           <ul className="space-y-2 sm:space-y-2.5">
             {DATA_DELETED.map((item, i) => (
               <li key={i} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                <span className="leading-relaxed">{item}</span>
+                <span className="leading-relaxed">{t(item)}</span>
               </li>
             ))}
           </ul>
@@ -198,20 +162,20 @@ export default function AccountDeletion() {
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
             <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-amber-700" />
           </div>
-          Data yang Tetap Disimpan (Sesuai Regulasi)
+          {t('accountDeletion.dataRetainedTitle')}
         </h2>
 
         <div className="mb-10 sm:mb-12 space-y-3 sm:space-y-4">
           {DATA_RETAINED.map(item => (
-            <div key={item.label} className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-sm">
+            <div key={item.labelKey} className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-sm">
               <div className="flex items-start justify-between gap-3 mb-2">
-                <h3 className="font-bold text-sm sm:text-base text-slate-900 leading-snug">{item.label}</h3>
+                <h3 className="font-bold text-sm sm:text-base text-slate-900 leading-snug">{t(item.labelKey)}</h3>
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-[11px] sm:text-xs font-bold shrink-0">
                   <Clock className="w-3 h-3" />
-                  {item.period}
+                  {t(item.periodKey)}
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{item.reason}</p>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">{t(item.reasonKey)}</p>
             </div>
           ))}
         </div>
@@ -223,14 +187,14 @@ export default function AccountDeletion() {
               <ShieldCheck className="w-5 h-5 text-emerald-400" />
             </div>
             <div className="min-w-0">
-              <h3 className="font-display font-bold text-base sm:text-lg mb-1.5 sm:mb-2">Komitmen Kami</h3>
+              <h3 className="font-display font-bold text-base sm:text-lg mb-1.5 sm:mb-2">{t('accountDeletion.commitmentTitle')}</h3>
               <p className="text-xs sm:text-sm text-white/80 leading-relaxed">
-                ArahInn berkomitmen melindungi privasi Anda sesuai <strong>UU No. 27 Tahun 2022 tentang Pelindungan Data Pribadi (UU PDP)</strong>. Permintaan penghapusan akun diproses gratis tanpa biaya. Jika ada pertanyaan, kami siap membantu melalui kontak di atas.
+                {t('accountDeletion.commitmentText')}
               </p>
               <a href="/kebijakan-privasi"
                 className="mt-3 sm:mt-4 inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-emerald-400 hover:text-emerald-300 transition-colors">
                 <FileText className="w-3.5 h-3.5" />
-                Baca Kebijakan Privasi lengkap
+                {t('accountDeletion.readPrivacy')}
                 <ArrowRight className="w-3.5 h-3.5" />
               </a>
             </div>
@@ -238,8 +202,8 @@ export default function AccountDeletion() {
         </div>
 
         <p className="text-center text-[11px] sm:text-xs text-slate-400 leading-relaxed px-2">
-          © 2026 ArahInn.com — PT. Redy Hospitality Management.<br className="sm:hidden" />
-          <span className="hidden sm:inline"> </span>Semua hak dilindungi.
+          {t('accountDeletion.copyright')}<br className="sm:hidden" />
+          <span className="hidden sm:inline"> </span>{t('accountDeletion.rightsReserved')}
         </p>
       </section>
     </div>

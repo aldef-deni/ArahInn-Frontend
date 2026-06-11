@@ -1,31 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import {
   TrainFront, ArrowLeftRight, Calendar, Users, Search, X,
   MapPin, Clock, ArrowRight, Loader2, ChevronRight, AlertCircle,
 } from 'lucide-react'
+import i18n from '@/i18n'
 import { travelApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 
 const todayStr = () => new Date().toISOString().slice(0, 10)
-const gradeLabel = (g) => ({ E: 'Eksekutif', B: 'Bisnis', K: 'Ekonomi' }[g] || g || '-')
-const MONTHS_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
-const DAYS_ID = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']
-// YYYY-MM-DD → 05/Juni/2026
-const formatDateSlash = (ymd) => { if (!ymd) return '-'; const [y, m, d] = ymd.split('-'); return `${d}/${MONTHS_ID[+m - 1]}/${y}` }
-// YYYY-MM-DD → Jumat, 5 Juni 2026
-const formatDateFull = (ymd) => {
-  if (!ymd) return '-'
-  const [y, m, d] = ymd.split('-')
-  const dt = new Date(`${ymd}T00:00:00`)
-  return `${DAYS_ID[dt.getDay()]}, ${+d} ${MONTHS_ID[+m - 1]} ${y}`
-}
+const gradeLabel = (g, t) => ({ E: t('travel.gradeE'), B: t('travel.gradeB'), K: t('travel.gradeK') }[g] || g || '-')
+const dateLocale = () => (i18n.language === 'en' ? 'en-US' : 'id-ID')
+const formatDateSlash = (ymd) => { if (!ymd) return '-'; const dt = new Date(`${ymd}T00:00:00`); return dt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) }
+const formatDateFull = (ymd) => { if (!ymd) return '-'; const dt = new Date(`${ymd}T00:00:00`); return dt.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) }
 const titleCase = (s) => (s || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
 
 /* ── Station picker modal ─────────────────────────────────────────────── */
 function StationPicker({ open, stations, title, onPick, onClose }) {
+  const { t } = useTranslation()
   const [q, setQ] = useState('')
   useEffect(() => { if (open) setQ('') }, [open])
   if (!open) return null
@@ -48,13 +43,13 @@ function StationPicker({ open, stations, title, onPick, onClose }) {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               autoFocus value={q} onChange={e => setQ(e.target.value)}
-              placeholder="Cari stasiun / kota..."
+              placeholder={t('travel.searchStation')}
               className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
             />
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {filtered.length === 0 && <p className="text-center text-sm text-slate-400 py-8">Stasiun tidak ditemukan</p>}
+          {filtered.length === 0 && <p className="text-center text-sm text-slate-400 py-8">{t('travel.stationNotFound')}</p>}
           {filtered.map(s => (
             <button
               key={s.idStasiun}
@@ -78,6 +73,7 @@ function StationPicker({ open, stations, title, onPick, onClose }) {
 
 /* ── Main page ────────────────────────────────────────────────────────── */
 export default function TrainSearch() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const [origin, setOrigin]           = useState(null)  // station object
@@ -141,7 +137,7 @@ export default function TrainSearch() {
       setShowForm(false)
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
     } catch (e) {
-      setError(e?.response?.data?.message || 'Gagal mencari jadwal. Coba lagi.')
+      setError(e?.response?.data?.message || t('travel.scheduleSearchError'))
     } finally {
       setSearching(false)
     }
@@ -158,7 +154,7 @@ export default function TrainSearch() {
 
   return (
     <div className="min-h-[70vh] bg-slate-50">
-      <SEO title="Tiket Kereta Api — Cari Jadwal & Harga" description="Pesan tiket kereta api KAI semua kelas & rute di ArahInn. Harga transparan, e-tiket instan." url="/tiket/kereta" />
+      <SEO title={t('travel.trainSeoTitle')} description={t('travel.trainSeoDesc')} url="/tiket/kereta" />
 
       {/* Hero + form */}
       {showForm && (
@@ -169,8 +165,8 @@ export default function TrainSearch() {
               <TrainFront className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="font-display text-lg sm:text-xl font-bold leading-tight">Tiket Kereta Api</h1>
-              <p className="text-[11px] sm:text-xs text-white/80">KAI — semua kelas & rute</p>
+              <h1 className="font-display text-lg sm:text-xl font-bold leading-tight">{t('travel.trainTitle')}</h1>
+              <p className="text-[11px] sm:text-xs text-white/80">{t('travel.trainTagline')}</p>
             </div>
           </div>
 
@@ -181,9 +177,9 @@ export default function TrainSearch() {
               <button onClick={() => setPicker('origin')} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-orange-400 text-left transition-colors">
                 <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Dari</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{t('travel.from')}</p>
                   <p className={`text-sm font-semibold truncate ${origin ? 'text-slate-900' : 'text-slate-400'}`}>
-                    {origin ? `${origin.namaStasiun} (${origin.idStasiun})` : 'Pilih stasiun asal'}
+                    {origin ? `${origin.namaStasiun} (${origin.idStasiun})` : t('travel.pickOriginStation')}
                   </p>
                 </div>
               </button>
@@ -191,9 +187,9 @@ export default function TrainSearch() {
               <button onClick={() => setPicker('destination')} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-orange-400 text-left transition-colors">
                 <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Ke</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{t('travel.to')}</p>
                   <p className={`text-sm font-semibold truncate ${destination ? 'text-slate-900' : 'text-slate-400'}`}>
-                    {destination ? `${destination.namaStasiun} (${destination.idStasiun})` : 'Pilih stasiun tujuan'}
+                    {destination ? `${destination.namaStasiun} (${destination.idStasiun})` : t('travel.pickDestStation')}
                   </p>
                 </div>
               </button>
@@ -207,19 +203,19 @@ export default function TrainSearch() {
             {/* Date + passengers */}
             <div className="grid grid-cols-2 gap-2.5 mt-2.5">
               <div className="relative p-3 rounded-xl border border-slate-200 cursor-pointer" onClick={openDatePicker}>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Calendar className="w-3 h-3" /> Tanggal</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Calendar className="w-3 h-3" /> {t('travel.date')}</p>
                 <p className="text-sm font-semibold text-slate-900 mt-0.5">{formatDateSlash(date)}</p>
                 <input ref={dateRef} type="date" value={date} min={todayStr()} onChange={e => setDate(e.target.value)}
-                  className="absolute bottom-1 left-3 w-px h-px opacity-0 pointer-events-none" tabIndex={-1} aria-label="Pilih tanggal" />
+                  className="absolute bottom-1 left-3 w-px h-px opacity-0 pointer-events-none" tabIndex={-1} aria-label={t('travel.date')} />
               </div>
               <div className="p-3 rounded-xl border border-slate-200">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Users className="w-3 h-3" /> Penumpang</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Users className="w-3 h-3" /> {t('travel.passengers')}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <select value={adult} onChange={e => setAdult(+e.target.value)} className="text-sm font-semibold bg-transparent focus:outline-none">
-                    {[1,2,3,4,5,6,7].map(n => <option key={n} value={n}>{n} Dewasa</option>)}
+                    {[1,2,3,4,5,6,7].map(n => <option key={n} value={n}>{n} {t('travel.adultLabel')}</option>)}
                   </select>
                   <select value={infant} onChange={e => setInfant(+e.target.value)} className="text-xs text-slate-500 bg-transparent focus:outline-none">
-                    {[0,1,2,3,4].map(n => <option key={n} value={n}>{n} Bayi</option>)}
+                    {[0,1,2,3,4].map(n => <option key={n} value={n}>{n} {t('travel.infantLabel')}</option>)}
                   </select>
                 </div>
               </div>
@@ -230,7 +226,7 @@ export default function TrainSearch() {
               disabled={!canSearch || searching}
               className="w-full mt-3 py-3.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50"
             >
-              {searching ? <><Loader2 className="w-4 h-4 animate-spin" /> Mencari jadwal...</> : <><Search className="w-4 h-4" /> Cari Tiket</>}
+              {searching ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('travel.searchingSchedule')}</> : <><Search className="w-4 h-4" /> {t('travel.searchTicket')}</>}
             </button>
           </div>
         </div>
@@ -249,8 +245,8 @@ export default function TrainSearch() {
         {results && results.length === 0 && !searching && (
           <div className="text-center py-12">
             <TrainFront className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="font-semibold text-slate-700">Tidak ada jadwal</p>
-            <p className="text-sm text-slate-400 mt-1">Coba ubah tanggal atau rute pencarian.</p>
+            <p className="font-semibold text-slate-700">{t('travel.noScheduleShort')}</p>
+            <p className="text-sm text-slate-400 mt-1">{t('travel.noScheduleShortDesc')}</p>
           </div>
         )}
 
@@ -263,23 +259,23 @@ export default function TrainSearch() {
                   {titleCase(origin?.namaStasiun)} <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" /> {titleCase(destination?.namaStasiun)}
                 </p>
                 <p className="text-xs text-slate-500 mt-1">
-                  {formatDateFull(date)} · {adult} Dewasa{infant > 0 ? `, ${infant} Bayi` : ''}
+                  {formatDateFull(date)} · {adult} {t('travel.adultLabel')}{infant > 0 ? `, ${infant} ${t('travel.infantLabel')}` : ''}
                 </p>
               </div>
               <button
                 onClick={() => { setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
                 className="shrink-0 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold active:scale-95 transition-all"
               >
-                Ubah Pencarian
+                {t('travel.changeSearch')}
               </button>
             </div>
 
             {/* Sort bar */}
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs font-bold text-slate-500">Urutkan:</span>
+              <span className="text-xs font-bold text-slate-500">{t('travel.sortLabel')}</span>
               {[
-                { id: 'price', label: 'Harga Termurah' },
-                { id: 'departure', label: 'Paling Pagi' },
+                { id: 'price', label: t('travel.sortCheapestPrice') },
+                { id: 'departure', label: t('travel.sortEarliest') },
               ].map(opt => (
                 <button
                   key={opt.id}
@@ -293,7 +289,7 @@ export default function TrainSearch() {
                   {opt.label}
                 </button>
               ))}
-              <span className="ml-auto text-xs text-slate-400">{results.length} kereta</span>
+              <span className="ml-auto text-xs text-slate-400">{t('travel.trainsCount', { count: results.length })}</span>
             </div>
 
             {/* Cards (Traveloka style) */}
@@ -307,7 +303,7 @@ export default function TrainSearch() {
                       {/* Train name + class */}
                       <div className="min-w-0 w-[34%] sm:w-[28%]">
                         <p className="font-bold text-slate-900 text-sm sm:text-base leading-tight truncate">{train.trainName}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{gradeLabel(seat.grade)} ({seat.class})</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{gradeLabel(seat.grade, t)} ({seat.class})</p>
                       </div>
 
                       {/* Times + duration */}
@@ -320,7 +316,7 @@ export default function TrainSearch() {
                           <span className="text-[10px] text-slate-400">{train.duration}</span>
                           <div className="w-full flex items-center gap-1 my-0.5">
                             <div className="h-px flex-1 bg-slate-200" />
-                            <span className="text-[9px] text-emerald-600 font-bold">Langsung</span>
+                            <span className="text-[9px] text-emerald-600 font-bold">{t('travel.direct')}</span>
                             <div className="h-px flex-1 bg-slate-200" />
                           </div>
                         </div>
@@ -332,16 +328,16 @@ export default function TrainSearch() {
 
                       {/* Price + select */}
                       <div className="text-right shrink-0 w-[26%] sm:w-[22%]">
-                        <p className="font-display text-sm sm:text-lg font-bold text-orange-600 leading-tight">{formatRupiah((Number(seat.priceAdult) || 0) + markup)}<span className="text-[10px] font-normal text-slate-400">/pax</span></p>
+                        <p className="font-display text-sm sm:text-lg font-bold text-orange-600 leading-tight">{formatRupiah((Number(seat.priceAdult) || 0) + markup)}<span className="text-[10px] font-normal text-slate-400">{t('travel.perPax')}</span></p>
                         {!soldOut && (seat.availability ?? 0) <= 50 && (
-                          <p className="text-[10px] text-red-500 font-semibold mt-0.5">Sisa {seat.availability} kursi</p>
+                          <p className="text-[10px] text-red-500 font-semibold mt-0.5">{t('travel.seatsLeftKursi', { n: seat.availability })}</p>
                         )}
                         <button
                           onClick={() => selectTrain(train, seat)}
                           disabled={soldOut}
                           className="mt-2 px-4 sm:px-6 py-2 rounded-full bg-orange-500 hover:bg-orange-600 text-white text-xs sm:text-sm font-bold active:scale-95 transition-all disabled:opacity-40 disabled:bg-slate-300"
                         >
-                          {soldOut ? 'Habis' : 'Pilih'}
+                          {soldOut ? t('travel.soldOutShort') : t('travel.select')}
                         </button>
                       </div>
                     </div>
@@ -355,13 +351,13 @@ export default function TrainSearch() {
         {!results && !searching && (
           <div className="text-center py-12">
             <TrainFront className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-            <p className="text-sm text-slate-400">Isi rute & tanggal, lalu cari tiket kereta.</p>
+            <p className="text-sm text-slate-400">{t('travel.trainEmptyPrompt')}</p>
           </div>
         )}
       </section>
 
-      <StationPicker open={picker === 'origin'} stations={stations} title="Stasiun Asal" onPick={setOrigin} onClose={() => setPicker(null)} />
-      <StationPicker open={picker === 'destination'} stations={stations} title="Stasiun Tujuan" onPick={setDestination} onClose={() => setPicker(null)} />
+      <StationPicker open={picker === 'origin'} stations={stations} title={t('travel.originStation')} onPick={setOrigin} onClose={() => setPicker(null)} />
+      <StationPicker open={picker === 'destination'} stations={stations} title={t('travel.destStation')} onPick={setDestination} onClose={() => setPicker(null)} />
     </div>
   )
 }

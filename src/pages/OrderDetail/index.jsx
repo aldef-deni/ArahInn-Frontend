@@ -1,10 +1,12 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { bookingApi } from '@/services/index'
 import { formatRupiah, formatDate, statusBadgeClass, statusLabel, getImageUrl } from '@/utils'
 import { ChevronLeft, Calendar, MapPin, BedDouble, Users, Receipt, Hash } from 'lucide-react'
 
 export default function OrderDetail() {
+  const { t }    = useTranslation()
   const { id }   = useParams()
   const navigate = useNavigate()
 
@@ -21,7 +23,7 @@ export default function OrderDetail() {
 
   if (!booking) return (
     <div className="container py-20 text-center">
-      <p className="text-muted-foreground">Pesanan tidak ditemukan.</p>
+      <p className="text-muted-foreground">{t('orderDetail.notFound')}</p>
     </div>
   )
 
@@ -34,11 +36,11 @@ export default function OrderDetail() {
       <button onClick={() => navigate('/orders')}
         className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground active:scale-95 mb-4 sm:mb-6 transition-all">
         <ChevronLeft className="w-4 h-4" />
-        <span className="hidden sm:inline">Kembali ke Riwayat Pesanan</span>
-        <span className="sm:hidden">Kembali</span>
+        <span className="hidden sm:inline">{t('orderDetail.backToHistory')}</span>
+        <span className="sm:hidden">{t('orderDetail.back')}</span>
       </button>
 
-      <h1 className="font-display text-xl sm:text-2xl font-bold mb-4 sm:mb-6 leading-tight">Detail Pesanan</h1>
+      <h1 className="font-display text-xl sm:text-2xl font-bold mb-4 sm:mb-6 leading-tight">{t('orderDetail.title')}</h1>
 
       {/* Status & Booking Code */}
       <div className="bg-white border rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4 shadow-card flex items-center justify-between flex-wrap gap-2 sm:gap-3">
@@ -73,48 +75,48 @@ export default function OrderDetail() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pt-1">
             <div className="flex items-center gap-2 text-xs sm:text-sm">
               <BedDouble className="w-4 h-4 text-muted-foreground shrink-0" />
-              <span className="truncate"><span className="text-muted-foreground">Kamar:</span> {room?.name}</span>
+              <span className="truncate"><span className="text-muted-foreground">{t('orderDetail.room')}</span> {room?.name}</span>
             </div>
             <div className="flex items-center gap-2 text-xs sm:text-sm">
               <Users className="w-4 h-4 text-muted-foreground shrink-0" />
-              <span><span className="text-muted-foreground">Tamu:</span> {booking.guests} orang</span>
+              <span><span className="text-muted-foreground">{t('orderDetail.guests')}</span> {booking.guests} {t('orderDetail.guestUnit')}</span>
             </div>
             <div className="flex items-center gap-2 text-xs sm:text-sm">
               <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
-              <span><span className="text-muted-foreground">Check-in:</span> {formatDate(booking.checkIn)}</span>
+              <span><span className="text-muted-foreground">{t('orderDetail.checkin')}</span> {formatDate(booking.checkIn)}</span>
             </div>
             <div className="flex items-center gap-2 text-xs sm:text-sm">
               <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
-              <span><span className="text-muted-foreground">Check-out:</span> {formatDate(booking.checkOut)}</span>
+              <span><span className="text-muted-foreground">{t('orderDetail.checkout')}</span> {formatDate(booking.checkOut)}</span>
             </div>
           </div>
-          <p className="text-[11px] sm:text-xs text-muted-foreground pt-1">Durasi: {booking.totalNights} malam</p>
+          <p className="text-[11px] sm:text-xs text-muted-foreground pt-1">{t('orderDetail.duration', { n: booking.totalNights })}</p>
         </div>
       </div>
 
       {/* Guest Info */}
       <div className="bg-white border rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4 shadow-card">
         <h2 className="font-semibold mb-2.5 sm:mb-3 flex items-center gap-2 text-[11px] sm:text-sm uppercase tracking-wide text-muted-foreground">
-          Data Tamu
+          {t('orderDetail.guestData')}
         </h2>
         <div className="space-y-2 text-xs sm:text-sm">
           <div className="flex justify-between gap-3">
-            <span className="text-muted-foreground shrink-0">Nama</span>
+            <span className="text-muted-foreground shrink-0">{t('orderDetail.name')}</span>
             <span className="font-medium text-right break-words min-w-0">{booking.guestName}</span>
           </div>
           <div className="flex justify-between gap-3">
-            <span className="text-muted-foreground shrink-0">Email</span>
+            <span className="text-muted-foreground shrink-0">{t('orderDetail.email')}</span>
             <span className="font-medium text-right break-all min-w-0">{booking.guestEmail}</span>
           </div>
           {booking.guestPhone && (
             <div className="flex justify-between gap-3">
-              <span className="text-muted-foreground shrink-0">Telepon</span>
+              <span className="text-muted-foreground shrink-0">{t('orderDetail.phone')}</span>
               <span className="font-medium text-right">{booking.guestPhone}</span>
             </div>
           )}
           {booking.notes && (
             <div className="flex justify-between gap-3 sm:gap-4">
-              <span className="text-muted-foreground shrink-0">Catatan</span>
+              <span className="text-muted-foreground shrink-0">{t('orderDetail.notes')}</span>
               <span className="font-medium text-right break-words">{booking.notes}</span>
             </div>
           )}
@@ -124,15 +126,15 @@ export default function OrderDetail() {
       {/* Price Breakdown */}
       <div className="bg-white border rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-card">
         <h2 className="font-semibold mb-2.5 sm:mb-3 flex items-center gap-2 text-[11px] sm:text-sm uppercase tracking-wide text-muted-foreground">
-          <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Rincian Pembayaran
+          <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {t('orderDetail.paymentBreakdown')}
         </h2>
         <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
           <div className="flex justify-between gap-3">
-            <span className="text-muted-foreground">Harga Hotel ({booking.totalNights} malam)</span>
+            <span className="text-muted-foreground">{t('orderDetail.hotelPrice', { n: booking.totalNights })}</span>
             <span className="text-right whitespace-nowrap">{formatRupiah(parseFloat(booking.basePrice) || 0)}</span>
           </div>
           <div className="flex justify-between gap-3">
-            <span className="text-muted-foreground">{(parseFloat(booking.taxAmount) || 0) > 0 ? 'PPN & Others' : 'Biaya Lainnya'}</span>
+            <span className="text-muted-foreground">{(parseFloat(booking.taxAmount) || 0) > 0 ? t('orderDetail.taxOthers') : t('orderDetail.otherFees')}</span>
             <span className="text-right whitespace-nowrap">{formatRupiah(
               (parseFloat(booking.markupAmount) || 0) +
               (parseFloat(booking.taxAmount) || 0) +
@@ -141,18 +143,18 @@ export default function OrderDetail() {
           </div>
           {parseFloat(booking.promoDiscount) > 0 && (
             <div className="flex justify-between gap-3 text-green-600">
-              <span>Diskon Promo</span>
+              <span>{t('orderDetail.promoDiscount')}</span>
               <span className="text-right whitespace-nowrap">− {formatRupiah(parseFloat(booking.promoDiscount))}</span>
             </div>
           )}
           {parseFloat(booking.loyaltyDiscount) > 0 && (
             <div className="flex justify-between gap-3 text-green-600">
-              <span>Diskon Poin</span>
+              <span>{t('orderDetail.pointDiscount')}</span>
               <span className="text-right whitespace-nowrap">− {formatRupiah(parseFloat(booking.loyaltyDiscount))}</span>
             </div>
           )}
           <div className="flex justify-between items-center pt-2.5 sm:pt-3 border-t font-bold gap-3">
-            <span className="text-sm sm:text-base">Total Dibayar</span>
+            <span className="text-sm sm:text-base">{t('orderDetail.totalPaid')}</span>
             <span className="price-tag text-base sm:text-lg">{formatRupiah(parseFloat(booking.totalPrice) || 0)}</span>
           </div>
         </div>
@@ -164,13 +166,13 @@ export default function OrderDetail() {
           {/* Desktop inline */}
           <button onClick={() => navigate(`/payment/${booking.id}`)}
             className="hidden lg:flex w-full mt-4 py-3 bg-brand text-white rounded-2xl font-bold hover:bg-brand-700 active:scale-[0.98] transition-all items-center justify-center">
-            Selesaikan Pembayaran
+            {t('orderDetail.completePayment')}
           </button>
           {/* Mobile sticky bottom */}
           <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] px-4 py-3">
             <button onClick={() => navigate(`/payment/${booking.id}`)}
               className="w-full py-3 bg-brand text-white rounded-xl font-bold text-sm hover:bg-brand-700 active:scale-[0.98] transition-all">
-              Selesaikan Pembayaran · {formatRupiah(parseFloat(booking.totalPrice) || 0)}
+              {t('orderDetail.completePayment')} · {formatRupiah(parseFloat(booking.totalPrice) || 0)}
             </button>
           </div>
         </>

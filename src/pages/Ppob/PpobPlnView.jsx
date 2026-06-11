@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { formatRupiah } from '@/utils'
 import {
   Zap, Receipt, FileWarning, AlertCircle, Loader2, CheckCircle, Check,
@@ -25,19 +26,19 @@ import {
  */
 
 const PLN_NOMINALS = [
-  { value: 20000,   label: '20 Ribu',  pln: '17 kWh ±' },
-  { value: 50000,   label: '50 Ribu',  pln: '45 kWh ±' },
-  { value: 100000,  label: '100 Ribu', pln: '90 kWh ±' },
-  { value: 200000,  label: '200 Ribu', pln: '180 kWh ±' },
-  { value: 500000,  label: '500 Ribu', pln: '460 kWh ±' },
-  { value: 1000000, label: '1 Juta',   pln: '930 kWh ±' },
+  { value: 20000,   labelKey: 'ppob.nom20k',  pln: '17 kWh ±' },
+  { value: 50000,   labelKey: 'ppob.nom50k',  pln: '45 kWh ±' },
+  { value: 100000,  labelKey: 'ppob.nom100k', pln: '90 kWh ±' },
+  { value: 200000,  labelKey: 'ppob.nom200k', pln: '180 kWh ±' },
+  { value: 500000,  labelKey: 'ppob.nom500k', pln: '460 kWh ±' },
+  { value: 1000000, labelKey: 'ppob.nom1jt',  pln: '930 kWh ±' },
 ]
 
 const SUBTYPES = [
   {
     id: 'prabayar',
-    label: 'Token Prabayar',
-    desc: 'Beli token listrik prepaid',
+    labelKey: 'ppob.plnPrepaid',
+    descKey: 'ppob.plnPrepaidDesc',
     Icon: Zap,
     color: 'bg-amber-500',
     border: 'border-amber-500',
@@ -46,8 +47,8 @@ const SUBTYPES = [
   },
   {
     id: 'pascabayar',
-    label: 'Pascabayar',
-    desc: 'Bayar tagihan bulanan',
+    labelKey: 'ppob.plnPostpaid',
+    descKey: 'ppob.plnPostpaidDesc',
     Icon: Receipt,
     color: 'bg-blue-500',
     border: 'border-blue-500',
@@ -56,8 +57,8 @@ const SUBTYPES = [
   },
   {
     id: 'non_taglist',
-    label: 'Non Taglist',
-    desc: 'Tagihan susulan / di luar tagihan rutin',
+    labelKey: 'ppob.plnNonTaglist',
+    descKey: 'ppob.plnNonTaglistDesc',
     Icon: FileWarning,
     color: 'bg-rose-500',
     border: 'border-rose-500',
@@ -107,6 +108,7 @@ export default function PpobPlnView({
   inquiryPending,
   onInquiry,
 }) {
+  const { t } = useTranslation()
   const [subtype, setSubtype] = useState(null)
   const [nominal, setNominal] = useState(null)
 
@@ -114,8 +116,8 @@ export default function PpobPlnView({
   const grouped = useMemo(() => {
     const out = { prabayar: [], pascabayar: [], non_taglist: [] }
     for (const p of products) {
-      const t = classifySubtype(p.name)
-      if (t) out[t].push(p)
+      const kind = classifySubtype(p.name)
+      if (kind) out[kind].push(p)
     }
     return out
   }, [products])
@@ -146,7 +148,7 @@ export default function PpobPlnView({
       {/* Card: Pilih Layanan PLN */}
       <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-5">
         <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5 sm:mb-3">
-          1. Pilih Jenis Layanan
+          {t('ppob.plnStep1')}
         </p>
         <div className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-3">
           {SUBTYPES.map(st => {
@@ -170,10 +172,10 @@ export default function PpobPlnView({
                 </div>
                 <div className="flex-1 min-w-0 sm:mt-2.5">
                   <p className={`text-sm font-bold leading-tight ${active ? st.accent : 'text-slate-800'}`}>
-                    {st.label}
+                    {t(st.labelKey)}
                   </p>
                   <p className="text-[11px] text-slate-500 mt-0.5 leading-snug line-clamp-2">
-                    {st.desc}
+                    {t(st.descKey)}
                   </p>
                 </div>
                 {active && (
@@ -183,7 +185,7 @@ export default function PpobPlnView({
                 )}
                 {disabled && (
                   <p className="absolute bottom-1.5 right-2 text-[9px] text-slate-400 italic">
-                    Belum tersedia
+                    {t('ppob.notAvailable')}
                   </p>
                 )}
               </button>
@@ -196,19 +198,19 @@ export default function PpobPlnView({
       {subtype && (
         <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5">
           <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5 sm:mb-3">
-            2. No. Meter / ID Pelanggan
+            {t('ppob.plnStep2')}
           </p>
           <input
             type="tel"
             inputMode="numeric"
             value={customerNumber}
             onChange={e => onCustomerChange(e.target.value.replace(/\D/g, ''))}
-            placeholder="11 digit nomor meter atau ID pelanggan"
+            placeholder={t('ppob.plnMeterPlaceholder')}
             maxLength={14}
             className="w-full px-4 py-3 border border-slate-200 rounded-xl text-base font-mono focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
           />
           <p className="mt-2 text-[11px] text-slate-500 leading-relaxed">
-            Nomor meter biasanya tertera di kWh meter atau struk PLN sebelumnya (11 digit).
+            {t('ppob.plnMeterHint')}
           </p>
         </div>
       )}
@@ -217,20 +219,20 @@ export default function PpobPlnView({
       {subtype && customerNumber.length >= 4 && (
         <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5">
           <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5 sm:mb-3">
-            3. {subtype === 'prabayar' ? 'Pilih Nominal' : 'Cek Tagihan'}
+            3. {subtype === 'prabayar' ? t('ppob.plnPickNominal') : t('ppob.plnCheckBill')}
           </p>
 
           {loadingProducts && (
             <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 py-6">
-              <Loader2 className="w-4 h-4 animate-spin" /> Memuat produk PLN...
+              <Loader2 className="w-4 h-4 animate-spin" /> {t('ppob.plnLoadingProducts')}
             </div>
           )}
 
           {!loadingProducts && !selectedProduct && (
             <div className="text-center py-6">
               <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-              <p className="text-sm text-slate-500 font-medium">Produk PLN belum tersedia.</p>
-              <p className="text-[11px] text-slate-400 mt-1">Coba lagi atau pilih jenis layanan lain.</p>
+              <p className="text-sm text-slate-500 font-medium">{t('ppob.plnNoProducts')}</p>
+              <p className="text-[11px] text-slate-400 mt-1">{t('ppob.plnNoProductsDesc')}</p>
             </div>
           )}
 
@@ -249,7 +251,7 @@ export default function PpobPlnView({
                         : 'border-slate-200 hover:border-slate-300 bg-white'
                     }`}
                   >
-                    <p className="text-[11px] sm:text-xs text-slate-500 font-semibold">{nom.label}</p>
+                    <p className="text-[11px] sm:text-xs text-slate-500 font-semibold">{t(nom.labelKey)}</p>
                     <p className={`mt-1 text-sm sm:text-base font-bold ${active ? 'text-amber-700' : 'text-slate-900'}`}>
                       {formatRupiah(nom.value)}
                     </p>
@@ -274,7 +276,7 @@ export default function PpobPlnView({
                 subtype === 'pascabayar' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-rose-600 hover:bg-rose-700'
               }`}
             >
-              {inquiryPending ? 'Mengecek tagihan...' : 'Cek Tagihan Sekarang'}
+              {inquiryPending ? t('ppob.plnChecking') : t('ppob.plnCheckNow')}
             </button>
           )}
 
@@ -283,14 +285,14 @@ export default function PpobPlnView({
             <div className="mt-4 p-3.5 sm:p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle className="w-4 h-4 text-emerald-600" />
-                <p className="text-xs sm:text-sm font-bold text-emerald-700">Tagihan ditemukan</p>
+                <p className="text-xs sm:text-sm font-bold text-emerald-700">{t('ppob.plnBillFound')}</p>
               </div>
-              <p className="text-xs sm:text-sm text-slate-700">Nama: <b>{inquiry.customer?.name || '-'}</b></p>
-              <p className="text-xs sm:text-sm text-slate-700">Tagihan: <b>{formatRupiah(inquiry.pricing?.tagihan || 0)}</b></p>
+              <p className="text-xs sm:text-sm text-slate-700">{t('ppob.nameLabel')}: <b>{inquiry.customer?.name || '-'}</b></p>
+              <p className="text-xs sm:text-sm text-slate-700">{t('ppob.billLabel')}: <b>{formatRupiah(inquiry.pricing?.tagihan || 0)}</b></p>
               {Number(inquiry.pricing?.adminFee || 0) > 0 && (
-                <p className="text-xs sm:text-sm text-slate-700">Biaya admin: <b>{formatRupiah(inquiry.pricing?.adminFee)}</b></p>
+                <p className="text-xs sm:text-sm text-slate-700">{t('ppob.adminFee')}: <b>{formatRupiah(inquiry.pricing?.adminFee)}</b></p>
               )}
-              <p className="text-sm sm:text-base font-bold text-slate-900 mt-2">Total: {formatRupiah(inquiry.pricing?.totalAmount || 0)}</p>
+              <p className="text-sm sm:text-base font-bold text-slate-900 mt-2">{t('ppob.totalLabel')}: {formatRupiah(inquiry.pricing?.totalAmount || 0)}</p>
             </div>
           )}
         </div>

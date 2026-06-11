@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { ppobApi, paymentApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
@@ -26,17 +27,18 @@ function useCountdown(expiresAt) {
 }
 
 const STATUS_PRESENTATION = {
-  pending     : { label: 'Menunggu Pembayaran', color: 'amber',   Icon: Clock },
-  paid        : { label: 'Pembayaran Diterima',  color: 'blue',    Icon: CheckCircle },
-  processing  : { label: 'Diproses Vendor',      color: 'blue',    Icon: Loader2 },
-  inquired    : { label: 'Menunggu Konfirmasi',  color: 'amber',   Icon: Clock },
-  success     : { label: 'Berhasil',             color: 'emerald', Icon: CheckCircle },
-  failed      : { label: 'Gagal',                color: 'red',     Icon: XCircle },
-  refundable  : { label: 'Akan Direfund',        color: 'amber',   Icon: Clock },
-  refunded    : { label: 'Direfund',             color: 'slate',   Icon: Clock },
+  pending     : { labelKey: 'ppob.payStatusPending',    color: 'amber',   Icon: Clock },
+  paid        : { labelKey: 'ppob.payStatusPaid',       color: 'blue',    Icon: CheckCircle },
+  processing  : { labelKey: 'ppob.payStatusProcessing', color: 'blue',    Icon: Loader2 },
+  inquired    : { labelKey: 'ppob.payStatusInquired',   color: 'amber',   Icon: Clock },
+  success     : { labelKey: 'ppob.payStatusSuccess',    color: 'emerald', Icon: CheckCircle },
+  failed      : { labelKey: 'ppob.payStatusFailed',     color: 'red',     Icon: XCircle },
+  refundable  : { labelKey: 'ppob.payStatusRefundable', color: 'amber',   Icon: Clock },
+  refunded    : { labelKey: 'ppob.payStatusRefunded',   color: 'slate',   Icon: Clock },
 }
 
 export default function PpobPayment() {
+  const { t } = useTranslation()
   const { trxCode } = useParams()
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -110,9 +112,9 @@ export default function PpobPayment() {
       <ModalShell onClose={handleClose} onBackdrop={handleBackdrop}>
         <div className="py-16 text-center px-6">
           <XCircle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-700 font-semibold">Transaksi tidak ditemukan.</p>
+          <p className="text-slate-700 font-semibold">{t('ppob.trxNotFound')}</p>
           <button onClick={handleClose} className="inline-block mt-4 text-sm font-semibold text-brand hover:underline">
-            Kembali ke PPOB
+            {t('ppob.backToPpob')}
           </button>
         </div>
       </ModalShell>
@@ -142,14 +144,14 @@ export default function PpobPayment() {
   // ── Active payment / waiting states (modal) ──
   return (
     <ModalShell onClose={handleClose} onBackdrop={handleBackdrop}>
-      <SEO title="Selesaikan Pembayaran" description="Instruksi pembayaran transaksi PPOB ArahInn." />
+      <SEO title={t('ppob.paySeoTitle')} description={t('ppob.paySeoDesc')} />
 
       <div className="px-4 sm:px-6 pb-6 pt-4 sm:pt-5">
 
       {/* Status indicator */}
       <div className={`flex items-center gap-2 px-3 py-2.5 rounded-xl mb-4 text-xs sm:text-sm font-semibold bg-${presentation.color}-50 border border-${presentation.color}-200 text-${presentation.color}-700`}>
         <StatusIcon className={`w-4 h-4 shrink-0 ${status === 'processing' ? 'animate-spin' : ''}`} />
-        <span className="truncate">{presentation.label}</span>
+        <span className="truncate">{t(presentation.labelKey)}</span>
         {expiresAt && !expired && status === 'pending' && (
           <span className="ml-auto font-mono text-[10px] sm:text-xs shrink-0">{countdown}</span>
         )}
@@ -159,27 +161,27 @@ export default function PpobPayment() {
       <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6 shadow-sm">
         <div className="flex items-start justify-between gap-3 mb-3 pb-3 border-b border-slate-100">
           <div className="min-w-0">
-            <p className="text-[10px] sm:text-xs uppercase tracking-wide text-slate-400 font-bold">Produk</p>
+            <p className="text-[10px] sm:text-xs uppercase tracking-wide text-slate-400 font-bold">{t('ppob.product')}</p>
             <p className="font-bold text-sm sm:text-base text-slate-900 line-clamp-2">{trx.product?.name}</p>
             <p className="text-xs text-slate-500 mt-0.5 font-mono">{trx.customer?.number}</p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-[10px] sm:text-xs uppercase tracking-wide text-slate-400 font-bold">Kode</p>
+            <p className="text-[10px] sm:text-xs uppercase tracking-wide text-slate-400 font-bold">{t('ppob.code')}</p>
             <p className="font-mono text-xs sm:text-sm font-bold text-brand">{trx.trxCode}</p>
           </div>
         </div>
 
         <div className="space-y-1.5 text-xs sm:text-sm">
-          <Row label="Tagihan / Harga" value={formatRupiah(trx.pricing?.tagihan || totalAmount)} />
+          <Row label={t('ppob.billOrPrice')} value={formatRupiah(trx.pricing?.tagihan || totalAmount)} />
           {Number(trx.pricing?.adminFee || 0) > 0 && (
-            <Row label="Biaya admin" value={formatRupiah(trx.pricing?.adminFee)} />
+            <Row label={t('ppob.adminFee')} value={formatRupiah(trx.pricing?.adminFee)} />
           )}
-          <Row label="Subtotal" value={formatRupiah(totalAmount)} />
+          <Row label={t('ppob.subtotal')} value={formatRupiah(totalAmount)} />
           {paymentMode === 'manual' && (
-            <Row label="Kode unik" value={`+ ${String(uniqueCode).padStart(3, '0')}`} accent="brand" />
+            <Row label={t('ppob.uniqueCode')} value={`+ ${String(uniqueCode).padStart(3, '0')}`} accent="brand" />
           )}
           <div className="pt-2 border-t border-slate-100 flex justify-between items-center font-bold">
-            <span className="text-sm sm:text-base">Total Transfer</span>
+            <span className="text-sm sm:text-base">{t('ppob.totalTransfer')}</span>
             <span className="text-base sm:text-xl text-brand">{formatRupiah(finalAmount)}</span>
           </div>
         </div>
@@ -190,8 +192,8 @@ export default function PpobPayment() {
         <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm">
           {/* Amount */}
           <div className="flex items-center justify-between gap-2 mb-1">
-            <p className="text-xs sm:text-sm text-slate-500">Nominal Transfer</p>
-            <span className="text-[10px] sm:text-xs font-semibold text-brand bg-brand/10 px-2 py-0.5 rounded">NOMINAL UNIK</span>
+            <p className="text-xs sm:text-sm text-slate-500">{t('ppob.transferAmount')}</p>
+            <span className="text-[10px] sm:text-xs font-semibold text-brand bg-brand/10 px-2 py-0.5 rounded">{t('ppob.uniqueNominal')}</span>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 bg-slate-50 rounded-xl px-3 sm:px-4 py-3 sm:py-4 mb-2">
             <span className="font-mono text-xl sm:text-3xl font-black tracking-tight flex-1 min-w-0 text-slate-900 truncate">
@@ -207,34 +209,34 @@ export default function PpobPayment() {
           <p className="text-[11px] sm:text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4 sm:mb-5 flex items-start gap-2 leading-relaxed">
             <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
             <span>
-              Transfer <strong>tepat {formatRupiah(finalAmount)}</strong> (termasuk 3 digit kode unik <strong>{String(uniqueCode).padStart(3, '0')}</strong>) supaya admin lebih cepat verifikasi.
+              {t('ppob.transferExactInfo', { amount: formatRupiah(finalAmount), code: String(uniqueCode).padStart(3, '0') })}
             </span>
           </p>
 
           {/* Bank info */}
           <div className="space-y-2 mb-4 sm:mb-5">
-            <FieldRow label="Bank Tujuan" value={manualBank.bankName} />
-            <FieldRow label="Nomor Rekening" value={manualBank.accountNumber}
+            <FieldRow label={t('ppob.destBank')} value={manualBank.bankName} />
+            <FieldRow label={t('ppob.accountNumberFull')} value={manualBank.accountNumber}
               onCopy={() => copyText(manualBank.accountNumber, 'rek')}
               copied={copiedField === 'rek'} mono />
-            <FieldRow label="Atas Nama" value={manualBank.accountName} />
+            <FieldRow label={t('ppob.accountNameLabel')} value={manualBank.accountName} />
           </div>
 
           {/* How to pay */}
           <div className="space-y-2 text-xs sm:text-sm bg-slate-50 rounded-xl p-3.5 sm:p-4 mb-4 sm:mb-5">
-            <p className="font-semibold text-slate-700 mb-2">Cara Pembayaran:</p>
+            <p className="font-semibold text-slate-700 mb-2">{t('ppob.howToPay')}</p>
             <ol className="space-y-1.5 list-decimal list-inside text-slate-600 leading-relaxed">
-              <li>Transfer <strong>tepat</strong> {formatRupiah(finalAmount)} ke rekening di atas.</li>
-              <li>Pakai <strong>1 rekening yang sama</strong> agar sistem cepat mendeteksi.</li>
-              <li>Admin verifikasi mutasi rekening (1-15 menit jam kerja, lebih lama di luar jam kerja).</li>
-              <li>Setelah terverifikasi, pulsa/token akan dikirim ke <strong className="font-mono">{trx.customer?.number}</strong>.</li>
+              <li>{t('ppob.payInstr1', { amount: formatRupiah(finalAmount) })}</li>
+              <li>{t('ppob.payInstr2')}</li>
+              <li>{t('ppob.payInstr3')}</li>
+              <li>{t('ppob.payInstr4', { number: trx.customer?.number })}</li>
             </ol>
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-3.5 flex items-start gap-2.5">
             <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
             <p className="text-xs sm:text-sm text-blue-700 leading-relaxed">
-              Sudah transfer? Tidak perlu konfirmasi. Status akan otomatis ter-update setelah admin verifikasi mutasi rekening.
+              {t('ppob.paidNoConfirm')}
             </p>
           </div>
         </div>
@@ -242,7 +244,7 @@ export default function PpobPayment() {
 
       {paymentMode !== 'manual' && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-700">
-          Mode pembayaran <strong>{paymentMode}</strong> belum didukung untuk PPOB. Hubungi admin.
+          {t('ppob.modeUnsupported', { mode: paymentMode })}
         </div>
       )}
 
@@ -250,11 +252,11 @@ export default function PpobPayment() {
       <div className="mt-5 sm:mt-6 grid grid-cols-2 gap-2 sm:gap-3">
         <Link to="/topup-tagihan/history"
           className="text-center py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 active:scale-[0.98] transition-all">
-          Riwayat
+          {t('ppob.history')}
         </Link>
         <a href="https://wa.me/6285188136009" target="_blank" rel="noopener noreferrer"
           className="text-center py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 active:scale-[0.98] transition-all">
-          Chat Admin
+          {t('ppob.chatAdmin')}
         </a>
       </div>
       </div>
@@ -267,6 +269,7 @@ export default function PpobPayment() {
  * (pattern sama dengan Checkout akomodasi).
  */
 function ModalShell({ children, onClose, onBackdrop }) {
+  const { t } = useTranslation()
   return (
     <div
       onClick={onBackdrop}
@@ -281,15 +284,15 @@ function ModalShell({ children, onClose, onBackdrop }) {
           <div className="sm:hidden mx-auto w-10 h-1 rounded-full bg-slate-300 mb-3" />
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">Pembayaran</p>
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500">{t('ppob.paymentLabel')}</p>
               <h1 className="font-display text-lg sm:text-xl md:text-2xl font-bold leading-tight text-slate-900 truncate">
-                Selesaikan Pembayaran
+                {t('ppob.completePayment')}
               </h1>
             </div>
             <button
               onClick={onClose}
               className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-95 flex items-center justify-center transition-all shrink-0"
-              aria-label="Tutup"
+              aria-label={t('ppob.close')}
             >
               <X className="w-5 h-5 text-slate-600" />
             </button>
@@ -355,6 +358,7 @@ function formatToken(raw) {
 }
 
 function SuccessView({ trx, navigate }) {
+  const { t } = useTranslation()
   const [copied, setCopied]   = useState(false)
   const kind = detectTrxKind(trx)
   const sn   = trx.serialNumber
@@ -371,8 +375,8 @@ function SuccessView({ trx, navigate }) {
     if (!navigator.share || !sn) return
     try {
       await navigator.share({
-        title: `Token ${trx.product?.name} ArahInn`,
-        text : `Token PLN: ${sn}\nMeter: ${trx.customer?.number}\nNama: ${trx.customer?.name || '-'}`,
+        title: t('ppob.shareTokenTitle', { name: trx.product?.name }),
+        text : t('ppob.shareTokenText', { sn, number: trx.customer?.number, name: trx.customer?.name || '-' }),
       })
     } catch {}
   }
@@ -393,15 +397,15 @@ function SuccessView({ trx, navigate }) {
           </div>
         </div>
         <h1 className="font-display text-xl sm:text-2xl font-bold mt-4 text-slate-900">
-          Transaksi Berhasil!
+          {t('ppob.trxSuccess')}
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          {kind === 'pln'     ? 'Token listrik PLN sudah terbit'
-          : kind === 'pulsa'  ? `Pulsa sudah dikirim ke ${trx.customer?.number}`
-          : kind === 'ewallet'? `Saldo sudah masuk ke ${trx.customer?.number}`
-          : kind === 'tagihan'? `Tagihan ${trx.product?.name} terbayar`
-          : kind === 'game'   ? `Voucher game sudah terkirim ke ID ${trx.customer?.number}`
-          : 'Transaksi sudah selesai'}
+          {kind === 'pln'     ? t('ppob.subPln')
+          : kind === 'pulsa'  ? t('ppob.subPulsa',   { number: trx.customer?.number })
+          : kind === 'ewallet'? t('ppob.subEwallet', { number: trx.customer?.number })
+          : kind === 'tagihan'? t('ppob.subTagihan', { name: trx.product?.name })
+          : kind === 'game'   ? t('ppob.subGame',    { number: trx.customer?.number })
+          : t('ppob.subOther')}
         </p>
       </div>
 
@@ -418,9 +422,9 @@ function SuccessView({ trx, navigate }) {
                 <Zap className="w-4.5 h-4.5 text-white" strokeWidth={2.5} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] sm:text-xs font-bold text-amber-700 uppercase tracking-wider">Token Listrik PLN</p>
+                <p className="text-[10px] sm:text-xs font-bold text-amber-700 uppercase tracking-wider">{t('ppob.plnTokenCard')}</p>
                 <p className="text-[11px] text-slate-600">
-                  Untuk meter <span className="font-mono font-semibold">{trx.customer?.number}</span>
+                  {t('ppob.forMeter', { number: '' })}<span className="font-mono font-semibold">{trx.customer?.number}</span>
                 </p>
               </div>
             </div>
@@ -437,19 +441,19 @@ function SuccessView({ trx, navigate }) {
               <div className="grid grid-cols-2 gap-2 mb-3">
                 {trx.customer?.name && (
                   <div className="bg-white/60 rounded-lg p-2.5">
-                    <p className="text-[9px] sm:text-[10px] uppercase text-slate-500 font-bold">Pelanggan</p>
+                    <p className="text-[9px] sm:text-[10px] uppercase text-slate-500 font-bold">{t('ppob.customerLabel')}</p>
                     <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{trx.customer.name}</p>
                   </div>
                 )}
                 {kwh && (
                   <div className="bg-white/60 rounded-lg p-2.5">
-                    <p className="text-[9px] sm:text-[10px] uppercase text-slate-500 font-bold">Jumlah Listrik</p>
+                    <p className="text-[9px] sm:text-[10px] uppercase text-slate-500 font-bold">{t('ppob.electricityAmount')}</p>
                     <p className="text-xs sm:text-sm font-bold text-amber-700">{kwh} kWh</p>
                   </div>
                 )}
                 {tarif && (
                   <div className="bg-white/60 rounded-lg p-2.5">
-                    <p className="text-[9px] sm:text-[10px] uppercase text-slate-500 font-bold">Tarif / Daya</p>
+                    <p className="text-[9px] sm:text-[10px] uppercase text-slate-500 font-bold">{t('ppob.tariffPower')}</p>
                     <p className="text-xs sm:text-sm font-semibold text-slate-900">{tarif}</p>
                   </div>
                 )}
@@ -468,11 +472,11 @@ function SuccessView({ trx, navigate }) {
               >
                 {copied ? (
                   <>
-                    <CheckCircle className="w-4 h-4" /> Tersalin!
+                    <CheckCircle className="w-4 h-4" /> {t('ppob.copiedToken')}
                   </>
                 ) : (
                   <>
-                    <Copy className="w-4 h-4" /> Salin Token
+                    <Copy className="w-4 h-4" /> {t('ppob.copyToken')}
                   </>
                 )}
               </button>
@@ -481,7 +485,7 @@ function SuccessView({ trx, navigate }) {
                   onClick={shareToken}
                   className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 border-amber-300 text-amber-700 font-bold text-sm hover:bg-amber-100 active:scale-[0.97] transition-all"
                 >
-                  <Share2 className="w-4 h-4" /> Bagikan
+                  <Share2 className="w-4 h-4" /> {t('ppob.share')}
                 </button>
               )}
             </div>
@@ -493,13 +497,13 @@ function SuccessView({ trx, navigate }) {
       {kind === 'pln' && hasSn && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3.5 sm:p-4 mb-4">
           <p className="text-xs sm:text-sm font-bold text-blue-900 mb-2 flex items-center gap-1.5">
-            <Info className="w-4 h-4" /> Cara Input Token ke Meter PLN
+            <Info className="w-4 h-4" /> {t('ppob.plnInputTitle')}
           </p>
           <ol className="text-[11px] sm:text-xs text-blue-800 space-y-1 list-decimal list-inside leading-relaxed">
-            <li>Tekan <strong>20 digit token</strong> di atas pada keypad meter PLN Anda.</li>
-            <li>Tekan tombol <strong>Enter</strong> atau <strong>OK</strong>.</li>
-            <li>Tunggu sampai meter respond <em>"Berhasil"</em> dan kWh bertambah.</li>
-            <li>Kalau meter respond <em>"Token Salah"</em>, periksa angka lalu coba lagi.</li>
+            <li>{t('ppob.plnInput1')}</li>
+            <li>{t('ppob.plnInput2')}</li>
+            <li>{t('ppob.plnInput3')}</li>
+            <li>{t('ppob.plnInput4')}</li>
           </ol>
         </div>
       )}
@@ -508,7 +512,7 @@ function SuccessView({ trx, navigate }) {
       {kind !== 'pln' && hasSn && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 sm:p-4 mb-4">
           <p className="text-[10px] sm:text-xs font-bold text-emerald-700 uppercase mb-2">
-            {kind === 'game' ? 'Voucher Code' : 'Nomor Referensi'}
+            {kind === 'game' ? t('ppob.voucherCode') : t('ppob.refNumber')}
           </p>
           <div className="flex items-center gap-2 bg-white border border-emerald-200 rounded-lg px-3 py-2.5">
             <p className="font-mono text-sm sm:text-base font-bold text-emerald-900 break-all flex-1">{sn}</p>
@@ -521,17 +525,17 @@ function SuccessView({ trx, navigate }) {
           </div>
           {kind === 'pulsa' && (
             <p className="text-[11px] text-emerald-700 mt-2.5 leading-relaxed">
-              💡 Cek pulsa Anda dengan <strong>*888#</strong> atau cek saldo via SMS provider.
+              {t('ppob.tipPulsa')}
             </p>
           )}
           {kind === 'ewallet' && (
             <p className="text-[11px] text-emerald-700 mt-2.5 leading-relaxed">
-              💡 Buka aplikasi e-wallet untuk cek saldo terbaru.
+              {t('ppob.tipEwallet')}
             </p>
           )}
           {kind === 'game' && (
             <p className="text-[11px] text-emerald-700 mt-2.5 leading-relaxed">
-              💡 Diamond/voucher otomatis masuk ke akun game tertaut.
+              {t('ppob.tipGame')}
             </p>
           )}
         </div>
@@ -540,10 +544,10 @@ function SuccessView({ trx, navigate }) {
       {/* ── Trx info summary ────────────────────────────── */}
       <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 sm:p-4 mb-5">
         <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
-          <InfoCell label="Produk" value={trx.product?.name} />
-          <InfoCell label="No. Tujuan" value={trx.customer?.number} mono />
-          <InfoCell label="Kode Transaksi" value={trx.trxCode} mono />
-          <InfoCell label="Total Bayar" value={formatRupiah(trx.pricing?.totalAmount || 0)} accent="brand" />
+          <InfoCell label={t('ppob.product')} value={trx.product?.name} />
+          <InfoCell label={t('ppob.destNumber')} value={trx.customer?.number} mono />
+          <InfoCell label={t('ppob.trxCodeLabel')} value={trx.trxCode} mono />
+          <InfoCell label={t('ppob.totalPaid')} value={formatRupiah(trx.pricing?.totalAmount || 0)} accent="brand" />
         </div>
       </div>
 
@@ -551,11 +555,11 @@ function SuccessView({ trx, navigate }) {
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <button onClick={() => navigate("/topup-tagihan")}
           className="py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 active:scale-[0.98] transition-all">
-          Transaksi Lagi
+          {t('ppob.trxAgain')}
         </button>
         <button onClick={() => navigate("/topup-tagihan/history")}
           className="py-3 bg-brand text-white rounded-xl font-bold text-sm hover:bg-brand-700 active:scale-[0.98] transition-all shadow-md shadow-brand/30">
-          Lihat Riwayat
+          {t('ppob.viewHistory')}
         </button>
       </div>
     </div>
@@ -574,6 +578,7 @@ function InfoCell({ label, value, mono, accent }) {
 }
 
 function FailedView({ trx, status, navigate }) {
+  const { t } = useTranslation()
   const presentation = STATUS_PRESENTATION[status]
   const Icon = presentation?.Icon || XCircle
   return (
@@ -581,9 +586,9 @@ function FailedView({ trx, status, navigate }) {
       <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-${presentation?.color || 'red'}-100 flex items-center justify-center mx-auto mb-4 sm:mb-6`}>
         <Icon className={`w-10 h-10 sm:w-12 sm:h-12 text-${presentation?.color || 'red'}-600`} />
       </div>
-      <h1 className="font-display text-xl sm:text-2xl font-bold mb-2 text-slate-900">{presentation?.label || 'Gagal'}</h1>
+      <h1 className="font-display text-xl sm:text-2xl font-bold mb-2 text-slate-900">{presentation ? t(presentation.labelKey) : t('ppob.payStatusFailed')}</h1>
       <p className="text-sm sm:text-base text-slate-600 mb-1">
-        Kode transaksi: <strong className="font-mono">{trx.trxCode}</strong>
+        {t('ppob.trxCodeColon')} <strong className="font-mono">{trx.trxCode}</strong>
       </p>
       {trx.failureReason && (
         <p className="text-sm text-slate-500 mt-3 bg-slate-50 border border-slate-200 rounded-xl p-3">
@@ -592,17 +597,17 @@ function FailedView({ trx, status, navigate }) {
       )}
       {status === 'refundable' && (
         <p className="mt-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3 leading-relaxed">
-          Dana akan dikembalikan oleh admin ke rekening pengirim. Mohon tunggu — proses 1-2 hari kerja.
+          {t('ppob.refundNote')}
         </p>
       )}
       <div className="mt-6 sm:mt-8 flex gap-3">
         <button onClick={() => navigate("/topup-tagihan")}
           className="flex-1 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50">
-          Kembali
+          {t('travel.back')}
         </button>
         <a href="https://wa.me/6285188136009" target="_blank" rel="noopener noreferrer"
           className="flex-1 py-3 text-center bg-emerald-500 text-white rounded-xl font-semibold hover:bg-emerald-600 text-sm">
-          Chat Admin
+          {t('ppob.chatAdmin')}
         </a>
       </div>
     </div>

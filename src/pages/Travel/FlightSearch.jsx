@@ -236,7 +236,7 @@ export default function FlightSearch() {
               ))}
             </div>
             <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-1">
-              <button onClick={() => setAirlineFilter('')} className={`px-3 py-1.5 rounded-full text-xs font-bold border shrink-0 ${!airlineFilter?'bg-sky-50 border-sky-500 text-sky-700':'bg-white border-slate-200 text-slate-500'}`}>Semua Maskapai</button>
+              <button onClick={() => setAirlineFilter('')} className={`px-3 py-1.5 rounded-full text-xs font-bold border shrink-0 ${!airlineFilter?'bg-sky-50 border-sky-500 text-sky-700':'bg-white border-slate-200 text-slate-500'}`}>{t('travel.allAirlines')}</button>
               {airlinesInResults.map(a => (
                 <button key={a.code} onClick={() => setAirlineFilter(a.code)} className={`px-3 py-1.5 rounded-full text-xs font-bold border shrink-0 flex items-center gap-1.5 ${airlineFilter===a.code?'bg-sky-50 border-sky-500 text-sky-700':'bg-white border-slate-200 text-slate-500'}`}>
                   <AirlineLogo code={a.code} name={a.name} /> {a.name}
@@ -244,7 +244,7 @@ export default function FlightSearch() {
               ))}
             </div>
 
-            <p className="text-xs text-slate-400 mb-2">{view.length} penerbangan</p>
+            <p className="text-xs text-slate-400 mb-2">{t('travel.flightsCount', { count: view.length })}</p>
 
             {/* Flight cards */}
             <div className="space-y-3">
@@ -264,15 +264,15 @@ export default function FlightSearch() {
                         <div className="flex-1 flex flex-col items-center">
                           <span className="text-[10px] text-slate-400">{cls.duration}</span>
                           <div className="w-full flex items-center gap-1 my-0.5"><div className="h-px flex-1 bg-slate-200" /><Plane className="w-3 h-3 text-slate-300" /><div className="h-px flex-1 bg-slate-200" /></div>
-                          <span className="text-[9px] text-emerald-600 font-bold">{flight.isTransit ? 'Transit' : 'Langsung'}</span>
+                          <span className="text-[9px] text-emerald-600 font-bold">{flight.isTransit ? t('travel.transit') : t('travel.direct')}</span>
                         </div>
                         <div className="text-center"><p className="font-bold text-slate-900 text-sm sm:text-base">{cls.arrivalTime}</p><p className="text-[10px] text-slate-400 font-semibold">{cls.arrival}</p></div>
                       </div>
                       <div className="text-right shrink-0">
                         {price > 0
-                          ? <p className="font-display text-sm sm:text-lg font-bold text-sky-600 leading-tight">{formatRupiah(price + markup)}<span className="text-[10px] font-normal text-slate-400">/pax</span></p>
-                          : <p className="text-[11px] font-bold text-sky-600">Cek harga</p>}
-                        <button onClick={() => selectFlight(flight)} className="mt-2 px-5 py-2 rounded-full bg-sky-500 hover:bg-sky-600 text-white text-xs sm:text-sm font-bold active:scale-95 transition-all">Pilih</button>
+                          ? <p className="font-display text-sm sm:text-lg font-bold text-sky-600 leading-tight">{formatRupiah(price + markup)}<span className="text-[10px] font-normal text-slate-400">{t('travel.perPax')}</span></p>
+                          : <p className="text-[11px] font-bold text-sky-600">{t('travel.checkPrice')}</p>}
+                        <button onClick={() => selectFlight(flight)} className="mt-2 px-5 py-2 rounded-full bg-sky-500 hover:bg-sky-600 text-white text-xs sm:text-sm font-bold active:scale-95 transition-all">{t('travel.select')}</button>
                       </div>
                     </div>
                   </div>
@@ -283,15 +283,15 @@ export default function FlightSearch() {
         )}
 
         {results && results.length === 0 && !searching && (
-          <div className="text-center py-12"><Plane className="w-12 h-12 text-slate-300 mx-auto mb-3" /><p className="font-semibold text-slate-700">Tidak ada penerbangan</p><p className="text-sm text-slate-400 mt-1">Coba ubah tanggal atau rute.</p></div>
+          <div className="text-center py-12"><Plane className="w-12 h-12 text-slate-300 mx-auto mb-3" /><p className="font-semibold text-slate-700">{t('travel.noFlights')}</p><p className="text-sm text-slate-400 mt-1">{t('travel.noFlightsDesc')}</p></div>
         )}
         {!results && !searching && (
-          <div className="text-center py-12"><Plane className="w-12 h-12 text-slate-200 mx-auto mb-3" /><p className="text-sm text-slate-400">Isi rute & tanggal, lalu cari penerbangan semua maskapai.</p></div>
+          <div className="text-center py-12"><Plane className="w-12 h-12 text-slate-200 mx-auto mb-3" /><p className="text-sm text-slate-400">{t('travel.flightEmptyPrompt')}</p></div>
         )}
       </section>
 
-      <AirportPicker open={picker === 'departure'} airports={airports} title="Bandara Asal" onPick={setDeparture} onClose={() => setPicker(null)} />
-      <AirportPicker open={picker === 'arrival'} airports={airports} title="Bandara Tujuan" onPick={setArrival} onClose={() => setPicker(null)} />
+      <AirportPicker open={picker === 'departure'} airports={airports} title={t('travel.originAirport')} onPick={setDeparture} onClose={() => setPicker(null)} />
+      <AirportPicker open={picker === 'arrival'} airports={airports} title={t('travel.destAirport')} onPick={setArrival} onClose={() => setPicker(null)} />
     </div>
   )
 }

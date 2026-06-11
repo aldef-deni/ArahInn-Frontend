@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { propertyApi } from '@/services/propertyApi'
 import { reviewApi } from '@/services/reviewApi'
 import { formatRupiah, getImageUrl } from '@/utils'
 import { formatDistanceToNow } from 'date-fns'
-import { id as idLocale } from 'date-fns/locale'
+import { id as idLocale, enUS as enLocale } from 'date-fns/locale'
 import {
   ArrowLeft,
   Bath,
@@ -29,7 +30,11 @@ import ReviewForm from '@/components/ReviewForm'
 import MapEmbed from '@/components/ui/MapEmbed'
 import SEO from '@/components/SEO'
 
-const CERT_LABELS = { SHM: 'SHM', HGB: 'HGB', Strata: 'Strata Title', Lainnya: 'Lainnya' }
+const certLabel = (cert, t) => {
+  if (!cert) return ''
+  if (cert === 'Lainnya') return t('propertyDetail.certOther')
+  return ({ SHM: 'SHM', HGB: 'HGB', Strata: 'Strata Title' }[cert]) || cert
+}
 
 function SpecCard({ icon: Icon, label, value }) {
   return (
@@ -48,6 +53,7 @@ function SpecCard({ icon: Icon, label, value }) {
 }
 
 export default function PropertyDetail() {
+  const { t, i18n } = useTranslation()
   const { id } = useParams()
   const navigate = useNavigate()
   const [imgIdx, setImgIdx] = useState(0)
@@ -92,15 +98,15 @@ export default function PropertyDetail() {
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-50 text-blue-600">
               <Building2 className="h-7 w-7" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900">Properti tidak ditemukan</h2>
+            <h2 className="text-2xl font-bold text-slate-900">{t('propertyDetail.notFound')}</h2>
             <p className="mt-3 text-sm leading-7 text-slate-500">
-              Listing properti ini mungkin sudah dihapus atau tidak lagi tersedia.
+              {t('propertyDetail.notFoundDesc')}
             </p>
             <button
               onClick={() => navigate('/properti')}
               className="mt-6 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
             >
-              Kembali ke daftar properti
+              {t('propertyDetail.backToList')}
             </button>
           </div>
         </div>
@@ -112,24 +118,24 @@ export default function PropertyDetail() {
   const prevImg = () => setImgIdx(i => (i - 1 + images.length) % images.length)
   const nextImg = () => setImgIdx(i => (i + 1) % images.length)
 
-  const listingTypeLabel = data.listingType === 'rent' ? 'Disewa' : 'Dijual'
+  const listingTypeLabel = data.listingType === 'rent' ? t('propertyDetail.forRent') : t('propertyDetail.forSale')
   const listingTypeColor = data.listingType === 'rent'
     ? 'bg-blue-600 text-white'
     : 'bg-orange-500 text-white'
 
   const specCards = [
-    data.landArea ? { icon: Maximize2, label: 'Luas tanah', value: `${data.landArea} m2` } : null,
-    data.buildingArea ? { icon: Building2, label: 'Luas bangunan', value: `${data.buildingArea} m2` } : null,
-    data.bedrooms != null ? { icon: BedDouble, label: 'Kamar tidur', value: `${data.bedrooms}` } : null,
-    data.bathrooms != null ? { icon: Bath, label: 'Kamar mandi', value: `${data.bathrooms}` } : null,
+    data.landArea ? { icon: Maximize2, label: t('propertyDetail.specLandArea'), value: `${data.landArea} m2` } : null,
+    data.buildingArea ? { icon: Building2, label: t('propertyDetail.specBuildingArea'), value: `${data.buildingArea} m2` } : null,
+    data.bedrooms != null ? { icon: BedDouble, label: t('propertyDetail.specBedrooms'), value: `${data.bedrooms}` } : null,
+    data.bathrooms != null ? { icon: Bath, label: t('propertyDetail.specBathrooms'), value: `${data.bathrooms}` } : null,
   ].filter(Boolean)
 
   const seoTitle = data?.title
-    ? `${data.title}${data.city ? ` di ${data.city}` : ''} — ${listingTypeLabel}`
-    : 'Properti'
+    ? `${data.title}${data.city ? ` ${t('propertyDetail.seoInCity', { city: data.city })}` : ''} — ${listingTypeLabel}`
+    : t('propertyDetail.seoFallbackTitle')
   const seoDescription = data?.description
     ? String(data.description).replace(/<[^>]+>/g, '').slice(0, 160)
-    : `${listingTypeLabel}: ${data?.title || 'properti pilihan'} di ArahInn. Listing properti terkurasi dengan harga transparan.`
+    : t('propertyDetail.seoDescFallback', { type: listingTypeLabel, title: data?.title || t('propertyDetail.seoDescTitleFallback') })
   const seoImage = images[0] ? getImageUrl(images[0]) : undefined
 
   return (
@@ -147,8 +153,8 @@ export default function PropertyDetail() {
           className="group mb-4 sm:mb-6 inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-slate-200 bg-white px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-slate-600 shadow-sm transition-colors hover:border-blue-200 hover:text-blue-600 active:scale-95"
         >
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-          <span className="hidden sm:inline">Kembali ke daftar properti</span>
-          <span className="sm:hidden">Kembali</span>
+          <span className="hidden sm:inline">{t('propertyDetail.backToList')}</span>
+          <span className="sm:hidden">{t('propertyDetail.back')}</span>
         </button>
 
         <section className="overflow-hidden rounded-2xl sm:rounded-3xl lg:rounded-[34px] border border-slate-200 bg-white shadow-[0_22px_60px_rgba(15,23,42,0.08)]">
@@ -197,7 +203,7 @@ export default function PropertyDetail() {
                   {data.certificate ? (
                     <span className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/20 bg-white/10 px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-white backdrop-blur">
                       <ShieldCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                      {CERT_LABELS[data.certificate] || data.certificate}
+                      {certLabel(data.certificate, t)}
                     </span>
                   ) : null}
                 </div>
@@ -213,7 +219,7 @@ export default function PropertyDetail() {
                   </span>
                   <span className="inline-flex items-center gap-1.5 sm:gap-2 shrink-0">
                     <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-                    {(data.viewsCount || 0).toLocaleString('id-ID')}<span className="hidden sm:inline"> kali dilihat</span>
+                    {(data.viewsCount || 0).toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')}<span className="hidden sm:inline">{t('propertyDetail.viewsSuffix')}</span>
                   </span>
                 </div>
               </div>
@@ -221,12 +227,12 @@ export default function PropertyDetail() {
 
             <aside className="border-t border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 sm:p-5 lg:border-l lg:border-t-0">
               <div className="rounded-2xl sm:rounded-[28px] border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-                <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Harga listing</p>
+                <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{t('propertyDetail.listingPrice')}</p>
                 <p className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-black text-orange-600 break-all">{formatRupiah(data.price)}</p>
                 {data.priceNegotiable ? (
                   <span className="mt-2 sm:mt-3 inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-emerald-50 px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-semibold text-emerald-700">
                     <CheckCircle2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                    Harga dapat dinegosiasikan
+                    {t('propertyDetail.negotiable')}
                   </span>
                 ) : null}
 
@@ -255,29 +261,29 @@ export default function PropertyDetail() {
 
                 {!data.contactPhone && !data.contactEmail ? (
                   <div className="mt-4 rounded-xl sm:rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center text-xs sm:text-sm text-slate-500">
-                    Kontak penjual belum tersedia
+                    {t('propertyDetail.contactUnavailable')}
                   </div>
                 ) : null}
               </div>
 
               <div className="mt-3 sm:mt-4 rounded-2xl sm:rounded-[28px] border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-                <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Ringkasan properti</p>
+                <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{t('propertyDetail.propertySummary')}</p>
                 <div className="mt-3 sm:mt-4 space-y-2.5 sm:space-y-3 text-xs sm:text-sm">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-slate-500">Tipe listing</span>
+                    <span className="text-slate-500">{t('propertyDetail.listingType')}</span>
                     <span className="font-semibold text-slate-900">{listingTypeLabel}</span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-slate-500">Kategori</span>
+                    <span className="text-slate-500">{t('propertyDetail.category')}</span>
                     <span className="font-semibold text-slate-900 truncate">{data.category || '-'}</span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-slate-500">Kota</span>
+                    <span className="text-slate-500">{t('propertyDetail.city')}</span>
                     <span className="font-semibold text-slate-900 truncate">{data.city || '-'}</span>
                   </div>
                   {data.owner?.name ? (
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-slate-500">Pemilik</span>
+                      <span className="text-slate-500">{t('propertyDetail.owner')}</span>
                       <span className="font-semibold text-slate-900 truncate">{data.owner.name}</span>
                     </div>
                   ) : null}
@@ -292,25 +298,25 @@ export default function PropertyDetail() {
             <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Tentang listing</p>
-                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">Detail properti yang lebih jelas</h2>
+                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{t('propertyDetail.aboutListing')}</p>
+                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">{t('propertyDetail.aboutHeading')}</h2>
                 </div>
                 <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
                   <Sparkles className="h-3.5 w-3.5" />
-                  Listing premium
+                  {t('propertyDetail.premiumListing')}
                 </span>
               </div>
 
               <p className="mt-5 text-sm leading-8 text-slate-600">
-                {data.description || 'Belum ada deskripsi yang tersedia untuk properti ini.'}
+                {data.description || t('propertyDetail.noDescription')}
               </p>
             </section>
 
             {specCards.length ? (
               <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
                 <div className="mb-5">
-                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Spesifikasi</p>
-                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">Ukuran dan komposisi ruangan</h2>
+                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{t('propertyDetail.specifications')}</p>
+                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">{t('propertyDetail.specHeading')}</h2>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -323,8 +329,8 @@ export default function PropertyDetail() {
 
             <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
               <div className="mb-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Lokasi</p>
-                <h2 className="mt-2 text-2xl font-bold text-slate-900">Posisi properti di area sekitar</h2>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{t('propertyDetail.location')}</p>
+                <h2 className="mt-2 text-2xl font-bold text-slate-900">{t('propertyDetail.locationHeading')}</h2>
               </div>
 
               <div className="overflow-hidden rounded-[26px] border border-slate-200">
@@ -340,8 +346,8 @@ export default function PropertyDetail() {
             {data.facilities?.length > 0 ? (
               <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
                 <div className="mb-5">
-                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Fasilitas</p>
-                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">Nilai tambah dari properti ini</h2>
+                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{t('propertyDetail.facilities')}</p>
+                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">{t('propertyDetail.facilitiesHeading')}</h2>
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -363,12 +369,12 @@ export default function PropertyDetail() {
             <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Ulasan</p>
-                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">Pendapat tentang properti ini</h2>
+                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{t('propertyDetail.reviews')}</p>
+                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">{t('propertyDetail.reviewsHeading')}</h2>
                 </div>
                 {reviewData?.average_rating ? (
                   <div className="rounded-2xl bg-blue-50 px-4 py-3 text-right">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-500">Skor rata-rata</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-500">{t('propertyDetail.avgScore')}</p>
                     <p className="mt-1 text-sm font-bold text-blue-700">
                       {Number(reviewData.average_rating).toFixed(1)} / 5
                     </p>
@@ -386,10 +392,10 @@ export default function PropertyDetail() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="text-sm font-semibold text-slate-900">{review.user?.name || 'Tamu'}</p>
+                            <p className="text-sm font-semibold text-slate-900">{review.user?.name || t('propertyDetail.guest')}</p>
                             <span className="text-xs text-slate-400">
                               {review.created_at
-                                ? formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: idLocale })
+                                ? formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: i18n.language === 'en' ? enLocale : idLocale })
                                 : ''}
                             </span>
                           </div>
@@ -412,8 +418,8 @@ export default function PropertyDetail() {
               ) : (
                 <div className="mt-5 rounded-[26px] border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center">
                   <MessageSquare className="mx-auto h-10 w-10 text-slate-300" />
-                  <p className="mt-3 text-sm font-medium text-slate-600">Belum ada ulasan untuk properti ini.</p>
-                  <p className="mt-1 text-sm text-slate-500">Jadilah yang pertama membagikan pendapat Anda.</p>
+                  <p className="mt-3 text-sm font-medium text-slate-600">{t('propertyDetail.noReviews')}</p>
+                  <p className="mt-1 text-sm text-slate-500">{t('propertyDetail.noReviewsHint')}</p>
                 </div>
               )}
 
@@ -432,7 +438,7 @@ export default function PropertyDetail() {
           <aside className="space-y-4 sm:space-y-5">
             {data.owner ? (
               <section className="rounded-2xl sm:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-                <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Pemilik listing</p>
+                <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{t('propertyDetail.ownerListing')}</p>
                 <div className="mt-3 sm:mt-4 flex items-center gap-3">
                   <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl sm:rounded-2xl bg-blue-50 font-bold text-blue-700 shrink-0">
                     {data.owner.name?.[0]?.toUpperCase()}
@@ -446,16 +452,16 @@ export default function PropertyDetail() {
             ) : null}
 
             <section className="rounded-2xl sm:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-              <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Legalitas</p>
+              <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{t('propertyDetail.legality')}</p>
               <div className="mt-3 sm:mt-4 rounded-xl sm:rounded-[24px] border border-slate-200 bg-slate-50 p-3 sm:p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl sm:rounded-2xl bg-white text-blue-600 shadow-sm shrink-0">
                     <Landmark className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Sertifikat</p>
+                    <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{t('propertyDetail.certificate')}</p>
                     <p className="mt-0.5 sm:mt-1 text-sm font-semibold text-slate-900 truncate">
-                      {data.certificate ? (CERT_LABELS[data.certificate] || data.certificate) : 'Belum tersedia'}
+                      {data.certificate ? certLabel(data.certificate, t) : t('propertyDetail.certNotAvailable')}
                     </p>
                   </div>
                 </div>
@@ -479,7 +485,7 @@ export default function PropertyDetail() {
               {data.contactPhone && (
                 <a href={`tel:${data.contactPhone}`}
                   className="h-11 w-11 rounded-xl bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 active:scale-95 transition-all shadow-md"
-                  aria-label="Telepon">
+                  aria-label={t('propertyDetail.phoneAria')}>
                   <Phone className="h-4 w-4" />
                 </a>
               )}
@@ -487,7 +493,7 @@ export default function PropertyDetail() {
                 <a href={`mailto:${data.contactEmail}`}
                   className="px-4 h-11 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 active:scale-95 transition-all shadow-md flex items-center gap-1.5">
                   <Mail className="h-4 w-4" />
-                  Email
+                  {t('propertyDetail.emailLabel')}
                 </a>
               )}
             </div>
