@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async'
 const SITE_NAME = 'ArahInn'
 const DEFAULT_TITLE = 'ArahInn — Booking Hotel, Villa & Properti Terpercaya'
 const DEFAULT_DESCRIPTION = 'Pesan hotel, villa, dan properti pilihan di seluruh Indonesia dengan harga terbaik. Pembayaran aman, layanan 24 jam, dan ribuan akomodasi terkurasi.'
-const DEFAULT_IMAGE = 'https://arahinn.com/logo-arahin.png'
+const DEFAULT_IMAGE = 'https://arahinn.com/og-arahinn.png'
 const SITE_URL = 'https://arahinn.com'
 
 export default function SEO({
