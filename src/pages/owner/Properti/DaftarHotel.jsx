@@ -1275,10 +1275,11 @@ function Step7Foto({ form, setForm }) {
   }
 
   const setMain = (groupId, fileIdx) => {
+    // Foto utama bersifat GLOBAL (1 thumbnail untuk kartu) → reset main grup lain.
     setForm(p => ({
       ...p,
       photo_groups: p.photo_groups.map(g =>
-        g.id === groupId ? { ...g, mainIdx: fileIdx } : g
+        g.id === groupId ? { ...g, mainIdx: fileIdx } : { ...g, mainIdx: null }
       ),
     }))
   }
@@ -2773,7 +2774,8 @@ export default function DaftarHotel({ editId: editIdProp } = {}) {
           id: Date.now() + i,
           category: cat,
           files,
-          mainIdx: files.length > 0 ? 0 : null,
+          // Foto utama (thumbnail) = images[0] global → hanya grup pertama yg ditandai
+          mainIdx: i === 0 && files.length > 0 ? 0 : null,
         }))
       : [{ id: Date.now(), category: '', files: [], mainIdx: null }]
 
@@ -2997,20 +2999,34 @@ export default function DaftarHotel({ editId: editIdProp } = {}) {
       ))
 
       // ── Hotel photos ──
+      // Foto utama (thumbnail kartu) harus jadi images[0]. BE menyusun array =
+      // [existing (urut) ...] + [upload baru (urut) ...], lalu kita kirim
+      // primary_index posisi foto utama di array gabungan itu agar BE pindah ke depan.
       const existingHotelImages = []
+      let existingPos = 0, newPos = 0
+      let primaryExistingPos = -1, primaryNewPos = -1
       ;(form.photo_groups || []).forEach((group, gi) => {
         fd.append(`photo_categories[${gi}]`, group.category || '')
-        ;(group.files || []).forEach(file => {
+        ;(group.files || []).forEach((file, fIdx) => {
+          const isMain = group.mainIdx === fIdx
           if (file instanceof File) {
             fd.append(`hotel_photos[${gi}][]`, file)
+            if (isMain) primaryNewPos = newPos
+            newPos++
           } else if (file && file.existing && file.path) {
             existingHotelImages.push({ path: file.path, category: group.category || file.category || '' })
+            if (isMain) primaryExistingPos = existingPos
+            existingPos++
           }
         })
       })
       if (isEditMode) {
         fd.append('existing_images', JSON.stringify(existingHotelImages))
       }
+      const primaryIndex = primaryExistingPos >= 0
+        ? primaryExistingPos
+        : (primaryNewPos >= 0 ? existingHotelImages.length + primaryNewPos : -1)
+      if (primaryIndex >= 0) fd.append('primary_index', String(primaryIndex))
 
       // ── NPWP / NITKU docs ──
       if (form.npwp_doc instanceof File)        fd.append('npwp_doc',         form.npwp_doc)

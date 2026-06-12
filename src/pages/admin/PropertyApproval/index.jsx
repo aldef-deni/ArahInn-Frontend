@@ -527,7 +527,7 @@ function DetailModal({ listing, onClose, onApprove, onReject, isApproving, isRej
 export default function AdminPropertyApproval() {
   const { toast }           = useToast()
   const qc                  = useQueryClient()
-  const [tab, setTab]         = useState('pending')
+  const [tab, setTab]         = useState('all')
   const [detail, setDetail]   = useState(null)
   const [page, setPage]       = useState(1)
   const [formOpen, setFormOpen] = useState(false)
