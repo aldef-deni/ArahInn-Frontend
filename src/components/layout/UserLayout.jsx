@@ -317,7 +317,7 @@ export default function UserLayout() {
                           <p className="text-xs font-semibold">Google Play</p>
                         </div>
                       </a>
-                      <a href="#" className="flex items-center gap-2.5 px-4 py-2 bg-black/80 hover:bg-black text-white rounded-xl transition-colors shadow-sm border border-white/10">
+                      <a href="https://apps.apple.com/us/app/arahinn/id6773062198" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 px-4 py-2 bg-black/80 hover:bg-black text-white rounded-xl transition-colors shadow-sm border border-white/10">
                         <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.42c1.42.07 2.41.74 3.24.8 1.23-.24 2.41-.94 3.72-.84 1.58.13 2.77.71 3.56 1.86-3.25 1.94-2.49 5.89.48 7.03-.57 1.44-1.31 2.88-3 3.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
                         <div className="leading-tight text-left">
                           <p className="text-[9px] text-slate-300">Download on the</p>
@@ -494,7 +494,7 @@ export default function UserLayout() {
 
             {/* App Store Badges */}
             <div className="flex items-center gap-3">
-              <a href="#"
+              <a href="https://apps.apple.com/us/app/arahinn/id6773062198" target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-2.5 px-4 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors shadow-sm">
                 <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.42c1.42.07 2.41.74 3.24.8 1.23-.24 2.41-.94 3.72-.84 1.58.13 2.77.71 3.56 1.86-3.25 1.94-2.49 5.89.48 7.03-.57 1.44-1.31 2.88-3 3.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
@@ -520,9 +520,8 @@ export default function UserLayout() {
 
         {/* Copyright */}
         <div className="border-t border-slate-200">
-          <div className="container py-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-slate-400">
-            <p>© 2026 ArahInn.com. {t('footer.copyright')}</p>
-            <p>Made with ❤️ in Indonesia</p>
+          <div className="container py-4 flex justify-center items-center text-xs text-slate-400">
+            <p>© 2026 PT. Redy Hospitality Management. {t('footer.copyright')}</p>
           </div>
         </div>
       </footer>}

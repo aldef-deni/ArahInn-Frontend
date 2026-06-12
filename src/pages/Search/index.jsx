@@ -133,6 +133,7 @@ export default function SearchPage() {
   const handleSearch = (e) => {
     e.preventDefault()
     setPage(1)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     const p = { checkIn: form.checkIn, checkOut: form.checkOut, guests: form.guests }
     if (form.q)        p.q        = form.q
     if (form.category) p.category = form.category

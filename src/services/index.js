@@ -233,6 +233,8 @@ export const authApi = {
   forgot      : (d)    => api.post('/auth/forgot-password', d),
   reset       : (d)    => api.post('/auth/reset-password', d),
   me          : ()     => api.get('/auth/me'),
+  // Google One Tap / Sign-In (credential = JWT id_token dari GIS)
+  googleOneTap: (idToken) => api.post('/auth/google/mobile', { id_token: idToken }),
 }
 
 export const interiorApi = {

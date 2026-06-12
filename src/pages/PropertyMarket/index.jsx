@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import i18n from '@/i18n'
 import { propertyApi } from '@/services/propertyApi'
 import { formatRupiah, getImageUrl } from '@/utils'
-import { Search, MapPin, SlidersHorizontal, X, Building2, Home, Trees, Hotel, RotateCcw, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, MapPin, SlidersHorizontal, X, Building2, Home, Trees, Hotel, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Navigation } from 'lucide-react'
 import SEO from '@/components/SEO'
 
 const CATEGORIES = [
@@ -100,6 +100,11 @@ function PropertyCard({ listing, onClick }) {
               <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-slate-500">
                 <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-500 shrink-0" />
                 <span className="truncate">{listing.city}{listing.province ? `, ${listing.province}` : ''}</span>
+                {listing.distanceKm != null && !isNaN(Number(listing.distanceKm)) && (
+                  <span className="ml-auto shrink-0 px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 font-semibold text-[10px]">
+                    {Number(listing.distanceKm) < 1 ? `${Math.round(Number(listing.distanceKm) * 1000)} m` : `${Number(listing.distanceKm).toFixed(1)} km`}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -273,9 +278,28 @@ export default function PropertyMarket() {
     min_price   : priceRange[0] > 0 ? priceRange[0] : undefined,
     max_price   : priceRange[1] < MAX_PRICE ? priceRange[1] : undefined,
     facilities  : selectedFacilities.length ? selectedFacilities.join(',') : undefined,
+    lat         : params.get('lat') || undefined,
+    lng         : params.get('lng') || undefined,
     page,
     limit       : 12,
   }
+
+  const [geoLoading, setGeoLoading] = useState(false)
+  const handleNearMe = () => {
+    if (!navigator.geolocation) return
+    setGeoLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGeoLoading(false)
+        const next = new URLSearchParams(params)
+        next.set('lat', pos.coords.latitude); next.set('lng', pos.coords.longitude); next.delete('city')
+        setParams(next); setForm(f => ({ ...f, city: '' })); setPage(1)
+      },
+      () => { setGeoLoading(false); alert('Tidak bisa akses lokasi. Izinkan akses lokasi di browser.') },
+      { enableHighAccuracy: true, timeout: 10000 },
+    )
+  }
+  const nearMeActive = !!(params.get('lat') && params.get('lng'))
 
   const { data, isLoading } = useQuery({
     queryKey: ['property-market', query],
@@ -291,6 +315,7 @@ export default function PropertyMarket() {
   const handleSearch = (e) => {
     e.preventDefault()
     setPage(1)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     // Update URL params
     const newParams = new URLSearchParams()
     if (form.city) newParams.set('city', form.city)
@@ -393,15 +418,31 @@ export default function PropertyMarket() {
             {/* City — always full width */}
             <div className="relative">
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('propertyMarket.cityLocation')}</label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  value={form.city}
-                  onChange={e => setForm({...form, city: e.target.value})}
-                  placeholder={t('propertyMarket.cityPlaceholder')}
-                  className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500 bg-slate-50"
-                />
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    value={form.city}
+                    onChange={e => setForm({...form, city: e.target.value})}
+                    placeholder={t('propertyMarket.cityPlaceholder')}
+                    className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500 bg-slate-50"
+                  />
+                </div>
+                <button type="button" onClick={handleNearMe} disabled={geoLoading}
+                  className={`shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-50 ${
+                    nearMeActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
+                  }`}>
+                  <Navigation className={`w-4 h-4 ${geoLoading ? 'animate-pulse' : ''}`} />
+                  <span className="hidden sm:inline">{geoLoading ? 'Mencari…' : 'Dekat saya'}</span>
+                </button>
               </div>
+              {nearMeActive && (
+                <p className="text-xs text-blue-600 font-medium mt-1 flex items-center gap-1">
+                  <Navigation className="w-3.5 h-3.5" /> Diurutkan dari lokasi terdekat Anda
+                  <button type="button" onClick={() => { const n = new URLSearchParams(params); n.delete('lat'); n.delete('lng'); setParams(n) }}
+                    className="ml-1 underline text-slate-400">reset</button>
+                </p>
+              )}
             </div>
 
             {/* Category + Type: 2-col grid on mobile, inline on lg+ */}

@@ -10,7 +10,7 @@ import {
   Search, MapPin, Calendar, Users, ArrowRight,
   Zap, Shield, Headphones, Award, TrendingUp, Tag, Copy, Check, Clock, Building2,
   ChevronDown, Wallet, Hotel, Smartphone, Lightbulb, Receipt, Sofa, BadgePercent,
-  Plane, Ship, TrainFront, Megaphone, Mountain, Dumbbell,
+  Plane, Ship, TrainFront, Megaphone, Mountain, Dumbbell, Navigation,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { format, addDays, parseISO } from 'date-fns'
@@ -241,7 +241,28 @@ export default function Home() {
     navigate(`/properti?${params}`)
   }
 
-  const PROP_CATEGORIES = ['Hotel', 'Apartemen', 'Kosan', 'Guest House', 'Villa', 'Resort']
+  const handlePropertyNearMe = () => {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const p = new URLSearchParams()
+        p.set('lat', pos.coords.latitude); p.set('lng', pos.coords.longitude)
+        navigate(`/properti?${p}`)
+      },
+      () => alert('Tidak bisa akses lokasi. Izinkan akses lokasi di browser.'),
+      { enableHighAccuracy: true, timeout: 10000 },
+    )
+  }
+
+  // label (Indonesia) → value (sesuai DB, English). Dulu value "Apartemen" → tidak match.
+  const PROP_CATEGORIES = [
+    { label: 'Hotel',       value: 'Hotel' },
+    { label: 'Apartemen',   value: 'Apartment' },
+    { label: 'Kosan',       value: 'Kosan' },
+    { label: 'Guest House', value: 'Guest House' },
+    { label: 'Villa',       value: 'Villa' },
+    { label: 'Resort',      value: 'Resort' },
+  ]
 
   const popularCities = ['Jakarta','Bali','Yogyakarta','Surabaya','Bandung','Lombok']
 
@@ -514,6 +535,10 @@ export default function Home() {
                     className="w-full text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
                   />
                 </div>
+                <button type="button" onClick={handlePropertyNearMe}
+                  className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 whitespace-nowrap">
+                  <Navigation className="w-3.5 h-3.5" /> Dekat saya
+                </button>
               </div>
 
               {/* Category */}
@@ -526,7 +551,7 @@ export default function Home() {
                     onChange={e => setPropForm(p => ({ ...p, category: e.target.value }))}
                     className="w-full text-sm text-slate-700 focus:outline-none bg-transparent cursor-pointer">
                     <option value="">{t('property.allCategories')}</option>
-                    {PROP_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    {PROP_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                   </select>
                 </div>
                 <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />

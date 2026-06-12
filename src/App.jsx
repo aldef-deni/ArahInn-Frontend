@@ -1,5 +1,14 @@
 import { useEffect } from 'react'
-import { Routes, Route, Navigate, useParams } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom'
+import GoogleOneTap from '@/components/GoogleOneTap'
+
+// Reset scroll ke atas tiap pindah halaman (pathname berubah) — bukan saat
+// hanya ganti filter (search params), supaya filter tidak loncat ke atas.
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
 import { useQuery } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/toaster'
 import { useAuthStore } from '@/store/authStore'
@@ -253,6 +262,8 @@ export default function App() {
 
   return (
     <>
+      <ScrollToTop />
+      <GoogleOneTap />
       <Routes>
         {extranetMode && <Route path="/" element={<Navigate to="/login" replace />} />}
 
