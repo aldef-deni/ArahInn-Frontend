@@ -33,7 +33,7 @@ function ServiceCategoryTabs() {
     { label: t('services.akomodasi'),     Icon: Hotel,        to: '/search',                            accent: '#ffffff' },
     { label: t('services.tiketPesawat'),  Icon: Plane,        to: '/tiket/pesawat',                     accent: '#7dd3fc' },
     { label: t('services.tiketPelni'),    Icon: Ship,         to: '/tiket/pelni',                       accent: '#67e8f9' },
-    { label: t('services.tiketKereta'),   Icon: TrainFront,   to: '/tiket/kereta',                      accent: '#fdba74' },
+    { label: t('services.tiketKereta'),   Icon: TrainFront,   to: '/coming-soon?feature=tiket-kereta',  accent: '#fdba74' },
     { label: t('services.pulsaData'),     Icon: Smartphone,   to: '/topup-tagihan/pulsa-data',          accent: '#60a5fa' },
     { label: t('services.listrikPln'),    Icon: Lightbulb,    to: '/topup-tagihan/pln',                 accent: '#fbbf24' },
     { label: t('services.bayarTagihan'),  Icon: Receipt,      to: '/topup-tagihan/tagihan',             accent: '#34d399' },
