@@ -1,10 +1,23 @@
 import { useTranslation } from 'react-i18next'
+import { useQuery } from '@tanstack/react-query'
 import { Sparkles, Palette, Hammer, Shield, ArrowRight } from 'lucide-react'
 import InteriorPenawaran from '@/components/InteriorPenawaran'
 import SEO from '@/components/SEO'
+import api from '@/services/api'
+
+const DEFAULT_WA = { number: '6282181111618', message: 'Halo ArahInn, saya ingin konsultasi Design Interior.' }
 
 export default function InteriorPage() {
   const { t } = useTranslation()
+
+  const { data: wa } = useQuery({
+    queryKey: ['interior-wa'],
+    queryFn : () => api.get('/interior-wa').then(r => r.data?.data || DEFAULT_WA),
+    staleTime: 5 * 60 * 1000,
+  })
+  const waNumber  = wa?.number  || DEFAULT_WA.number
+  const waMessage = wa?.message || DEFAULT_WA.message
+  const waLink    = `https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}`
 
   const features = [
     { icon: Palette, title: t('interior.feat1Title'), desc: t('interior.feat1Desc') },
@@ -111,13 +124,15 @@ export default function InteriorPage() {
             <p className="text-orange-50 mb-5 sm:mb-7 max-w-2xl mx-auto leading-relaxed text-xs sm:text-sm md:text-base">
               {t('interior.ctaSubtitle')}
             </p>
-            <button
-              onClick={scrollToGallery}
+            <a
+              href={waLink}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 sm:px-7 py-3 sm:py-3.5 bg-white hover:bg-orange-50 active:scale-95 text-orange-600 font-bold rounded-xl sm:rounded-2xl shadow-lg transition-all hover:-translate-y-0.5 text-sm sm:text-base"
             >
               {t('interior.ctaButton')}
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </a>
           </div>
         </div>
       </section>

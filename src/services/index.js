@@ -55,6 +55,7 @@ export const travelApi = {
   // Admin: verifikasi pembayaran travel → terbitkan e-tiket
   adminBookings : (p)  => api.get('/admin/travel/bookings', { params: p }),
   adminIssue    : (id, d) => api.post(`/admin/travel/bookings/${id}/issue`, d),
+  adminCancel   : (id, d) => api.post(`/admin/travel/bookings/${id}/cancel`, d),
 
   // ── Pesawat ──
   airports      : ()  => api.get('/travel/flight/airports'),
@@ -111,6 +112,7 @@ export const adminApi = {
   revenue        : (p)      => api.get('/admin/reports/revenue', { params: p }),
   bookings       : (p)      => api.get('/admin/reports/bookings', { params: p }),
   canceled       : (p)      => api.get('/admin/reports/canceled', { params: p }),
+  profit         : (p)      => api.get('/admin/reports/profit', { params: p }),
   logs           : (p)      => api.get('/admin/logs', { params: p }),
   // Analytics
   analyticsOverview  : (p)  => api.get('/admin/analytics/overview', { params: p }),
@@ -133,6 +135,9 @@ export const adminApi = {
   // Markup travel
   getTravelMarkup   : ()    => api.get('/admin/settings/travel-markup'),
   setTravelMarkup   : (d)   => api.post('/admin/settings/travel-markup', d),
+  // Nomor WA konsultasi Design Interior
+  getInteriorWa     : ()    => api.get('/admin/settings/interior-wa'),
+  setInteriorWa     : (d)   => api.post('/admin/settings/interior-wa', d),
   // Hotels CRUD
   hotels         : (p)      => api.get('/admin/hotels', { params: p }),
   pendingHotels  : ()       => api.get('/admin/hotels/pending'),

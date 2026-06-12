@@ -2,12 +2,12 @@ import { useQuery } from '@tanstack/react-query'
 import { adminApi } from '@/services/index'
 import { formatRupiah, statusBadgeClass, statusLabel } from '@/utils'
 import {
-  Users, Hotel, ShoppingBag, TrendingUp,
+  Users, Hotel, ShoppingBag, TrendingUp, Wallet,
   ArrowUpRight, ArrowDownRight, Clock, CheckCircle
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, BarChart, Bar, Cell,
+  Tooltip, ResponsiveContainer, BarChart, Bar, Cell, Legend,
 } from 'recharts'
 
 function StatCard({ title, value, sub, icon: Icon, color = 'blue', trend }) {
@@ -44,12 +44,19 @@ export default function Dashboard() {
     refetchInterval: 60_000,
   })
 
+  const monthRange = () => {
+    const from = new Date(); from.setDate(1)
+    return { from: from.toISOString(), to: new Date().toISOString() }
+  }
+
   const { data: revenueData } = useQuery({
     queryKey: ['admin-revenue-chart'],
-    queryFn : () => {
-      const from = new Date(); from.setDate(1)
-      return adminApi.revenue({ from: from.toISOString(), to: new Date().toISOString() }).then(r => r.data.data)
-    },
+    queryFn : () => adminApi.revenue(monthRange()).then(r => r.data.data),
+  })
+
+  const { data: profitData } = useQuery({
+    queryKey: ['admin-profit-chart'],
+    queryFn : () => adminApi.profit(monthRange()).then(r => r.data?.data),
   })
 
   if (isLoading) return (
@@ -74,17 +81,35 @@ export default function Dashboard() {
     { name: 'Batal',    value: byStatus.canceled || 0, color: '#ef4444' },
   ]
 
+  // Gabung data harian gross (revenue) + komisi ArahInn (profit) per tanggal
+  const chartMap = {}
+  ;(revenueData?.daily || []).forEach(d => {
+    chartMap[d.date] = { date: d.date, revenue: d.amount || 0, commission: 0 }
+  })
+  ;(profitData?.daily || []).forEach(d => {
+    chartMap[d.date] = { ...(chartMap[d.date] || { date: d.date, revenue: 0 }), commission: d.profit || 0 }
+  })
+  const chartData = Object.values(chartMap).sort((a, b) => a.date.localeCompare(b.date))
+
   return (
     <div className="space-y-6">
       {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         <StatCard
           icon={TrendingUp}
-          title="Total Pendapatan"
+          title="Total Transaksi (Bruto)"
           value={formatRupiah(summary.totalRevenue)}
           sub={`Bulan ini: ${formatRupiah(summary.revenueThisMonth)}`}
-          color="green"
+          color="blue"
           trend={trends.revenue}
+        />
+        <StatCard
+          icon={Wallet}
+          title="Pendapatan Komisi ArahInn"
+          value={formatRupiah(summary.commissionRevenue || 0)}
+          sub={`Bulan ini: ${formatRupiah(summary.commissionThisMonth || 0)}`}
+          color="green"
+          trend={trends.commission}
         />
         <StatCard
           icon={ShoppingBag}
@@ -113,23 +138,38 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Revenue chart */}
+        {/* Revenue + commission chart */}
         <div className="lg:col-span-2 bg-white border rounded-2xl p-5 shadow-card">
-          <h2 className="font-semibold text-base mb-5">Pendapatan Bulan Ini</h2>
-          {revenueData?.daily?.length > 0 ? (
+          <div className="flex items-start justify-between mb-5">
+            <div>
+              <h2 className="font-semibold text-base">Transaksi &amp; Komisi Bulan Ini</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Bruto transaksi (biru) vs laba komisi ArahInn (hijau)</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-bold text-emerald-600">{formatRupiah(summary.commissionThisMonth || 0)}</p>
+              <p className="text-[11px] text-muted-foreground">komisi bulan ini</p>
+            </div>
+          </div>
+          {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={revenueData.daily}>
+              <AreaChart data={chartData}>
                 <defs>
-                  <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="gradRev" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%"  stopColor="#2563eb" stopOpacity={0.15} />
                     <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradComm" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#10b981" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={d => d?.slice(5)} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${(v/1e6).toFixed(0)}jt`} />
-                <Tooltip formatter={(v) => formatRupiah(v)} labelFormatter={l => `Tanggal: ${l}`} />
-                <Area type="monotone" dataKey="amount" stroke="#2563eb" strokeWidth={2} fill="url(#grad)" />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={v => v >= 1e6 ? `${(v/1e6).toFixed(1)}jt` : `${(v/1e3).toFixed(0)}rb`} />
+                <Tooltip formatter={(v, n) => [formatRupiah(v), n === 'revenue' ? 'Transaksi' : 'Komisi ArahInn']} labelFormatter={l => `Tanggal: ${l}`} />
+                <Legend formatter={(v) => v === 'revenue' ? 'Transaksi (bruto)' : 'Komisi ArahInn'} iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                <Area type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={2} fill="url(#gradRev)" />
+                <Area type="monotone" dataKey="commission" stroke="#10b981" strokeWidth={2} fill="url(#gradComm)" />
               </AreaChart>
             </ResponsiveContainer>
           ) : (

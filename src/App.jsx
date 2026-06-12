@@ -86,6 +86,7 @@ import AdminHarga from '@/pages/admin/Harga'
 
 // Finance Pages
 import FinanceInvoices from '@/pages/admin/Finance/Invoices'
+import FinanceProfit from '@/pages/admin/Finance/Profit'
 
 // Owner Management
 import AdminOwners from '@/pages/admin/Owners'
@@ -344,6 +345,7 @@ export default function App() {
           <Route path="promos" element={<BlockRoles roles={['design_interior']}><AdminPromos /></BlockRoles>} />
           <Route path="campaigns" element={<BlockRoles roles={['design_interior']}><AdminCampaigns /></BlockRoles>} />
           <Route path="finance/invoices" element={<BlockRoles roles={['design_interior']}><FinanceInvoices /></BlockRoles>} />
+          <Route path="finance/profit" element={<BlockRoles roles={['design_interior', 'admin']}><FinanceProfit /></BlockRoles>} />
           <Route path="owners" element={<BlockRoles roles={['design_interior']}><AdminOwners /></BlockRoles>} />
           <Route path="mm-handler" element={<BlockRoles roles={['design_interior']}><AdminMMHandler /></BlockRoles>} />
           <Route path="property-approval" element={<BlockRoles roles={['design_interior']}><AdminPropertyApproval /></BlockRoles>} />

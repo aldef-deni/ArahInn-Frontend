@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Hotel, ShoppingBag, BarChart2, BarChart3,
   Users, UserCog, Tag, LogOut, Menu, X, User,
   FileText, CreditCard, Building2, Megaphone, ChevronDown, MessageSquare,
-  CalendarDays, Sofa, Headphones, Shield, Receipt, Settings, Ticket,
+  CalendarDays, Sofa, Headphones, Shield, Receipt, Settings, Ticket, TrendingUp,
 } from 'lucide-react'
 import { cn, roleLabel, getImageUrl } from '@/utils'
 import NotificationBell from '@/components/ui/NotificationBell'
@@ -44,9 +44,6 @@ const NAV_ADMIN = [
       { to: '/admin/campaigns', label: 'Campaign', icon: Megaphone },
     ],
   },
-  { to: '/admin/reports',           label: 'Laporan',               icon: BarChart2 },
-  { to: '/admin/analytics',         label: 'Analytics',             icon: BarChart3 },
-
   { type: 'section', label: 'User Management' },
   { to: '/admin/users',                  label: 'Pengelola',       icon: UserCog },
   { to: '/admin/owners',                 label: 'Owner Akomodasi', icon: Building2 },
@@ -55,6 +52,9 @@ const NAV_ADMIN = [
   { to: '/admin/reviews',                label: 'Review Tamu',     icon: MessageSquare },
 
   { type: 'section', label: 'System' },
+  { to: '/admin/reports',                label: 'Laporan',         icon: BarChart2 },
+  { to: '/admin/finance/profit',         label: 'Laba Platform',   icon: TrendingUp },
+  { to: '/admin/analytics',              label: 'Analytics',       icon: BarChart3 },
   { to: '/admin/settings',               label: 'Pengaturan',      icon: Settings },
 ]
 
@@ -81,6 +81,7 @@ const NAV_FINANCE = [
   { to: '/admin',                     label: 'Dashboard',     icon: LayoutDashboard, exact: true },
   { to: '/admin/orders',              label: 'Transaksi',     icon: CreditCard },
   { to: '/admin/reports',             label: 'Lap. Keuangan', icon: BarChart2 },
+  { to: '/admin/finance/profit',      label: 'Laba Platform', icon: TrendingUp },
   { to: '/admin/finance/invoices',    label: 'Invoice',       icon: FileText },
 ]
 

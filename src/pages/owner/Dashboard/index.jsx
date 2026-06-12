@@ -98,9 +98,9 @@ export default function OwnerDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           icon={TrendingUp}
-          label="Total Pendapatan"
+          label="Pendapatan Bersih"
           value={formatRupiah(summary.totalRevenue || 0)}
-          sub={`Bulan ini: ${formatRupiah(summary.revenueThisMonth || 0)}`}
+          sub={`Bulan ini: ${formatRupiah(summary.revenueThisMonth || 0)} · setelah komisi`}
           color="green"
         />
         <StatCard
@@ -132,8 +132,13 @@ export default function OwnerDashboard() {
         <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <div className="flex items-start justify-between mb-5">
             <div>
-              <h2 className="font-semibold text-slate-900">Pendapatan Bulan Ini</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Akumulasi per hari dari booking sukses</p>
+              <h2 className="font-semibold text-slate-900">Pendapatan Bersih Bulan Ini</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Netto setelah komisi platform — yang Anda terima</p>
+              {summary.grossThisMonth != null && (
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Dibayar customer {formatRupiah(summary.grossThisMonth || 0)} · komisi platform &amp; pajak {formatRupiah(summary.commissionThisMonth || 0)}
+                </p>
+              )}
             </div>
             <p className="text-sm font-bold text-blue-600">{formatRupiah(summary.revenueThisMonth || 0)}</p>
           </div>
@@ -193,7 +198,7 @@ export default function OwnerDashboard() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
-                {['Kode','Tamu','Kamar','Check-in','Check-out','Total','Status'].map(h => (
+                {['Kode','Tamu','Kamar','Check-in','Check-out','Diterima','Status'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -206,7 +211,7 @@ export default function OwnerDashboard() {
                   <td className="px-4 py-3 text-slate-500 max-w-[120px] truncate">{b.room?.name}</td>
                   <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{new Date(b.checkIn).toLocaleDateString('id-ID')}</td>
                   <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{new Date(b.checkOut).toLocaleDateString('id-ID')}</td>
-                  <td className="px-4 py-3 font-semibold whitespace-nowrap">{formatRupiah(b.totalPrice)}</td>
+                  <td className="px-4 py-3 font-semibold whitespace-nowrap text-emerald-600" title={`Dibayar customer: ${formatRupiah(b.totalPrice)}`}>{formatRupiah(b.basePrice ?? b.totalPrice)}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadgeClass(b.status)}`}>
                       {statusLabel(b.status)}

@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { interiorDesignApi } from '@/services/index'
+import { interiorDesignApi, adminApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import { getImageUrl } from '@/utils'
@@ -8,6 +8,7 @@ import { validateImageFile } from '@/utils/imageValidation'
 import {
   Plus, Pencil, Trash2, X, Loader2, ImageIcon,
   Film, CheckCircle2, Clock, XCircle, Upload, Sofa, Save,
+  MessageCircle, Phone,
 } from 'lucide-react'
 
 const MAX_VIDEO_MB = 20
@@ -59,6 +60,29 @@ export default function AdminInterior() {
     queryKey: ['admin-interior-designs'],
     queryFn : () => interiorDesignApi.adminList().then(r => r.data.data),
     staleTime: 0,
+  })
+
+  // ── Nomor WA konsultasi (global, dipakai tombol "Mulai Konsultasi") ──
+  const role      = useAuthStore(s => s.user?.role)
+  const canEditWa = ['superadmin', 'admin', 'design_interior'].includes(role)
+  const [waNumber, setWaNumber] = useState('')
+
+  const { data: waData } = useQuery({
+    queryKey: ['admin-interior-wa'],
+    enabled : canEditWa,
+    queryFn : () => adminApi.getInteriorWa().then(r => r.data?.data),
+    staleTime: 5 * 60 * 1000,
+  })
+  useEffect(() => { if (waData?.number != null) setWaNumber(waData.number) }, [waData])
+
+  const waMut = useMutation({
+    mutationFn: () => adminApi.setInteriorWa({ number: waNumber }),
+    onSuccess : (r) => {
+      toast({ title: 'Nomor WA disimpan', description: r.data?.message })
+      if (r.data?.data?.number) setWaNumber(r.data.data.number)
+      qc.invalidateQueries({ queryKey: ['interior-wa'] })
+    },
+    onError: (e) => toast({ title: 'Gagal menyimpan', description: e?.response?.data?.message || 'Coba lagi.', variant: 'destructive' }),
   })
 
   // ── Mutations ────────────────────────────────────────────
@@ -228,6 +252,42 @@ export default function AdminInterior() {
           <Plus className="w-4 h-4" /> Tambah Desain
         </button>
       </div>
+
+      {/* WhatsApp konsultasi (global) */}
+      {canEditWa && (
+        <div className="bg-white border rounded-2xl shadow-card p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center shrink-0">
+              <MessageCircle className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-semibold text-slate-900 text-sm">Nomor WhatsApp Konsultasi</h2>
+              <p className="text-xs text-slate-500 mt-0.5 mb-3">
+                Dipakai tombol <strong>"Mulai Konsultasi"</strong> di halaman Design Interior publik.
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2 border rounded-xl px-3 py-2 bg-slate-50">
+                  <Phone className="w-4 h-4 text-slate-400" />
+                  <input value={waNumber} onChange={e => setWaNumber(e.target.value)} inputMode="tel"
+                    placeholder="6282181111618 / 0821..."
+                    className="bg-transparent outline-none text-sm w-48" />
+                </div>
+                <button onClick={() => waMut.mutate()} disabled={waMut.isPending || !waNumber.trim()}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-semibold disabled:opacity-50">
+                  {waMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Simpan
+                </button>
+                {waNumber.trim() && (
+                  <a href={`https://wa.me/${waNumber.replace(/\D+/g, '')}`} target="_blank" rel="noopener noreferrer"
+                    className="text-xs text-green-600 font-semibold">Tes buka WA →</a>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-2">
+                Format bebas (0821…, +62…, 62…) — otomatis dinormalisasi ke 62xxxx saat disimpan.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-white border rounded-2xl shadow-card overflow-hidden">

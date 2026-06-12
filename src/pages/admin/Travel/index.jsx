@@ -52,6 +52,21 @@ export default function AdminTravel() {
     issueMut.mutate(b.id)
   }
 
+  const cancelMut = useMutation({
+    mutationFn: ({ id, reason }) => travelApi.adminCancel(id, { reason }),
+    onSuccess: (r) => {
+      toast({ title: 'Pesanan dibatalkan', description: r.data?.message })
+      qc.invalidateQueries({ queryKey: ['admin-travel'] })
+    },
+    onError: (e) => toast({ title: 'Gagal membatalkan', description: e?.response?.data?.message || 'Coba lagi.', variant: 'destructive' }),
+  })
+
+  const confirmCancel = (b) => {
+    const reason = window.prompt(`Batalkan pesanan ${b.code}?\n\nPesanan yang dibatalkan tidak bisa diterbitkan lagi.\n(Opsional) Tulis alasan pembatalan:`, '')
+    if (reason === null) return // user menekan Cancel
+    cancelMut.mutate({ id: b.id, reason })
+  }
+
   return (
     <div className="container py-4 sm:py-6 max-w-5xl">
       <div className="flex items-center gap-3 mb-4">
@@ -105,11 +120,17 @@ export default function AdminTravel() {
                   </div>
                   <div className="text-right shrink-0">
                     <p className="price-tag text-base">{formatRupiah(b.totalPrice)}</p>
-                    {b.status === 'pending_payment' && (
-                      <button onClick={() => confirmIssue(b)} disabled={issueMut.isPending}
-                        className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-50">
-                        {issueMut.isPending && issueMut.variables === b.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />} Verifikasi & Terbitkan
-                      </button>
+                    {(b.status === 'pending_payment' || b.status === 'paid') && (
+                      <div className="mt-2 flex items-center justify-end gap-2">
+                        <button onClick={() => confirmCancel(b)} disabled={cancelMut.isPending}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold disabled:opacity-50">
+                          {cancelMut.isPending && cancelMut.variables?.id === b.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />} Batalkan
+                        </button>
+                        <button onClick={() => confirmIssue(b)} disabled={issueMut.isPending}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-50">
+                          {issueMut.isPending && issueMut.variables === b.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />} Verifikasi & Terbitkan
+                        </button>
+                      </div>
                     )}
                     {b.status === 'issued' && b.urlEtiket && (
                       <a href={b.urlEtiket} target="_blank" rel="noopener noreferrer" className="mt-2 block text-xs text-emerald-600 font-semibold">Lihat e-tiket →</a>

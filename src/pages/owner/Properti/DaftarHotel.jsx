@@ -3052,15 +3052,27 @@ export default function DaftarHotel({ editId: editIdProp } = {}) {
         ? hotelApi.update(editId, fd)
         : hotelApi.create(fd)
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       clearDraft()
       qc.invalidateQueries({ queryKey: ['owner-my-hotels'] })
       qc.invalidateQueries({ queryKey: ['owner-hotel-active'] })
       qc.invalidateQueries({ queryKey: ['admin-hotels'] })
       qc.invalidateQueries({ queryKey: ['pending-hotels'] })
       qc.invalidateQueries({ queryKey: ['hotel-edit-full', editId] })
+
+      // Foto yang gagal diupload (mis. ukuran melebihi batas server) → warning jelas
+      const warnings = res?.data?.warnings || []
+      if (warnings.length) {
+        toast({
+          title: `${warnings.length} foto GAGAL diupload`,
+          description: warnings.join('\n') + '\n\nFoto lain tetap tersimpan. Perbaiki & upload ulang foto yang gagal.',
+          variant: 'destructive',
+          duration: 12000,
+        })
+      }
+
       if (isEditMode) {
-        toast({ title: 'Perubahan berhasil disimpan.' })
+        if (!warnings.length) toast({ title: 'Perubahan berhasil disimpan.' })
         if (isOwnerInlineEdit) {
           // tetap di /owner/properti, biarkan user lanjut mengedit
         } else if (isAdminPath) {
