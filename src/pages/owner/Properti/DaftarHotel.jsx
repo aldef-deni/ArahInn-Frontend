@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast'
 import {
   Check, ChevronDown, ChevronRight, ChevronUp, Loader2, Clock,
   ArrowLeft, Send, Save, Plus, Info, Copy, AlertCircle, ImageIcon, X, Star, Upload, Pencil,
+  Hotel, MapPin,
 } from 'lucide-react'
 import { cn, getImageUrl } from '@/utils'
 import { validateImageFiles } from '@/utils/imageValidation'
@@ -3347,6 +3348,25 @@ export default function DaftarHotel({ editId: editIdProp } = {}) {
             </span>
             . Setelah submit, owner langsung dapat mengelolanya.
           </p>
+        </div>
+      </div>
+    )}
+
+    {/* Judul nama akomodasi yang sedang diedit — agar tidak salah properti */}
+    {isEditMode && form.name && (
+      <div className="mb-4 flex items-start gap-2.5">
+        <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+          <Hotel className="w-5 h-5" />
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight break-words">{form.name}</h2>
+          {(form.category || form.city) && (
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
+              {form.category && <span className="font-medium">{form.category}</span>}
+              {form.category && form.city && <span className="text-slate-300">·</span>}
+              {form.city && <span className="inline-flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {form.city}</span>}
+            </p>
+          )}
         </div>
       </div>
     )}

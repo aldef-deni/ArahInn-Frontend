@@ -19,6 +19,7 @@ import InteriorPenawaran from '@/components/InteriorPenawaran'
 import PromoFlyerCarousel from '@/components/PromoFlyerCarousel'
 import CampaignBanner from '@/components/CampaignBanner'
 import BlurSelect from '@/components/ui/BlurSelect'
+import DestinationSearch from '@/components/ui/DestinationSearch'
 import Racket from '@/components/icons/Racket'
 import SEO from '@/components/SEO'
 
@@ -316,11 +317,18 @@ export default function Home() {
                 <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-white/50 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="text-[9px] sm:text-[10px] font-bold text-white/50 uppercase tracking-widest mb-0.5 sm:mb-1">{t('hero.cityHotelLabel')}</p>
-                  <input
+                  <DestinationSearch
                     value={form.q}
-                    onChange={e => setForm({...form, q: e.target.value})}
+                    onChange={v => setForm({ ...form, q: v })}
+                    onPickCity={(city) => setForm(f => ({ ...f, q: city }))}
+                    onNearMe={(lat, lng) => {
+                      const p = new URLSearchParams()
+                      p.set('lat', lat); p.set('lng', lng)
+                      p.set('checkIn', form.checkIn); p.set('checkOut', form.checkOut); p.set('guests', form.guests)
+                      navigate(`/search?${p}`)
+                    }}
                     placeholder={t('hero.cityHotelPlaceholder')}
-                    className="w-full bg-transparent text-white placeholder:text-white/35 text-sm font-medium focus:outline-none"
+                    inputClassName="w-full bg-transparent text-white placeholder:text-white/35 text-sm font-medium focus:outline-none"
                   />
                 </div>
               </div>

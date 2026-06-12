@@ -3,10 +3,11 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
 import { formatRupiah } from '@/utils'
-import { Search, MapPin, RotateCcw, ChevronDown, SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, MapPin, RotateCcw, ChevronDown, SlidersHorizontal, X, ChevronLeft, ChevronRight, Navigation } from 'lucide-react'
 import { format } from 'date-fns'
 import { useTranslation } from 'react-i18next'
 import HotelCardRow from '@/components/hotel/HotelCardRow'
+import DestinationSearch from '@/components/ui/DestinationSearch'
 import SEO from '@/components/SEO'
 import DateField from '@/components/ui/DateField'
 
@@ -117,6 +118,8 @@ export default function SearchPage() {
     star_ratings: selectedStars.length ? selectedStars.join(',') : undefined,
     facilities  : selectedFacilities.length ? selectedFacilities.join(',') : undefined,
     sort_by  : sortBy,
+    lat      : params.get('lat') || undefined,
+    lng      : params.get('lng') || undefined,
     page,
     limit    : 10,
   }
@@ -204,14 +207,28 @@ export default function SearchPage() {
       <div className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30">
         <div className="container py-3 sm:py-4">
           <form onSubmit={handleSearch} className="flex flex-col gap-2">
-            {/* Destination — always full width */}
+            {/* Destination — always full width (dropdown "Dekat saya" + destinasi populer) */}
             <div className="relative">
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('search.cityHotelLabel')}</label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input value={form.q} onChange={e => setForm({...form, q: e.target.value})}
+              <div className="relative flex items-center">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10 pointer-events-none" />
+                <DestinationSearch
+                  value={form.q}
+                  onChange={v => setForm({ ...form, q: v })}
+                  onPickCity={(city) => {
+                    setForm(f => ({ ...f, q: city }))
+                    const next = new URLSearchParams(params)
+                    next.set('q', city); next.delete('lat'); next.delete('lng'); next.delete('city')
+                    setParams(next); setPage(1)
+                  }}
+                  onNearMe={(lat, lng) => {
+                    const next = new URLSearchParams(params)
+                    next.set('lat', lat); next.set('lng', lng); next.delete('q'); next.delete('city')
+                    setParams(next); setForm(f => ({ ...f, q: '' })); setPage(1)
+                  }}
                   placeholder={t('search.cityHotelPlaceholder')}
-                  className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand bg-slate-50" />
+                  inputClassName="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand bg-slate-50"
+                />
               </div>
             </div>
 
@@ -284,6 +301,11 @@ export default function SearchPage() {
                     <span className="text-slate-900">{totalResults.toLocaleString('id')} {t('search.hotelsCount')}</span></>
                   )}
                 </p>
+                {params.get('lat') && params.get('lng') && (
+                  <p className="text-xs text-blue-600 font-medium mt-0.5 flex items-center gap-1">
+                    <Navigation className="w-3.5 h-3.5" /> Diurutkan dari lokasi terdekat Anda
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 {/* Mobile filter toggle */}

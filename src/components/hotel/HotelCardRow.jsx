@@ -71,6 +71,13 @@ export default function HotelCardRow({ hotel }) {
           <div className="flex items-center gap-1 text-slate-500 text-[11px] sm:text-xs">
             <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
             <span className="truncate">{hotel.city}{hotel.province ? `, ${hotel.province}` : ''}</span>
+            {hotel.distanceKm != null && !isNaN(Number(hotel.distanceKm)) && (
+              <span className="ml-1 shrink-0 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 font-semibold text-[10px]">
+                {Number(hotel.distanceKm) < 1
+                  ? `${Math.round(Number(hotel.distanceKm) * 1000)} m`
+                  : `${Number(hotel.distanceKm).toFixed(1)} km`}
+              </span>
+            )}
           </div>
 
           <div className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 bg-blue-50 text-blue-700 text-[10px] sm:text-xs font-medium rounded-lg">

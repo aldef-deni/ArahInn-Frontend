@@ -11,6 +11,7 @@ const multipartConfig = {
 
 export const hotelApi = {
   search    : (params) => api.get('/hotels/search', { params }),
+  popularDestinations: () => api.get('/hotels/popular-destinations'),
   getById   : (id)     => api.get(`/hotels/${id}`),
   getRooms  : (id)     => api.get(`/hotels/${id}/rooms`),
   getCities : ()       => api.get('/hotels/cities'),

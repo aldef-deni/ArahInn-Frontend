@@ -6,7 +6,7 @@ import { format, addDays, formatDistanceToNow } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
 import { hotelApi } from '@/services/hotelApi'
 import { reviewApi } from '@/services/reviewApi'
-import { campaignApi, chatApi } from '@/services/index'
+import { campaignApi, chatApi, promoApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { formatRupiah, diffDays, formatDate, getImageUrl } from '@/utils'
 import {
@@ -28,6 +28,8 @@ import {
   Sparkles,
   AlertTriangle,
   Star,
+  Ticket,
+  Copy,
   Users,
   UtensilsCrossed,
   Waves,
@@ -792,6 +794,19 @@ export default function HotelDetail() {
     enabled: !!resolvedId,
   })
 
+  // Voucher owner yang berlaku untuk properti ini
+  const { data: hotelVouchers = [] } = useQuery({
+    queryKey: ['hotel-vouchers', resolvedId],
+    queryFn: () => promoApi.forHotel(resolvedId).then(r => r.data?.data || []),
+    enabled: !!resolvedId,
+  })
+  const [copiedCode, setCopiedCode] = useState('')
+  const copyVoucher = (code) => {
+    navigator.clipboard?.writeText(code)
+    setCopiedCode(code)
+    setTimeout(() => setCopiedCode(''), 1800)
+  }
+
   const { data: availData } = useQuery({
     queryKey: ['avail', resolvedId, dates],
     queryFn: () => hotelApi.checkAvail(resolvedId, dates).then(r => r.data.data),
@@ -1042,6 +1057,38 @@ export default function HotelDetail() {
             </aside>
           </div>
         </section>
+
+        {/* Voucher properti (dari owner) */}
+        {hotelVouchers.length > 0 && (
+          <div className="mt-4 sm:mt-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Ticket className="w-5 h-5 text-orange-500" />
+              <h2 className="font-bold text-slate-900 text-base sm:text-lg">Voucher Tersedia</h2>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {hotelVouchers.map(v => (
+                <div key={v.id} className="relative overflow-hidden rounded-2xl border border-dashed border-orange-300 bg-gradient-to-br from-orange-50 to-amber-50 p-4">
+                  <p className="font-bold text-slate-900 text-sm line-clamp-1">{v.name}</p>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    {v.discountType === 'percent' ? `Diskon ${Number(v.discountValue)}%` : `Hemat ${formatRupiah(v.discountValue)}`}
+                    {v.minPurchase > 0 && ` · min. ${formatRupiah(v.minPurchase)}`}
+                  </p>
+                  {v.endDate && (
+                    <p className="text-[11px] text-slate-400 mt-1">Berlaku s/d {formatDate(v.endDate)}</p>
+                  )}
+                  <button type="button" onClick={() => copyVoucher(v.code)}
+                    className="mt-3 w-full flex items-center justify-between gap-2 rounded-xl border border-orange-300 bg-white px-3 py-2 transition-colors hover:bg-orange-50">
+                    <span className="font-mono font-bold text-orange-600 text-sm tracking-wide">{v.code}</span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-orange-500">
+                      {copiedCode === v.code ? <><Check className="w-3.5 h-3.5" /> Tersalin</> : <><Copy className="w-3.5 h-3.5" /> Salin</>}
+                    </span>
+                  </button>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-slate-400 mt-2">Masukkan kode voucher saat pembayaran untuk mendapat diskon.</p>
+          </div>
+        )}
 
         <div className="mt-4 sm:mt-6 grid gap-3 sm:gap-4 sm:grid-cols-3">
           {[

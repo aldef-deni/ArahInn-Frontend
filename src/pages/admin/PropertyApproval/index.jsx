@@ -4,12 +4,13 @@ import { propertyApi } from '@/services/propertyApi'
 import { formatRupiah, getImageUrl } from '@/utils'
 import { validateImageFiles } from '@/utils/imageValidation'
 import PriceInput from '@/components/ui/PriceInput'
+import MapEmbed from '@/components/ui/MapEmbed'
 import { useToast } from '@/hooks/use-toast'
 import {
   Building2, CheckCircle2, XCircle, Clock, Eye,
   MapPin, Tag, X, ChevronLeft, ChevronRight,
   AlertTriangle, User, Phone, Mail, BedDouble, Bath, Maximize2,
-  Plus, Save, Upload,
+  Plus, Save, Upload, Info, Pencil, Star,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
@@ -24,17 +25,65 @@ const FACILITIES_LIST = [
 const INIT_FORM = {
   title: '', description: '', category: '', listingType: 'sell',
   price: '', priceNegotiable: false, address: '', city: '', province: '',
+  latitude: '', longitude: '',
   landArea: '', buildingArea: '', bedrooms: '', bathrooms: '',
   certificate: '', facilities: [], contactPhone: '', contactEmail: '',
 }
 
-function PropertyFormDrawer({ onClose }) {
+// Prefill form dari listing (edit mode) → konversi null/number ke string input
+const listingToForm = (l) => ({
+  title: l.title || '', description: l.description || '', category: l.category || '',
+  listingType: l.listingType || 'sell', price: l.price != null ? String(l.price) : '',
+  priceNegotiable: !!l.priceNegotiable, address: l.address || '', city: l.city || '',
+  province: l.province || '',
+  latitude: l.latitude != null ? String(l.latitude) : '',
+  longitude: l.longitude != null ? String(l.longitude) : '',
+  landArea: l.landArea != null ? String(l.landArea) : '',
+  buildingArea: l.buildingArea != null ? String(l.buildingArea) : '',
+  bedrooms: l.bedrooms != null ? String(l.bedrooms) : '',
+  bathrooms: l.bathrooms != null ? String(l.bathrooms) : '',
+  certificate: l.certificate || '', facilities: Array.isArray(l.facilities) ? l.facilities : [],
+  contactPhone: l.contactPhone || '', contactEmail: l.contactEmail || '',
+})
+
+function PhotoThumb({ url, main, onSetMain, onRemove }) {
+  return (
+    <div className={`relative w-20 h-16 rounded-xl overflow-hidden group border-2 ${main ? 'border-amber-400 ring-2 ring-amber-200' : 'border-slate-200'}`}>
+      <img src={url} alt="" className="w-full h-full object-cover" />
+      {main && (
+        <span className="absolute top-1 left-1 bg-amber-400 text-white text-[8px] font-bold px-1 py-0.5 rounded-md flex items-center gap-0.5 z-10">
+          <Star className="w-2 h-2 fill-white" /> Utama
+        </span>
+      )}
+      <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1.5 transition-opacity">
+        {!main && (
+          <button type="button" onClick={onSetMain} title="Jadikan foto utama (thumbnail)"
+            className="w-6 h-6 rounded-full bg-white/90 text-amber-500 flex items-center justify-center hover:bg-white">
+            <Star className="w-3.5 h-3.5" />
+          </button>
+        )}
+        <button type="button" onClick={onRemove} title="Hapus foto"
+          className="w-6 h-6 rounded-full bg-white/90 text-red-500 flex items-center justify-center hover:bg-white">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function PropertyFormDrawer({ onClose, editing }) {
   const { toast } = useToast()
   const qc        = useQueryClient()
   const fileRef   = useRef(null)
-  const [form, setForm]       = useState({ ...INIT_FORM })
+  const isEdit    = !!editing
+  const [form, setForm]       = useState(() => editing ? listingToForm(editing) : { ...INIT_FORM })
   const [newImages, setNewImages] = useState([])
   const [previews, setPreviews]   = useState([])
+  const [existingImages, setExistingImages] = useState(() => (editing?.images || []))
+  // Foto utama (thumbnail kartu) — ref bisa path string (existing) atau File (baru)
+  const [mainRef, setMainRef] = useState(() => editing?.images?.[0] ?? null)
+  const effMain = mainRef ?? existingImages[0] ?? newImages[0] ?? null
+  const isMain  = (ref) => effMain === ref
 
   const f = (k) => (e) => {
     const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value
@@ -66,9 +115,17 @@ function PropertyFormDrawer({ onClose }) {
   }
 
   const removeNew = (idx) => {
-    setNewImages(p => p.filter((_, i) => i !== idx))
+    setNewImages(p => {
+      if (p[idx] === mainRef) setMainRef(null)
+      return p.filter((_, i) => i !== idx)
+    })
     setPreviews(p => p.filter((_, i) => i !== idx))
   }
+
+  const removeExisting = (idx) => setExistingImages(p => {
+    if (p[idx] === mainRef) setMainRef(null)
+    return p.filter((_, i) => i !== idx)
+  })
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -78,11 +135,27 @@ function PropertyFormDrawer({ onClose }) {
         else if (v !== '' && v !== null && v !== undefined) fd.append(k, v)
       })
       newImages.forEach(img => fd.append('images[]', img))
+
+      // Foto utama → kirim primary_index (posisi di array gabungan existing + baru)
+      let primaryIndex = -1
+      if (typeof effMain === 'string') {
+        const idx = existingImages.indexOf(effMain)
+        if (idx >= 0) primaryIndex = idx
+      } else if (effMain) {
+        const idx = newImages.indexOf(effMain)
+        if (idx >= 0) primaryIndex = existingImages.length + idx
+      }
+      if (primaryIndex > 0) fd.append('primary_index', String(primaryIndex))
+
+      if (isEdit) {
+        fd.append('existing_images', JSON.stringify(existingImages))
+        return propertyApi.update(editing.id, fd)
+      }
       return propertyApi.create(fd)
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-property-listings'] })
-      toast({ title: 'Properti berhasil ditambahkan.' })
+      toast({ title: isEdit ? 'Properti berhasil diperbarui.' : 'Properti berhasil ditambahkan.' })
       onClose()
     },
     onError: (e) => toast({
@@ -105,8 +178,8 @@ function PropertyFormDrawer({ onClose }) {
               <Building2 className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h2 className="font-bold text-slate-900">Tambah Properti</h2>
-              <p className="text-xs text-slate-500">Daftarkan properti baru ke marketplace</p>
+              <h2 className="font-bold text-slate-900">{isEdit ? 'Edit Properti' : 'Tambah Properti'}</h2>
+              <p className="text-xs text-slate-500">{isEdit ? 'Perbarui data listing properti' : 'Daftarkan properti baru ke marketplace'}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 transition-colors">
@@ -169,6 +242,48 @@ function PropertyFormDrawer({ onClose }) {
             <label className="block text-sm font-semibold text-slate-700 mb-1.5">Alamat Lengkap</label>
             <input value={form.address} onChange={f('address')}
               placeholder="Jl. Sudirman No. 10..." className={inputCls} />
+          </div>
+
+          {/* Lokasi Google Map (latitude / longitude) */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Lokasi Peta (Google Map)</label>
+            <div className="grid grid-cols-2 gap-4 mb-2">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Latitude</label>
+                <input type="number" step="any" inputMode="decimal" value={form.latitude}
+                  onChange={f('latitude')}
+                  onPaste={e => {
+                    const text = e.clipboardData.getData('text').trim()
+                    const m = text.match(/^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/)
+                    if (m) { e.preventDefault(); setForm(p => ({ ...p, latitude: m[1], longitude: m[2] })) }
+                  }}
+                  placeholder="-6.200000" className={inputCls + ' font-mono'} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Longitude</label>
+                <input type="number" step="any" inputMode="decimal" value={form.longitude}
+                  onChange={f('longitude')} placeholder="106.816666" className={inputCls + ' font-mono'} />
+              </div>
+            </div>
+            <div className="flex items-start justify-between gap-3 mb-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl">
+              <div className="flex items-start gap-2">
+                <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-blue-700 leading-relaxed">
+                  Buka <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" className="underline font-medium">Google Maps</a>, klik kanan di lokasi properti, klik koordinatnya, lalu paste di kolom Latitude (format <span className="font-mono bg-white/60 px-1 rounded">-6.2, 106.8</span> otomatis terisi keduanya). Atau geser pin di peta bawah.
+                </p>
+              </div>
+              {(form.latitude || form.longitude) && (
+                <button type="button" onClick={() => setForm(p => ({ ...p, latitude: '', longitude: '' }))}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-700 whitespace-nowrap shrink-0">Reset</button>
+              )}
+            </div>
+            <MapEmbed
+              query={[form.address, form.city, form.province, 'Indonesia'].filter(Boolean).join(', ')}
+              lat={form.latitude ? parseFloat(form.latitude) : undefined}
+              lng={form.longitude ? parseFloat(form.longitude) : undefined}
+              height={240}
+              onCoords={(lat, lng) => setForm(p => ({ ...p, latitude: lat, longitude: lng }))}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -238,17 +353,18 @@ function PropertyFormDrawer({ onClose }) {
 
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1">Foto Properti</label>
-            <p className="text-xs text-slate-400 mb-2">Min. resolusi 1024 px · maks. 5 MB per file.</p>
-            {previews.length > 0 && (
+            <p className="text-xs text-slate-400 mb-2">
+              Min. resolusi 1024 px · maks. 5 MB per file. Klik ikon <Star className="w-3 h-3 inline text-amber-400" /> untuk jadikan foto <strong>utama</strong> (thumbnail kartu di web).
+            </p>
+            {(existingImages.length > 0 || previews.length > 0) && (
               <div className="flex flex-wrap gap-2 mb-3">
+                {existingImages.map((src, i) => (
+                  <PhotoThumb key={`ex-${src}-${i}`} url={getImageUrl(src)} main={isMain(src)}
+                    onSetMain={() => setMainRef(src)} onRemove={() => removeExisting(i)} />
+                ))}
                 {previews.map((src, i) => (
-                  <div key={i} className="relative w-20 h-16 rounded-xl overflow-hidden group border-2 border-blue-300">
-                    <img src={src} alt="" className="w-full h-full object-cover" />
-                    <button onClick={() => removeNew(i)}
-                      className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                      <X className="w-4 h-4 text-white" />
-                    </button>
-                  </div>
+                  <PhotoThumb key={`new-${i}`} url={src} main={isMain(newImages[i])}
+                    onSetMain={() => setMainRef(newImages[i])} onRemove={() => removeNew(i)} />
                 ))}
               </div>
             )}
@@ -271,7 +387,7 @@ function PropertyFormDrawer({ onClose }) {
             className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
             {mutation.isPending
               ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>
-              : <><Save className="w-4 h-4" /> Simpan Properti</>
+              : <><Save className="w-4 h-4" /> {isEdit ? 'Simpan Perubahan' : 'Simpan Properti'}</>
             }
           </button>
         </div>
@@ -531,6 +647,7 @@ export default function AdminPropertyApproval() {
   const [detail, setDetail]   = useState(null)
   const [page, setPage]       = useState(1)
   const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing]   = useState(null)
 
   const params = tab === 'all'
     ? { status: 'all', page, limit: 20 }
@@ -722,6 +839,10 @@ export default function AdminPropertyApproval() {
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-xl text-xs font-semibold hover:bg-blue-100 transition-colors">
                             <Eye className="w-3.5 h-3.5" /> Detail
                           </button>
+                          <button onClick={() => setEditing(listing)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-200 transition-colors">
+                            <Pencil className="w-3.5 h-3.5" /> Edit
+                          </button>
                           {listing.status === 'pending' && (
                             <>
                               <button onClick={() => approveMutation.mutate(listing.id)}
@@ -756,8 +877,9 @@ export default function AdminPropertyApproval() {
         )}
       </div>
 
-      {/* Form Drawer */}
+      {/* Form Drawer — tambah / edit */}
       {formOpen && <PropertyFormDrawer onClose={() => setFormOpen(false)} />}
+      {editing && <PropertyFormDrawer editing={editing} onClose={() => setEditing(null)} />}
 
       {/* Detail Modal */}
       {detail && (

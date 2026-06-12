@@ -8,6 +8,100 @@ import { Download, CheckCircle2, X, AlertTriangle, RefreshCw, Calendar, Building
 
 const STATUSES = ['','pending','paid','issued','canceled','refunded','rescheduled']
 
+const fmtDateTime = (d) => d
+  ? new Date(d).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  : '–'
+
+// ── Detail booking modal (klik kode booking) ──────────────
+function OrderDetailModal({ order, onClose }) {
+  // Ambil data terbaru + lengkap by id (status terupdate)
+  const { data: full, isLoading } = useQuery({
+    queryKey: ['admin-order-detail', order.id],
+    queryFn : () => bookingApi.getById(order.id).then(r => r.data?.data || r.data),
+    initialData: order,
+  })
+  const b = full || order
+
+  const Row = ({ label, value, mono, strong }) => (
+    <div className="flex items-start justify-between gap-3 py-2 border-b border-slate-50 last:border-0">
+      <span className="text-xs text-slate-500 shrink-0">{label}</span>
+      <span className={`text-sm text-right ${mono ? 'font-mono' : ''} ${strong ? 'font-bold text-slate-900' : 'font-medium text-slate-700'}`}>{value ?? '–'}</span>
+    </div>
+  )
+  const Section = ({ title, children }) => (
+    <div className="bg-slate-50 rounded-xl p-4">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-1">{title}</p>
+      {children}
+    </div>
+  )
+  const rp = (v) => (v != null ? formatRupiah(v) : '–')
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Detail Pesanan</p>
+            <h2 className="font-mono font-bold text-brand text-lg truncate">{b.bookingCode}</h2>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusBadgeClass(b.status)}`}>{statusLabel(b.status)}</span>
+            <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100"><X className="w-5 h-5 text-slate-500" /></button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {isLoading && <p className="text-xs text-slate-400">Memuat data terbaru…</p>}
+
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Section title="Tamu">
+              <Row label="Nama" value={b.guestName || b.user?.name} />
+              <Row label="Email" value={b.guestEmail || b.user?.email} />
+              <Row label="Telepon" value={b.guestPhone || '–'} />
+              <Row label="Jumlah tamu" value={b.guests} />
+            </Section>
+            <Section title="Akomodasi">
+              <Row label="Hotel" value={b.hotel?.name} />
+              <Row label="Kota" value={b.hotel?.city} />
+              <Row label="Kamar" value={b.room?.name} />
+              <Row label="Jml kamar" value={b.roomCount} />
+            </Section>
+          </div>
+
+          <Section title="Jadwal">
+            <Row label="Check-in" value={formatDateShort(b.checkIn)} />
+            <Row label="Check-out" value={formatDateShort(b.checkOut)} />
+            <Row label="Total malam" value={b.totalNights ? `${b.totalNights} malam` : '–'} />
+          </Section>
+
+          <Section title="Rincian Harga">
+            <Row label="Harga kamar (base)" value={rp(b.basePrice)} />
+            <Row label="Markup / Pajak & Others" value={rp(b.markupAmount)} />
+            {b.promoDiscount > 0 && <Row label="Diskon promo" value={`- ${rp(b.promoDiscount)}`} />}
+            {b.voucherCode && <Row label="Kode voucher" value={b.voucherCode} mono />}
+            {b.loyaltyDiscount > 0 && <Row label="Diskon poin" value={`- ${rp(b.loyaltyDiscount)}`} />}
+            {b.taxAmount > 0 && <Row label="PPN" value={rp(b.taxAmount)} />}
+            <Row label="Total dibayar" value={rp(b.totalPrice)} strong />
+            {b.ownerPayout != null && <Row label="Diterima owner" value={rp(b.ownerPayout)} />}
+            {b.commissionProfit != null && <Row label="Komisi ArahInn" value={rp(b.commissionProfit)} />}
+          </Section>
+
+          <Section title="Pembayaran & Waktu">
+            <Row label="Metode" value={b.payments?.[0]?.method || b.paymentMethod || '–'} />
+            <Row label="Dibuat" value={fmtDateTime(b.createdAt)} />
+            <Row label="Dibayar" value={fmtDateTime(b.paidAt)} />
+            <Row label="Voucher terbit" value={fmtDateTime(b.issuedAt)} />
+            {b.canceledAt && <Row label="Dibatalkan" value={fmtDateTime(b.canceledAt)} />}
+          </Section>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Confirm approve dialog ────────────────────────────────
 function ApproveConfirm({ order, onClose, onConfirm, isLoading }) {
   return (
@@ -154,6 +248,7 @@ export default function AdminOrders() {
   const [approveTarget, setApprove]   = useState(null)
   const [cancelTarget, setCancel]     = useState(null)
   const [rescheduleTarget, setReschedule] = useState(null)
+  const [detailTarget, setDetail]     = useState(null)
   const deferredPropertySearch = useDeferredValue(propertySearch.trim())
   const shouldSearchProperty = !selectedProperty && deferredPropertySearch.length >= 3
 
@@ -346,7 +441,13 @@ export default function AdminOrders() {
                   ))
                 : data?.data?.map(order => (
                     <tr key={order.id} className="hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-3 font-mono text-xs font-bold text-brand whitespace-nowrap">{order.bookingCode}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <button onClick={() => setDetail(order)}
+                          className="font-mono text-xs font-bold text-brand hover:underline hover:text-brand-700 transition-colors cursor-pointer"
+                          title="Lihat detail pesanan">
+                          {order.bookingCode}
+                        </button>
+                      </td>
                       <td className="px-4 py-3">
                         <div>
                           <p className="font-medium whitespace-nowrap">{order.guestName || order.user?.name}</p>
@@ -457,6 +558,11 @@ export default function AdminOrders() {
           onConfirm={({ checkIn, checkOut }) => rescheduleMutation.mutate({ id: rescheduleTarget.id, checkIn, checkOut })}
           isLoading={rescheduleMutation.isPending}
         />
+      )}
+
+      {/* Detail booking modal */}
+      {detailTarget && (
+        <OrderDetailModal order={detailTarget} onClose={() => setDetail(null)} />
       )}
     </div>
   )

@@ -1,8 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { promoApi } from '@/services/index'
+import { hotelApi } from '@/services/hotelApi'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah, formatDateShort } from '@/utils'
+import DateInput from '@/components/ui/DateInput'
 import { Plus, Tag, X, Trash2, Zap, Award, Copy, Check, ShieldCheck, Clock, ToggleLeft, ToggleRight, Heart, HeartOff, CheckCircle2 } from 'lucide-react'
 import PriceInput from '@/components/ui/PriceInput'
 
@@ -14,7 +16,7 @@ const TYPE_STYLES = {
 
 const emptyForm = {
   code: '', name: '', type: 'voucher', discount_type: 'percent', discount_value: '',
-  min_purchase: '', quota: '', start_date: '', end_date: '',
+  min_purchase: '', quota: '', start_date: '', end_date: '', hotel_id: '',
 }
 
 export default function OwnerPromo() {
@@ -26,6 +28,13 @@ export default function OwnerPromo() {
   const { data: ownerPromos = [], isLoading: loadingOwner } = useQuery({
     queryKey: ['my-promos'],
     queryFn : () => promoApi.myPromos().then(r => r.data?.data || []),
+  })
+
+  // Daftar properti owner untuk dropdown "Berlaku untuk"
+  const { data: myHotels = [] } = useQuery({
+    queryKey: ['owner-my-hotels'],
+    queryFn : () => hotelApi.myHotels().then(r => r.data?.data || []),
+    staleTime: 5 * 60 * 1000,
   })
 
   const createMutation = useMutation({
@@ -95,6 +104,11 @@ export default function OwnerPromo() {
                   </span>
                 )}
                 <p className="font-semibold text-slate-900 text-sm line-clamp-2">{p.name}</p>
+                <p className="text-[11px] text-brand-700 bg-brand/10 inline-block px-2 py-0.5 rounded-md mt-1 font-medium">
+                  {p.hotelId
+                    ? (myHotels.find(h => String(h.id) === String(p.hotelId))?.name || 'Properti tertentu')
+                    : 'Semua Properti'}
+                </p>
                 <p className="text-xs text-slate-400 mt-1">
                   Diskon {p.discountType === 'percent'
                     ? `${p.discountValue}%`
@@ -149,12 +163,15 @@ export default function OwnerPromo() {
                   className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Tipe Promo</label>
-                <select value={form.type} onChange={f('type')}
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Berlaku untuk</label>
+                <select value={form.hotel_id} onChange={f('hotel_id')}
                   className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/30">
-                  <option value="voucher">Voucher</option>
-                  <option value="flash_sale">Flash Sale</option>
+                  <option value="">Semua Properti</option>
+                  {myHotels.map(h => (
+                    <option key={h.id} value={h.id}>{h.name}</option>
+                  ))}
                 </select>
+                <p className="text-[11px] text-slate-400 mt-1">Pilih properti tertentu, atau "Semua Properti" untuk seluruh akomodasi Anda.</p>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5">Kode Voucher <span className="text-red-500">*</span></label>
@@ -190,13 +207,12 @@ export default function OwnerPromo() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">Mulai</label>
-                  <input type="date" value={form.start_date} onChange={f('start_date')}
-                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand" />
+                  <DateInput value={form.start_date} onChange={v => setForm(p => ({ ...p, start_date: v }))} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">Berakhir</label>
-                  <input type="date" value={form.end_date} onChange={f('end_date')}
-                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand" />
+                  <DateInput value={form.end_date} min={form.start_date || undefined}
+                    onChange={v => setForm(p => ({ ...p, end_date: v }))} />
                 </div>
               </div>
             </div>

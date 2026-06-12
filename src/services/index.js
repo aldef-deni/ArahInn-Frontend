@@ -87,6 +87,7 @@ export const promoApi = {
   platform    : ()     => api.get('/promos/platform'),
   ownersList  : ()     => api.get('/promos/owners-list'),
   flyers      : ()     => api.get('/promos/flyers'),
+  forHotel    : (id)   => api.get(`/promos/hotel/${id}`),
   follow      : (id)   => api.post(`/promos/${id}/follow`),
   unfollow    : (id)   => api.delete(`/promos/${id}/follow`),
   create      : (d)    => d instanceof FormData

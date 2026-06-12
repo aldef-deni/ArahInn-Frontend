@@ -776,8 +776,8 @@ export default function AdminHotels() {
                               : <div className="w-full h-full flex items-center justify-center text-xl">🏨</div>}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-slate-900 truncate">{hotel.name}</p>
-                            <p className="text-xs text-slate-400 truncate">{hotel.address}</p>
+                            <p className="font-semibold text-slate-900 truncate cursor-help" title={hotel.name}>{hotel.name}</p>
+                            <p className="text-xs text-slate-400 truncate cursor-help" title={hotel.address}>{hotel.address}</p>
                           </div>
                         </div>
                       </td>

@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useForm } from 'react-hook-form'
 import { formatRupiah, formatDateShort } from '@/utils'
 import { Plus, Tag, Zap, Edit2, Trash2, X, Save, ToggleLeft, ToggleRight, Users, User, Image as ImageIcon, Upload } from 'lucide-react'
+import DateInput from '@/components/ui/DateInput'
 import PriceInput from '@/components/ui/PriceInput'
 import { getImageUrl } from '@/utils'
 
@@ -365,13 +366,12 @@ export default function AdminPromos() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Tanggal Mulai <span className="text-muted-foreground font-normal">(opsional)</span></label>
-                  <input type="date" {...register('startDate')}
-                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                  <DateInput value={watch('startDate') || ''} onChange={v => setValue('startDate', v)} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Tanggal Berakhir <span className="text-muted-foreground font-normal">(opsional)</span></label>
-                  <input type="date" {...register('endDate')}
-                    className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
+                  <DateInput value={watch('endDate') || ''} min={watch('startDate') || undefined}
+                    onChange={v => setValue('endDate', v)} />
                 </div>
               </div>
 
