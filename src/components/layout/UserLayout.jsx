@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast'
 import {
   Hotel, Search, List, User, LogOut, Menu, X,
   ChevronDown, Globe, Settings, LayoutDashboard,
-  Phone, Mail, Smartphone, Building2, Sofa, Tag, Receipt,
+  Phone, Mail, Smartphone, Building2, Sofa, Tag, Receipt, Star,
 } from 'lucide-react'
 import { cn, getImageUrl } from '@/utils'
 import {
@@ -60,8 +60,9 @@ export default function UserLayout() {
     { to: '/topup-tagihan', label: t('nav.topUpTagihan'), icon: Receipt },
     { to: '/promo',         label: t('nav.promo'),        icon: Tag },
     ...(token ? [
-      { to: '/orders',  label: t('nav.orders'),  icon: List },
-      { to: '/profile', label: t('nav.profile'), icon: User },
+      { to: '/orders',   label: t('nav.orders'),     icon: List },
+      { to: '/loyalty',  label: t('loyalty.title'),  icon: Star },
+      { to: '/profile',  label: t('nav.profile'),    icon: User },
     ] : []),
   ]
 
@@ -138,6 +139,10 @@ export default function UserLayout() {
                         <LayoutDashboard className="w-4 h-4" /> {t('nav.admin')}
                       </a>
                     )}
+                    <Link to="/loyalty" onClick={() => setDropOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-muted transition-colors">
+                      <Star className="w-4 h-4" /> {t('loyalty.title')}
+                    </Link>
                     <Link to="/profile" onClick={() => setDropOpen(false)}
                       className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-muted transition-colors">
                       <Settings className="w-4 h-4" /> {t('nav.profile')}

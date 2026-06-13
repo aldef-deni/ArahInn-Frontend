@@ -103,9 +103,19 @@ export const promoApi = {
   remove      : (id)   => api.delete(`/promos/${id}`),
   loyalty: {
     balance : ()    => api.get('/promos/loyalty/balance'),
+    summary : ()    => api.get('/promos/loyalty/summary'),
     history : (p)   => api.get('/promos/loyalty/history', { params: p }),
     redeem  : (d)   => api.post('/promos/loyalty/redeem', d),
   },
+}
+
+// Loyalitas — admin (superadmin only)
+export const adminLoyaltyApi = {
+  getConfig : ()        => api.get('/admin/loyalty/config'),
+  setConfig : (d)       => api.post('/admin/loyalty/config', d),
+  users     : (p)       => api.get('/admin/loyalty/users', { params: p }),
+  adjust    : (id, d)   => api.post(`/admin/loyalty/users/${id}/adjust`, d),
+  setTier   : (id, d)   => api.post(`/admin/loyalty/users/${id}/tier`, d),
 }
 
 export const adminApi = {

@@ -1153,5 +1153,30 @@
     "contactHotel": "Contact Hotel",
     "checkAvailability": "Check Availability",
     "amenities": "Room Amenities"
+  },
+  "loyalty": {
+    "title": "Loyalty Points",
+    "subtitle": "Earn points from every transaction",
+    "available": "Points available",
+    "tierLabel": "{{tier}} Tier",
+    "lifetime": "Lifetime points earned",
+    "toNext": "{{points}} more points to reach {{tier}}",
+    "maxTier": "You are at the highest tier",
+    "howTitle": "How It Works",
+    "earnTitle": "Earn Points",
+    "earnDesc": "Rp{{per}} per transaction = 1 point, multiplied by your tier.",
+    "redeemTitle": "Redeem Points",
+    "redeemDesc": "1 point = Rp1, used at checkout. No minimum.",
+    "tierTitle": "Level Up",
+    "tierDesc": "The higher your tier, the more points you earn per transaction.",
+    "tiersTitle": "Membership Tiers",
+    "silver": "Silver",
+    "gold": "Gold",
+    "platinum": "Platinum",
+    "perRule": "Rp{{per}} = {{mult}} points",
+    "activationNote": "Bonus {{points}} points on new account activation.",
+    "historyTitle": "Points History",
+    "empty": "No point activity yet.",
+    "loginPrompt": "Sign in to view your loyalty points."
   }
 }

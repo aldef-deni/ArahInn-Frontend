@@ -1153,5 +1153,30 @@
     "contactHotel": "Hubungi Hotel",
     "checkAvailability": "Periksa Ketersediaan",
     "amenities": "Fasilitas Kamar"
+  },
+  "loyalty": {
+    "title": "Poin Loyalitas",
+    "subtitle": "Kumpulkan poin dari setiap transaksi",
+    "available": "Poin tersedia",
+    "tierLabel": "Tier {{tier}}",
+    "lifetime": "Total poin seumur hidup",
+    "toNext": "{{points}} poin lagi untuk naik ke {{tier}}",
+    "maxTier": "Anda sudah di tier tertinggi",
+    "howTitle": "Cara Kerja",
+    "earnTitle": "Dapatkan Poin",
+    "earnDesc": "Rp{{per}} transaksi = 1 poin, dikalikan tier Anda.",
+    "redeemTitle": "Tukar Poin",
+    "redeemDesc": "1 poin = Rp1, dipakai saat checkout. Tanpa minimal.",
+    "tierTitle": "Naik Tier",
+    "tierDesc": "Makin tinggi tier, makin besar perolehan poin per transaksi.",
+    "tiersTitle": "Tingkatan Keanggotaan",
+    "silver": "Silver",
+    "gold": "Gold",
+    "platinum": "Platinum",
+    "perRule": "Rp{{per}} = {{mult}} poin",
+    "activationNote": "Bonus {{points}} poin saat aktivasi akun baru.",
+    "historyTitle": "Riwayat Poin",
+    "empty": "Belum ada aktivitas poin.",
+    "loginPrompt": "Masuk untuk melihat poin loyalitas Anda."
   }
 }

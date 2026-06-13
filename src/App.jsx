@@ -29,6 +29,7 @@ import Payment from '@/pages/Payment'
 import OrderHistory from '@/pages/OrderHistory'
 import OrderDetail from '@/pages/OrderDetail'
 import Profile from '@/pages/Profile'
+import Loyalty from '@/pages/Loyalty'
 import PropertyMarket from '@/pages/PropertyMarket'
 import PropertyDetail from '@/pages/PropertyDetail'
 import InteriorPage from '@/pages/Interior'
@@ -84,6 +85,7 @@ import AdminOrders from '@/pages/admin/Orders'
 import AdminReports from '@/pages/admin/Reports'
 import AdminAnalytics from '@/pages/admin/Analytics'
 import AdminSettings from '@/pages/admin/Settings'
+import AdminLoyalty from '@/pages/admin/Loyalty'
 import AdminUsers from '@/pages/admin/Users'
 import AdminPromos from '@/pages/admin/Promos'
 import AdminCampaigns from '@/pages/admin/Campaigns'
@@ -319,6 +321,7 @@ export default function App() {
             <Route path="/orders" element={<PrivateRoute><OrderHistory /></PrivateRoute>} />
             <Route path="/orders/:id" element={<PrivateRoute><OrderDetail /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+            <Route path="/loyalty" element={<PrivateRoute><Loyalty /></PrivateRoute>} />
             <Route path="/dashboard" element={<PrivateRoute><OrderHistory /></PrivateRoute>} />
             <Route path="/maintenance" element={<Maintenance />} />
             <Route path="/syarat-ketentuan" element={<TermsAndConditions />} />
@@ -353,6 +356,7 @@ export default function App() {
           <Route path="reports" element={<BlockRoles roles={['design_interior']}><AdminReports /></BlockRoles>} />
           <Route path="analytics" element={<BlockRoles roles={['design_interior']}><AdminAnalytics /></BlockRoles>} />
           <Route path="settings" element={<AdminRoute roles={['superadmin']}><AdminSettings /></AdminRoute>} />
+          <Route path="loyalty" element={<AdminRoute roles={['superadmin']}><AdminLoyalty /></AdminRoute>} />
           <Route path="users" element={<BlockRoles roles={['design_interior']}><AdminUsers /></BlockRoles>} />
           <Route path="promos" element={<BlockRoles roles={['design_interior']}><AdminPromos /></BlockRoles>} />
           <Route path="campaigns" element={<BlockRoles roles={['design_interior']}><AdminCampaigns /></BlockRoles>} />
