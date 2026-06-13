@@ -59,9 +59,8 @@ export default function UserLayout() {
     { to: '/interior',  label: t('nav.interior'), icon: Sofa },
     { to: '/topup-tagihan', label: t('nav.topUpTagihan'), icon: Receipt },
     { to: '/promo',         label: t('nav.promo'),        icon: Tag },
+    // Saat login: Pesanan & Poin Loyalitas dipindah ke dropdown akun (tidak di main menu)
     ...(token ? [
-      { to: '/orders',   label: t('nav.orders'),     icon: List },
-      { to: '/loyalty',  label: t('loyalty.title'),  icon: Star },
       { to: '/profile',  label: t('nav.profile'),    icon: User },
     ] : []),
   ]
@@ -139,6 +138,10 @@ export default function UserLayout() {
                         <LayoutDashboard className="w-4 h-4" /> {t('nav.admin')}
                       </a>
                     )}
+                    <Link to="/orders" onClick={() => setDropOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-muted transition-colors">
+                      <List className="w-4 h-4" /> {t('nav.orders')}
+                    </Link>
                     <Link to="/loyalty" onClick={() => setDropOpen(false)}
                       className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-muted transition-colors">
                       <Star className="w-4 h-4" /> {t('loyalty.title')}

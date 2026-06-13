@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { userApi, promoApi, bookingApi, chatApi } from '@/services/index'
@@ -20,6 +20,7 @@ import {
   ShieldCheck, Zap, Search, BedDouble, Sparkles, ArrowRight,
   Headphones, ChevronDown, Globe, DollarSign, MapPin, Info,
   FileText, ScrollText, Settings, Send, Receipt,
+  Crown, Award, UserCircle2,
 } from 'lucide-react'
 import PpobTransactionList from '@/pages/Ppob/PpobTransactionList'
 
@@ -37,11 +38,19 @@ function Avatar({ user, size = 'md' }) {
 }
 
 // ── Tier helpers ──────────────────────────────────────────
-function getTier(points = 0) {
-  if (points >= 5000) return { label: 'Gold Tier',   color: 'from-yellow-400 to-amber-500',  text: 'text-yellow-900' }
-  if (points >= 1000) return { label: 'Silver Tier', color: 'from-slate-400 to-slate-500',   text: 'text-slate-900' }
-  return               { label: 'Bronze Tier',        color: 'from-orange-400 to-amber-600',  text: 'text-orange-900' }
+// Tier mengikuti skema baru: dihitung dari LIFETIME EARNED (server), bukan saldo,
+// supaya tier TIDAK turun saat poin dipakai. Konsisten dengan halaman /loyalty.
+const TIER_STYLE = {
+  member:   { label: 'Member',   color: 'from-blue-500 to-blue-700' },
+  silver:   { label: 'Silver',   color: 'from-slate-400 to-slate-600' },
+  gold:     { label: 'Gold',     color: 'from-amber-400 via-yellow-500 to-amber-600' },
+  platinum: { label: 'Platinum', color: 'from-zinc-800 via-neutral-950 to-black' },
 }
+// Background image per tier (folder public) — sama dengan halaman /loyalty
+const TIER_BG = {
+  member: '/member-bg.webp', silver: '/silver-bg.webp', gold: '/gold-bg.webp', platinum: '/platinum-bg.webp',
+}
+const TIER_ICON = { member: UserCircle2, silver: Star, gold: Award, platinum: Crown }
 
 const ORDER_TABS = [
   { value: '',         labelKey: 'profilePage.filterAll' },
@@ -521,21 +530,57 @@ function SectionOrders() {
 
 function SectionLoyalty({ loyalty }) {
   const { t } = useTranslation()
-  const tier = getTier(loyalty?.balance)
+  // Tier dari summary (lifetime earned) → tidak turun saat redeem. Fallback silver.
+  const { data: summary } = useQuery({
+    queryKey: ['loyalty-summary'],
+    queryFn: () => promoApi.loyalty.summary().then(r => r.data?.data),
+  })
+  const tierKey = summary?.tier || 'member'
+  const tier    = TIER_STYLE[tierKey] || TIER_STYLE.member
+  const balance = loyalty?.balance ?? summary?.balance ?? 0
+  const isPlat  = tierKey === 'platinum'
+  const isGold  = tierKey === 'gold'
+  const lux     = isPlat || isGold
+  const mult    = summary?.multiplier ?? 1
+  const earnPer = summary?.config?.earnPer ?? summary?.config?.earn_per ?? 100
+  const TierIcon = TIER_ICON[tierKey] || Star
+  const { data: history = [] } = useQuery({
+    queryKey: ['loyalty-history'],
+    queryFn: () => promoApi.loyalty.history({ limit: 50 }).then(r => r.data?.data ?? []),
+  })
   return (
     <div className="space-y-5">
       <div>
         <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-1">{t('profilePage.loyaltyTitle')}</h2>
         <p className="text-sm text-slate-500">{t('profilePage.loyaltySubtitle')}</p>
       </div>
-      <div className={`bg-gradient-to-br ${tier.color} rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white shadow-lg`}>
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <span className="text-xs sm:text-sm font-semibold opacity-80">{tier.label}</span>
-          <Star className="w-5 h-5 sm:w-6 sm:h-6 fill-white/40 text-white/40" />
+      <div
+        className={`relative overflow-hidden rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white shadow-lg bg-zinc-900 ${isPlat ? 'ring-1 ring-amber-300/30' : isGold ? 'ring-1 ring-white/30' : ''}`}
+        style={{ backgroundImage: `url(${TIER_BG[tierKey] || TIER_BG.member})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      >
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-black/45 via-black/10 to-transparent" />
+        <div className="relative">
+          <div className="flex items-start justify-between mb-3 sm:mb-4">
+            <span className={`text-xs sm:text-sm font-semibold drop-shadow ${isPlat ? 'text-amber-200' : 'text-white/90'}`}>{tier.label}</span>
+            {lux ? (
+              <div className="relative w-9 h-9 sm:w-11 sm:h-11 shrink-0">
+                <div className="absolute -inset-1.5 rounded-full blur-md opacity-80 animate-spin"
+                  style={{ background: isPlat
+                    ? 'conic-gradient(from 0deg, transparent 0deg, rgba(251,191,36,0.55) 70deg, transparent 150deg, transparent 360deg)'
+                    : 'conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.75) 70deg, transparent 150deg, transparent 360deg)', animationDuration: '5s' }} />
+                <div className={`absolute inset-0.5 rounded-full blur-md animate-pulse ${isPlat ? 'bg-amber-400/15' : 'bg-white/25'}`} />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <TierIcon className={`w-5 h-5 sm:w-6 sm:h-6 ${isPlat ? 'text-amber-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.65)]' : 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.75)]'}`} />
+                </div>
+              </div>
+            ) : (
+              <TierIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white/45" />
+            )}
+          </div>
+          <p className={`font-display text-4xl sm:text-5xl font-bold break-all ${isPlat ? 'bg-gradient-to-b from-amber-100 via-amber-200 to-amber-400 bg-clip-text text-transparent drop-shadow' : 'drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)]'}`}>{balance.toLocaleString('id-ID')}</p>
+          <p className={`text-xs sm:text-sm mt-1 drop-shadow ${isPlat ? 'text-amber-100/80' : 'text-white/85'}`}>{t('profilePage.pointsAvailable')}</p>
+          <p className="text-[11px] sm:text-xs text-white/75 mt-2 sm:mt-3 leading-relaxed drop-shadow">{t('loyalty.perRule', { per: earnPer.toLocaleString('id-ID'), mult })} · {t('loyalty.lifetime')}: {(summary?.lifetime ?? balance).toLocaleString('id-ID')}</p>
         </div>
-        <p className="font-display text-4xl sm:text-5xl font-bold break-all">{(loyalty?.balance || 0).toLocaleString('id-ID')}</p>
-        <p className="text-xs sm:text-sm opacity-80 mt-1">{t('profilePage.pointsAvailable')}</p>
-        <p className="text-[11px] sm:text-xs opacity-60 mt-2 sm:mt-3 leading-relaxed">{t('profilePage.exchangeNote', { value: formatRupiah(loyalty?.balance || 0) })}</p>
       </div>
       <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm">
         <h3 className="font-semibold text-slate-900 mb-4">{t('profilePage.howToEarn')}</h3>
@@ -555,6 +600,42 @@ function SectionLoyalty({ loyalty }) {
             </li>
           ))}
         </ul>
+      </div>
+
+      {/* Riwayat pendapatan / pemakaian poin */}
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <h3 className="font-semibold text-slate-900">{t('loyalty.historyTitle')}</h3>
+          <Link to="/loyalty" className="text-xs font-semibold text-brand hover:underline shrink-0">
+            {t('loyalty.seeAll')}
+          </Link>
+        </div>
+        {history.length === 0 ? (
+          <p className="text-sm text-slate-400 text-center py-6">{t('loyalty.empty')}</p>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {history.map((h, i) => {
+              const pts = Number(h.points ?? 0)
+              const isEarn = pts > 0
+              return (
+                <li key={h.id ?? i} className="flex items-center gap-3 py-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isEarn ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+                    <Star className={`w-4 h-4 ${isEarn ? 'text-emerald-500 fill-emerald-200' : 'text-rose-400'}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-800 truncate">{h.description || (isEarn ? t('profilePage.earnBooking') : '-')}</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> {formatDateShort(h.createdAt ?? h.created_at)}
+                    </p>
+                  </div>
+                  <span className={`text-sm font-bold shrink-0 ${isEarn ? 'text-emerald-600' : 'text-rose-500'}`}>
+                    {isEarn ? '+' : ''}{pts.toLocaleString('id-ID')}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </div>
     </div>
   )
@@ -1226,8 +1307,14 @@ export default function Profile() {
     queryFn : () => promoApi.loyalty.balance().then(r => r.data.data),
     enabled : !isPengelola,
   })
+  // Tier dari lifetime earned (server) → tidak turun saat poin dipakai.
+  const { data: loyaltySummary } = useQuery({
+    queryKey: ['loyalty-summary'],
+    queryFn : () => promoApi.loyalty.summary().then(r => r.data?.data),
+    enabled : !isPengelola,
+  })
 
-  const tier = getTier(loyalty?.balance)
+  const tier = TIER_STYLE[loyaltySummary?.tier] || TIER_STYLE.member
 
   const renderContent = () => {
     switch (active) {
@@ -1305,16 +1392,20 @@ export default function Profile() {
 
               {/* Tier card — hanya untuk user biasa */}
               {!isPengelola && (
-                <div className={`mt-4 bg-gradient-to-r ${tier.color} rounded-xl p-3`}>
-                  <div className="flex items-center justify-between">
+                <div
+                  className={`relative overflow-hidden mt-4 rounded-xl p-3 bg-zinc-900 ${loyaltySummary?.tier === 'platinum' ? 'ring-1 ring-amber-300/30' : loyaltySummary?.tier === 'gold' ? 'ring-1 ring-white/30' : ''}`}
+                  style={{ backgroundImage: `url(${TIER_BG[loyaltySummary?.tier] || TIER_BG.member})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                >
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-black/45 via-black/10 to-transparent" />
+                  <div className="relative">
                     <div className="flex items-center gap-2">
-                      <Star className="w-4 h-4 text-white/70" />
-                      <span className="text-sm font-semibold text-white">{tier.label}</span>
+                      {(() => { const TI = TIER_ICON[loyaltySummary?.tier] || Star; return <TI className={`w-4 h-4 ${loyaltySummary?.tier === 'platinum' ? 'text-amber-300' : 'text-white/80'}`} /> })()}
+                      <span className={`text-sm font-semibold drop-shadow ${loyaltySummary?.tier === 'platinum' ? 'text-amber-200' : 'text-white'}`}>{tier.label}</span>
                     </div>
-                  </div>
-                  <div className="flex items-baseline gap-1 mt-2">
-                    <span className="text-2xl font-bold text-white">{(loyalty?.balance || 0).toLocaleString('id-ID')}</span>
-                    <span className="text-xs text-white/70">{t('profilePage.pointsLabel')}</span>
+                    <div className="flex items-baseline gap-1 mt-2">
+                      <span className={`text-2xl font-bold drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)] ${loyaltySummary?.tier === 'platinum' ? 'bg-gradient-to-b from-amber-100 via-amber-200 to-amber-400 bg-clip-text text-transparent' : 'text-white'}`}>{(loyalty?.balance || 0).toLocaleString('id-ID')}</span>
+                      <span className="text-xs text-white/75">{t('profilePage.pointsLabel')}</span>
+                    </div>
                   </div>
                 </div>
               )}

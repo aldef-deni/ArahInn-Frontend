@@ -1,21 +1,25 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Star, Save, Search, Plus, Minus, X, Award, Crown } from 'lucide-react'
+import { Star, Save, Search, Plus, Minus, X, Award, Crown, UserCircle2 } from 'lucide-react'
 import { adminLoyaltyApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 
 const TIER_BADGE = {
-  silver:   { label: 'Silver',   cls: 'bg-slate-100 text-slate-700',   Icon: Star },
-  gold:     { label: 'Gold',     cls: 'bg-amber-100 text-amber-700',   Icon: Award },
-  platinum: { label: 'Platinum', cls: 'bg-indigo-100 text-indigo-700', Icon: Crown },
+  member:   { label: 'Member',   cls: 'bg-blue-100 text-blue-700',     Icon: UserCircle2 },
+  silver:   { label: 'Silver',   cls: 'bg-slate-200 text-slate-700',   Icon: Star },
+  gold:     { label: 'Gold',     cls: 'bg-amber-100 text-amber-800',   Icon: Award },
+  platinum: { label: 'Platinum', cls: 'bg-zinc-900 text-white',        Icon: Crown },
 }
 
 // Key camelCase — interceptor axios konversi response snake→camel & request camel→snake.
+// Pengaturan AMBANG POIN kenaikan tier (tierSilver/Gold/Platinum) ada di sini.
 const FIELDS = [
-  { key: 'earnPer',          label: 'Rp per 1 poin (Silver)',  hint: 'Mis. 100 = Rp100 transaksi dapat 1 poin' },
+  { key: 'earnPer',          label: 'Rp per 1 poin (dasar)',   hint: 'Mis. 100 = Rp100 transaksi dapat 1 poin (tier Member)' },
   { key: 'activationPoints', label: 'Poin aktivasi user baru', hint: 'Bonus saat registrasi' },
+  { key: 'tierSilver',       label: 'Ambang Silver (poin)',    hint: 'Lifetime earned untuk naik Silver' },
   { key: 'tierGold',         label: 'Ambang Gold (poin)',      hint: 'Lifetime earned untuk naik Gold' },
   { key: 'tierPlatinum',     label: 'Ambang Platinum (poin)',  hint: 'Lifetime earned untuk naik Platinum' },
+  { key: 'multMember',       label: 'Multiplier Member',       hint: 'Pengali poin (×)' },
   { key: 'multSilver',       label: 'Multiplier Silver',       hint: 'Pengali poin (×)' },
   { key: 'multGold',         label: 'Multiplier Gold',         hint: 'Pengali poin (×)' },
   { key: 'multPlatinum',     label: 'Multiplier Platinum',     hint: 'Pengali poin (×)' },
@@ -154,6 +158,7 @@ export default function AdminLoyalty() {
                         <select value={u.tierOverride ?? ''} onChange={e => tierMut.mutate({ id: u.id, tier: e.target.value || null })}
                           className="text-xs border border-slate-200 rounded-lg px-2 py-1.5">
                           <option value="">Auto</option>
+                          <option value="member">Member</option>
                           <option value="silver">Silver</option>
                           <option value="gold">Gold</option>
                           <option value="platinum">Platinum</option>

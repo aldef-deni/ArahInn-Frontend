@@ -3,11 +3,11 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { hotelApi } from '@/services/hotelApi'
-import { bookingApi } from '@/services/index'
+import { bookingApi, promoApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah, diffDays, getImageUrl } from '@/utils'
-import { Tag, ChevronLeft, User, Phone, Mail, X, ArrowRight } from 'lucide-react'
+import { Tag, ChevronLeft, User, Phone, Mail, X, ArrowRight, Star } from 'lucide-react'
 
 export default function Checkout() {
   const { t } = useTranslation()
@@ -31,17 +31,60 @@ export default function Checkout() {
     notes: '',
     promoCode: '',
     usePoints: false,
+    pointsInput: '',
   })
   const [pricing, setPricing] = useState(null)
   const [basePricing, setBasePricing] = useState(null)   // harga tanpa promo (untuk reset instan)
   const [appliedPromo, setAppliedPromo] = useState('')   // kode yang BENAR-BENAR diterapkan
   const [promoApplied, setPromoApplied] = useState(false)
   const [promoError, setPromoError] = useState('')
+  const [appliedPoints, setAppliedPoints] = useState(0)  // poin yang BENAR-BENAR dipakai
+  const [pointsLoading, setPointsLoading] = useState(false)
+  const [pointsError, setPointsError] = useState('')
 
   const { data: hotel } = useQuery({
     queryKey: ['hotel-checkout', hotelId],
     queryFn: () => hotelApi.getById(hotelId).then(r => r.data.data),
   })
+
+  // Saldo poin loyalitas customer (untuk fitur redeem)
+  const { data: pointBalance = 0 } = useQuery({
+    queryKey: ['loyalty-balance'],
+    queryFn: () => promoApi.loyalty.balance().then(r => r.data?.data?.balance ?? 0),
+    enabled: !!user,
+  })
+
+  // Recalc harga dengan kombinasi kode promo + poin (eksplisit, hindari state async)
+  const recalcWith = (code, points) =>
+    bookingApi.calcPrice({
+      roomId, checkIn, checkOut, roomCount,
+      promoCode: code || undefined,
+      pointsToRedeem: points || 0,
+      usePoints: (points || 0) > 0,
+    }).then(r => { setPricing(r.data.data); return r.data.data })
+
+  const handleApplyPoints = async () => {
+    const want = Math.max(0, parseInt(form.pointsInput || '0', 10) || 0)
+    if (want <= 0) { setPointsError('Masukkan jumlah poin.'); return }
+    if (want > pointBalance) { setPointsError(`Poin Anda hanya ${pointBalance.toLocaleString('id-ID')}.`); return }
+    setPointsError('')
+    setPointsLoading(true)
+    try {
+      const data = await recalcWith(appliedPromo, want)
+      const used = Number(data.loyaltyDiscount) || 0
+      setAppliedPoints(used)
+      setForm(f => ({ ...f, pointsInput: String(used), usePoints: used > 0 }))
+    } catch (e) {
+      setPointsError(e?.response?.data?.message || 'Gagal menerapkan poin.')
+    } finally { setPointsLoading(false) }
+  }
+
+  const clearPoints = async () => {
+    setAppliedPoints(0); setPointsError('')
+    setForm(f => ({ ...f, pointsInput: '', usePoints: false }))
+    setPointsLoading(true)
+    try { await recalcWith(appliedPromo, 0) } catch { /* noop */ } finally { setPointsLoading(false) }
+  }
 
   const room = hotel?.rooms?.find(r => String(r.id) === String(roomId))
 
@@ -59,9 +102,12 @@ export default function Checkout() {
       const data = r.data.data
       setPricing(data)
       setBasePricing(data)
-      // Ganti tanggal/jumlah kamar → promo yang sudah diterapkan direset (harus apply ulang)
+      // Ganti tanggal/jumlah kamar → promo & poin yang sudah diterapkan direset (apply ulang)
       setAppliedPromo('')
       setPromoApplied(false)
+      setAppliedPoints(0)
+      setPointsError('')
+      setForm(f => ({ ...f, pointsInput: '', usePoints: false }))
     },
     onError: (e) =>
       toast({
@@ -85,7 +131,8 @@ export default function Checkout() {
         guestPhone: form.guestPhone,
         notes: form.notes,
         promoCode: appliedPromo || undefined,
-        usePoints: form.usePoints,
+        usePoints: appliedPoints > 0,
+        pointsToRedeem: appliedPoints,
       }),
     onSuccess: (r) => navigate(`/payment/${r.data.data.booking.id}`),
     onError: (e) =>
@@ -105,7 +152,8 @@ export default function Checkout() {
         checkOut,
         roomCount,
         promoCode: code,
-        usePoints: form.usePoints,
+        usePoints: appliedPoints > 0,
+        pointsToRedeem: appliedPoints,
       }),
     onSuccess: (r) => {
       const data = r.data.data
@@ -137,7 +185,9 @@ export default function Checkout() {
     setPromoApplied(false)
     setAppliedPromo('')
     setPromoError('')
-    if (basePricing) setPricing(basePricing)
+    // Kalau poin sedang dipakai, hitung ulang tanpa promo tapi tetap pakai poin.
+    if (appliedPoints > 0) { recalcWith('', appliedPoints) }
+    else if (basePricing) setPricing(basePricing)
   }
 
   // Auto-calc harga saat halaman pertama dibuka & saat roomCount/tanggal berubah
@@ -311,25 +361,77 @@ export default function Checkout() {
             )}
           </div>
 
+          {/* Redeem Poin Card — tepat di bawah Kode Promo */}
+          {user && pointBalance > 0 && (
+            <div className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+              <h2 className="mb-1 flex items-center gap-2 text-sm sm:text-base font-bold text-slate-900">
+                <Star className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500" /> {t('checkout.redeemTitle')}
+              </h2>
+              <p className="mb-3 text-xs text-slate-500">
+                {t('checkout.pointsAvailable', { points: pointBalance.toLocaleString('id-ID') })}
+                <button type="button" onClick={() => { setForm({ ...form, pointsInput: String(pointBalance) }); setPointsError('') }}
+                  className="ml-2 font-semibold text-amber-600 hover:underline">{t('checkout.useMax')}</button>
+              </p>
+              <div className="flex gap-2 sm:gap-3">
+                <input
+                  type="number" min={0} max={pointBalance} inputMode="numeric"
+                  value={form.pointsInput}
+                  onChange={e => { setForm({ ...form, pointsInput: e.target.value }); if (pointsError) setPointsError('') }}
+                  placeholder={t('checkout.redeemPh')}
+                  className={`flex-1 min-w-0 rounded-xl border px-3 sm:px-4 py-2.5 text-sm focus:outline-none focus:ring-2 ${
+                    pointsError ? 'border-red-300 focus:ring-red-200' : 'focus:ring-amber-300'
+                  }`}
+                />
+                {appliedPoints > 0 ? (
+                  <button onClick={clearPoints} disabled={pointsLoading}
+                    className="rounded-xl bg-slate-100 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 transition-all hover:bg-slate-200 active:scale-95 disabled:opacity-50 shrink-0">
+                    {pointsLoading ? '...' : t('checkout.clear')}
+                  </button>
+                ) : (
+                  <button onClick={handleApplyPoints} disabled={!form.pointsInput || pointsLoading}
+                    className="rounded-xl bg-amber-500 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-semibold text-white transition-all hover:bg-amber-600 active:scale-95 disabled:opacity-50 shrink-0">
+                    {pointsLoading ? '...' : t('checkout.apply')}
+                  </button>
+                )}
+              </div>
+              {pointsError && (
+                <div className="mt-2 flex items-start gap-1.5 text-xs sm:text-sm text-red-600">
+                  <span className="font-semibold">⚠</span><span>{pointsError}</span>
+                </div>
+              )}
+              {appliedPoints > 0 && !pointsError && (
+                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-amber-700">
+                  {t('checkout.redeemApplied', { points: appliedPoints.toLocaleString('id-ID'), amount: formatRupiah(appliedPoints) })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Price Breakdown Card */}
           <div className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
             <h2 className="mb-3 sm:mb-4 text-sm sm:text-base font-bold text-slate-900">{t('checkout.summary')}</h2>
 
             {pricing ? (() => {
-              // BE sekarang return original_base_price (sebelum promo) & base_price (setelah promo).
-              // Promo discount diaplikasikan di base price agar konsisten dengan card.
-              const promoDiscount     = Number(pricing.promoDiscount) || 0     // total (campaign + kode)
-              const campaignDiscount  = Number(pricing.campaignDiscount) || 0  // bagian campaign otomatis
-              const codeDiscount      = Number(pricing.codeDiscount) || 0      // bagian kode promo
-              const hasPromo          = promoDiscount > 0
-              const basePriceFinal    = Number(pricing.basePrice) || 0
+              // Harga Hotel = base_price (SUDAH dipotong diskon campaign + kode promo).
+              // Harga asli (original) ditampilkan dicoret bila ada diskon — tanpa baris
+              // diskon terpisah agar tidak terlihat dipotong dua kali.
+              const promoDiscount  = Number(pricing.promoDiscount) || 0
+              const hasPromo       = promoDiscount > 0
+              const basePriceFinal = Number(pricing.basePrice) || 0
+              const originalBase   = Number(pricing.originalBasePrice) || basePriceFinal
+              const loyaltyDisc    = Number(pricing.loyaltyDiscount) || 0
 
               return (
               <div className="space-y-2 text-sm">
-                {/* Harga hotel (sudah termasuk semua diskon; rincian diskon di bawah) */}
-                <div className="flex justify-between">
+                {/* Harga hotel — sudah termasuk diskon; harga asli dicoret bila ada potongan */}
+                <div className="flex justify-between items-start gap-2">
                   <span className="text-muted-foreground">{t('checkout.hotelPrice')}</span>
-                  <span>{formatRupiah(basePriceFinal)}</span>
+                  <div className="text-right">
+                    {hasPromo && (
+                      <p className="text-xs text-slate-400 line-through leading-tight">{formatRupiah(originalBase)}</p>
+                    )}
+                    <p className={hasPromo ? 'font-semibold text-green-600' : ''}>{formatRupiah(basePriceFinal)}</p>
+                  </div>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">
@@ -337,40 +439,26 @@ export default function Checkout() {
                   </span>
                   <span>{formatRupiah((pricing.markupAmount || 0) + (pricing.taxAmount || 0) + (pricing.priceSuffix || 0))}</span>
                 </div>
-                {/* Diskon CAMPAIGN otomatis (owner ikut campaign) — selalu tampil kalau ada */}
-                {campaignDiscount > 0 && (
-                  <div className="flex justify-between items-start gap-2">
-                    <span className="text-muted-foreground">Diskon Campaign</span>
-                    <span className="font-medium text-green-600 whitespace-nowrap">- {formatRupiah(campaignDiscount)}</span>
-                  </div>
-                )}
-                {/* Diskon KODE PROMO — hanya saat kode sudah di-Gunakan */}
-                {appliedPromo && codeDiscount > 0 && (
-                  <div className="flex justify-between items-start gap-2">
-                    <span className="text-muted-foreground">{t('checkout.promoDiscount')}</span>
-                    <span className="font-medium text-green-600 whitespace-nowrap">- {formatRupiah(codeDiscount)}</span>
-                  </div>
-                )}
-                {pricing.loyaltyDiscount > 0 && (
+                {/* Potongan poin loyalitas — satu-satunya potongan yang benar2 mengurangi total */}
+                {loyaltyDisc > 0 && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('checkout.pointDiscount')}</span>
-                    <span className="font-medium text-green-600">- {formatRupiah(pricing.loyaltyDiscount)}</span>
+                    <span className="font-medium text-green-600">- {formatRupiah(loyaltyDisc)}</span>
                   </div>
                 )}
                 <div className="border-t pt-3">
-                  {hasPromo && (
-                    <div className="flex justify-between text-xs text-slate-400 line-through mb-1">
-                      <span>Total tanpa promo</span>
-                      <span>{formatRupiah(pricing.totalPrice + promoDiscount)}</span>
-                    </div>
-                  )}
                   <div className="flex justify-between text-base font-bold">
                     <span>{t('checkout.total')}</span>
                     <span className="price-tag">{formatRupiah(pricing.totalPrice)}</span>
                   </div>
-                  {campaignDiscount > 0 && pricing.campaign?.title && (
+                  {hasPromo && (
+                    <p className="mt-1 text-[11px] text-green-600 font-semibold">
+                      {t('checkout.youSaved', { amount: formatRupiah(promoDiscount) })}
+                    </p>
+                  )}
+                  {pricing.campaign?.title && (
                     <p className="mt-1 text-[11px] text-orange-600 font-semibold">
-                      ✦ {pricing.campaign.title} otomatis diterapkan
+                      ✦ {pricing.campaign.title} {t('checkout.autoApplied')}
                     </p>
                   )}
                 </div>
