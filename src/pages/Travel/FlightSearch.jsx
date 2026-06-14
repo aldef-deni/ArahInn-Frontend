@@ -11,46 +11,73 @@ import { travelApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 
-const todayStr = () => new Date().toISOString().slice(0, 10)
+// Tanggal LOKAL (YYYY-MM-DD) — JANGAN toISOString() (itu UTC, mundur sehari di WIB).
+const pad2 = (n) => String(n).padStart(2, '0')
+const ymdLocal = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+const todayStr = () => ymdLocal(new Date())
 const dateLocale = () => (i18n.language === 'en' ? 'en-US' : 'id-ID')
 const formatDateSlash = (ymd) => { if (!ymd) return '-'; const dt = new Date(`${ymd}T00:00:00`); return dt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) }
 const formatDateFull = (ymd) => { if (!ymd) return '-'; const dt = new Date(`${ymd}T00:00:00`); return dt.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) }
 const titleCase = (s) => (s || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
 const airlineLogo = (code) => `https://api.fastravel.co.id/assets/maskapai/${code}.png`
 
-/* ── Airport picker ───────────────────────────────────────────────────── */
+/* ── Highlight teks yang cocok dengan query ───────────────────────────── */
+function Highlight({ text, q }) {
+  const s = text ?? ''
+  if (!q) return s
+  const idx = s.toLowerCase().indexOf(q)
+  if (idx === -1) return s
+  return (
+    <>{s.slice(0, idx)}<span className="text-sky-600 font-semibold">{s.slice(idx, idx + q.length)}</span>{s.slice(idx + q.length)}</>
+  )
+}
+
+/* ── Airport picker (full-screen di mobile, search pinned di atas) ─────── */
 function AirportPicker({ open, airports, title, onPick, onClose }) {
   const { t } = useTranslation()
   const [q, setQ] = useState('')
-  useEffect(() => { if (open) setQ('') }, [open])
+  const inputRef = useRef(null)
+  useEffect(() => {
+    if (open) { setQ(''); const id = setTimeout(() => inputRef.current?.focus(), 60); return () => clearTimeout(id) }
+  }, [open])
   if (!open) return null
+  const term = q.trim().toLowerCase()
   const filtered = (airports || []).filter(a =>
-    `${a.name} ${a.bandara} ${a.code}`.toLowerCase().includes(q.toLowerCase())
-  ).slice(0, 60)
+    `${a.name} ${a.bandara} ${a.group} ${a.code}`.toLowerCase().includes(term)
+  ).slice(0, 80)
+  const subOf = (a) => [a.bandara, a.group].filter((v, i, arr) => v && arr.indexOf(v) === i).join(', ')
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:p-4" onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} className="w-full sm:max-w-md max-h-[85vh] bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden">
-        <div className="shrink-0 px-4 pt-3 pb-3 border-b border-slate-100">
-          <div className="sm:hidden mx-auto w-10 h-1 rounded-full bg-slate-300 mb-3" />
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <h2 className="font-bold text-slate-900">{title}</h2>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><X className="w-4 h-4 text-slate-600" /></button>
-          </div>
-          <div className="relative">
+    <div className="fixed inset-0 z-50 bg-white sm:bg-slate-900/60 sm:backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} className="flex flex-col h-full w-full bg-white overflow-hidden sm:h-auto sm:max-h-[85vh] sm:max-w-md sm:rounded-3xl sm:shadow-2xl">
+        {/* Search bar pinned di atas (anti ketutup keyboard) */}
+        <div className="shrink-0 flex items-center gap-2 px-3 pb-3 border-b border-slate-100"
+          style={{ paddingTop: 'max(env(safe-area-inset-top), 0.75rem)' }}>
+          <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder={t('travel.searchCityAirport')}
-              className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-300" />
+            <input ref={inputRef} value={q} onChange={e => setQ(e.target.value)} placeholder={title || t('travel.searchCityAirport')}
+              className="w-full pl-9 pr-9 py-2.5 bg-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+            {q && (
+              <button onClick={() => { setQ(''); inputRef.current?.focus() }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center">
+                <X className="w-3.5 h-3.5 text-slate-500" />
+              </button>
+            )}
           </div>
+          <button onClick={onClose} className="shrink-0 px-2 py-1 text-sm font-semibold text-sky-600">{t('common.cancel')}</button>
         </div>
-        <div className="flex-1 overflow-y-auto">
-          {filtered.length === 0 && <p className="text-center text-sm text-slate-400 py-8">{t('travel.airportNotFound')}</p>}
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          {filtered.length === 0 && <p className="text-center text-sm text-slate-400 py-10">{t('travel.airportNotFound')}</p>}
           {filtered.map(a => (
             <button key={a.code} onClick={() => { onPick(a); onClose() }}
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 active:bg-slate-100 text-left border-b border-slate-50">
-              <div className="w-9 h-9 rounded-lg bg-sky-100 flex items-center justify-center shrink-0"><Plane className="w-4 h-4 text-sky-600" /></div>
+              <Plane className="w-4 h-4 text-slate-400 shrink-0" />
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-sm text-slate-900 truncate">{a.name} <span className="text-slate-400 font-mono text-xs">({a.code})</span></p>
-                <p className="text-xs text-slate-500 truncate">{a.bandara} · {a.group}</p>
+                <p className="font-semibold text-sm text-slate-900 truncate">
+                  <Highlight text={a.name} q={term} />{' '}
+                  <span className="font-mono text-xs text-slate-500"><Highlight text={a.code} q={term} /></span>
+                </p>
+                <p className="text-xs text-slate-500 truncate"><Highlight text={subOf(a)} q={term} /></p>
               </div>
             </button>
           ))}

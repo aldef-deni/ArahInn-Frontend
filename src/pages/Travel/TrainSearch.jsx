@@ -11,7 +11,10 @@ import { travelApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 
-const todayStr = () => new Date().toISOString().slice(0, 10)
+// Tanggal LOKAL (YYYY-MM-DD) — JANGAN toISOString() (itu UTC, mundur sehari di WIB).
+const pad2 = (n) => String(n).padStart(2, '0')
+const ymdLocal = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+const todayStr = () => ymdLocal(new Date())
 const gradeLabel = (g, t) => ({ E: t('travel.gradeE'), B: t('travel.gradeB'), K: t('travel.gradeK') }[g] || g || '-')
 const dateLocale = () => (i18n.language === 'en' ? 'en-US' : 'id-ID')
 const formatDateSlash = (ymd) => { if (!ymd) return '-'; const dt = new Date(`${ymd}T00:00:00`); return dt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) }

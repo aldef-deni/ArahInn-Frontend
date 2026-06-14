@@ -11,7 +11,10 @@ import { travelApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 
-const todayStr = () => new Date().toISOString().slice(0, 10)
+// Tanggal LOKAL (YYYY-MM-DD) — JANGAN toISOString() (itu UTC, mundur sehari di WIB).
+const pad2 = (n) => String(n).padStart(2, '0')
+const ymdLocal = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+const todayStr = () => ymdLocal(new Date())
 const dateLocale = () => (i18n.language === 'en' ? 'en-US' : 'id-ID')
 const formatDateSlash = (ymd) => { if (!ymd) return '-'; const dt = new Date(`${ymd}T00:00:00`); return dt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) }
 const ymd8 = (s) => s && s.length === 8 ? `${s.slice(6,8)}/${s.slice(4,6)}/${s.slice(0,4)}` : s   // YYYYMMDD → DD/MM/YYYY
@@ -79,7 +82,7 @@ export default function PelniSearch() {
       const end = new Date(`${date}T00:00:00`); end.setDate(end.getDate() + 14)
       const res = await travelApi.searchPelni({
         origin: +origin.CODE, destination: +destination.CODE,
-        startDate: date, endDate: end.toISOString().slice(0, 10),
+        startDate: date, endDate: ymdLocal(end),
       })
       setResults(res.data?.data || [])
       setShowForm(false)

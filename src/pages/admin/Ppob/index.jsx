@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ppobApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
@@ -36,11 +36,14 @@ export default function AdminPpob() {
   })
   const trxList = txResp?.data ?? []
 
+  const forceFreshBalance = useRef(false)
   const { data: balance, refetch: refetchBalance, isFetching: balanceFetching } = useQuery({
     queryKey: ['admin-ppob-balance'],
-    queryFn : () => ppobApi.adminBalance().then(r => r.data),
-    refetchInterval: 120_000, // auto-refresh tiap 2 menit
+    queryFn : () => { const f = forceFreshBalance.current; forceFreshBalance.current = false; return ppobApi.adminBalance(f).then(r => r.data) },
+    refetchInterval: 120_000, // auto-refresh tiap 2 menit (saldo live, cache 90s di server)
   })
+  // Tombol refresh manual → paksa ambil saldo live (bypass cache server).
+  const refreshBalanceLive = () => { forceFreshBalance.current = true; refetchBalance() }
 
   const refundMutation = useMutation({
     mutationFn: ({ code, notes }) => ppobApi.adminRefund(code, { notes }),
@@ -118,9 +121,9 @@ export default function AdminPpob() {
               )}
             </div>
             <button
-              onClick={() => refetchBalance()}
+              onClick={refreshBalanceLive}
               disabled={balanceFetching}
-              title="Muat ulang saldo"
+              title="Muat ulang saldo (live)"
               className={`p-1.5 rounded-lg transition-colors disabled:opacity-50 ${isLow ? 'hover:bg-red-100' : 'hover:bg-emerald-100'}`}
             >
               <RefreshCw className={`w-4 h-4 ${isLow ? 'text-red-600' : 'text-emerald-600'} ${balanceFetching ? 'animate-spin' : ''}`} />

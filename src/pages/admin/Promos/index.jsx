@@ -334,7 +334,7 @@ export default function AdminPromos() {
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold pointer-events-none">
                       {discountType === 'percent' ? '%' : 'Rp'}
                     </span>
-                    <input type="number" min="0" step={discountType === 'percent' ? '0.1' : '1000'}
+                    <input type="number" min="0" step={discountType === 'percent' ? '0.1' : '1'}
                       {...register('discountValue', { required: true, min: 0.01, max: discountType === 'percent' ? 100 : undefined, valueAsNumber: true })}
                       placeholder={discountType === 'percent' ? 'mis. 20' : 'mis. 50000'}
                       className={`w-full pl-10 pr-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50 ${errors.discountValue ? 'border-red-400' : ''}`} />
