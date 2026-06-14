@@ -674,7 +674,7 @@ export default function Home() {
       <section className="container py-6 sm:py-8">
         <a href="/register" className="block rounded-xl sm:rounded-2xl overflow-hidden shadow-md hover:shadow-xl active:scale-[0.99] transition-all max-w-full lg:max-w-[80%] mx-auto">
           <img
-            src="/app-banner.png"
+            src="/app-banner.webp"
             alt="New User Special Treats – ArahInn App"
             className="w-full h-auto object-cover"
             loading="lazy"
