@@ -38,31 +38,45 @@ export default function FlightBooking() {
   }, [sel, navigate])
 
   if (!sel) return null
-  const { departure, arrival, date, airline, cls } = sel
+  // Normalisasi leg: one-way = 1 leg (pergi); pulang-pergi = [pergi, pulang]
+  const isRT = sel.tripType === 'roundtrip'
+  const out  = isRT ? sel.outbound : { departure: sel.departure, arrival: sel.arrival, date: sel.date, airline: sel.airline, cls: sel.cls }
+  const ret  = isRT ? sel.return : null
+  // Alias kompat untuk blok lama (booked screen) — pakai leg pergi
+  const { departure, arrival, date, cls } = out
 
-  // Ambil harga real via fare (banyak maskapai kasih harga di fare, bukan search)
-  const { data: fare, isLoading: fareLoading, isError: fareFailed, error: fareErr } = useQuery({
-    queryKey: ['flight-fare', cls?.seat],
+  // Fare per leg (banyak maskapai kasih harga di fare, bukan search)
+  const fareOut = useQuery({
+    queryKey: ['flight-fare', 'out', out?.cls?.seat],
     queryFn: () => travelApi.flightFare({
-      airline, departure: departure.code, arrival: arrival.code,
-      departureDate: date, returnDate: '',
-      adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0,
-      seats: [cls.seat],
+      airline: out.airline, departure: out.departure.code, arrival: out.arrival.code,
+      departureDate: out.date, returnDate: '',
+      adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0, seats: [out.cls.seat],
     }).then(r => r.data?.data),
-    enabled: !!cls?.seat,
-    retry: 1,
+    enabled: !!out?.cls?.seat, retry: 1,
   })
-  // Pesan vendor kalau fare gagal (mis. penerbangan tdk tersedia / harga kadaluarsa)
+  const fareRet = useQuery({
+    queryKey: ['flight-fare', 'ret', ret?.cls?.seat],
+    queryFn: () => travelApi.flightFare({
+      airline: ret.airline, departure: ret.departure.code, arrival: ret.arrival.code,
+      departureDate: ret.date, returnDate: '',
+      adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0, seats: [ret.cls.seat],
+    }).then(r => r.data?.data),
+    enabled: isRT && !!ret?.cls?.seat, retry: 1,
+  })
+
+  const fareFailed  = fareOut.isError || (isRT && fareRet.isError)
   const fareErrorMsg = fareFailed
-    ? (fareErr?.response?.data?.message || t('travel.fareErrorDefault'))
+    ? ((fareOut.error || fareRet.error)?.response?.data?.message || t('travel.fareErrorDefault'))
     : null
 
-  const price     = Number(fare?.price ?? cls?.price) || 0
-  const baggage   = fare?.baggage
+  const priceOut  = Number(fareOut.data?.price ?? out?.cls?.price) || 0
+  const priceRet  = isRT ? (Number(fareRet.data?.price ?? ret?.cls?.price) || 0) : 0
   const markup    = Number(sel.markup) || 0
   const payingPax = (sel.adult || 1) + (sel.child || 0)   // bayi umumnya tanpa kursi
-  const ticketSub = price * payingPax
-  const markupSub = markup * payingPax
+  const numLegs   = isRT ? 2 : 1
+  const ticketSub = (priceOut + priceRet) * payingPax
+  const markupSub = markup * payingPax * numLegs
   const total     = ticketSub + markupSub
   const promoDiscount = appliedPromo?.discount || 0
   const finalTotal    = Math.max(0, total - promoDiscount)
@@ -74,24 +88,36 @@ export default function FlightBooking() {
              && children.every(p => p.firstName && p.birthdate)
              && infants.every(p => p.firstName && p.birthdate)
 
+  const legPayload = (leg, price) => ({
+    airline: leg.airline, departure: leg.departure.code, arrival: leg.arrival.code,
+    departureDate: leg.date, price,
+    flightCode: leg.cls.flightCode, departureTime: leg.cls.departureTime, arrivalTime: leg.cls.arrivalTime, class: leg.cls.class,
+    flights: [leg.cls.seat],
+  })
+
   const submit = async () => {
     if (fareFailed) { setError(`${fareErrorMsg} ${t('travel.searchAgainHint')}`); return }
     if (!valid) { setError(t('travel.completePax')); return }
     setLoading(true); setError(null)
     try {
-      const res = await travelApi.checkout({
-        moda: 'pesawat',
-        airline, departure: departure.code, arrival: arrival.code,
-        departureDate: date,
-        adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0,
-        price, markup,
-        promoCode: appliedPromo?.code || undefined,
-        flightCode: cls.flightCode, departureTime: cls.departureTime, arrivalTime: cls.arrivalTime, class: cls.class,
-        flights: [cls.seat],
-        passengers: { adults, children, infants },
-      })
-      const booking = res.data?.data
-      if (booking?.id) navigate(`/tiket/bayar/${booking.id}`)
+      const res = isRT
+        ? await travelApi.checkout({
+            moda: 'pesawat', tripType: 'roundtrip',
+            adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0, markup,
+            promoCode: appliedPromo?.code || undefined,
+            outbound: legPayload(out, priceOut),
+            return:   legPayload(ret, priceRet),
+            passengers: { adults, children, infants },
+          })
+        : await travelApi.checkout({
+            moda: 'pesawat', ...legPayload(out, priceOut),
+            adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0, markup,
+            promoCode: appliedPromo?.code || undefined,
+            passengers: { adults, children, infants },
+          })
+      const data = res.data?.data
+      const bookingId = isRT ? data?.depart?.id : data?.id
+      if (bookingId) navigate(`/tiket/bayar/${bookingId}`)
       else setError(t('travel.createOrderFailed'))
     } catch (e) {
       setError(travelCheckoutError(e))
@@ -129,18 +155,8 @@ export default function FlightBooking() {
       <div className="container max-w-lg py-5">
         <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-700"><ChevronLeft className="w-4 h-4" /> {t('travel.back')}</button>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-9 h-9 rounded-lg bg-sky-100 flex items-center justify-center"><Plane className="w-4.5 h-4.5 text-sky-600" /></div>
-            <div className="min-w-0"><p className="font-bold text-sm text-slate-900">{cls.flightCode}</p><span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{t('travel.classPrefix')} {cls.class}</span></div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="text-center"><p className="font-bold text-slate-900">{cls.departureTime}</p><p className="text-[10px] text-slate-400">{departure.code}</p></div>
-            <div className="flex-1 flex items-center gap-1.5"><div className="h-px flex-1 bg-slate-200" /><span className="text-[10px] text-slate-400">{cls.duration}</span><div className="h-px flex-1 bg-slate-200" /><ArrowRight className="w-3.5 h-3.5 text-slate-300" /></div>
-            <div className="text-center"><p className="font-bold text-slate-900">{cls.arrivalTime}</p><p className="text-[10px] text-slate-400">{arrival.code}</p></div>
-          </div>
-          <p className="text-xs text-slate-400 mt-2 flex items-center gap-1"><Calendar className="w-3 h-3" /> {formatDMY(date)}</p>
-        </div>
+        <LegCard leg={out} label={isRT ? t('travel.tripDepart') : null} t={t} />
+        {isRT && <LegCard leg={ret} label={t('travel.tripReturn')} t={t} />}
 
         {error && <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl mb-4"><AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" /><p className="text-sm text-red-700">{error}</p></div>}
 
@@ -200,8 +216,15 @@ export default function FlightBooking() {
         <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
           <p className="font-bold text-sm text-slate-900 mb-2.5">{t('travel.priceBreakdown')}</p>
           <div className="space-y-1.5 text-sm">
-            <div className="flex justify-between"><span className="text-slate-500">{t('travel.ticketPriceLabel')} ({payingPax} × {formatRupiah(price)})</span><span className="text-slate-900">{formatRupiah(ticketSub)}</span></div>
-            {markup > 0 && <div className="flex justify-between"><span className="text-slate-500">{t('travel.serviceFee')} ({payingPax} × {formatRupiah(markup)})</span><span className="text-slate-900">{formatRupiah(markupSub)}</span></div>}
+            {isRT ? (
+              <>
+                <div className="flex justify-between"><span className="text-slate-500">{t('travel.tripDepart')} ({payingPax} × {formatRupiah(priceOut)})</span><span className="text-slate-900">{formatRupiah(priceOut * payingPax)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">{t('travel.tripReturn')} ({payingPax} × {formatRupiah(priceRet)})</span><span className="text-slate-900">{formatRupiah(priceRet * payingPax)}</span></div>
+              </>
+            ) : (
+              <div className="flex justify-between"><span className="text-slate-500">{t('travel.ticketPriceLabel')} ({payingPax} × {formatRupiah(priceOut)})</span><span className="text-slate-900">{formatRupiah(ticketSub)}</span></div>
+            )}
+            {markup > 0 && <div className="flex justify-between"><span className="text-slate-500">{t('travel.serviceFee')} ({payingPax * numLegs} × {formatRupiah(markup)})</span><span className="text-slate-900">{formatRupiah(markupSub)}</span></div>}
             {promoDiscount > 0 && <div className="flex justify-between"><span className="text-slate-500">{t('travel.promoDiscountLabel')} {appliedPromo?.code ? `(${appliedPromo.code})` : ''}</span><span className="font-medium text-green-600">- {formatRupiah(promoDiscount)}</span></div>}
             <div className="flex justify-between pt-1.5 border-t border-slate-100"><span className="font-bold text-slate-900">{t('travel.total')}</span><span className="font-bold text-sky-600">{formatRupiah(finalTotal)}</span></div>
           </div>
@@ -252,4 +275,22 @@ function Field({ label, icon: Icon, value, onChange, type = 'text', placeholder,
 }
 function Row({ label, value, mono }) {
   return <div className="flex justify-between gap-3"><span className="text-sm text-slate-500">{label}</span><span className={`text-sm font-semibold text-slate-900 text-right ${mono ? 'font-mono' : ''}`}>{value}</span></div>
+}
+function LegCard({ leg, label, t }) {
+  const c = leg.cls || {}
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
+      {label && <span className="inline-block mb-2 px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 text-[10px] font-bold uppercase tracking-wide">{label}</span>}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-9 h-9 rounded-lg bg-sky-100 flex items-center justify-center"><Plane className="w-4.5 h-4.5 text-sky-600" /></div>
+        <div className="min-w-0"><p className="font-bold text-sm text-slate-900">{c.flightCode}</p><span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{t('travel.classPrefix')} {c.class}</span></div>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="text-center"><p className="font-bold text-slate-900">{c.departureTime}</p><p className="text-[10px] text-slate-400">{leg.departure.code}</p></div>
+        <div className="flex-1 flex items-center gap-1.5"><div className="h-px flex-1 bg-slate-200" /><span className="text-[10px] text-slate-400">{c.duration}</span><div className="h-px flex-1 bg-slate-200" /><ArrowRight className="w-3.5 h-3.5 text-slate-300" /></div>
+        <div className="text-center"><p className="font-bold text-slate-900">{c.arrivalTime}</p><p className="text-[10px] text-slate-400">{leg.arrival.code}</p></div>
+      </div>
+      <p className="text-xs text-slate-400 mt-2 flex items-center gap-1"><Calendar className="w-3 h-3" /> {formatDMY(leg.date)}</p>
+    </div>
+  )
 }

@@ -111,8 +111,14 @@ export default function FlightSearch() {
   const [showForm, setShowForm] = useState(true)
   const [sortBy, setSortBy] = useState('price')      // 'price' | 'departure'
   const [airlineFilter, setAirlineFilter] = useState('')  // '' = semua
+  // Pulang-pergi
+  const [tripType, setTripType]   = useState('oneway')  // 'oneway' | 'roundtrip'
+  const [returnDate, setReturnDate] = useState('')
+  const [leg, setLeg]   = useState('depart')            // leg yang sedang dipilih (PP): depart | return
+  const [outboundSel, setOutboundSel] = useState(null)  // simpan pilihan leg pergi
   const resultsRef = useRef(null)
   const dateRef = useRef(null)
+  const returnDateRef = useRef(null)
 
   const { data: airports = [] } = useQuery({
     queryKey: ['flight-airports'], queryFn: () => travelApi.airports().then(r => r.data?.data || []), staleTime: 86400_000,
@@ -124,6 +130,23 @@ export default function FlightSearch() {
   const openDatePicker = () => { const el = dateRef.current; if (!el) return; try { el.showPicker ? el.showPicker() : el.focus() } catch { el.focus() } }
   const swap = () => { setDeparture(arrival); setArrival(departure) }
   const canSearch = departure && arrival && departure.code !== arrival.code && date
+    && (tripType === 'oneway' || (returnDate && returnDate >= date))
+  const openReturnPicker = () => { const el = returnDateRef.current; if (!el) return; try { el.showPicker ? el.showPicker() : el.focus() } catch { el.focus() } }
+  const isReturnLeg = tripType === 'roundtrip' && leg === 'return'
+  const dispFrom = isReturnLeg ? arrival : departure
+  const dispTo   = isReturnLeg ? departure : arrival
+  const dispDate = isReturnLeg ? returnDate : date
+
+  const paxField = (
+    <div className="p-3 rounded-xl border border-slate-200">
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Users className="w-3 h-3" /> {t('travel.passengers')}</p>
+      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+        <select value={adult} onChange={e => setAdult(+e.target.value)} className="text-sm font-semibold bg-transparent focus:outline-none">{[1,2,3,4,5,6,7].map(n => <option key={n} value={n}>{n} {t('travel.adultShort')}</option>)}</select>
+        <select value={child} onChange={e => setChild(+e.target.value)} className="text-xs text-slate-500 bg-transparent focus:outline-none">{[0,1,2,3,4].map(n => <option key={n} value={n}>{n} {t('travel.childShort')}</option>)}</select>
+        <select value={infant} onChange={e => setInfant(+e.target.value)} className="text-xs text-slate-500 bg-transparent focus:outline-none">{[0,1,2,3,4].map(n => <option key={n} value={n}>{n} {t('travel.infantShort')}</option>)}</select>
+      </div>
+    </div>
+  )
 
   const cls0 = (f) => (f.classes?.[0]?.[0]) || {}
   const priceOf = (f) => Number(cls0(f).price) || 0
@@ -150,18 +173,20 @@ export default function FlightSearch() {
     return [...m.entries()].map(([code, name]) => ({ code, name }))
   }, [results])
 
-  const doSearch = async () => {
-    if (!canSearch) return
-    setSearching(true); setError(null); setResults(null); setAirlineFilter('')
+  const doSearch = async (which = 'depart') => {
+    if (which === 'depart' && !canSearch) return
+    const isReturn = which === 'return'
+    const dep = isReturn ? arrival.code : departure.code
+    const arr = isReturn ? departure.code : arrival.code
+    const d   = isReturn ? returnDate : date
+    setSearching(true); setError(null); setResults(null); setAirlineFilter(''); setSortBy('price'); setLeg(which)
+    if (which === 'depart') setOutboundSel(null)
     try {
       const res = await travelApi.searchAllFlights({
-        departure: departure.code, arrival: arrival.code,
-        departureDate: date, adult, child, infant,
+        departure: dep, arrival: arr, departureDate: d, adult, child, infant,
       })
       const data = res.data?.data || []
       setResults(data)
-      // Kalau ADA penerbangan → tutup form & scroll ke hasil.
-      // Kalau KOSONG → biarkan form tetap tampil supaya user bisa ubah tanggal/rute.
       if (data.length > 0) {
         setShowForm(false)
         setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
@@ -175,8 +200,24 @@ export default function FlightSearch() {
 
   const selectFlight = (flight) => {
     const cls = cls0(flight)
+    // Sekali jalan → langsung ke form pemesanan
+    if (tripType === 'oneway') {
+      sessionStorage.setItem('flight_selection', JSON.stringify({
+        departure, arrival, date, airline: flight.airline, adult, child, infant, flight, cls, markup,
+      }))
+      navigate('/tiket/pesawat/pesan'); return
+    }
+    // PP — leg PERGI dipilih → simpan, lalu cari leg PULANG
+    if (leg === 'depart') {
+      setOutboundSel({ departure, arrival, date, airline: flight.airline, flight, cls })
+      doSearch('return')
+      return
+    }
+    // PP — leg PULANG dipilih (flight ini arrival→departure pada returnDate)
+    const ret = { departure: arrival, arrival: departure, date: returnDate, airline: flight.airline, flight, cls }
     sessionStorage.setItem('flight_selection', JSON.stringify({
-      departure, arrival, date, airline: flight.airline, adult, child, infant, flight, cls, markup,
+      tripType: 'roundtrip', adult, child, infant, markup,
+      outbound: outboundSel, return: ret,
     }))
     navigate('/tiket/pesawat/pesan')
   }
@@ -197,6 +238,16 @@ export default function FlightSearch() {
           </div>
 
           <div className="bg-white rounded-2xl shadow-lg p-3.5 sm:p-4 text-slate-900">
+            {/* Tipe perjalanan */}
+            <div className="flex gap-2 mb-3">
+              {[['oneway', t('travel.oneWay')], ['roundtrip', t('travel.roundTrip')]].map(([k, l]) => (
+                <button key={k} type="button"
+                  onClick={() => { setTripType(k); setLeg('depart'); setOutboundSel(null); if (k === 'oneway') setReturnDate('') }}
+                  className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-colors ${tripType === k ? 'bg-sky-50 border-sky-500 text-sky-700' : 'bg-white border-slate-200 text-slate-500'}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
             <div className="relative grid grid-cols-1 gap-2.5">
               <button onClick={() => setPicker('departure')} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-sky-400 text-left transition-colors">
                 <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
@@ -217,21 +268,21 @@ export default function FlightSearch() {
 
             <div className="grid grid-cols-2 gap-2.5 mt-2.5">
               <div className="relative p-3 rounded-xl border border-slate-200 cursor-pointer" onClick={openDatePicker}>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Calendar className="w-3 h-3" /> {t('travel.date')}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Calendar className="w-3 h-3" /> {tripType === 'roundtrip' ? t('travel.departDate') : t('travel.date')}</p>
                 <p className="text-sm font-semibold text-slate-900 mt-0.5">{formatDateSlash(date)}</p>
-                <input ref={dateRef} type="date" value={date} min={todayStr()} onChange={e => setDate(e.target.value)} className="absolute bottom-1 left-3 w-px h-px opacity-0 pointer-events-none" tabIndex={-1} />
+                <input ref={dateRef} type="date" value={date} min={todayStr()} onChange={e => { setDate(e.target.value); if (returnDate && returnDate < e.target.value) setReturnDate('') }} className="absolute bottom-1 left-3 w-px h-px opacity-0 pointer-events-none" tabIndex={-1} />
               </div>
-              <div className="p-3 rounded-xl border border-slate-200">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Users className="w-3 h-3" /> {t('travel.passengers')}</p>
-                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                  <select value={adult} onChange={e => setAdult(+e.target.value)} className="text-sm font-semibold bg-transparent focus:outline-none">{[1,2,3,4,5,6,7].map(n => <option key={n} value={n}>{n} {t('travel.adultShort')}</option>)}</select>
-                  <select value={child} onChange={e => setChild(+e.target.value)} className="text-xs text-slate-500 bg-transparent focus:outline-none">{[0,1,2,3,4].map(n => <option key={n} value={n}>{n} {t('travel.childShort')}</option>)}</select>
-                  <select value={infant} onChange={e => setInfant(+e.target.value)} className="text-xs text-slate-500 bg-transparent focus:outline-none">{[0,1,2,3,4].map(n => <option key={n} value={n}>{n} {t('travel.infantShort')}</option>)}</select>
+              {tripType === 'roundtrip' ? (
+                <div className="relative p-3 rounded-xl border border-slate-200 cursor-pointer" onClick={openReturnPicker}>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Calendar className="w-3 h-3" /> {t('travel.returnDate')}</p>
+                  <p className={`text-sm font-semibold mt-0.5 ${returnDate ? 'text-slate-900' : 'text-slate-400'}`}>{returnDate ? formatDateSlash(returnDate) : t('travel.pickReturnDate')}</p>
+                  <input ref={returnDateRef} type="date" value={returnDate} min={date} onChange={e => setReturnDate(e.target.value)} className="absolute bottom-1 left-3 w-px h-px opacity-0 pointer-events-none" tabIndex={-1} />
                 </div>
-              </div>
+              ) : paxField}
             </div>
+            {tripType === 'roundtrip' && <div className="mt-2.5">{paxField}</div>}
 
-            <button onClick={doSearch} disabled={!canSearch || searching} className="w-full mt-3 py-3.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50">
+            <button onClick={() => doSearch('depart')} disabled={!canSearch || searching} className="w-full mt-3 py-3.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50">
               {searching ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('travel.searchingAirlines')}</> : <><Search className="w-4 h-4" /> {t('travel.searchFlights')}</>}
             </button>
           </div>
@@ -246,11 +297,25 @@ export default function FlightSearch() {
 
         {results && results.length > 0 && (
           <>
+            {/* Banner langkah PP */}
+            {tripType === 'roundtrip' && (
+              <div className="mb-3 rounded-xl bg-sky-50 border border-sky-200 p-3">
+                <p className="text-xs font-bold text-sky-700 flex items-center gap-1.5">
+                  <Plane className="w-3.5 h-3.5" /> {leg === 'depart' ? t('travel.stepPickDepart') : t('travel.stepPickReturn')}
+                </p>
+                {leg === 'return' && outboundSel && (
+                  <p className="text-[11px] text-slate-600 mt-1">
+                    {t('travel.departChosen')}: <span className="font-semibold">{outboundSel.departure?.code}→{outboundSel.arrival?.code}</span> {cls0(outboundSel.flight).departureTime} · {outboundSel.flight.airlineName}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Summary header */}
             <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="font-bold text-slate-900 text-base sm:text-lg flex items-center gap-2 flex-wrap leading-tight">{titleCase(departure?.name)} <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" /> {titleCase(arrival?.name)}</p>
-                <p className="text-xs text-slate-500 mt-1">{formatDateFull(date)} · {adult} {t('travel.adultLabel')}{child>0?`, ${child} ${t('travel.childLabel')}`:''}{infant>0?`, ${infant} ${t('travel.infantLabel')}`:''}</p>
+                <p className="font-bold text-slate-900 text-base sm:text-lg flex items-center gap-2 flex-wrap leading-tight">{titleCase(dispFrom?.name)} <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" /> {titleCase(dispTo?.name)}</p>
+                <p className="text-xs text-slate-500 mt-1">{formatDateFull(dispDate)} · {adult} {t('travel.adultLabel')}{child>0?`, ${child} ${t('travel.childLabel')}`:''}{infant>0?`, ${infant} ${t('travel.infantLabel')}`:''}</p>
               </div>
               <button onClick={() => { setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="shrink-0 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold active:scale-95 transition-all">{t('travel.changeSearch')}</button>
             </div>
