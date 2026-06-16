@@ -173,7 +173,7 @@ export default function OrderHistory() {
                       </button>
                       {order.status === 'pending' && (
                         <>
-                          <button onClick={() => navigate(`/payment/${order.id}`)}
+                          <button onClick={() => navigate(`/payment/${order.bookingCode || order.id}`)}
                             className="flex-1 py-2 bg-brand text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold hover:bg-brand-700 active:scale-95 transition-all">
                             {t('orderHistory.payNow')}
                           </button>

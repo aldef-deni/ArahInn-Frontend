@@ -54,6 +54,8 @@ import AdminPpob from '@/pages/admin/Ppob'
 import AdminTravel from '@/pages/admin/Travel'
 import TermsAndConditions from '@/pages/Legal/TermsAndConditions'
 import PrivacyPolicy from '@/pages/Legal/PrivacyPolicy'
+import HelpCenter from '@/pages/HelpCenter'
+import Contact from '@/pages/Contact'
 import AccountDeletion from '@/pages/Legal/AccountDeletion'
 
 // Auth Pages
@@ -321,12 +323,16 @@ export default function App() {
             <Route path="/orders" element={<PrivateRoute><OrderHistory /></PrivateRoute>} />
             <Route path="/orders/:id" element={<PrivateRoute><OrderDetail /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
-            <Route path="/loyalty" element={<PrivateRoute><Loyalty /></PrivateRoute>} />
+            <Route path="/poin" element={<PrivateRoute><Loyalty /></PrivateRoute>} />
+            {/* URL lama → redirect ke /poin (SEO + link lama tetap jalan) */}
+            <Route path="/loyalty" element={<Navigate to="/poin" replace />} />
             <Route path="/dashboard" element={<PrivateRoute><OrderHistory /></PrivateRoute>} />
             <Route path="/maintenance" element={<Maintenance />} />
             <Route path="/syarat-ketentuan" element={<TermsAndConditions />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/kebijakan-privasi" element={<PrivacyPolicy />} />
+            <Route path="/pusat-bantuan" element={<HelpCenter />} />
+            <Route path="/hubungi-kami" element={<Contact />} />
             <Route path="/account-deletion" element={<AccountDeletion />} />
             <Route path="/hapus-akun" element={<AccountDeletion />} />
             {/* SEO-friendly hotel detail URL: /<kategori>/<slug> — placed LAST so static routes win */}

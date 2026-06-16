@@ -1,14 +1,17 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/store/authStore'
-import { authApi } from '@/services/index'
+import { authApi, campaignApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import {
   Hotel, Search, List, User, LogOut, Menu, X,
   ChevronDown, Globe, Settings, LayoutDashboard,
   Phone, Mail, Smartphone, Building2, Sofa, Tag, Receipt, Star,
+  Megaphone, CalendarDays,
 } from 'lucide-react'
+import CampaignDetailModal from '@/components/CampaignDetailModal'
 import { cn, getImageUrl } from '@/utils'
 import {
   getManagementPortalUrl,
@@ -30,6 +33,19 @@ export default function UserLayout() {
   const { toast } = useToast()
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropOpen, setDropOpen] = useState(false)
+
+  // Campaign modal (dipicu dari footer "Campaign")
+  const [campaignListOpen, setCampaignListOpen] = useState(false)
+  const [selectedCampaign, setSelectedCampaign] = useState(null)
+  const { data: campaigns = [] } = useQuery({
+    queryKey: ['active-campaigns-footer'],
+    queryFn: () => campaignApi.active().then(r => r.data?.data || []),
+    staleTime: 5 * 60_000,
+  })
+  const openCampaign = () => {
+    if (campaigns.length === 1) setSelectedCampaign(campaigns[0])
+    else setCampaignListOpen(true)
+  }
 
   const isPengelola = user && PENGELOLA_ROLES.includes(user.role)
   const managementHref = isOwnerRole(user?.role)
@@ -142,7 +158,7 @@ export default function UserLayout() {
                       className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-muted transition-colors">
                       <List className="w-4 h-4" /> {t('nav.orders')}
                     </Link>
-                    <Link to="/loyalty" onClick={() => setDropOpen(false)}
+                    <Link to="/poin" onClick={() => setDropOpen(false)}
                       className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-muted transition-colors">
                       <Star className="w-4 h-4" /> {t('loyalty.title')}
                     </Link>
@@ -358,18 +374,23 @@ export default function UserLayout() {
           <div>
             <h4 className="font-display font-bold text-xl text-brand-800 mb-4">{t('footer.services')}</h4>
             <ul className="space-y-2.5 text-sm text-slate-500">
-              {[t('footer.searchHotel'), t('footer.flashSale'), t('footer.specialPromo'), t('footer.loyaltyProgram')].map(l => (
-                <li key={l}><a href="#" className="hover:text-brand transition-colors">{l}</a></li>
-              ))}
+              <li><Link to="/search" className="hover:text-brand transition-colors">{t('footer.searchHotel')}</Link></li>
+              <li>
+                <button type="button" onClick={openCampaign} className="hover:text-brand transition-colors text-left">
+                  {t('footer.campaign')}
+                </button>
+              </li>
+              <li><Link to="/promo" className="hover:text-brand transition-colors">{t('footer.specialPromo')}</Link></li>
+              <li><Link to="/poin" className="hover:text-brand transition-colors">{t('footer.loyaltyProgram')}</Link></li>
             </ul>
           </div>
           <div>
             <h4 className="font-display font-bold text-xl text-brand-800 mb-4">{t('footer.help')}</h4>
             <ul className="space-y-2.5 text-sm text-slate-500">
-              <li><a href="#" className="hover:text-brand transition-colors">{t('footer.helpCenter')}</a></li>
+              <li><Link to="/pusat-bantuan" className="hover:text-brand transition-colors">{t('footer.helpCenter')}</Link></li>
               <li><Link to="/syarat-ketentuan" className="hover:text-brand transition-colors">{t('footer.terms')}</Link></li>
               <li><Link to="/privacy-policy" className="hover:text-brand transition-colors">{t('footer.privacy')}</Link></li>
-              <li><a href="#" className="hover:text-brand transition-colors">{t('footer.contactLink')}</a></li>
+              <li><Link to="/hubungi-kami" className="hover:text-brand transition-colors">{t('footer.contactLink')}</Link></li>
             </ul>
           </div>
           <div>
@@ -426,17 +447,17 @@ export default function UserLayout() {
                 <h4 className="text-xs font-bold text-brand-800 uppercase tracking-[0.18em]">{t('footer.ourPartners')}</h4>
                 <span className="h-px flex-1 bg-gradient-to-l from-brand/30 to-transparent" />
               </div>
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                {['AKR.png','BBS.png','Dekorasi.me.png','IMG_20260510_184716.png','RuangSinggah.png'].map(f => (
+              <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-6">
+                {['akr.png','bawono.png','scp.png','dekorasi.png','ruangsinggah.png'].map(f => (
                   <div
                     key={f}
-                    className="relative h-16 w-28 flex items-center justify-center rounded-xl bg-white border border-slate-200/70 px-3"
+                    className="relative h-16 w-16 flex items-center justify-center rounded-xl bg-white border border-slate-200/70 p-1"
                   >
                     <img
                       src={`/our-partners/${f}`}
                       alt={f.replace(/\.[^.]+$/, '')}
                       loading="lazy"
-                      className="max-h-10 max-w-full object-contain"
+                      className="max-h-full max-w-full object-contain"
                     />
                   </div>
                 ))}
@@ -539,6 +560,51 @@ export default function UserLayout() {
 
       {/* Dropdown backdrop */}
       {dropOpen && <div className="fixed inset-0 z-40" onClick={() => setDropOpen(false)} />}
+
+      {/* Modal daftar Campaign aktif (dipicu footer "Campaign") */}
+      {campaignListOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => setCampaignListOpen(false)}>
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl max-h-[85vh] overflow-y-auto scrollbar-hide"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-3 border-b border-slate-100">
+              <h3 className="font-display font-bold text-lg text-slate-900 flex items-center gap-2">
+                <Megaphone className="w-5 h-5 text-orange-500" /> {t('footer.campaignTitle')}
+              </h3>
+              <button onClick={() => setCampaignListOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center">
+                <X className="w-4 h-4 text-slate-600" />
+              </button>
+            </div>
+            {campaigns.length === 0 ? (
+              <p className="px-5 py-12 text-center text-sm text-slate-500">{t('footer.campaignNone')}</p>
+            ) : (
+              <div className="p-4 space-y-3">
+                {campaigns.map(c => (
+                  <button key={c.id} onClick={() => { setSelectedCampaign(c); setCampaignListOpen(false) }}
+                    className="w-full flex items-center gap-3 p-3 rounded-2xl border border-slate-100 hover:border-orange-300 hover:bg-orange-50/40 text-left transition-colors">
+                    <div className="w-20 h-14 rounded-xl overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center">
+                      {getImageUrl(c.image || c.banner)
+                        ? <img src={getImageUrl(c.image || c.banner)} alt={c.title} className="w-full h-full object-cover" />
+                        : <Megaphone className="w-6 h-6 text-slate-300" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-sm text-slate-900 line-clamp-1">{c.title}</p>
+                      {Number(c.discountPercent) > 0 && (
+                        <span className="inline-block mt-1 text-[11px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full">
+                          {Number(c.discountPercent)}% OFF
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {selectedCampaign && <CampaignDetailModal campaign={selectedCampaign} onClose={() => setSelectedCampaign(null)} />}
     </div>
   )
 }

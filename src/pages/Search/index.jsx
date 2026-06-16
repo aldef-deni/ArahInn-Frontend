@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
 import { formatRupiah } from '@/utils'
 import { Search, MapPin, RotateCcw, ChevronDown, SlidersHorizontal, X, ChevronLeft, ChevronRight, Navigation } from 'lucide-react'
-import { format } from 'date-fns'
+import { format, addDays } from 'date-fns'
 import { useTranslation } from 'react-i18next'
 import HotelCardRow from '@/components/hotel/HotelCardRow'
 import DestinationSearch from '@/components/ui/DestinationSearch'
@@ -85,6 +85,8 @@ export default function SearchPage() {
 
   const today    = format(new Date(), 'yyyy-MM-dd')
   const tomorrow = format(new Date(Date.now() + 86400000), 'yyyy-MM-dd')
+  // +1 hari (lokal, hindari UTC) dari string yyyy-MM-dd
+  const nextDay  = (ymd) => format(addDays(new Date(`${ymd}T00:00:00`), 1), 'yyyy-MM-dd')
 
   const [form, setForm] = useState({
     q       : params.get('q')       || params.get('city') || '',
@@ -256,7 +258,12 @@ export default function SearchPage() {
                 label={t('search.checkin')}
                 value={form.checkIn}
                 min={today}
-                onChange={v => setForm({...form, checkIn: v})}
+                onChange={v => setForm(f => ({
+                  ...f,
+                  checkIn: v,
+                  // checkout selalu mengikuti minimal check-in + 1 hari
+                  checkOut: (!f.checkOut || f.checkOut <= v) ? nextDay(v) : f.checkOut,
+                }))}
                 className="relative flex w-full cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/30"
                 labelClassName="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1"
               />
@@ -343,7 +350,15 @@ export default function SearchPage() {
                   </div>
                 ))
               ) : data?.data?.length ? (
-                data.data.map(hotel => <HotelCardRow key={hotel.id} hotel={hotel} />)
+                data.data.map(hotel => (
+                  <HotelCardRow
+                    key={hotel.id}
+                    hotel={hotel}
+                    checkIn={form.checkIn}
+                    checkOut={form.checkOut}
+                    guests={form.guests}
+                  />
+                ))
               ) : (
                 <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 py-14 sm:py-20 text-center px-4">
                   <p className="text-4xl mb-3 sm:mb-4">🔍</p>

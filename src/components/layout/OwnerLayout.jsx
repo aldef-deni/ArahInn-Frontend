@@ -265,7 +265,7 @@ export default function OwnerLayout() {
 
   return (
     <div className="min-h-screen bg-[#f5f7fb] text-slate-900">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[280px] border-r border-slate-200 bg-white xl:flex xl:flex-col">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[280px] border-r border-slate-200 bg-white min-[960px]:flex min-[960px]:flex-col">
         <div className="border-b border-slate-200 px-7 py-6">
           <Link to="/owner" className="flex items-center gap-3">
             <img src="/logo-arahin.png" alt="Arahinn" className="h-10 w-auto" />
@@ -512,7 +512,7 @@ export default function OwnerLayout() {
         </div>
       </aside>
 
-      <div className="min-h-screen xl:ml-[280px]">
+      <div className="min-h-screen min-[960px]:ml-[280px]">
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex flex-col gap-5 px-5 py-5 md:px-8 xl:px-10">
             {/* Top row: title (flexible) + actions (shrink-0) */}

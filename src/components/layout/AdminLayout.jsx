@@ -96,7 +96,9 @@ export default function AdminLayout() {
   const navigate         = useNavigate()
   const location         = useLocation()
   const { toast }        = useToast()
-  const [collapsed, setCollapsed] = useState(false)
+  // Di layar sempit (HP asli) mulai collapsed agar konten tetap lega.
+  // Mode "Desktop site" di HP (~980px) & laptop tetap ter-expand.
+  const [collapsed, setCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
 
   const isFinance         = user?.role === 'finance'
   const isMarketManager   = user?.role === 'admin'

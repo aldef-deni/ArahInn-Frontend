@@ -13,6 +13,10 @@ RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 RewriteCond %{HTTP_HOST} ^www\.arahinn\.com$ [NC]
 RewriteRule ^ https://arahinn.com%{REQUEST_URI} [R=301,L]
 
+# ── 2b. SEO 301: URL lama /loyalty → /poin (permanen) ────────────────
+# Harus SEBELUM SPA fallback agar ditangkap lebih dulu.
+RewriteRule ^loyalty/?$ /poin [R=301,L]
+
 # ── 3. SPA fallback (React Router) ───────────────────────────────────
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

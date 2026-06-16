@@ -61,6 +61,7 @@ const DEFAULT_META = { icon: Bell, color: 'text-slate-500', bg: 'bg-slate-50' }
 function resolveRoute(type, role, data) {
   const d = data || {}
   const bookingId  = d.booking_id  ?? d.bookingId
+  const bookingRef = d.booking_code ?? d.bookingCode ?? bookingId  // URL ramah (kode booking)
   const hotelId    = d.hotel_id    ?? d.hotelId
   const propertyId = d.property_id ?? d.propertyId
   const reviewId   = d.review_id   ?? d.reviewId
@@ -94,7 +95,7 @@ function resolveRoute(type, role, data) {
     // ── Payment ──────────────────────────────────────────────
     case 'payment_pending':
     case 'payment_expired':
-      return bookingId ? `/payment/${bookingId}` : '/orders'
+      return bookingRef ? `/payment/${bookingRef}` : '/orders'
     // Bukti bayar manual diunggah → admin/finance verifikasi di daftar pesanan
     case 'payment_proof_uploaded':
       return '/admin/orders'

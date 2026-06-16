@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { bookingApi, paymentApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
-import { Clock, Copy, CheckCircle, XCircle, Building2, X, ArrowLeft, ListOrdered, Info } from 'lucide-react'
+import { Clock, Copy, CheckCircle, XCircle, Building2, X, ArrowLeft, ListOrdered, Info, ChevronDown } from 'lucide-react'
 
 const BANKS = [
   { id: 'bca',     label: 'BCA',     logo: '/banks/bca.png' },
@@ -41,6 +41,10 @@ export default function Payment() {
   const [vaInfo, setVaInfo]   = useState(null) // { vaNumber, bank, expiredAt } untuk DOKU
   const [manualInfo, setManualInfo] = useState(null) // { bankName, accountNumber, accountName, finalAmount, expiredAt }
   const [showLeaveModal, setShowLeaveModal] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(false) // dropdown rincian pembayaran
+  // Deadline countdown (ms, di-anchor ke jam CLIENT) — diisi SETELAH klik "Lanjut ke
+  // Instruksi Transfer" agar countdown mulai tepat (mis. 1:00:00) & tidak muncul sebelum klik.
+  const [paymentDeadline, setPaymentDeadline] = useState(null)
 
   // Cek mode pembayaran (doku/manual) — backend yang nentuin
   const { data: modeData } = useQuery({
@@ -55,15 +59,25 @@ export default function Payment() {
     queryKey: ['booking-payment', bookingId],
     queryFn : () => bookingApi.getById(bookingId).then(r => r.data.data),
   })
+  // URL memakai KODE booking; ID numerik untuk panggilan payment diambil dari booking.
+  const realId = booking?.id
 
-  const activeExpiresAt = vaInfo?.expiredAt ?? manualInfo?.expiredAt ?? booking?.expiresAt
-  const { secs, display: countdown, expired } = useCountdown(activeExpiresAt)
+  // Bila halaman dibuka via ID numerik (mis. /payment/39), ganti URL ke kode booking
+  // (mis. /payment/ARHMQEP3PU) tanpa menambah history — agar ID tidak terlihat di URL.
+  useEffect(() => {
+    if (booking?.bookingCode && /^\d+$/.test(String(bookingId))) {
+      navigate(`/payment/${booking.bookingCode}`, { replace: true })
+    }
+  }, [booking?.bookingCode, bookingId, navigate])
+
+  const { secs, display: countdown, expired } = useCountdown(paymentDeadline)
 
   const hasActivePayment = !!(vaInfo || manualInfo)
 
   const { data: paymentData } = useQuery({
-    queryKey: ['payment-status', bookingId],
-    queryFn : () => paymentApi.status(bookingId).then(r => r.data.data),
+    queryKey: ['payment-status', realId],
+    queryFn : () => paymentApi.status(realId).then(r => r.data.data),
+    enabled : !!realId,
     refetchInterval: hasActivePayment ? 5000 : false,
   })
 
@@ -74,12 +88,17 @@ export default function Payment() {
     mutationFn: () => {
       // Manual mode: bypass payment_method (backend selalu pakai bank_transfer)
       const payload = paymentMode === 'manual'
-        ? { bookingId }
-        : { bookingId, paymentMethod: bank }
+        ? { bookingId: realId }
+        : { bookingId: realId, paymentMethod: bank }
       return paymentApi.initiate(payload)
     },
     onSuccess : (r) => {
       const data = r.data.data
+      // Mulai countdown dari durasi server (expiresInSeconds) yang di-anchor ke jam client
+      // → mulai TEPAT (mis. 3600 dtk = 1:00:00). Fallback ke timestamp absolut bila tak ada.
+      const secsLeft = Number(data?.expiresInSeconds)
+      if (Number.isFinite(secsLeft) && secsLeft > 0) setPaymentDeadline(Date.now() + secsLeft * 1000)
+      else if (data?.expiredAt) setPaymentDeadline(new Date(data.expiredAt).getTime())
       if (paymentMode === 'manual') {
         setManualInfo(data)
         toast({ title: 'Instruksi transfer dibuat', description: 'Transfer sesuai nominal & rekening di bawah ini.' })
@@ -157,78 +176,96 @@ export default function Payment() {
     <div className="container py-4 sm:py-6 lg:py-8 max-w-2xl">
       <h1 className="font-display text-xl sm:text-2xl font-bold mb-2 leading-tight">{t('payment.title')}</h1>
 
-      {/* Countdown — hanya tampil untuk DOKU mode (manual transfer tidak butuh urgency) */}
-      {paymentMode === 'doku' && (
+      {/* Countdown batas waktu pembayaran — muncul SETELAH klik "Lanjut ke Instruksi
+          Transfer" (paymentDeadline terisi), mulai tepat dari durasi setting (mis. 1:00:00). */}
+      {paymentDeadline && !isPaid && (
         <div className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl mb-4 sm:mb-6 text-xs sm:text-sm font-medium ${
-          secs < 600 ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-orange-50 border border-orange-200 text-orange-700'
+          expired
+            ? 'bg-red-50 border border-red-200 text-red-700'
+            : secs < 600 ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-orange-50 border border-orange-200 text-orange-700'
         }`}>
           <Clock className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 animate-pulse" />
-          <span className="truncate">{vaInfo ? t('payment.remainingBeforePayment') : t('payment.remainingTime') + ':'}</span>
-          <span className="font-mono text-base sm:text-xl font-bold ml-auto">{countdown}</span>
+          <span className="truncate">{expired ? t('payment.expiredNote') : (vaInfo ? t('payment.remainingBeforePayment') : t('payment.remainingTime') + ':')}</span>
+          {!expired && <span className="font-mono text-base sm:text-xl font-bold ml-auto">{countdown}</span>}
         </div>
       )}
 
-      {/* Order summary */}
-      <div className="bg-white border rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-4 sm:mb-6 shadow-card">
-        {/* Hotel & booking info */}
-        <div className="flex justify-between items-start gap-3 mb-3 sm:mb-4">
+      {/* Order summary (ringkas + dropdown rincian) */}
+      <div className="bg-white border rounded-xl sm:rounded-2xl mb-4 sm:mb-6 shadow-card overflow-hidden">
+        {/* Header selalu tampil: nama properti + total + panah dropdown */}
+        <button
+          type="button"
+          onClick={() => setDetailOpen(o => !o)}
+          aria-expanded={detailOpen}
+          className="w-full flex items-center justify-between gap-3 p-4 sm:p-5 text-left hover:bg-slate-50/60 transition-colors"
+        >
           <div className="min-w-0">
             <p className="font-semibold text-sm sm:text-base line-clamp-2">{booking?.hotel?.name}</p>
             <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
               {booking?.room?.name} · {booking?.totalNights} malam
             </p>
           </div>
-          <div className="text-right shrink-0">
-            <p className="text-[10px] sm:text-xs text-muted-foreground">{t('payment.bookingCode')}</p>
-            <p className="font-mono font-bold text-brand text-xs sm:text-sm">{booking?.bookingCode}</p>
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="text-right">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">{t('payment.totalBill')}</p>
+              <p className="price-tag font-bold text-base sm:text-xl leading-tight">{formatRupiah(booking?.totalPrice)}</p>
+            </div>
+            <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform shrink-0 ${detailOpen ? 'rotate-180' : ''}`} />
           </div>
+        </button>
+
+        {/* Detail muncul saat dropdown dibuka */}
+        {detailOpen && (
+        <div className="px-4 sm:px-5 pb-4 sm:pb-5">
+        <div className="flex justify-between items-center gap-3 pb-3 mb-2 border-b text-[11px] sm:text-xs">
+          <span className="text-muted-foreground">{t('payment.bookingCode')}</span>
+          <span className="font-mono font-bold text-brand">{booking?.bookingCode}</span>
         </div>
-
-        {/* Price breakdown */}
-        <div className="border-t pt-3 sm:pt-4 space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
-          <div className="flex justify-between items-start gap-3 text-muted-foreground">
-            <span>{t('payment.hotelPrice')} ({booking?.totalNights} malam)</span>
-            <span className="text-right">{formatRupiah(parseFloat(booking?.basePrice) || 0)}</span>
-          </div>
-          <div className="flex justify-between items-start gap-3 text-muted-foreground">
-            <span>{(parseFloat(booking?.taxAmount) || 0) > 0 ? t('payment.tax') : t('payment.othersOnly')}</span>
-            <span className="text-right">{formatRupiah((parseFloat(booking?.markupAmount) || 0) + (parseFloat(booking?.taxAmount) || 0) + (parseFloat(booking?.priceSuffix) || 0))}</span>
-          </div>
-
-          {booking?.promoDiscount > 0 && (
-            <div className="flex justify-between items-start gap-3 text-green-600">
-              <span className="min-w-0">
-                {t('payment.promoDiscount')}
-                {booking?.voucherCode ? ` (${booking.voucherCode})` : ''}
-              </span>
-              <span className="text-right whitespace-nowrap">− {formatRupiah(booking.promoDiscount)}</span>
+        {/* Price breakdown — Harga Hotel = base_price (SUDAH termasuk diskon campaign+kode).
+            Harga asli dicoret bila ada diskon; TANPA baris diskon terpisah agar tidak
+            terlihat dipotong dua kali (konsisten dengan halaman Checkout). */}
+        {(() => {
+          const promoDiscount  = Number(booking?.promoDiscount) || 0
+          const hasPromo       = promoDiscount > 0
+          const basePriceFinal = parseFloat(booking?.basePrice) || 0
+          const originalBase   = basePriceFinal + promoDiscount   // base_price = original − promo
+          const loyaltyDisc    = Number(booking?.loyaltyDiscount) || 0
+          const fees           = (parseFloat(booking?.markupAmount) || 0) + (parseFloat(booking?.taxAmount) || 0) + (parseFloat(booking?.priceSuffix) || 0)
+          return (
+          <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
+            <div className="flex justify-between items-start gap-3">
+              <span className="text-muted-foreground">{t('payment.hotelPrice')} ({booking?.totalNights} malam)</span>
+              <div className="text-right">
+                {hasPromo && <p className="text-[11px] text-slate-400 line-through leading-tight">{formatRupiah(originalBase)}</p>}
+                <p className={hasPromo ? 'font-semibold text-green-600' : 'text-muted-foreground'}>{formatRupiah(basePriceFinal)}</p>
+              </div>
             </div>
-          )}
-          {booking?.loyaltyDiscount > 0 && (
-            <div className="flex justify-between items-start gap-3 text-green-600">
-              <span>{t('payment.loyaltyDiscount')}</span>
-              <span className="text-right whitespace-nowrap">− {formatRupiah(booking.loyaltyDiscount)}</span>
+            <div className="flex justify-between items-start gap-3 text-muted-foreground">
+              <span>{(parseFloat(booking?.taxAmount) || 0) > 0 ? t('payment.tax') : t('payment.othersOnly')}</span>
+              <span className="text-right">{formatRupiah(fees)}</span>
             </div>
-          )}
-
-          <div className="pt-2.5 sm:pt-3 border-t">
-            {booking?.promoDiscount > 0 && (
-              <div className="flex justify-between items-center text-[11px] sm:text-xs text-slate-400 line-through mb-1">
-                <span>{t('payment.totalWithoutPromo')}</span>
-                <span>{formatRupiah((parseFloat(booking?.totalPrice) || 0) + (parseFloat(booking?.promoDiscount) || 0))}</span>
+            {loyaltyDisc > 0 && (
+              <div className="flex justify-between items-start gap-3 text-green-600">
+                <span>{t('payment.loyaltyDiscount')}</span>
+                <span className="text-right whitespace-nowrap">− {formatRupiah(loyaltyDisc)}</span>
               </div>
             )}
-            <div className="flex justify-between items-center font-bold gap-3">
-              <span className="text-sm sm:text-base">{t('payment.totalBill')}</span>
-              <span className="price-tag text-base sm:text-xl">{formatRupiah(booking?.totalPrice)}</span>
+            <div className="pt-2.5 sm:pt-3 border-t">
+              <div className="flex justify-between items-center font-bold gap-3">
+                <span className="text-sm sm:text-base">{t('payment.totalBill')}</span>
+                <span className="price-tag text-base sm:text-xl">{formatRupiah(booking?.totalPrice)}</span>
+              </div>
+              {hasPromo && (
+                <p className="mt-1.5 text-[10px] sm:text-[11px] text-orange-600 font-semibold">
+                  ✦ {t('payment.savings')} {formatRupiah(promoDiscount)} {t('payment.withPromo')}
+                </p>
+              )}
             </div>
-            {booking?.promoDiscount > 0 && (
-              <p className="mt-1.5 text-[10px] sm:text-[11px] text-orange-600 font-semibold">
-                ✦ {t('payment.savings')} {formatRupiah(booking.promoDiscount)} {t('payment.withPromo')}
-              </p>
-            )}
           </div>
+          )
+        })()}
         </div>
+        )}
       </div>
 
       {/* ═════ MANUAL TRANSFER MODE ═════ */}

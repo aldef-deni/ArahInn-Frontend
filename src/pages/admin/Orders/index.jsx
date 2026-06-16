@@ -82,7 +82,7 @@ function OrderDetailModal({ order, onClose }) {
             <Row label="Markup / Pajak & Others" value={rp(b.markupAmount)} />
             {b.promoDiscount > 0 && <Row label="Diskon promo" value={`- ${rp(b.promoDiscount)}`} />}
             {b.voucherCode && <Row label="Kode voucher" value={b.voucherCode} mono />}
-            {b.loyaltyDiscount > 0 && <Row label="Diskon poin" value={`- ${rp(b.loyaltyDiscount)}`} />}
+            {b.loyaltyDiscount > 0 && <Row label="Redeem Poin" value={`- ${rp(b.loyaltyDiscount)}`} />}
             {b.taxAmount > 0 && <Row label="PPN" value={rp(b.taxAmount)} />}
             <Row label="Total dibayar" value={rp(b.totalPrice)} strong />
             {b.ownerPayout != null && <Row label="Diterima owner" value={rp(b.ownerPayout)} />}
@@ -94,6 +94,15 @@ function OrderDetailModal({ order, onClose }) {
             <Row label="Dibuat" value={fmtDateTime(b.createdAt)} />
             <Row label="Dibayar" value={fmtDateTime(b.paidAt)} />
             <Row label="Voucher terbit" value={fmtDateTime(b.issuedAt)} />
+            {['paid','issued','rescheduled'].includes(b.status) && (
+              <Row label="Status voucher" value={
+                b.voucherError
+                  ? <span className="text-red-600 font-semibold">Gagal kirim email</span>
+                  : b.voucherSentAt
+                    ? <span className="text-emerald-600 font-semibold">Terkirim {fmtDateTime(b.voucherSentAt)}</span>
+                    : '–'
+              } />
+            )}
             {b.canceledAt && <Row label="Dibatalkan" value={fmtDateTime(b.canceledAt)} />}
           </Section>
         </div>
@@ -314,6 +323,17 @@ export default function AdminOrders() {
     onError: (e) => toast({ title: 'Gagal reschedule', description: e?.response?.data?.message, variant: 'destructive' }),
   })
 
+  // Kirim ulang e-voucher ke tamu (mis. saat sebelumnya gagal terkirim)
+  const resendMutation = useMutation({
+    mutationFn: (id) => bookingApi.resendVoucher(id),
+    onSuccess : (_d, id) => {
+      qc.invalidateQueries({ queryKey: ['admin-orders'] })
+      qc.invalidateQueries({ queryKey: ['admin-order-detail', id] })
+      toast({ title: 'Voucher dikirim ulang.', description: 'E-voucher telah dikirim ke email tamu.' })
+    },
+    onError: (e) => toast({ title: 'Gagal kirim ulang voucher', description: e?.response?.data?.message, variant: 'destructive' }),
+  })
+
   const exportCSV = () => {
     const rows = data?.data?.map(b =>
       [b.bookingCode, b.guestName, b.hotel?.name, formatDateShort(b.checkIn), formatDateShort(b.checkOut), b.totalPrice, b.status].join(',')
@@ -504,6 +524,27 @@ export default function AdminOrders() {
                                 className="flex items-center gap-1 px-3 py-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors whitespace-nowrap">
                                 <RefreshCw className="w-3.5 h-3.5" /> Reschedule
                               </button>
+                            )}
+                            {/* Voucher: penanda gagal kirim + tombol kirim ulang (status terkonfirmasi) */}
+                            {['paid','issued','rescheduled'].includes(order.status) && (
+                              <>
+                                {order.voucherError && (
+                                  <span title={order.voucherError}
+                                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg whitespace-nowrap">
+                                    <AlertTriangle className="w-3.5 h-3.5" /> Voucher gagal kirim
+                                  </span>
+                                )}
+                                <button onClick={() => resendMutation.mutate(order.id)}
+                                  disabled={resendMutation.isPending}
+                                  title={order.voucherSentAt ? `Voucher terkirim ${fmtDateTime(order.voucherSentAt)} — klik untuk kirim ulang` : 'Kirim ulang e-voucher ke email tamu'}
+                                  className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg border transition-colors whitespace-nowrap disabled:opacity-50 ${
+                                    order.voucherError
+                                      ? 'text-white bg-red-600 border-red-600 hover:bg-red-700'
+                                      : 'text-slate-700 bg-slate-50 border-slate-200 hover:bg-slate-100'
+                                  }`}>
+                                  <RefreshCw className="w-3.5 h-3.5" /> Kirim ulang voucher
+                                </button>
+                              </>
                             )}
                           </div>
                         </td>

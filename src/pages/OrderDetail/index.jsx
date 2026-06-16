@@ -164,13 +164,13 @@ export default function OrderDetail() {
       {booking.status === 'pending' && (
         <>
           {/* Desktop inline */}
-          <button onClick={() => navigate(`/payment/${booking.id}`)}
+          <button onClick={() => navigate(`/payment/${booking.bookingCode || booking.id}`)}
             className="hidden lg:flex w-full mt-4 py-3 bg-brand text-white rounded-2xl font-bold hover:bg-brand-700 active:scale-[0.98] transition-all items-center justify-center">
             {t('orderDetail.completePayment')}
           </button>
           {/* Mobile sticky bottom */}
           <div className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] px-4 py-3">
-            <button onClick={() => navigate(`/payment/${booking.id}`)}
+            <button onClick={() => navigate(`/payment/${booking.bookingCode || booking.id}`)}
               className="w-full py-3 bg-brand text-white rounded-xl font-bold text-sm hover:bg-brand-700 active:scale-[0.98] transition-all">
               {t('orderDetail.completePayment')} · {formatRupiah(parseFloat(booking.totalPrice) || 0)}
             </button>

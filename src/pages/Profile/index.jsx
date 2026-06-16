@@ -450,7 +450,7 @@ function SectionOrders() {
                   key={order.id}
                   order={order}
                   onDetail={() => navigate(`/orders/${order.bookingCode || order.id}`)}
-                  onPay={() => navigate(`/payment/${order.id}`)}
+                  onPay={() => navigate(`/payment/${order.bookingCode || order.id}`)}
                   onCancel={() => cancelMutation.mutate(order.id)}
                   onChat={(order.hotelId || order.hotel?.id) ? () => setChatBooking({
                     id: order.id,
@@ -606,7 +606,7 @@ function SectionLoyalty({ loyalty }) {
       <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between gap-2">
           <h3 className="font-semibold text-slate-900">{t('loyalty.historyTitle')}</h3>
-          <Link to="/loyalty" className="text-xs font-semibold text-brand hover:underline shrink-0">
+          <Link to="/poin" className="text-xs font-semibold text-brand hover:underline shrink-0">
             {t('loyalty.seeAll')}
           </Link>
         </div>

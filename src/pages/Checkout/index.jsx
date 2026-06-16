@@ -134,7 +134,7 @@ export default function Checkout() {
         usePoints: appliedPoints > 0,
         pointsToRedeem: appliedPoints,
       }),
-    onSuccess: (r) => navigate(`/payment/${r.data.data.booking.id}`),
+    onSuccess: (r) => navigate(`/payment/${r.data.data.booking.bookingCode || r.data.data.booking.id}`),
     onError: (e) =>
       toast({
         title: t('checkout.bookingFailed'),

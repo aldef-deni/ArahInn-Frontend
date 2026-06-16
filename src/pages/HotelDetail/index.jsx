@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { format, addDays, formatDistanceToNow } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
@@ -735,13 +735,24 @@ export default function HotelDetail() {
   const today = format(new Date(), 'yyyy-MM-dd')
   const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd')
 
-  const [dates, setDates] = useState({ checkIn: today, checkOut: tomorrow })
-  const [guests, setGuests] = useState(2)
+  // Tanggal/tamu awal mengikuti hasil pencarian (query ?checkIn&checkOut&guests) bila valid,
+  // jadi saat akomodasi diklik dari Cari Hotel, detail terbuka sesuai tanggal custom — bukan hari ini.
+  const [searchParams] = useSearchParams()
+  const qpCheckIn  = searchParams.get('checkIn')
+  const qpCheckOut = searchParams.get('checkOut')
+  const qpGuests   = parseInt(searchParams.get('guests'), 10)
+  const initCheckIn  = (qpCheckIn && qpCheckIn >= today) ? qpCheckIn : today
+  const initCheckOut = (qpCheckOut && qpCheckOut > initCheckIn)
+    ? qpCheckOut
+    : format(addDays(new Date(`${initCheckIn}T00:00:00`), 1), 'yyyy-MM-dd')
+
+  const [dates, setDates] = useState({ checkIn: initCheckIn, checkOut: initCheckOut })
+  const [guests, setGuests] = useState(Number.isFinite(qpGuests) && qpGuests > 0 ? qpGuests : 2)
   const [roomCount, setRoomCount] = useState(1)
 
   // Modal "Pilih Tanggal Lain" — ganti tanggal untuk cek ketersediaan lain (saat kamar penuh)
   const [showDateModal, setShowDateModal] = useState(false)
-  const [draftDates, setDraftDates] = useState({ checkIn: today, checkOut: tomorrow })
+  const [draftDates, setDraftDates] = useState({ checkIn: initCheckIn, checkOut: initCheckOut })
   const openDateModal = () => {
     setDraftDates({ checkIn: dates.checkIn, checkOut: dates.checkOut })
     setShowDateModal(true)

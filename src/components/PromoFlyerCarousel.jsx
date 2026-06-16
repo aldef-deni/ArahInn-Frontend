@@ -189,7 +189,7 @@ export default function PromoFlyerCarousel() {
       </div>
 
       <div ref={scrollRef}
-        className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 -mx-1 px-1"
+        className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pt-2 pb-4 -mx-8 px-8 scroll-px-8"
         style={{ scrollbarWidth: 'thin' }}>
         {promos.map(promo => {
           const isUpcoming = checkIsUpcoming(promo.startDate)

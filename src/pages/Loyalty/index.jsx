@@ -105,7 +105,7 @@ export default function Loyalty() {
 
   return (
     <div className="bg-gradient-to-b from-slate-50 to-white min-h-screen">
-      <SEO title={t('loyalty.title')} url="/loyalty" />
+      <SEO title={t('loyalty.title')} url="/poin" />
       <div className="container py-8 max-w-5xl">
 
         <h1 className="text-2xl font-bold text-slate-900 mb-1">{t('loyalty.title')}</h1>

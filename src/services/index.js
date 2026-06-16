@@ -8,6 +8,7 @@ export const bookingApi = {
   cancel       : (id)     => api.put(`/bookings/${id}/cancel`),
   reschedule   : (id, d)  => api.put(`/bookings/${id}/reschedule`, d),
   refund       : (id)     => api.post(`/bookings/${id}/refund`),
+  resendVoucher: (id)     => api.post(`/bookings/${id}/resend-voucher`),
   // Download voucher PDF (binary)
   downloadVoucher: (id)   => api.get(`/bookings/${id}/voucher`, { responseType: 'blob' }),
   getAll       : (p)      => api.get('/bookings', { params: p }),

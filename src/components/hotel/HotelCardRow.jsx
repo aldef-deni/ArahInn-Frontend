@@ -13,8 +13,10 @@ const CATEGORY_COLORS = {
   Resort     : 'bg-rose-100 text-rose-700',
 }
 
-export default function HotelCardRow({ hotel }) {
+export default function HotelCardRow({ hotel, checkIn, checkOut, guests }) {
   const { t } = useTranslation()
+  // URL detail membawa tanggal/tamu hasil pencarian agar terbuka sesuai tanggal custom
+  const detailUrl = hotelDetailUrl(hotel, { checkIn, checkOut, guests })
   const [imgError, setImgError] = useState(false)
   const lowestPrice     = hotel.rooms?.[0]?.basePrice
   const discountedPrice = hotel.discountedPrice
@@ -26,7 +28,7 @@ export default function HotelCardRow({ hotel }) {
     <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm hover:shadow-md active:scale-[0.99] sm:active:scale-100 transition-all overflow-hidden flex flex-col sm:flex-row">
 
       {/* ── Image ── */}
-      <Link to={hotelDetailUrl(hotel)} className="relative w-full sm:w-44 sm:shrink-0 block group">
+      <Link to={detailUrl} className="relative w-full sm:w-44 sm:shrink-0 block group">
         {hotel.images?.[0] && !imgError ? (
           <img
             src={getImageUrl(hotel.images[0])}
@@ -49,7 +51,7 @@ export default function HotelCardRow({ hotel }) {
 
         {/* Middle — info */}
         <div className="flex-1 min-w-0 space-y-1.5 sm:space-y-2">
-          <Link to={hotelDetailUrl(hotel)}>
+          <Link to={detailUrl}>
             <h3 className="font-bold text-sm sm:text-base text-slate-900 hover:text-brand transition-colors line-clamp-2 leading-snug">
               {hotel.name}
             </h3>
@@ -134,7 +136,7 @@ export default function HotelCardRow({ hotel }) {
           </div>
 
           <Link
-            to={hotelDetailUrl(hotel)}
+            to={detailUrl}
             className="ml-3 sm:ml-0 sm:mt-3 px-4 sm:px-5 py-2 sm:py-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white text-xs sm:text-sm font-semibold rounded-xl transition-all whitespace-nowrap shadow-sm"
           >
             {t('hotel.book')}
