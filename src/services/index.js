@@ -110,6 +110,21 @@ export const promoApi = {
   },
 }
 
+// Wishlist — customer (simpan hotel & properti favorit)
+export const wishlistApi = {
+  list    : ()    => api.get('/wishlist'),
+  ids     : ()    => api.get('/wishlist/ids'),
+  config  : ()    => api.get('/wishlist/config'),
+  toggle  : (d)   => api.post('/wishlist/toggle', d),
+  remove  : (id)  => api.delete(`/wishlist/${id}`),
+}
+
+// Wishlist — admin (superadmin only)
+export const adminWishlistApi = {
+  getConfig : ()  => api.get('/admin/settings/wishlist'),
+  setConfig : (d) => api.post('/admin/settings/wishlist', d),
+}
+
 // Loyalitas — admin (superadmin only)
 export const adminLoyaltyApi = {
   getConfig : ()        => api.get('/admin/loyalty/config'),

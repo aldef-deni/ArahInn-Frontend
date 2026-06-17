@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
-import { userApi, promoApi, bookingApi, chatApi } from '@/services/index'
+import { userApi, promoApi, bookingApi, chatApi, wishlistApi } from '@/services/index'
 import BookingChatModal from '@/components/chat/BookingChatModal'
 import { reviewApi } from '@/services/reviewApi'
 import { useAuthStore } from '@/store/authStore'
@@ -16,7 +16,7 @@ import {
   Eye, EyeOff, ShoppingBag, Calendar, ChevronRight,
   XCircle, RefreshCw, Shield, Heart, MessageSquare,
   CreditCard, BadgeCheck, CheckCircle2, Loader2,
-  Clock, AlertCircle, Building2, Hotel as HotelIcon,
+  Clock, AlertCircle, Building2, Hotel as HotelIcon, Trash2,
   ShieldCheck, Zap, Search, BedDouble, Sparkles, ArrowRight,
   Headphones, ChevronDown, Globe, DollarSign, MapPin, Info,
   FileText, ScrollText, Settings, Send, Receipt,
@@ -903,69 +903,95 @@ function SectionPayment() {
   )
 }
 
-// ── Section: Wishlist (Coming Soon) ───────────────────────
+// ── Section: Wishlist (hotel & properti favorit) ───────────────────────
 function SectionWishlist() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { toast } = useToast()
+  const qc = useQueryClient()
+
+  const { data: cfg } = useQuery({ queryKey: ['wishlist-config'], queryFn: () => wishlistApi.config().then(r => r.data?.data), staleTime: 5 * 60_000 })
+  const { data: items = [], isLoading } = useQuery({ queryKey: ['wishlist-list'], queryFn: () => wishlistApi.list().then(r => r.data?.data || []) })
+
+  const removeMut = useMutation({
+    mutationFn: (wid) => wishlistApi.remove(wid),
+    onMutate: async (wid) => {
+      await qc.cancelQueries({ queryKey: ['wishlist-list'] })
+      const prev = qc.getQueryData(['wishlist-list'])
+      qc.setQueryData(['wishlist-list'], (old = []) => old.filter(x => x.wid !== wid))
+      return { prev }
+    },
+    onError: (_e, _wid, ctx) => { if (ctx?.prev) qc.setQueryData(['wishlist-list'], ctx.prev); toast({ title: t('wishlistBtn.failed') }) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['wishlist-ids'] }); toast({ title: t('wishlistBtn.removed') }) },
+  })
+
+  const detailUrl = (it) => it.type === 'hotel' ? `/hotel/${it.id}` : `/properti/${it.id}`
+  const featureOff = cfg && cfg.enabled === false
+
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-xl font-bold text-slate-900">{t('profilePage.wishlistTitle')}</h2>
-        <p className="text-sm text-slate-500 mt-0.5">{t('profilePage.wishlistSubtitle')}</p>
-      </div>
-
-      {/* Hero Coming Soon with pulse */}
-      <div className="bg-white rounded-3xl border border-rose-100 shadow-md shadow-rose-100/50 p-10 text-center">
-        <div className="relative inline-flex">
-          <span className="absolute inset-0 rounded-full bg-rose-300/50 animate-ping" />
-          <div className="relative w-24 h-24 rounded-full bg-rose-500 flex items-center justify-center shadow-lg shadow-rose-300">
-            <Heart className="w-12 h-12 text-white" fill="white" />
-          </div>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">{t('profilePage.wishlistTitle')}</h2>
+          <p className="text-sm text-slate-500 mt-0.5">{t('profilePage.wishlistSubtitle')}</p>
         </div>
-        <h3 className="mt-5 text-2xl font-black text-slate-900">{t('profilePage.comingSoon')}</h3>
-        <p className="mt-1.5 text-sm text-slate-500">{t('profilePage.wishlistDevNote')}</p>
+        {!featureOff && items.length > 0 && (
+          <span className="shrink-0 text-xs font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full">
+            {items.length}{cfg?.maxItems > 0 ? ` / ${cfg.maxItems}` : ''}
+          </span>
+        )}
       </div>
 
-      {/* Description */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5">
-        <h3 className="text-sm font-bold text-slate-900 mb-2">{t('profilePage.whatIsWishlist')}</h3>
-        <p className="text-sm text-slate-600 leading-relaxed">
-          {t('profilePage.whatIsWishlistDesc')}
-        </p>
-      </div>
-
-      {/* Features preview */}
-      <div>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">{t('profilePage.whatsComing')}</p>
-        <div className="space-y-2">
-          {[
-            { Icon: Heart,    title: t('profilePage.wlFeat1Title'), desc: t('profilePage.wlFeat1Desc') },
-            { Icon: BedDouble,title: t('profilePage.wlFeat2Title'), desc: t('profilePage.wlFeat2Desc') },
-            { Icon: Building2,title: t('profilePage.wlFeat3Title'), desc: t('profilePage.wlFeat3Desc') },
-            { Icon: Search,   title: t('profilePage.wlFeat4Title'), desc: t('profilePage.wlFeat4Desc') },
-          ].map(({ Icon, title, desc }) => (
-            <div key={title} className="bg-white rounded-2xl border border-slate-200 p-4 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center shrink-0">
-                <Icon className="w-5 h-5 text-rose-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-slate-900">{title}</p>
-                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{desc}</p>
+      {featureOff ? (
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3"><Heart className="w-7 h-7 text-slate-300" /></div>
+          <p className="font-semibold text-slate-700">{t('profilePage.wishlistOffTitle')}</p>
+          <p className="text-sm text-slate-400 mt-1">{t('profilePage.wishlistOffDesc')}</p>
+        </div>
+      ) : isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {[0, 1, 2, 3].map(i => <div key={i} className="h-28 rounded-2xl bg-slate-100 animate-pulse" />)}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="bg-white rounded-3xl border border-rose-100 shadow-md shadow-rose-100/40 p-10 text-center">
+          <div className="w-20 h-20 rounded-full bg-rose-50 flex items-center justify-center mx-auto mb-4"><Heart className="w-10 h-10 text-rose-300" /></div>
+          <h3 className="text-lg font-bold text-slate-900">{t('profilePage.wishlistEmptyTitle')}</h3>
+          <p className="mt-1.5 text-sm text-slate-500 max-w-sm mx-auto">{t('profilePage.whatIsWishlistDesc')}</p>
+          <button onClick={() => navigate('/search')} className="mt-5 inline-flex items-center justify-center gap-2 px-5 py-3 bg-brand text-white rounded-xl text-sm font-bold hover:bg-brand-700 transition-colors shadow-md shadow-brand/30">
+            <Search className="w-4 h-4" /> {t('profilePage.browseHotelsProps')} <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {items.map(it => (
+            <div key={it.wid} className="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow flex">
+              <Link to={detailUrl(it)} className="w-28 sm:w-32 shrink-0 bg-slate-100 relative">
+                {it.image
+                  ? <img src={getImageUrl(it.image)} alt={it.name} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full flex items-center justify-center">{it.type === 'hotel' ? <HotelIcon className="w-7 h-7 text-slate-300" /> : <Building2 className="w-7 h-7 text-slate-300" />}</div>}
+                <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-white/90 text-[9px] font-bold uppercase tracking-wide text-slate-600">
+                  {it.type === 'hotel' ? t('profilePage.wlTypeHotel') : t('profilePage.wlTypeProperty')}
+                </span>
+              </Link>
+              <div className="flex-1 min-w-0 p-3 flex flex-col">
+                <Link to={detailUrl(it)} className="min-w-0">
+                  <p className="font-bold text-sm text-slate-900 truncate">{it.name}</p>
+                  {it.city && <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1"><MapPin className="w-3 h-3 shrink-0" /> {it.city}</p>}
+                </Link>
+                <div className="mt-auto flex items-center justify-between gap-2 pt-2">
+                  {it.type === 'property'
+                    ? <span className="text-sm font-bold text-brand">{it.price ? formatRupiah(it.price) : '-'}</span>
+                    : <span className="text-xs text-amber-500 flex items-center gap-0.5">{it.starRating ? <>{it.starRating} <Star className="w-3 h-3 fill-amber-400 text-amber-400" /></> : ''}</span>}
+                  <button onClick={() => removeMut.mutate(it.wid)} disabled={removeMut.isPending}
+                    className="shrink-0 w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:border-rose-300 hover:text-rose-500 transition-colors" aria-label={t('wishlistBtn.removed')}>
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
-      </div>
-
-      {/* CTA */}
-      <button
-        onClick={() => navigate('/search')}
-        className="w-full flex items-center justify-center gap-2 py-3.5 bg-brand text-white rounded-2xl text-sm font-bold hover:bg-brand-700 transition-colors shadow-md shadow-brand/30"
-      >
-        <Search className="w-4 h-4" />
-        {t('profilePage.browseHotelsProps')}
-        <ArrowRight className="w-4 h-4" />
-      </button>
+      )}
     </div>
   )
 }

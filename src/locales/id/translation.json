@@ -308,6 +308,14 @@
     "orWith": "atau masuk dengan", "haveAccount": "Sudah punya akun?", "noAccount": "Belum punya akun?",
     "welcome": "Selamat datang, {{name}}! 👋"
   },
+  "wishlistBtn": {
+    "save": "Simpan",
+    "saved": "Tersimpan",
+    "added": "Ditambahkan ke wishlist",
+    "removed": "Dihapus dari wishlist",
+    "failed": "Gagal memperbarui wishlist",
+    "loginNeeded": "Login dulu untuk menyimpan ke wishlist"
+  },
   "footer": {
     "services": "Layanan", "help": "Bantuan", "followUs": "Ikuti Kami",
     "contactUs": "Hubungi Kami", "copyright": "Semua hak dilindungi.",
@@ -506,6 +514,11 @@
     "wishlistDevNote": "Fitur Wishlist sedang dalam pengembangan",
     "whatIsWishlist": "Apa Itu Wishlist?",
     "whatIsWishlistDesc": "Simpan hotel & properti favorit Anda untuk diakses lagi nanti. Cocok untuk rencana liburan, atau properti incaran yang ingin Anda pantau harga & ketersediaannya.",
+    "wishlistEmptyTitle": "Wishlist masih kosong",
+    "wishlistOffTitle": "Fitur Wishlist dinonaktifkan",
+    "wishlistOffDesc": "Fitur wishlist sedang tidak tersedia untuk saat ini.",
+    "wlTypeHotel": "Hotel",
+    "wlTypeProperty": "Properti",
     "whatsComing": "Yang Akan Hadir",
     "wlFeat1Title": "Simpan Sekali Klik",
     "wlFeat1Desc": "Tambah ke wishlist langsung dari kartu hotel atau properti.",

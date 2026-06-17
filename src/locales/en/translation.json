@@ -308,6 +308,14 @@
     "orWith": "or sign in with", "haveAccount": "Already have an account?", "noAccount": "Don't have an account?",
     "welcome": "Welcome, {{name}}! 👋"
   },
+  "wishlistBtn": {
+    "save": "Save",
+    "saved": "Saved",
+    "added": "Added to wishlist",
+    "removed": "Removed from wishlist",
+    "failed": "Failed to update wishlist",
+    "loginNeeded": "Please log in to save to wishlist"
+  },
   "footer": {
     "services": "Services", "help": "Help", "followUs": "Follow Us",
     "contactUs": "Contact Us", "copyright": "All rights reserved.",
@@ -506,6 +514,11 @@
     "wishlistDevNote": "The Wishlist feature is under development",
     "whatIsWishlist": "What Is Wishlist?",
     "whatIsWishlistDesc": "Save your favorite hotels & properties to access later. Great for holiday plans or properties you want to track for price & availability.",
+    "wishlistEmptyTitle": "Your wishlist is empty",
+    "wishlistOffTitle": "Wishlist feature disabled",
+    "wishlistOffDesc": "The wishlist feature is currently unavailable.",
+    "wlTypeHotel": "Hotel",
+    "wlTypeProperty": "Property",
     "whatsComing": "What's Coming",
     "wlFeat1Title": "Save in One Click",
     "wlFeat1Desc": "Add to wishlist directly from a hotel or property card.",

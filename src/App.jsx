@@ -91,6 +91,7 @@ import AdminReports from '@/pages/admin/Reports'
 import AdminAnalytics from '@/pages/admin/Analytics'
 import AdminSettings from '@/pages/admin/Settings'
 import AdminLoyalty from '@/pages/admin/Loyalty'
+import AdminWishlist from '@/pages/admin/Wishlist'
 import AdminUsers from '@/pages/admin/Users'
 import AdminPromos from '@/pages/admin/Promos'
 import AdminCampaigns from '@/pages/admin/Campaigns'
@@ -369,6 +370,7 @@ export default function App() {
           <Route path="analytics" element={<BlockRoles roles={['design_interior']}><AdminAnalytics /></BlockRoles>} />
           <Route path="settings" element={<AdminRoute roles={['superadmin']}><AdminSettings /></AdminRoute>} />
           <Route path="loyalty" element={<AdminRoute roles={['superadmin']}><AdminLoyalty /></AdminRoute>} />
+          <Route path="wishlist" element={<AdminRoute roles={['superadmin']}><AdminWishlist /></AdminRoute>} />
           <Route path="users" element={<BlockRoles roles={['design_interior']}><AdminUsers /></BlockRoles>} />
           <Route path="promos" element={<BlockRoles roles={['design_interior']}><AdminPromos /></BlockRoles>} />
           <Route path="campaigns" element={<BlockRoles roles={['design_interior']}><AdminCampaigns /></BlockRoles>} />

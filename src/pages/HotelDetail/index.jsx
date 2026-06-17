@@ -40,6 +40,7 @@ import MapEmbed from '@/components/ui/MapEmbed'
 import DateField from '@/components/ui/DateField'
 import ReviewForm from '@/components/ReviewForm'
 import InquiryChatModal from '@/components/chat/InquiryChatModal'
+import WishlistButton from '@/components/WishlistButton'
 import SEO from '@/components/SEO'
 
 const facilityIcons = {
@@ -1008,9 +1009,12 @@ export default function HotelDetail() {
                     ) : null}
                   </div>
 
-                  <h1 className="mt-2 sm:mt-4 max-w-3xl text-xl sm:text-2xl md:text-3xl lg:text-[2.6rem] font-bold leading-tight text-white">
-                    {hotel.name}
-                  </h1>
+                  <div className="mt-2 sm:mt-4 flex items-start justify-between gap-3">
+                    <h1 className="max-w-3xl text-xl sm:text-2xl md:text-3xl lg:text-[2.6rem] font-bold leading-tight text-white">
+                      {hotel.name}
+                    </h1>
+                    {resolvedId ? <WishlistButton type="hotel" id={resolvedId} className="mt-1 shrink-0" /> : null}
+                  </div>
 
                   <div className="mt-2 sm:mt-4 flex flex-wrap items-center gap-x-3 sm:gap-x-5 gap-y-1.5 sm:gap-y-3 text-xs sm:text-sm text-white/85">
                     <span className="inline-flex items-center gap-1.5 sm:gap-2 min-w-0">
@@ -1603,6 +1607,8 @@ export default function HotelDetail() {
                   Pesan Sekarang
                   <ArrowRight className="h-4 w-4" />
                 </button>
+
+                {resolvedId ? <WishlistButton type="hotel" id={resolvedId} variant="inline" className="mt-2.5 w-full" /> : null}
               </div>
 
               <div className="mt-5 grid gap-3">

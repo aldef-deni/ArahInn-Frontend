@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Star, MapPin, ThumbsUp, ChevronRight } from 'lucide-react'
 import { formatRupiah, getImageUrl, hotelDetailUrl } from '@/utils'
 import { useTranslation } from 'react-i18next'
+import WishlistButton from '@/components/WishlistButton'
 
 const CATEGORY_COLORS = {
   Hotel      : 'bg-blue-100 text-blue-700',
@@ -135,12 +136,15 @@ export default function HotelCardRow({ hotel, checkIn, checkOut, guests }) {
             )}
           </div>
 
-          <Link
-            to={detailUrl}
-            className="ml-3 sm:ml-0 sm:mt-3 px-4 sm:px-5 py-2 sm:py-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white text-xs sm:text-sm font-semibold rounded-xl transition-all whitespace-nowrap shadow-sm"
-          >
-            {t('hotel.book')}
-          </Link>
+          <div className="flex items-center gap-2 ml-3 sm:ml-0 sm:mt-3">
+            {hotel.id ? <WishlistButton type="hotel" id={hotel.id} className="w-9 h-9 sm:w-10 sm:h-10 border border-slate-200 shrink-0" /> : null}
+            <Link
+              to={detailUrl}
+              className="px-4 sm:px-5 py-2 sm:py-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white text-xs sm:text-sm font-semibold rounded-xl transition-all whitespace-nowrap shadow-sm"
+            >
+              {t('hotel.book')}
+            </Link>
+          </div>
         </div>
       </div>
     </div>
