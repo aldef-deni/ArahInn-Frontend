@@ -1,0 +1,207 @@
+/* =====================================
+   Overlay
+===================================== */
+
+.arahinn-overlay {
+  position: fixed;
+  inset: 0;
+
+  z-index: 999999;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: rgba(255,255,255,0.15);
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* =====================================
+   Modal Card
+===================================== */
+
+.arahinn-modal {
+  position: relative;
+
+  width: 720px;
+  max-width: min(95vw, 720px);
+
+  padding: clamp(20px, 5vw, 40px);
+
+  border-radius: 24px;
+
+  background: rgba(255,255,255,0.75);
+
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+  border: 1px solid rgba(255,255,255,0.4);
+
+  box-shadow:
+    0 10px 40px rgba(13,110,253,0.10),
+    0 0 60px rgba(13,110,253,0.08);
+
+  overflow: hidden;
+}
+
+/* =====================================
+   Logo
+===================================== */
+
+.logo-wrapper {
+  display: flex;
+  justify-content: center;
+
+  margin-bottom: clamp(18px, 4vw, 30px);
+}
+
+.loader-logo {
+  width: clamp(96px, 30vw, 160px);
+
+  animation:
+    logoRotate 12s linear infinite,
+    logoPulse 2s ease-in-out infinite;
+}
+
+/* =====================================
+   Flight Area
+===================================== */
+
+.flight-container {
+  position: relative;
+
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 600 / 220;   /* skala mengikuti lebar, tak terpotong */
+
+  margin: auto;
+}
+
+.flight-svg {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+}
+
+.flight-path {
+  fill: none;
+
+  stroke: #0d6efd;
+  stroke-width: 4;
+
+  stroke-dasharray: 12 8;
+}
+
+.plane {
+  position: absolute;
+
+  font-size: clamp(26px, 7vw, 42px);
+
+  z-index: 10;
+}
+
+.hotel {
+  position: absolute;
+
+  right: 0;
+  bottom: 6%;
+
+  font-size: clamp(34px, 9vw, 52px);
+
+  animation: hotelBounce 4.5s infinite;
+}
+
+/* =====================================
+   Text
+===================================== */
+
+.loader-text {
+  margin-top: clamp(14px, 3vw, 20px);
+
+  text-align: center;
+
+  font-size: clamp(14px, 3.6vw, 18px);
+  font-weight: 600;
+
+  color: #1f2937;
+
+  padding: 0 8px;
+}
+
+/* =====================================
+   Clouds
+===================================== */
+
+.cloud {
+  position: absolute;
+
+  opacity: .25;
+}
+
+.cloud1 {
+  top: 12px;
+  left: 16px;
+
+  font-size: clamp(30px, 7vw, 50px);
+
+  animation: floatCloud 8s ease-in-out infinite;
+}
+
+.cloud2 {
+  top: 70px;
+  right: 24px;
+
+  font-size: clamp(40px, 9vw, 70px);
+
+  animation: floatCloud 10s ease-in-out infinite;
+}
+
+@media (max-width: 480px) {
+  .cloud { display: none; }   /* hindari tumpang tindih di layar kecil */
+}
+
+/* =====================================
+   Animations
+===================================== */
+
+@keyframes floatCloud {
+  0%,100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes logoRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes logoPulse {
+  0%,100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes hotelBounce {
+  0%,80%,100% {
+    transform: translateY(0);
+  }
+
+  90% {
+    transform: translateY(-12px);
+  }
+}

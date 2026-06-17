@@ -10,6 +10,14 @@ import i18n from '@/i18n'
 import { travelApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
+import LoaderArahInn from '@/components/LoaderArahInn'
+
+const FLIGHT_LOADER_MESSAGES = [
+  'Mencari penerbangan terbaik...',
+  'Membandingkan harga maskapai...',
+  'Memeriksa ketersediaan kursi...',
+  'Menyiapkan perjalanan Anda...',
+]
 
 // Tanggal LOKAL (YYYY-MM-DD) — JANGAN toISOString() (itu UTC, mundur sehari di WIB).
 const pad2 = (n) => String(n).padStart(2, '0')
@@ -224,6 +232,7 @@ export default function FlightSearch() {
 
   return (
     <div className="min-h-[70vh] bg-slate-50">
+      {searching && <LoaderArahInn messages={FLIGHT_LOADER_MESSAGES} />}
       <SEO title={t('travel.flightSeoTitle')} description={t('travel.flightSeoDesc')} url="/tiket/pesawat" />
 
       {showForm && (

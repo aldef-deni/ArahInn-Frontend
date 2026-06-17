@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import {
   Plane, ArrowRight, User, Calendar, Phone, CreditCard, Mail,
-  Loader2, AlertCircle, CheckCircle2, ChevronLeft, ShieldCheck,
+  Loader2, AlertCircle, CheckCircle2, ChevronLeft, ShieldCheck, FileText,
 } from 'lucide-react'
 import { travelApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
@@ -12,13 +12,21 @@ import SEO from '@/components/SEO'
 import DateField from '@/components/ui/DateField'
 import PromoField from '@/components/travel/PromoField'
 import { travelCheckoutError } from '@/utils/travelCheckoutError'
+import { sortedCountries, countryName } from '@/data/countries'
 
 const formatDMY = (ymd) => { if (!ymd) return '-'; const [y,m,d] = ymd.split('-'); return `${d}/${m}/${y}` }
-const emptyAdult = () => ({ title: 'MR', firstName: '', lastName: '', birthdate: '', idNumber: '', phone: '', email: '' })
-const emptyKid   = () => ({ title: 'MSTR', firstName: '', lastName: '', birthdate: '', idNumber: '' })
+const emptyId = { nationality: 'ID', idNumber: '', passportNumber: '', passportIssueDate: '', passportIssuingCountry: '', passportExpiry: '' }
+const emptyAdult = () => ({ title: 'MR', firstName: '', lastName: '', birthdate: '', ...emptyId, phone: '', email: '' })
+const emptyKid   = () => ({ title: 'MSTR', firstName: '', lastName: '', birthdate: '', ...emptyId })
+const isWNI = (p) => (p.nationality || 'ID') === 'ID'
+// Identitas lengkap: WNI → NIK (wajib utk dewasa); WNA → paspor lengkap
+const idOk = (p, req) => isWNI(p)
+  ? (req ? !!p.idNumber : true)
+  : (!!p.passportNumber && !!p.passportIssueDate && !!p.passportIssuingCountry && !!p.passportExpiry)
 
 export default function FlightBooking() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const lang = i18n.language
   const navigate = useNavigate()
   const sel = useMemo(() => { try { return JSON.parse(sessionStorage.getItem('flight_selection') || 'null') } catch { return null } }, [])
 
@@ -84,9 +92,9 @@ export default function FlightBooking() {
   const upd = (setter) => (i, k, v) => setter(a => a.map((p, idx) => idx === i ? { ...p, [k]: v } : p))
   const setA = upd(setAdults), setC = upd(setChildren), setI = upd(setInfants)
 
-  const valid = adults.every(p => p.firstName && p.birthdate && p.idNumber && p.phone)
-             && children.every(p => p.firstName && p.birthdate)
-             && infants.every(p => p.firstName && p.birthdate)
+  const valid = adults.every(p => p.firstName && p.birthdate && idOk(p, true) && p.phone)
+             && children.every(p => p.firstName && p.birthdate && idOk(p, false))
+             && infants.every(p => p.firstName && p.birthdate && idOk(p, false))
 
   const legPayload = (leg, price) => ({
     airline: leg.airline, departure: leg.departure.code, arrival: leg.arrival.code,
@@ -182,7 +190,7 @@ export default function FlightBooking() {
               <Field label={t('travel.lastName')} value={p.lastName} onChange={v => setA(i, 'lastName', v)} />
             </div>
             <DateField label={t('travel.birthdate')} value={p.birthdate} onChange={v => setA(i, "birthdate", v)} />
-            <Field label={t('travel.idKtp')} icon={CreditCard} value={p.idNumber} onChange={v => setA(i, 'idNumber', v.replace(/[^0-9]/g,''))} inputMode="numeric" />
+            <IdentitySection p={p} set={setA} i={i} t={t} lang={lang} required />
             <div className="grid grid-cols-2 gap-2.5">
               <Field label={t('travel.phoneNo')} icon={Phone} value={p.phone} onChange={v => setA(i, 'phone', v.replace(/[^0-9]/g,''))} inputMode="numeric" />
               <Field label={t('travel.email')} icon={Mail} value={p.email} onChange={v => setA(i, 'email', v)} />
@@ -196,7 +204,7 @@ export default function FlightBooking() {
               <Field label={t('travel.lastName')} value={p.lastName} onChange={v => setC(i, 'lastName', v)} />
             </div>
             <DateField label={t('travel.birthdate')} value={p.birthdate} onChange={v => setC(i, "birthdate", v)} />
-            <Field label={t('travel.nikOptional')} icon={CreditCard} value={p.idNumber} onChange={v => setC(i, 'idNumber', v.replace(/[^0-9]/g,''))} inputMode="numeric" />
+            <IdentitySection p={p} set={setC} i={i} t={t} lang={lang} />
           </PaxCard>
         ))}
         {infants.map((p, i) => (
@@ -206,6 +214,7 @@ export default function FlightBooking() {
               <Field label={t('travel.lastName')} value={p.lastName} onChange={v => setI(i, 'lastName', v)} />
             </div>
             <DateField label={t('travel.birthdate')} value={p.birthdate} onChange={v => setI(i, "birthdate", v)} />
+            <IdentitySection p={p} set={setI} i={i} t={t} lang={lang} />
           </PaxCard>
         ))}
 
@@ -252,10 +261,45 @@ function PaxCard({ title, color, children }) {
     </div>
   )
 }
-function TitleSelect({ value, onChange, opts }) {
+// Kewarganegaraan + identitas: WNI → NIK; WNA → paspor (sesuai standar internasional)
+function IdentitySection({ p, set, i, t, lang, required }) {
+  const today = new Date().toISOString().slice(0, 10)
+  return (
+    <div className="space-y-2.5">
+      <CountrySelect label={t('travel.nationality')} value={p.nationality || 'ID'} onChange={v => set(i, 'nationality', v)} lang={lang} />
+      {isWNI(p) ? (
+        <Field label={required ? t('travel.idKtp') : t('travel.nikOptional')} icon={CreditCard} value={p.idNumber} onChange={v => set(i, 'idNumber', v.replace(/[^0-9]/g, ''))} inputMode="numeric" />
+      ) : (
+        <>
+          <div className="flex items-start gap-2 p-3 bg-sky-50 border border-sky-100 rounded-xl">
+            <FileText className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+            <p className="text-xs text-sky-800 leading-relaxed">{t('travel.passportHint')}</p>
+          </div>
+          <Field label={t('travel.passportNumber')} icon={CreditCard} value={p.passportNumber} onChange={v => set(i, 'passportNumber', v.replace(/[^a-zA-Z0-9]/g, '').toUpperCase())} />
+          <DateField label={t('travel.passportIssueDate')} value={p.passportIssueDate} max={today} onChange={v => set(i, 'passportIssueDate', v)} />
+          <CountrySelect label={t('travel.passportIssuingCountry')} value={p.passportIssuingCountry || ''} onChange={v => set(i, 'passportIssuingCountry', v)} lang={lang} placeholder={t('travel.selectCountry')} />
+          <DateField label={t('travel.passportExpiry')} value={p.passportExpiry} min={today} onChange={v => set(i, 'passportExpiry', v)} />
+        </>
+      )}
+    </div>
+  )
+}
+function CountrySelect({ label, value, onChange, lang, placeholder }) {
   return (
     <div>
-      <label className="block text-[11px] font-semibold text-slate-500 mb-1">Title</label>
+      <label className="block text-[11px] font-semibold text-slate-500 mb-1">{label}</label>
+      <select value={value} onChange={e => onChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-300">
+        {placeholder && <option value="">{placeholder}</option>}
+        {sortedCountries(lang).map(c => <option key={c.code} value={c.code}>{countryName(c, lang)}</option>)}
+      </select>
+    </div>
+  )
+}
+function TitleSelect({ value, onChange, opts }) {
+  const { t } = useTranslation()
+  return (
+    <div>
+      <label className="block text-[11px] font-semibold text-slate-500 mb-1">{t('travel.salutation')}</label>
       <select value={value} onChange={e => onChange(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300">
         {opts.map(o => <option key={o} value={o}>{o}</option>)}
       </select>

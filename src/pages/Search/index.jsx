@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import HotelCardRow from '@/components/hotel/HotelCardRow'
 import DestinationSearch from '@/components/ui/DestinationSearch'
 import SEO from '@/components/SEO'
+import LoaderArahInn from '@/components/LoaderArahInn'
 import DateField from '@/components/ui/DateField'
 
 const MAX_PRICE = 7000000
@@ -200,6 +201,7 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {isLoading && <LoaderArahInn />}
       <SEO
         title={t('search.seoTitle')}
         description={t('search.seoDescription')}

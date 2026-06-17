@@ -91,11 +91,32 @@ export default function AdminPromos() {
   })
 
   const handleImageChange = (e) => {
-    const file = e.target.files?.[0]
+    const input = e.target
+    const file = input.files?.[0]
     if (!file) return
-    setImageFile(file)
+    // Maks 5 MB
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'Ukuran gambar terlalu besar', description: 'Maksimal 5 MB. Silakan pilih gambar yang lebih kecil atau dikompres dulu.', variant: 'destructive' })
+      input.value = ''
+      return
+    }
     const reader = new FileReader()
-    reader.onloadend = () => setImagePreview(reader.result)
+    reader.onloadend = () => {
+      const dataUrl = reader.result
+      const img = new window.Image()
+      img.onload = () => {
+        // Resolusi minimal wajib 1536×1024 px
+        if (img.naturalWidth < 1536 || img.naturalHeight < 1024) {
+          toast({ title: 'Resolusi gambar terlalu kecil', description: `Minimal 1536×1024 piksel. Gambar Anda ${img.naturalWidth}×${img.naturalHeight} px.`, variant: 'destructive' })
+          input.value = ''
+          return
+        }
+        setImageFile(file)
+        setImagePreview(dataUrl)
+      }
+      img.onerror = () => { toast({ title: 'Gambar tidak valid', variant: 'destructive' }); input.value = '' }
+      img.src = dataUrl
+    }
     reader.readAsDataURL(file)
   }
 
@@ -266,7 +287,7 @@ export default function AdminPromos() {
       {/* Form modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto scrollbar-hide">
             <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-white">
               <h3 className="font-semibold">{editing ? 'Edit Promo' : 'Buat Promo Baru'}</h3>
               <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
@@ -278,7 +299,7 @@ export default function AdminPromos() {
               {/* Image flyer */}
               <div>
                 <label className="block text-sm font-medium mb-1.5">
-                  Flyer Image <span className="text-muted-foreground font-normal">(rekomendasi 1200×600px)</span>
+                  Flyer Image <span className="text-muted-foreground font-normal">(wajib min. 1536×1024px · maks 5 MB)</span>
                 </label>
                 <div className="flex items-center gap-4">
                   <div className="w-32 h-20 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0">
@@ -296,7 +317,7 @@ export default function AdminPromos() {
                   </label>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1.5">
-                  Promo dengan flyer akan tampil di carousel main website (walaupun belum mulai).
+                  Format PNG/JPG/WEBP · wajib minimal 1536×1024px (rasio 3:2) · maks 5 MB. Promo dengan flyer akan tampil di carousel main website (walaupun belum mulai).
                 </p>
               </div>
 

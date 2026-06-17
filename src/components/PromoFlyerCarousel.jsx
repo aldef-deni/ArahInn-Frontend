@@ -9,14 +9,14 @@ import {
 } from 'lucide-react'
 
 // Helper: cek apakah promo "Segera Hadir" (start di masa depan, abaikan jam)
-function checkIsUpcoming(startDate) {
+export function checkIsUpcoming(startDate) {
   if (!startDate) return false
   const today = new Date(); today.setHours(0, 0, 0, 0)
   const start = new Date(startDate); start.setHours(0, 0, 0, 0)
   return start > today
 }
 
-function PromoDetailModal({ promo, onClose }) {
+export function PromoDetailModal({ promo, onClose }) {
   const { toast } = useToast()
   const [copied, setCopied] = useState(false)
 

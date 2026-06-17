@@ -10,6 +10,14 @@ import i18n from '@/i18n'
 import { travelApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
+import LoaderArahInn from '@/components/LoaderArahInn'
+
+const PELNI_LOADER_MESSAGES = [
+  'Mencari kapal terbaik...',
+  'Membandingkan jadwal & kelas...',
+  'Memeriksa ketersediaan tiket...',
+  'Menyiapkan perjalanan Anda...',
+]
 
 // Tanggal LOKAL (YYYY-MM-DD) — JANGAN toISOString() (itu UTC, mundur sehari di WIB).
 const pad2 = (n) => String(n).padStart(2, '0')
@@ -109,6 +117,7 @@ export default function PelniSearch() {
 
   return (
     <div className="min-h-[70vh] bg-slate-50">
+      {searching && <LoaderArahInn messages={PELNI_LOADER_MESSAGES} />}
       <SEO title={t('travel.pelniSeoTitle')} description={t('travel.pelniSeoDesc')} url="/tiket/pelni" />
 
       {showForm && (
