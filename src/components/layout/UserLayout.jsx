@@ -1,5 +1,6 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
+import { TravelFooterContext } from '@/contexts/TravelFooterContext'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/store/authStore'
@@ -33,6 +34,13 @@ export default function UserLayout() {
   const { toast } = useToast()
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropOpen, setDropOpen] = useState(false)
+  // Moda transaksi travel aktif (di-set halaman pembayaran) → footer khusus pesawat
+  const [travelModa, setTravelModa] = useState(null)
+  // Footer khusus penerbangan: halaman pesawat (search/pesan), pembayaran tiket pesawat,
+  // serta halaman info penerbangan (persyaratan/kebijakan/refund)
+  const flightFooter = location.pathname.startsWith('/tiket/pesawat')
+    || location.pathname.startsWith('/penerbangan')
+    || (location.pathname.startsWith('/tiket/bayar') && travelModa === 'pesawat')
 
   // Campaign modal (dipicu dari footer "Campaign")
   const [campaignListOpen, setCampaignListOpen] = useState(false)
@@ -84,6 +92,7 @@ export default function UserLayout() {
   const mobileNavLinks = navLinks.filter(l => l.to !== '/search')
 
   return (
+    <TravelFooterContext.Provider value={setTravelModa}>
     <div className="min-h-screen flex flex-col bg-background">
 
       {/* ── Navbar ──────────────────────────────────────── */}
@@ -367,12 +376,19 @@ export default function UserLayout() {
               <img src="/logo-arahin.png" alt="Arahinn" className="h-10 w-auto" />
             </div>
             <p className="text-slate-500 text-sm leading-relaxed text-justify">
-              {t('footer.description')}
+              {t(flightFooter ? 'footer.flightDescription' : 'footer.description')}
             </p>
           </div>
           <div className="md:ml-auto flex flex-col sm:flex-row gap-12 lg:gap-16">
           <div>
             <h4 className="font-display font-bold text-xl text-brand-800 mb-4">{t('footer.services')}</h4>
+            {flightFooter ? (
+            <ul className="space-y-2.5 text-sm text-slate-500">
+              <li><Link to="/penerbangan/persyaratan" className="hover:text-brand transition-colors">{t('footer.flightRequirements')}</Link></li>
+              <li><Link to="/penerbangan/kebijakan" className="hover:text-brand transition-colors">{t('footer.flightPolicy')}</Link></li>
+              <li><Link to="/penerbangan/refund" className="hover:text-brand transition-colors">{t('footer.refundPolicy')}</Link></li>
+            </ul>
+            ) : (
             <ul className="space-y-2.5 text-sm text-slate-500">
               <li><Link to="/search" className="hover:text-brand transition-colors">{t('footer.searchHotel')}</Link></li>
               <li>
@@ -383,6 +399,7 @@ export default function UserLayout() {
               <li><Link to="/promo" className="hover:text-brand transition-colors">{t('footer.specialPromo')}</Link></li>
               <li><Link to="/poin" className="hover:text-brand transition-colors">{t('footer.loyaltyProgram')}</Link></li>
             </ul>
+            )}
           </div>
           <div>
             <h4 className="font-display font-bold text-xl text-brand-800 mb-4">{t('footer.help')}</h4>
@@ -606,5 +623,6 @@ export default function UserLayout() {
 
       {selectedCampaign && <CampaignDetailModal campaign={selectedCampaign} onClose={() => setSelectedCampaign(null)} />}
     </div>
+    </TravelFooterContext.Provider>
   )
 }

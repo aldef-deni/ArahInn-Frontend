@@ -11,6 +11,7 @@ import { travelApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 import LoaderArahInn from '@/components/LoaderArahInn'
+import TravelPromoSection from '@/components/travel/TravelPromoSection'
 
 const PELNI_LOADER_MESSAGES = [
   'Mencari kapal terbaik...',
@@ -200,7 +201,7 @@ export default function PelniSearch() {
         )}
 
         {results && results.length === 0 && !searching && <div className="text-center py-12"><Ship className="w-12 h-12 text-slate-300 mx-auto mb-3" /><p className="font-semibold text-slate-700">{t('travel.noSchedule')}</p><p className="text-sm text-slate-400 mt-1">{t('travel.noScheduleDesc')}</p></div>}
-        {!results && !searching && <div className="text-center py-12"><Ship className="w-12 h-12 text-slate-200 mx-auto mb-3" /><p className="text-sm text-slate-400">{t('travel.pelniEmptyPrompt')}</p></div>}
+        {!results && !searching && <TravelPromoSection product="pelni" />}
       </section>
 
       <PortPicker open={picker === 'origin'} ports={origins} title={t('travel.originPort')} onPick={setOrigin} onClose={() => setPicker(null)} />

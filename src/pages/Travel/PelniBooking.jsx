@@ -82,7 +82,8 @@ export default function PelniBooking() {
         passengers: { adults, children, infants },
       })
       const booking = res.data?.data
-      if (booking?.id) navigate(`/tiket/bayar/${booking.id}`)
+      const ref = booking?.code ?? booking?.id
+      if (ref) navigate(`/tiket/bayar/${ref}`)
       else setError('Gagal membuat pesanan.')
     } catch (e) {
       setError(travelCheckoutError(e))

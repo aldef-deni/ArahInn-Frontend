@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import i18n from '@/i18n'
+import { useSetTravelModa } from '@/contexts/TravelFooterContext'
 import {
   TrainFront, Plane, Ship, ArrowRight, Clock, Loader2, AlertCircle,
   CheckCircle2, Ticket, ChevronLeft, Download, Building2, Copy, Check,
@@ -12,6 +13,8 @@ import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 
 const fmtDMY = (s) => { if (!s) return '-'; const [y,m,d] = String(s).slice(0,10).split('-'); return `${d}/${m}/${y}` }
+const pad2 = (n) => String(n).padStart(2, '0')
+const PAY_WINDOW_MS = 12 * 60 * 1000   // batas bayar tiket pesawat: 12 menit
 
 export default function TravelPayment() {
   const { t } = useTranslation()
@@ -20,6 +23,11 @@ export default function TravelPayment() {
   const [err, setErr] = useState(null)
   const [downloading, setDownloading] = useState(false)
   const [copied, setCopied] = useState('')
+  const [now, setNow] = useState(Date.now())
+  const [payDeadline, setPayDeadline] = useState(null)
+
+  // Tick tiap detik untuk countdown pembayaran
+  useEffect(() => { const tmr = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(tmr) }, [])
 
   const { data: b, isLoading } = useQuery({
     queryKey: ['travel-booking', id],
@@ -32,6 +40,20 @@ export default function TravelPayment() {
     queryFn: () => paymentApi.mode().then(r => r.data?.data),
   })
   const bank = mode?.bank
+
+  // Beri tahu layout moda transaksi → footer khusus penerbangan saat moda 'pesawat'
+  const setTravelModa = useSetTravelModa()
+  useEffect(() => { setTravelModa(b?.moda || null); return () => setTravelModa(null) }, [b?.moda, setTravelModa])
+
+  // Deadline bayar 12 menit (tiket pesawat) — di-anchor saat order pertama dibuka & disimpan,
+  // agar selalu mulai tepat 12:00 dan tak terpengaruh selisih jam server/klien (refresh tetap konsisten).
+  useEffect(() => {
+    if (!b || b.moda !== 'pesawat' || b.status !== 'pending_payment') { setPayDeadline(null); return }
+    const key = `pay_deadline_${b.id}`
+    let dl = Number(localStorage.getItem(key))
+    if (!dl || Number.isNaN(dl)) { dl = Date.now() + PAY_WINDOW_MS; localStorage.setItem(key, String(dl)) }
+    setPayDeadline(dl)
+  }, [b?.id, b?.moda, b?.status])
 
   const copy = (text, field) => {
     try { navigator.clipboard?.writeText(String(text)) } catch { /* noop */ }
@@ -62,11 +84,18 @@ export default function TravelPayment() {
   const failed = ['failed', 'canceled', 'expired'].includes(b.status)
   const legLabel = (l) => l.leg === 'return' ? t('travel.tripReturn') : t('travel.tripDepart')
 
+  // Countdown 12 menit (khusus tiket pesawat)
+  const remainMs  = payDeadline ? Math.max(0, payDeadline - now) : 0
+  const cdMin = Math.floor(remainMs / 60000)
+  const cdSec = Math.floor((remainMs % 60000) / 1000)
+  const cdExpired = payDeadline ? remainMs <= 0 : false
+  const showCountdown = b.moda === 'pesawat' && b.status === 'pending_payment' && !!payDeadline
+
   return (
     <div className="min-h-[70vh] bg-slate-50">
       <SEO title={t('travel.paymentSeo')} url={`/tiket/bayar/${id}`} />
       <div className="container max-w-lg py-5">
-        <button onClick={() => navigate('/tiket')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-700"><ChevronLeft className="w-4 h-4" /> {t('travel.otherTickets')}</button>
+        <button onClick={() => navigate(b.moda === 'pesawat' ? '/tiket/pesawat' : b.moda === 'pelni' ? '/tiket/pelni' : '/tiket')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-700"><ChevronLeft className="w-4 h-4" /> {t('travel.otherTickets')}</button>
 
         {/* Status banner */}
         {issued ? (
@@ -98,6 +127,33 @@ export default function TravelPayment() {
             <div className="w-14 h-14 rounded-2xl bg-rose-100 flex items-center justify-center mx-auto mb-3"><AlertCircle className="w-7 h-7 text-rose-600" /></div>
             <h1 className="font-display text-xl font-bold text-slate-900">{b.status === 'expired' ? t('travel.orderExpiredTitle') : t('travel.orderCanceledTitle')}</h1>
             <p className="text-sm text-slate-500 mt-1">{t('travel.makeNewOrder')}</p>
+          </div>
+        ) : showCountdown ? (
+          <div className={`rounded-2xl border p-4 mb-4 ${cdExpired ? 'bg-rose-50 border-rose-200' : 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200'}`}>
+            <div className="flex items-center gap-3">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${cdExpired ? 'bg-rose-100' : 'bg-white shadow-sm'}`}>
+                <Clock className={`w-5.5 h-5.5 ${cdExpired ? 'text-rose-600' : 'text-amber-600'}`} />
+              </div>
+              <div className="min-w-0 flex-1">
+                {cdExpired ? (
+                  <>
+                    <p className="text-sm font-bold text-rose-700">{t('travel.payExpiredTitle')}</p>
+                    <p className="text-xs text-rose-600/90 mt-0.5">{t('travel.payExpiredMsg')}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-amber-700">{t('travel.payCountdownLabel')}</p>
+                    <p className="font-display text-3xl font-bold tabular-nums text-amber-700 leading-none mt-1">{pad2(cdMin)}:{pad2(cdSec)}</p>
+                  </>
+                )}
+              </div>
+            </div>
+            {!cdExpired && (
+              <p className="text-[11px] text-amber-800/90 mt-3 leading-relaxed flex items-start gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                {t('travel.payCountdownWarn')}
+              </p>
+            )}
           </div>
         ) : (
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 mb-4 flex items-start gap-2.5">

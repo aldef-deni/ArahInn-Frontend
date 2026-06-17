@@ -139,7 +139,7 @@ export default function TravelBookingList() {
                 </div>
                 <div className="flex items-center gap-2">
                   {isPending && (
-                    <button onClick={() => navigate(`/tiket/bayar/${b.id}`)}
+                    <button onClick={() => navigate(`/tiket/bayar/${b.code ?? b.id}`)}
                       className="px-4 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white text-xs sm:text-sm font-semibold shadow-md shadow-sky-500/20 active:scale-95 transition-all">
                       Bayar Sekarang
                     </button>
@@ -150,7 +150,7 @@ export default function TravelBookingList() {
                       {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} E-Tiket
                     </button>
                   )}
-                  <button onClick={() => navigate(`/tiket/bayar/${b.id}`)}
+                  <button onClick={() => navigate(`/tiket/bayar/${b.code ?? b.id}`)}
                     className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs sm:text-sm font-medium hover:bg-slate-50 active:scale-95 transition-all">
                     Detail <ChevronRight className="w-3.5 h-3.5" />
                   </button>

@@ -11,6 +11,7 @@ import { travelApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 import LoaderArahInn from '@/components/LoaderArahInn'
+import TravelPromoSection from '@/components/travel/TravelPromoSection'
 
 const FLIGHT_LOADER_MESSAGES = [
   'Mencari penerbangan terbaik...',
@@ -387,7 +388,7 @@ export default function FlightSearch() {
           <div className="text-center py-12"><Plane className="w-12 h-12 text-slate-300 mx-auto mb-3" /><p className="font-semibold text-slate-700">{t('travel.noFlights')}</p><p className="text-sm text-slate-400 mt-1">{t('travel.noFlightsDesc')}</p></div>
         )}
         {!results && !searching && (
-          <div className="text-center py-12"><Plane className="w-12 h-12 text-slate-200 mx-auto mb-3" /><p className="text-sm text-slate-400">{t('travel.flightEmptyPrompt')}</p></div>
+          <TravelPromoSection product="pesawat" />
         )}
       </section>
 

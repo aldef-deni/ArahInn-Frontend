@@ -54,6 +54,9 @@ import AdminPpob from '@/pages/admin/Ppob'
 import AdminTravel from '@/pages/admin/Travel'
 import TermsAndConditions from '@/pages/Legal/TermsAndConditions'
 import PrivacyPolicy from '@/pages/Legal/PrivacyPolicy'
+import FlightRequirements from '@/pages/Legal/FlightRequirements'
+import FlightPolicy from '@/pages/Legal/FlightPolicy'
+import FlightRefund from '@/pages/Legal/FlightRefund'
 import HelpCenter from '@/pages/HelpCenter'
 import Contact from '@/pages/Contact'
 import AccountDeletion from '@/pages/Legal/AccountDeletion'
@@ -328,6 +331,9 @@ export default function App() {
             <Route path="/loyalty" element={<Navigate to="/poin" replace />} />
             <Route path="/dashboard" element={<PrivateRoute><OrderHistory /></PrivateRoute>} />
             <Route path="/maintenance" element={<Maintenance />} />
+            <Route path="/penerbangan/persyaratan" element={<FlightRequirements />} />
+            <Route path="/penerbangan/kebijakan" element={<FlightPolicy />} />
+            <Route path="/penerbangan/refund" element={<FlightRefund />} />
             <Route path="/syarat-ketentuan" element={<TermsAndConditions />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/kebijakan-privasi" element={<PrivacyPolicy />} />

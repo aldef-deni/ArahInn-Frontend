@@ -10,11 +10,28 @@ import { travelApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 import DateField from '@/components/ui/DateField'
+import LoaderArahInn from '@/components/LoaderArahInn'
 import PromoField from '@/components/travel/PromoField'
 import { travelCheckoutError } from '@/utils/travelCheckoutError'
 import { sortedCountries, countryName } from '@/data/countries'
 
 const formatDMY = (ymd) => { if (!ymd) return '-'; const [y,m,d] = ymd.split('-'); return `${d}/${m}/${y}` }
+
+// Klasifikasi usia maskapai (dihitung dari hari ini, tanggal LOKAL):
+//   Dewasa  : ≥ 12 tahun
+//   Anak    : 2 – 11 tahun
+//   Bayi    : 0 – 23 bulan (di bawah 2 tahun)
+const fmtYmd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const yearsAgo = (n) => { const d = new Date(); d.setFullYear(d.getFullYear() - n); return fmtYmd(d) }
+const TODAY_YMD = fmtYmd(new Date())
+const AGE = {
+  adult:  { min: yearsAgo(100), max: yearsAgo(12) },
+  child:  { min: yearsAgo(12),  max: yearsAgo(2)  },
+  infant: { min: yearsAgo(2),   max: TODAY_YMD    },
+}
+// Tanggal lahir valid utk kategori (di dalam rentang min–max kategori)
+const inAge = (bd, cat) => !!bd && bd >= AGE[cat].min && bd <= AGE[cat].max
+
 const emptyId = { nationality: 'ID', idNumber: '', passportNumber: '', passportIssueDate: '', passportIssuingCountry: '', passportExpiry: '' }
 const emptyAdult = () => ({ title: 'MR', firstName: '', lastName: '', birthdate: '', ...emptyId, phone: '', email: '' })
 const emptyKid   = () => ({ title: 'MSTR', firstName: '', lastName: '', birthdate: '', ...emptyId })
@@ -92,9 +109,30 @@ export default function FlightBooking() {
   const upd = (setter) => (i, k, v) => setter(a => a.map((p, idx) => idx === i ? { ...p, [k]: v } : p))
   const setA = upd(setAdults), setC = upd(setChildren), setI = upd(setInfants)
 
-  const valid = adults.every(p => p.firstName && p.birthdate && idOk(p, true) && p.phone)
-             && children.every(p => p.firstName && p.birthdate && idOk(p, false))
-             && infants.every(p => p.firstName && p.birthdate && idOk(p, false))
+  const valid = adults.every(p => p.firstName && inAge(p.birthdate, 'adult') && idOk(p, true) && p.phone)
+             && children.every(p => p.firstName && inAge(p.birthdate, 'child') && idOk(p, false))
+             && infants.every(p => p.firstName && inAge(p.birthdate, 'infant') && idOk(p, false))
+
+  // Pesan validasi spesifik (nama pax + alasan) — utamakan kesalahan usia agar jelas
+  const validationError = () => {
+    const groups = [
+      { arr: adults,   cat: 'adult',  paxKey: 'adultPax',  reqPhone: true },
+      { arr: children, cat: 'child',  paxKey: 'childPax',  reqPhone: false },
+      { arr: infants,  cat: 'infant', paxKey: 'infantPax', reqPhone: false },
+    ]
+    for (const { arr, cat, paxKey, reqPhone } of groups) {
+      for (let i = 0; i < arr.length; i++) {
+        const p = arr[i]
+        const who = t(`travel.${paxKey}`, { n: i + 1 })
+        if (!p.firstName) return t('travel.errNeedName', { who })
+        if (!p.birthdate) return t('travel.errNeedBirth', { who })
+        if (!inAge(p.birthdate, cat)) return t(`travel.errAge_${cat}`, { who })
+        if (!idOk(p, cat === 'adult')) return t('travel.errNeedId', { who })
+        if (reqPhone && !p.phone) return t('travel.errNeedPhone', { who })
+      }
+    }
+    return null
+  }
 
   const legPayload = (leg, price) => ({
     airline: leg.airline, departure: leg.departure.code, arrival: leg.arrival.code,
@@ -105,7 +143,8 @@ export default function FlightBooking() {
 
   const submit = async () => {
     if (fareFailed) { setError(`${fareErrorMsg} ${t('travel.searchAgainHint')}`); return }
-    if (!valid) { setError(t('travel.completePax')); return }
+    const vErr = validationError()
+    if (vErr) { setError(vErr); window.scrollTo({ top: 0, behavior: 'smooth' }); return }
     setLoading(true); setError(null)
     try {
       const res = isRT
@@ -124,8 +163,9 @@ export default function FlightBooking() {
             passengers: { adults, children, infants },
           })
       const data = res.data?.data
-      const bookingId = isRT ? data?.depart?.id : data?.id
-      if (bookingId) navigate(`/tiket/bayar/${bookingId}`)
+      // URL pembayaran pakai KODE booking (TRV…), bukan id numerik
+      const ref = isRT ? (data?.depart?.code ?? data?.depart?.id) : (data?.code ?? data?.id)
+      if (ref) navigate(`/tiket/bayar/${ref}`)
       else setError(t('travel.createOrderFailed'))
     } catch (e) {
       setError(travelCheckoutError(e))
@@ -159,6 +199,7 @@ export default function FlightBooking() {
 
   return (
     <div className="min-h-[70vh] bg-slate-50">
+      {loading && <LoaderArahInn />}
       <SEO title={t('travel.paxDataSeo')} url="/tiket/pesawat/pesan" />
       <div className="container max-w-lg py-5">
         <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-700"><ChevronLeft className="w-4 h-4" /> {t('travel.back')}</button>
@@ -189,7 +230,10 @@ export default function FlightBooking() {
               <Field label={t('travel.firstName')} value={p.firstName} onChange={v => setA(i, 'firstName', v)} />
               <Field label={t('travel.lastName')} value={p.lastName} onChange={v => setA(i, 'lastName', v)} />
             </div>
-            <DateField label={t('travel.birthdate')} value={p.birthdate} onChange={v => setA(i, "birthdate", v)} />
+            <div>
+              <DateField label={t('travel.birthdate')} value={p.birthdate} min={AGE.adult.min} max={AGE.adult.max} onChange={v => setA(i, "birthdate", v)} />
+              <p className="text-[11px] text-slate-400 mt-1">{t('travel.adultAgeHint')}</p>
+            </div>
             <IdentitySection p={p} set={setA} i={i} t={t} lang={lang} required />
             <div className="grid grid-cols-2 gap-2.5">
               <Field label={t('travel.phoneNo')} icon={Phone} value={p.phone} onChange={v => setA(i, 'phone', v.replace(/[^0-9]/g,''))} inputMode="numeric" />
@@ -203,7 +247,10 @@ export default function FlightBooking() {
               <Field label={t('travel.firstName')} value={p.firstName} onChange={v => setC(i, 'firstName', v)} />
               <Field label={t('travel.lastName')} value={p.lastName} onChange={v => setC(i, 'lastName', v)} />
             </div>
-            <DateField label={t('travel.birthdate')} value={p.birthdate} onChange={v => setC(i, "birthdate", v)} />
+            <div>
+              <DateField label={t('travel.birthdate')} value={p.birthdate} min={AGE.child.min} max={AGE.child.max} onChange={v => setC(i, "birthdate", v)} />
+              <p className="text-[11px] text-slate-400 mt-1">{t('travel.childAgeHint')}</p>
+            </div>
             <IdentitySection p={p} set={setC} i={i} t={t} lang={lang} />
           </PaxCard>
         ))}
@@ -213,7 +260,10 @@ export default function FlightBooking() {
               <Field label={t('travel.firstName')} value={p.firstName} onChange={v => setI(i, 'firstName', v)} />
               <Field label={t('travel.lastName')} value={p.lastName} onChange={v => setI(i, 'lastName', v)} />
             </div>
-            <DateField label={t('travel.birthdate')} value={p.birthdate} onChange={v => setI(i, "birthdate", v)} />
+            <div>
+              <DateField label={t('travel.birthdate')} value={p.birthdate} min={AGE.infant.min} max={AGE.infant.max} onChange={v => setI(i, "birthdate", v)} />
+              <p className="text-[11px] text-slate-400 mt-1">{t('travel.infantAgeHint')}</p>
+            </div>
             <IdentitySection p={p} set={setI} i={i} t={t} lang={lang} />
           </PaxCard>
         ))}
@@ -268,7 +318,7 @@ function IdentitySection({ p, set, i, t, lang, required }) {
     <div className="space-y-2.5">
       <CountrySelect label={t('travel.nationality')} value={p.nationality || 'ID'} onChange={v => set(i, 'nationality', v)} lang={lang} />
       {isWNI(p) ? (
-        <Field label={required ? t('travel.idKtp') : t('travel.nikOptional')} icon={CreditCard} value={p.idNumber} onChange={v => set(i, 'idNumber', v.replace(/[^0-9]/g, ''))} inputMode="numeric" />
+        <Field label={required ? t('travel.idKtp') : t('travel.nikOptional')} icon={CreditCard} value={p.idNumber} onChange={v => set(i, 'idNumber', v.replace(/[^0-9]/g, '').slice(0, 16))} inputMode="numeric" maxLength={16} />
       ) : (
         <>
           <div className="flex items-start gap-2 p-3 bg-sky-50 border border-sky-100 rounded-xl">
@@ -306,13 +356,13 @@ function TitleSelect({ value, onChange, opts }) {
     </div>
   )
 }
-function Field({ label, icon: Icon, value, onChange, type = 'text', placeholder, inputMode }) {
+function Field({ label, icon: Icon, value, onChange, type = 'text', placeholder, inputMode, maxLength }) {
   return (
     <div>
       <label className="block text-[11px] font-semibold text-slate-500 mb-1">{label}</label>
       <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-3 py-2.5 focus-within:ring-2 focus-within:ring-sky-300">
         {Icon && <Icon className="w-4 h-4 text-slate-400 shrink-0" />}
-        <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} inputMode={inputMode} className="flex-1 text-sm text-slate-900 focus:outline-none bg-transparent" />
+        <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} inputMode={inputMode} maxLength={maxLength} className="flex-1 text-sm text-slate-900 focus:outline-none bg-transparent" />
       </div>
     </div>
   )

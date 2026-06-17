@@ -4,7 +4,7 @@ import "./LoaderArahInn.css";
 const messages = [
   "Menemukan hotel terbaik...",
   "Membandingkan harga terbaik...",
-  "Memeriksa ketersediaan kamar...",
+  "Menemukan maskapai terbaik...",  
   "Menyiapkan perjalanan Anda..."
 ];
 
