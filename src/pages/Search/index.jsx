@@ -10,6 +10,7 @@ import HotelCardRow from '@/components/hotel/HotelCardRow'
 import DestinationSearch from '@/components/ui/DestinationSearch'
 import SEO from '@/components/SEO'
 import LoaderArahInn from '@/components/LoaderArahInn'
+import bannerHotel from '@/assets/banners/cari-hotel.webp'
 import DateField from '@/components/ui/DateField'
 
 const MAX_PRICE = 7000000
@@ -207,6 +208,12 @@ export default function SearchPage() {
         description={t('search.seoDescription')}
         url="/search"
       />
+
+      {/* ── Header banner ── */}
+      <div className="container pt-3 sm:pt-4">
+        <img src={bannerHotel} alt="Cari Hotel ArahInn" width="1280" height="640"
+          className="w-full h-auto rounded-2xl shadow-sm" loading="eager" fetchpriority="high" />
+      </div>
 
       {/* ── Search bar top ── */}
       <div className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30">

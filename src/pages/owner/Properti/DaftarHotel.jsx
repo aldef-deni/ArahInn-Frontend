@@ -704,6 +704,15 @@ function Step3Kontak({ form, setForm, user }) {
           className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-500 cursor-not-allowed" />
         <p className="text-xs text-slate-400 mt-1.5">Alamat email utama (akun owner) tidak dapat diubah.</p>
 
+        <div className="mt-3 flex items-center justify-between">
+          <label className="text-sm font-medium text-slate-700">Email Penerima Voucher Tambahan</label>
+          {extraEmails.filter(e => (e || '').trim()).length > 0 && (
+            <span className="text-xs font-medium text-emerald-600">
+              {extraEmails.filter(e => (e || '').trim()).length} terdaftar
+            </span>
+          )}
+        </div>
+
         {extraEmails.map((val, i) => (
           <div key={i} className="mt-2 flex items-center gap-2">
             <input

@@ -65,7 +65,7 @@ export default function FlightBooking() {
   if (!sel) return null
   // Normalisasi leg: one-way = 1 leg (pergi); pulang-pergi = [pergi, pulang]
   const isRT = sel.tripType === 'roundtrip'
-  const out  = isRT ? sel.outbound : { departure: sel.departure, arrival: sel.arrival, date: sel.date, airline: sel.airline, cls: sel.cls }
+  const out  = isRT ? sel.outbound : { departure: sel.departure, arrival: sel.arrival, date: sel.date, airline: sel.airline, airlineName: sel.flight?.airlineName ?? sel.airlineName, cls: sel.cls }
   const ret  = isRT ? sel.return : null
   // Alias kompat untuk blok lama (booked screen) — pakai leg pergi
   const { departure, arrival, date, cls } = out
@@ -377,7 +377,7 @@ function LegCard({ leg, label, t }) {
       {label && <span className="inline-block mb-2 px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 text-[10px] font-bold uppercase tracking-wide">{label}</span>}
       <div className="flex items-center gap-2 mb-3">
         <div className="w-9 h-9 rounded-lg bg-sky-100 flex items-center justify-center"><Plane className="w-4.5 h-4.5 text-sky-600" /></div>
-        <div className="min-w-0"><p className="font-bold text-sm text-slate-900">{c.flightCode}</p><span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{t('travel.classPrefix')} {c.class}</span></div>
+        <div className="min-w-0"><p className="font-bold text-sm text-slate-900 truncate">{leg.flight?.airlineName ?? leg.airlineName ?? leg.airline}</p><span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{c.flightCode} · {t('travel.classPrefix')} {c.class}</span></div>
       </div>
       <div className="flex items-center gap-3">
         <div className="text-center"><p className="font-bold text-slate-900">{c.departureTime}</p><p className="text-[10px] text-slate-400">{leg.departure.code}</p></div>

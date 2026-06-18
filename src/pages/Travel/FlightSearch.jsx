@@ -12,6 +12,8 @@ import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 import LoaderArahInn from '@/components/LoaderArahInn'
 import TravelPromoSection from '@/components/travel/TravelPromoSection'
+import FlightRangeCalendar from '@/components/travel/FlightRangeCalendar'
+import bannerFlight from '@/assets/banners/cari-pesawat.webp'
 
 const FLIGHT_LOADER_MESSAGES = [
   'Mencari penerbangan terbaik...',
@@ -136,6 +138,27 @@ export default function FlightSearch() {
     queryKey: ['travel-markup'], queryFn: () => travelApi.settings().then(r => r.data?.data?.markupPerPax ?? 0), staleTime: 3600_000,
   })
 
+  // Kalender rentang (PP) + harga termurah HANYA untuk 2 tanggal terpilih.
+  const [calOpen, setCalOpen] = useState(false)
+  const cheapest = async (dep, arr, dt) => {
+    if (!dep || !arr || !dt) return null
+    const r = await travelApi.searchAllFlights({ departure: dep, arrival: arr, departureDate: dt, adult, child, infant })
+    const min = Math.min(...(r.data?.data ?? []).map(f => Number(f.classes?.[0]?.[0]?.price) || Infinity))
+    return Number.isFinite(min) ? min + Number(markup || 0) : null
+  }
+  const departPriceQ = useQuery({
+    queryKey: ['flight-cheapest', departure?.code, arrival?.code, date, adult, child, infant],
+    queryFn: () => cheapest(departure.code, arrival.code, date),
+    enabled: calOpen && tripType === 'roundtrip' && !!departure && !!arrival && !!date,
+    staleTime: 300_000,
+  })
+  const returnPriceQ = useQuery({
+    queryKey: ['flight-cheapest-ret', arrival?.code, departure?.code, returnDate, adult, child, infant],
+    queryFn: () => cheapest(arrival.code, departure.code, returnDate),
+    enabled: calOpen && tripType === 'roundtrip' && !!departure && !!arrival && !!returnDate,
+    staleTime: 300_000,
+  })
+
   const openDatePicker = () => { const el = dateRef.current; if (!el) return; try { el.showPicker ? el.showPicker() : el.focus() } catch { el.focus() } }
   const swap = () => { setDeparture(arrival); setArrival(departure) }
   const canSearch = departure && arrival && departure.code !== arrival.code && date
@@ -237,23 +260,20 @@ export default function FlightSearch() {
       <SEO title={t('travel.flightSeoTitle')} description={t('travel.flightSeoDesc')} url="/tiket/pesawat" />
 
       {showForm && (
-      <section className="bg-gradient-to-br from-sky-500 to-blue-600 text-white">
-        <div className="container py-5 sm:py-7">
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center"><Plane className="w-5 h-5" /></div>
-            <div>
-              <h1 className="font-display text-lg sm:text-xl font-bold leading-tight">{t('travel.flightTitle')}</h1>
-              <p className="text-[11px] sm:text-xs text-white/80">{t('travel.flightTagline')}</p>
-            </div>
-          </div>
+        <img src={bannerFlight} alt="Cari Tiket Pesawat ArahInn" width="1731" height="909"
+          className="block w-full h-auto" loading="eager" fetchpriority="high" />
+      )}
 
-          <div className="bg-white rounded-2xl shadow-lg p-3.5 sm:p-4 text-slate-900">
+      {showForm && (
+      <section className="relative z-10">
+        <div className="container -mt-[24vw] sm:-mt-[21vw] lg:-mt-[18vw] pb-6 sm:pb-8 relative z-10">
+          <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl shadow-xl p-3.5 sm:p-4 text-slate-900">
             {/* Tipe perjalanan */}
             <div className="flex gap-2 mb-3">
               {[['oneway', t('travel.oneWay')], ['roundtrip', t('travel.roundTrip')]].map(([k, l]) => (
                 <button key={k} type="button"
                   onClick={() => { setTripType(k); setLeg('depart'); setOutboundSel(null); if (k === 'oneway') setReturnDate('') }}
-                  className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-colors ${tripType === k ? 'bg-sky-50 border-sky-500 text-sky-700' : 'bg-white border-slate-200 text-slate-500'}`}>
+                  className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-colors ${tripType === k ? 'bg-sky-50 border-sky-500 text-sky-700' : 'bg-white/50 border-white/60 text-slate-600'}`}>
                   {l}
                 </button>
               ))}
@@ -276,19 +296,30 @@ export default function FlightSearch() {
               <button onClick={swap} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-sky-500 text-white shadow-md flex items-center justify-center active:scale-90 transition-transform z-10"><ArrowLeftRight className="w-4 h-4 rotate-90" /></button>
             </div>
 
+            <div className="relative">
             <div className="grid grid-cols-2 gap-2.5 mt-2.5">
-              <div className="relative p-3 rounded-xl border border-slate-200 cursor-pointer" onClick={openDatePicker}>
+              <div className="relative p-3 rounded-xl border border-slate-200 cursor-pointer" onClick={tripType === 'roundtrip' ? () => setCalOpen(true) : openDatePicker}>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Calendar className="w-3 h-3" /> {tripType === 'roundtrip' ? t('travel.departDate') : t('travel.date')}</p>
                 <p className="text-sm font-semibold text-slate-900 mt-0.5">{formatDateSlash(date)}</p>
                 <input ref={dateRef} type="date" value={date} min={todayStr()} onChange={e => { setDate(e.target.value); if (returnDate && returnDate < e.target.value) setReturnDate('') }} className="absolute bottom-1 left-3 w-px h-px opacity-0 pointer-events-none" tabIndex={-1} />
               </div>
               {tripType === 'roundtrip' ? (
-                <div className="relative p-3 rounded-xl border border-slate-200 cursor-pointer" onClick={openReturnPicker}>
+                <div className="relative p-3 rounded-xl border border-slate-200 cursor-pointer" onClick={() => setCalOpen(true)}>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Calendar className="w-3 h-3" /> {t('travel.returnDate')}</p>
                   <p className={`text-sm font-semibold mt-0.5 ${returnDate ? 'text-slate-900' : 'text-slate-400'}`}>{returnDate ? formatDateSlash(returnDate) : t('travel.pickReturnDate')}</p>
-                  <input ref={returnDateRef} type="date" value={returnDate} min={date} onChange={e => setReturnDate(e.target.value)} className="absolute bottom-1 left-3 w-px h-px opacity-0 pointer-events-none" tabIndex={-1} />
                 </div>
               ) : paxField}
+            </div>
+            {calOpen && tripType === 'roundtrip' && (
+              <FlightRangeCalendar
+                value={{ depart: date, return: returnDate }}
+                onChange={({ depart, return: r }) => { setDate(depart); setReturnDate(r) }}
+                onClose={() => setCalOpen(false)}
+                onConfirm={() => setCalOpen(false)}
+                prices={{ depart: departPriceQ.data ?? null, return: returnPriceQ.data ?? null }}
+                pricesLoading={departPriceQ.isFetching || returnPriceQ.isFetching}
+              />
+            )}
             </div>
             {tripType === 'roundtrip' && <div className="mt-2.5">{paxField}</div>}
 

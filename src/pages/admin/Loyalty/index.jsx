@@ -46,11 +46,17 @@ export default function AdminLoyalty() {
   // ── Users ──
   const [q, setQ] = useState('')
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const { data: usersRes } = useQuery({
-    queryKey: ['admin-loyalty-users', search],
-    queryFn: () => adminLoyaltyApi.users({ q: search, per_page: 25 }).then(r => r.data),
+    queryKey: ['admin-loyalty-users', search, page],
+    queryFn: () => adminLoyaltyApi.users({ q: search, per_page: 20, page }).then(r => r.data),
+    keepPreviousData: true,
   })
   const users = usersRes?.data ?? []
+  const pg = usersRes?.pagination ?? {}
+  const perPage = pg.perPage ?? 20
+  const totalUsers = pg.total ?? users.length
+  const totalPages = Math.max(1, Math.ceil(totalUsers / perPage))
 
   const [adjustUser, setAdjustUser] = useState(null) // { id, name }
   const [adjPoints, setAdjPoints] = useState('')
@@ -116,7 +122,7 @@ export default function AdminLoyalty() {
       <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6">
         <h2 className="font-bold text-slate-800 mb-4">Manajemen Member</h2>
 
-        <form onSubmit={e => { e.preventDefault(); setSearch(q) }} className="flex gap-2 mb-4">
+        <form onSubmit={e => { e.preventDefault(); setSearch(q); setPage(1) }} className="flex gap-2 mb-4">
           <div className="flex-1 flex items-center gap-2 px-3.5 py-2.5 border border-slate-200 rounded-xl">
             <Search className="w-4 h-4 text-slate-400" />
             <input value={q} onChange={e => setQ(e.target.value)} placeholder="Cari nama / email..."
@@ -176,6 +182,25 @@ export default function AdminLoyalty() {
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-3 border-t border-slate-100">
+            <p className="text-xs text-slate-500">
+              Menampilkan {(page - 1) * perPage + 1}–{Math.min(page * perPage, totalUsers)} dari {Number(totalUsers).toLocaleString('id-ID')} member
+            </p>
+            <div className="flex items-center gap-2">
+              <button type="button" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed">
+                Sebelumnya
+              </button>
+              <span className="text-xs text-slate-600">Hal. {page} / {totalPages}</span>
+              <button type="button" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed">
+                Berikutnya
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ── Modal adjust poin ── */}

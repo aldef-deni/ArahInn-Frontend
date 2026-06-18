@@ -10,7 +10,7 @@ import { validateImageFiles } from '@/utils/imageValidation'
 import {
   Plus, Search, Star, MapPin, Eye, Pencil, Trash2, X, Save,
   Building2, CheckCircle2, XCircle, Tag, ChevronLeft, ChevronRight,
-  AlertTriangle, Hotel, ImagePlus, DollarSign,
+  AlertTriangle, Hotel, ImagePlus, DollarSign, Mail,
 } from 'lucide-react'
 
 // ── Constants ────────────────────────────────────────────────────────────
@@ -72,6 +72,9 @@ function HotelFormDrawer({ hotel, onClose }) {
   const [existingImages,  setExistingImages]  = useState(hotel?.images || [])
   const [newFiles,        setNewFiles]        = useState([])
   const [newPreviews,     setNewPreviews]     = useState([])
+  const [voucherEmails,   setVoucherEmails]   = useState(
+    Array.isArray(hotel?.voucherEmails) ? hotel.voucherEmails : []
+  )
 
   const { data: ownersData } = useQuery({
     queryKey: ['owner-users'],
@@ -106,6 +109,10 @@ function HotelFormDrawer({ hotel, onClose }) {
     facilities.forEach(f    => fd.append('facilities[]',      f))
     existingImages.forEach(u => fd.append('existing_images[]', u))
     newFiles.forEach(f       => fd.append('images[]',          f))
+    // Email penerima voucher (selain email akun owner). Selalu dikirim agar bisa dikosongkan.
+    fd.append('voucher_emails', JSON.stringify(
+      voucherEmails.map(e => (e || '').trim()).filter(Boolean)
+    ))
     saveMutation.mutate(fd)
   }
 
@@ -258,6 +265,40 @@ function HotelFormDrawer({ hotel, onClose }) {
                   Hotel baru wajib terhubung ke akun owner agar bisa dikelola dan menerima booking.
                 </p>
               )}
+            </div>
+
+            {/* Email Penerima Voucher */}
+            <div>
+              <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700 mb-1.5">
+                <Mail className="w-4 h-4 text-brand" /> Email Penerima Voucher
+              </label>
+              <div className="space-y-2">
+                {voucherEmails.map((val, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <input
+                      type="email"
+                      value={val}
+                      onChange={e => setVoucherEmails(prev => prev.map((v, idx) => idx === i ? e.target.value : v))}
+                      placeholder="pengelola@contoh.com"
+                      className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand" />
+                    <button type="button" title="Hapus email ini"
+                      onClick={() => setVoucherEmails(prev => prev.filter((_, idx) => idx !== i))}
+                      className="px-3 py-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button type="button" onClick={() => setVoucherEmails(p => [...p, ''])}
+                className="mt-2 flex items-center gap-1.5 text-sm text-brand hover:opacity-80 font-medium">
+                <Plus className="w-3.5 h-3.5" /> Tambah email
+              </button>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                E-voucher booking otomatis dikirim ke <strong>email akun owner</strong> dan
+                <strong> semua email</strong> yang didaftarkan di sini. Berguna bila akun owner
+                memakai email yang tidak dipantau (mis. <code>superadmin@</code>) — tambahkan email
+                pengelola asli agar voucher pasti diterima.
+              </p>
             </div>
 
             {/* Description */}
