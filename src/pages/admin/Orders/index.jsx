@@ -75,6 +75,7 @@ function OrderDetailModal({ order, onClose }) {
             <Row label="Check-in" value={formatDateShort(b.checkIn)} />
             <Row label="Check-out" value={formatDateShort(b.checkOut)} />
             <Row label="Total malam" value={b.totalNights ? `${b.totalNights} malam` : '–'} />
+            <Row label="Jenis menginap" value={b.stayLabel || 'Harian'} />
           </Section>
 
           <Section title="Rincian Harga">

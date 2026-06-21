@@ -96,12 +96,13 @@ export default function OwnerPesanan() {
 
   const exportCsv = () => {
     if (!orders.length) return
-    const headers = ['Kode Booking','Tamu','Email','Kamar','Check-in','Check-out','Total','Status']
+    const headers = ['Kode Booking','Tamu','Email','Kamar','Menginap','Check-in','Check-out','Total','Status']
     const rows = orders.map(b => [
       b.bookingCode,
       b.guestName || b.user?.name,
       b.user?.email || '',
       b.room?.name || '',
+      b.stayLabel || 'Harian',
       new Date(b.checkIn).toLocaleDateString('id-ID'),
       new Date(b.checkOut).toLocaleDateString('id-ID'),
       b.totalPrice,
@@ -209,7 +210,12 @@ export default function OwnerPesanan() {
                         <p className="font-medium text-slate-900">{b.guestName || b.user?.name}</p>
                         <p className="text-xs text-slate-400">{b.user?.email}</p>
                       </td>
-                      <td className="px-4 py-3 text-slate-500 max-w-[120px] truncate">{b.room?.name}</td>
+                      <td className="px-4 py-3 text-slate-500 max-w-[140px]">
+                        <span className="block truncate">{b.room?.name}</span>
+                        {b.stayType && b.stayType !== 'daily' && (
+                          <span className="mt-0.5 inline-block rounded-full bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">{b.stayType === 'weekly' ? 'Mingguan' : 'Bulanan'}</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{new Date(b.checkIn).toLocaleDateString('id-ID')}</td>
                       <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{new Date(b.checkOut).toLocaleDateString('id-ID')}</td>
                       <td className="px-4 py-3 font-semibold text-slate-900 whitespace-nowrap">{formatRupiah(b.totalPrice)}</td>

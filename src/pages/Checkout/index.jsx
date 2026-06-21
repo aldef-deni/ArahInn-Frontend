@@ -22,6 +22,8 @@ export default function Checkout() {
   const checkOut = sp.get('checkOut')
   const guests = sp.get('guests') || 2
   const roomCount = parseInt(sp.get('roomCount') || '1', 10)
+  const stayType = sp.get('stayType') || 'daily'
+  const isLongStay = stayType === 'weekly' || stayType === 'monthly'
   const nights = diffDays(checkIn, checkOut)
 
   const [form, setForm] = useState({
@@ -57,7 +59,7 @@ export default function Checkout() {
   // Recalc harga dengan kombinasi kode promo + poin (eksplisit, hindari state async)
   const recalcWith = (code, points) =>
     bookingApi.calcPrice({
-      roomId, checkIn, checkOut, roomCount,
+      roomId, checkIn, checkOut, roomCount, stayType,
       promoCode: code || undefined,
       pointsToRedeem: points || 0,
       usePoints: (points || 0) > 0,
@@ -96,6 +98,7 @@ export default function Checkout() {
         checkIn,
         checkOut,
         roomCount,
+        stayType,
         usePoints: form.usePoints,
       }),
     onSuccess: (r) => {
@@ -126,6 +129,7 @@ export default function Checkout() {
         checkOut,
         guests: parseInt(guests, 10),
         roomCount,
+        stayType,
         guestName: form.guestName,
         guestEmail: form.guestEmail,
         guestPhone: form.guestPhone,
@@ -151,6 +155,7 @@ export default function Checkout() {
         checkIn,
         checkOut,
         roomCount,
+        stayType,
         promoCode: code,
         usePoints: appliedPoints > 0,
         pointsToRedeem: appliedPoints,
@@ -320,7 +325,8 @@ export default function Checkout() {
             </div>
           </div>
 
-          {/* Promo Code Card */}
+          {/* Promo Code Card — disembunyikan untuk menginap mingguan/bulanan (harga tetap, tanpa promo) */}
+          {!isLongStay && (
           <div className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
             <h2 className="mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base font-bold text-slate-900">
               <Tag className="h-4 w-4 sm:h-5 sm:w-5 text-brand" /> {t('checkout.promoCode')}
@@ -360,6 +366,7 @@ export default function Checkout() {
               </div>
             )}
           </div>
+          )}
 
           {/* Redeem Poin Card — tepat di bawah Kode Promo */}
           {user && pointBalance > 0 && (

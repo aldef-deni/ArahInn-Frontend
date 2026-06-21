@@ -91,6 +91,11 @@ export default function OrderDetail() {
             </div>
           </div>
           <p className="text-[11px] sm:text-xs text-muted-foreground pt-1">{t('orderDetail.duration', { n: booking.totalNights })}</p>
+          {booking.stayType && booking.stayType !== 'daily' && (
+            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
+              Paket {booking.stayLabel || (booking.stayType === 'weekly' ? 'Mingguan' : 'Bulanan')}
+            </span>
+          )}
         </div>
       </div>
 

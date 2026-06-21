@@ -52,7 +52,7 @@ const ROOM_TYPES = [
 const roomTypeLabel = (val) => ROOM_TYPES.find(t => t.value === val)?.label ?? val
 const FACILITIES = ['ac','tv','wifi','minibar','bathtub','jacuzzi','balcony','kitchen','living_room','extra_bed']
 
-const emptyForm = { name: '', type: 'standard', base_price: '', max_guests: 2, total_units: 1, description: '', facilities: [], existingImages: [], newImages: [] }
+const emptyForm = { name: '', type: 'standard', base_price: '', weekly_price: '', monthly_price: '', max_guests: 2, total_units: 1, description: '', facilities: [], existingImages: [], newImages: [] }
 
 export default function PropertiUnit() {
   const { hotel }  = useOutletContext()
@@ -94,6 +94,8 @@ export default function PropertiUnit() {
       name: r.name,
       type: r.type,
       base_price: r.basePrice,
+      weekly_price: r.weeklyPrice ?? '',
+      monthly_price: r.monthlyPrice ?? '',
       max_guests: r.maxGuests,
       total_units: r.totalUnits,
       description: r.description || '',
@@ -156,6 +158,8 @@ export default function PropertiUnit() {
       fd.append('name', form.name)
       fd.append('type', form.type)
       fd.append('base_price', form.base_price)
+      fd.append('weekly_price', form.weekly_price || '')
+      fd.append('monthly_price', form.monthly_price || '')
       fd.append('max_guests', form.max_guests)
       fd.append('total_units', form.total_units)
       fd.append('description', form.description || '')
@@ -170,6 +174,8 @@ export default function PropertiUnit() {
       name: form.name,
       type: form.type,
       base_price: form.base_price,
+      weekly_price: form.weekly_price === '' ? null : form.weekly_price,
+      monthly_price: form.monthly_price === '' ? null : form.monthly_price,
       max_guests: form.max_guests,
       total_units: form.total_units,
       description: form.description || '',
@@ -296,6 +302,20 @@ export default function PropertiUnit() {
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">Jumlah Unit</label>
                   <input type="number" min={1} value={form.total_units} onChange={e => setForm(p => ({ ...p, total_units: +e.target.value }))}
                     className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand" />
+                </div>
+                <div className="col-span-2 rounded-xl border border-slate-100 bg-slate-50/60 p-3">
+                  <p className="text-xs font-semibold text-slate-600 mb-0.5">Harga Menginap Lama <span className="font-normal text-slate-400">(opsional)</span></p>
+                  <p className="text-[11px] text-slate-400 mb-2.5">Harga tetap 1 minggu (7 malam) / 1 bulan (30 malam) — bukan kalkulasi harga harian & tidak terkena promo. Kosongkan bila tidak ditawarkan.</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-500 mb-1">Harga / Minggu</label>
+                      <PriceInput value={form.weekly_price} onChange={v => setForm(p => ({ ...p, weekly_price: v }))} suffix="/minggu" />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-500 mb-1">Harga / Bulan</label>
+                      <PriceInput value={form.monthly_price} onChange={v => setForm(p => ({ ...p, monthly_price: v }))} suffix="/bulan" />
+                    </div>
+                  </div>
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">

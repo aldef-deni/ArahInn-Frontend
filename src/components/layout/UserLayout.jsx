@@ -99,6 +99,14 @@ export default function UserLayout() {
       <header className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
         <div className="container relative flex h-14 md:h-16 items-center justify-between">
 
+          {/* Mobile hamburger — kiri (anchor sisi kiri di mobile) */}
+          <button
+            className="md:hidden p-2 -ml-2 rounded-lg hover:bg-muted transition-colors"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Menu">
+            {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+
           {/* Logo — centered on mobile, left on desktop */}
           <Link to="/" className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 flex items-center gap-2 shrink-0">
             <img src="/logo-arahin.png" alt="Arahinn" className="h-8 md:h-12 w-auto" />
@@ -194,13 +202,6 @@ export default function UserLayout() {
                 </Link>
               </div>
             )}
-
-            {/* Mobile menu toggle */}
-            <button
-              className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
-              onClick={() => setMenuOpen(!menuOpen)}>
-              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
           </div>
         </div>
 

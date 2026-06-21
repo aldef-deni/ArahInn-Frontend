@@ -178,7 +178,8 @@ function GalleryLightbox({ open, images, startIdx = 0, onClose, hotelName }) {
   )
 }
 
-function RoomCard({ room, nights, onBook }) {
+function RoomCard({ room, nights, onBook, stayType = 'daily', stayUnitLabel, longStayP = null }) {
+  const isLong = stayType === 'weekly' || stayType === 'monthly'
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const [imgIdx, setImgIdx] = useState(0)
@@ -242,8 +243,18 @@ function RoomCard({ room, nights, onBook }) {
         </div>
 
         <div className="min-w-[220px] rounded-[24px] bg-slate-50 p-4 text-right">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Mulai dari</p>
-          {room.discountedPrice && room.discountedPrice < room.basePrice ? (
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{isLong ? 'Harga' : 'Mulai dari'}</p>
+          {isLong ? (
+            longStayP != null ? (
+              <>
+                <p className="mt-1 text-2xl font-black text-orange-600">{formatRupiah(longStayP)}</p>
+                <p className="text-xs text-slate-500">per {stayUnitLabel}</p>
+                <p className="mt-1 text-[11px] text-slate-400">{stayType === 'weekly' ? '7 malam' : '30 malam'} · tanpa promo</p>
+              </>
+            ) : (
+              <p className="mt-2 text-sm font-semibold text-slate-400">Tidak tersedia untuk pilihan ini</p>
+            )
+          ) : room.discountedPrice && room.discountedPrice < room.basePrice ? (
             <>
               <p className="mt-1 text-sm text-slate-400 line-through">{formatRupiah(room.basePrice)}</p>
               <p className="text-2xl font-black text-orange-600 leading-tight">{formatRupiah(room.discountedPrice)}</p>
@@ -259,8 +270,8 @@ function RoomCard({ room, nights, onBook }) {
           ) : (
             <p className="mt-1 text-2xl font-black text-orange-600">{formatRupiah(room.basePrice)}</p>
           )}
-          <p className="text-xs text-slate-500">per malam</p>
-          {nights > 1 ? (
+          {!isLong && <p className="text-xs text-slate-500">per malam</p>}
+          {!isLong && nights > 1 ? (
             <p className="mt-2 text-xs text-slate-500">
               Estimasi {formatRupiah((room.discountedPrice ?? room.basePrice) * nights)} untuk {nights} malam
             </p>
@@ -750,6 +761,8 @@ export default function HotelDetail() {
   const [dates, setDates] = useState({ checkIn: initCheckIn, checkOut: initCheckOut })
   const [guests, setGuests] = useState(Number.isFinite(qpGuests) && qpGuests > 0 ? qpGuests : 2)
   const [roomCount, setRoomCount] = useState(1)
+  // Pilihan menginap: harian (pakai tanggal) | mingguan (7 mlm) | bulanan (30 mlm) — harga tetap, tanpa promo.
+  const [stayType, setStayType] = useState('daily')
 
   // Modal "Pilih Tanggal Lain" — ganti tanggal untuk cek ketersediaan lain (saat kamar penuh)
   const [showDateModal, setShowDateModal] = useState(false)
@@ -829,6 +842,11 @@ export default function HotelDetail() {
 
   const handleBook = (room) => {
     if (!token) return navigate('/login')
+    if (isLongStay) {
+      if (longStayPrice(room) == null) return  // kamar tak punya harga utk pilihan ini
+      navigate(`/checkout/${room.id}?hotelId=${resolvedId}&checkIn=${dates.checkIn}&checkOut=${effectiveCheckOut}&guests=${guests}&roomCount=${roomCount}&stayType=${stayType}`)
+      return
+    }
     setBookingRoom(room)
   }
 
@@ -900,17 +918,38 @@ export default function HotelDetail() {
   const sidebarRoomList = (availData?.length ? availData : hotel.rooms || [])
   const availableRooms = sidebarRoomList.filter(r => r.available !== false)
 
+  // ── Pilihan menginap lama (mingguan/bulanan) ──────────────────────────────
+  const STAY_NIGHTS = { weekly: 7, monthly: 30 }
+  const isLongStay = stayType === 'weekly' || stayType === 'monthly'
+  const stayUnitLabel = stayType === 'weekly' ? 'minggu' : 'bulan'
+  // Harga tetap long-stay kamar (null kalau owner tak set utk pilihan ini)
+  const longStayPrice = (r) => {
+    if (stayType === 'weekly') return r?.weeklyPrice ? Number(r.weeklyPrice) : null
+    if (stayType === 'monthly') return r?.monthlyPrice ? Number(r.monthlyPrice) : null
+    return null
+  }
+  const effectiveStayNights = isLongStay ? STAY_NIGHTS[stayType] : nights
+  const effectiveCheckOut = isLongStay && dates.checkIn
+    ? format(addDays(new Date(`${dates.checkIn}T00:00:00`), STAY_NIGHTS[stayType]), 'yyyy-MM-dd')
+    : dates.checkOut
+
   // Kamar terpilih di sidebar (default: yang termurah & tersedia, pakai harga promo kalau ada)
   const effectivePrice = (r) => Number(r.discountedPrice ?? r.basePrice)
+  // Harga yang dipakai untuk memilih/urut kamar: long-stay pakai harga tetap, harian pakai effective.
+  const pickPrice = (r) => isLongStay ? (longStayPrice(r) ?? Infinity) : effectivePrice(r)
   const selectedSidebarRoom =
     availableRooms.find(r => String(r.id) === String(sidebarRoomId)) ||
-    availableRooms.slice().sort((a, b) => effectivePrice(a) - effectivePrice(b))[0] ||
+    availableRooms.slice().sort((a, b) => pickPrice(a) - pickPrice(b))[0] ||
     null
 
   const sidebarOriginalPrice = selectedSidebarRoom?.basePrice ? Number(selectedSidebarRoom.basePrice) : null
-  const sidebarUnitPrice = selectedSidebarRoom ? effectivePrice(selectedSidebarRoom) : null
-  const sidebarTotalPrice = sidebarUnitPrice && nights > 0 ? sidebarUnitPrice * nights * roomCount : null
-  const sidebarHasDiscount = selectedSidebarRoom?.discountedPrice && selectedSidebarRoom.discountedPrice < selectedSidebarRoom.basePrice
+  const sidebarUnitPrice = selectedSidebarRoom
+    ? (isLongStay ? longStayPrice(selectedSidebarRoom) : effectivePrice(selectedSidebarRoom))
+    : null
+  const sidebarTotalPrice = isLongStay
+    ? (sidebarUnitPrice ? sidebarUnitPrice * roomCount : null)            // harga paket × kamar (tanpa × malam)
+    : (sidebarUnitPrice && nights > 0 ? sidebarUnitPrice * nights * roomCount : null)
+  const sidebarHasDiscount = !isLongStay && selectedSidebarRoom?.discountedPrice && selectedSidebarRoom.discountedPrice < selectedSidebarRoom.basePrice
 
   const prevImg = () => setSelImg(i => (i - 1 + images.length) % images.length)
   const nextImg = () => setSelImg(i => (i + 1) % images.length)
@@ -1220,6 +1259,22 @@ export default function HotelDetail() {
                 </div>
               </div>
 
+              {/* Pilihan menginap (harian / mingguan / bulanan) */}
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Pilihan menginap</span>
+                <div className="inline-grid grid-cols-3 gap-1.5 rounded-2xl bg-slate-100 p-1">
+                  {[{ v: 'daily', label: 'Harian' }, { v: 'weekly', label: 'Mingguan' }, { v: 'monthly', label: 'Bulanan' }].map(o => (
+                    <button key={o.v} type="button" onClick={() => setStayType(o.v)}
+                      className={`rounded-xl px-4 py-1.5 text-xs font-semibold transition-all ${stayType === o.v ? 'bg-white text-blue-700 shadow-sm ring-1 ring-blue-100' : 'text-slate-500 hover:text-slate-700'}`}>
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+                {isLongStay && (
+                  <span className="text-[11px] text-slate-400">Harga tetap {stayType === 'weekly' ? '7 malam' : '30 malam'} · tanpa promo</span>
+                )}
+              </div>
+
               {/* Danger banner: ada kamar yang penuh/tutup */}
               {(() => {
                 if (!availData?.length) return null
@@ -1247,7 +1302,8 @@ export default function HotelDetail() {
 
               <div className="mt-5 space-y-4">
                 {availData?.map(room => (
-                  <RoomCard key={room.id} room={room} nights={nights} onBook={handleBook} />
+                  <RoomCard key={room.id} room={room} nights={nights} onBook={handleBook}
+                    stayType={stayType} stayUnitLabel={stayUnitLabel} longStayP={longStayPrice(room)} />
                 ))}
 
                 {/* Card: cari ketersediaan tanggal lain (berguna saat kamar penuh) */}
@@ -1501,6 +1557,26 @@ export default function HotelDetail() {
                   </div>
                 ) : null}
 
+                {/* Pilihan menginap (harian / mingguan / bulanan) */}
+                <div className="mt-4">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                    Pilihan menginap
+                  </label>
+                  <div className="grid grid-cols-3 gap-1.5 rounded-2xl bg-slate-100 p-1">
+                    {[{ v: 'daily', label: 'Harian' }, { v: 'weekly', label: 'Mingguan' }, { v: 'monthly', label: 'Bulanan' }].map(o => (
+                      <button key={o.v} type="button" onClick={() => setStayType(o.v)}
+                        className={`rounded-xl py-2 text-xs font-semibold transition-all ${stayType === o.v ? 'bg-white text-blue-700 shadow-sm ring-1 ring-blue-100' : 'text-slate-500 hover:text-slate-700'}`}>
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                  {isLongStay && (
+                    <p className="mt-1.5 text-[11px] leading-snug text-slate-400">
+                      Harga tetap {stayType === 'weekly' ? '7 malam' : '30 malam'} · tanpa promo · check-out otomatis {effectiveCheckOut ? formatDate(effectiveCheckOut) : '-'}
+                    </p>
+                  )}
+                </div>
+
                 {/* Daftar kamar tersedia */}
                 <div className="mt-4">
                   <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
@@ -1524,7 +1600,7 @@ export default function HotelDetail() {
                   ) : (
                     <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                       {sidebarRoomList.map(r => {
-                        const isAvailable = r.available !== false
+                        const isAvailable = r.available !== false && (!isLongStay || longStayPrice(r) != null)
                         const isPicked = String(selectedSidebarRoom?.id) === String(r.id)
                         return (
                           <button
@@ -1548,15 +1624,28 @@ export default function HotelDetail() {
                                 </p>
                               </div>
                               <div className="text-right shrink-0">
-                                {r.discountedPrice && r.discountedPrice < r.basePrice ? (
-                                  <>
-                                    <p className="text-[10px] text-slate-400 line-through leading-none">{formatRupiah(r.basePrice)}</p>
-                                    <p className="text-xs font-bold text-orange-600 leading-tight">{formatRupiah(r.discountedPrice)}</p>
-                                  </>
+                                {isLongStay ? (
+                                  longStayPrice(r) != null ? (
+                                    <>
+                                      <p className="text-xs font-bold text-orange-600">{formatRupiah(longStayPrice(r))}</p>
+                                      <p className="text-[10px] text-slate-400">/ {stayUnitLabel}</p>
+                                    </>
+                                  ) : (
+                                    <p className="text-[10px] font-semibold text-slate-400">Tidak tersedia</p>
+                                  )
                                 ) : (
-                                  <p className="text-xs font-bold text-orange-600">{formatRupiah(r.basePrice)}</p>
+                                  <>
+                                    {r.discountedPrice && r.discountedPrice < r.basePrice ? (
+                                      <>
+                                        <p className="text-[10px] text-slate-400 line-through leading-none">{formatRupiah(r.basePrice)}</p>
+                                        <p className="text-xs font-bold text-orange-600 leading-tight">{formatRupiah(r.discountedPrice)}</p>
+                                      </>
+                                    ) : (
+                                      <p className="text-xs font-bold text-orange-600">{formatRupiah(r.basePrice)}</p>
+                                    )}
+                                    <p className="text-[10px] text-slate-400">/ malam</p>
+                                  </>
                                 )}
-                                <p className="text-[10px] text-slate-400">/ malam</p>
                               </div>
                             </div>
                             {!isAvailable && (
@@ -1583,7 +1672,9 @@ export default function HotelDetail() {
                       {formatRupiah(sidebarTotalPrice)}
                     </p>
                     <p className="mt-1 text-xs text-orange-700/80">
-                      {formatRupiah(sidebarUnitPrice)} × {nights} mlm × {roomCount} kmr
+                      {isLongStay
+                        ? `${formatRupiah(sidebarUnitPrice)} × 1 ${stayUnitLabel} × ${roomCount} kmr (${effectiveStayNights} malam)`
+                        : `${formatRupiah(sidebarUnitPrice)} × ${nights} mlm × ${roomCount} kmr`}
                     </p>
                     {sidebarHasDiscount && selectedSidebarRoom?.appliedPromo && (
                       <span className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-orange-200 text-orange-700 rounded-full text-[10px] font-bold">
@@ -1599,9 +1690,13 @@ export default function HotelDetail() {
                   onClick={() => {
                     if (!token) return navigate('/login')
                     if (!selectedSidebarRoom) return
+                    if (isLongStay) {
+                      navigate(`/checkout/${selectedSidebarRoom.id}?hotelId=${resolvedId}&checkIn=${dates.checkIn}&checkOut=${effectiveCheckOut}&guests=${guests}&roomCount=${roomCount}&stayType=${stayType}`)
+                      return
+                    }
                     setBookingRoom(selectedSidebarRoom)
                   }}
-                  disabled={!selectedSidebarRoom || nights <= 0}
+                  disabled={!selectedSidebarRoom || (!isLongStay && nights <= 0) || (isLongStay && !sidebarUnitPrice)}
                   className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
                 >
                   Pesan Sekarang

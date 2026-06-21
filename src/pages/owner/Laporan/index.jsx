@@ -185,13 +185,14 @@ export default function OwnerLaporan() {
       doc.text('Detail Pesanan', margin, y)
       autoTable(doc, {
         startY: y + 8,
-        head  : [['Kode', 'Tanggal', 'Tamu', 'Akomodasi', 'Kamar', 'Status', 'Total']],
+        head  : [['Kode', 'Tanggal', 'Tamu', 'Akomodasi', 'Kamar', 'Menginap', 'Status', 'Total']],
         body  : orders.map(b => [
           b.bookingCode || `#${b.id}`,
           formatDateShort(b.createdAt),
           b.guestName || b.user?.name || '-',
           b.hotel?.name || '-',
           b.room?.name  || '-',
+          b.stayLabel || 'Harian',
           statusLabel(b.status),
           formatRupiah(b.totalPrice),
         ]),
