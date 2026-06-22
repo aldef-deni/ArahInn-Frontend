@@ -85,9 +85,12 @@ export default function OwnerLaporan() {
     })
   }, [allOrders, filters])
 
+  // Pendapatan bersih owner per transaksi = owner_payout (fallback base_price utk booking lama).
+  // JANGAN pakai total_price — itu yang dibayar customer (termasuk komisi + biaya layanan + PPN).
+  const netOf = (b) => Number(b.ownerPayout ?? b.basePrice ?? 0) || 0
   const confirmed = orders.filter(b => ['paid', 'issued'].includes(b.status))
   const canceled  = orders.filter(b => b.status === 'canceled')
-  const revenue   = confirmed.reduce((s, b) => s + (b.totalPrice || 0), 0)
+  const revenue   = confirmed.reduce((s, b) => s + netOf(b), 0)
 
   // Chart: pendapatan per bulan
   const chartData = useMemo(() => {
@@ -96,7 +99,7 @@ export default function OwnerLaporan() {
       const d = b.checkIn ? new Date(b.checkIn) : new Date(b.createdAt)
       const m = d.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' })
       if (!acc[m]) acc[m] = { month: m, revenue: 0, bookings: 0 }
-      acc[m].revenue  += b.totalPrice || 0
+      acc[m].revenue  += netOf(b)
       acc[m].bookings += 1
       return acc
     }, {})
@@ -108,7 +111,7 @@ export default function OwnerLaporan() {
     const byHotel = confirmed.reduce((acc, b) => {
       const id = b.hotel?.id ?? b.hotelId ?? 'unknown'
       if (!acc[id]) acc[id] = { id, name: b.hotel?.name ?? 'Hotel', city: b.hotel?.city ?? '', revenue: 0, bookings: 0 }
-      acc[id].revenue  += b.totalPrice || 0
+      acc[id].revenue  += netOf(b)
       acc[id].bookings += 1
       return acc
     }, {})

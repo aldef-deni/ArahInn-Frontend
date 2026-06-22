@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ppobApi } from '@/services/index'
+import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
 import {
-  Receipt, RefreshCw, RotateCcw, AlertTriangle, Search, Wallet, X, CheckCircle,
+  Receipt, RefreshCw, RotateCcw, AlertTriangle, Search, Wallet, X, CheckCircle, Trash2,
 } from 'lucide-react'
 
 const STATUS_OPTS = [
@@ -21,6 +22,11 @@ const STATUS_OPTS = [
 export default function AdminPpob() {
   const { toast } = useToast()
   const qc = useQueryClient()
+  const { user } = useAuthStore()
+  const isAldeftech = (user?.email || '').trim().toLowerCase() === 'aldeftech@gmail.com'
+
+  const [selectedIds, setSelectedIds] = useState([])
+  const [showBulkDelete, setShowBulkDelete] = useState(false)
 
   const [status, setStatus]     = useState('')
   const [search, setSearch]     = useState('')
@@ -35,6 +41,30 @@ export default function AdminPpob() {
     refetchInterval: 30_000,
   })
   const trxList = txResp?.data ?? []
+
+  // ── Hapus massal (khusus aldeftech@gmail.com) ───────────────
+  useEffect(() => { setSelectedIds([]) }, [status, search])
+  const allSelected = trxList.length > 0 && trxList.every(t => selectedIds.includes(t.id))
+  const toggleAll = () => {
+    if (allSelected) {
+      const pageIds = new Set(trxList.map(t => t.id))
+      setSelectedIds(prev => prev.filter(id => !pageIds.has(id)))
+    } else {
+      setSelectedIds(prev => [...new Set([...prev, ...trxList.map(t => t.id)])])
+    }
+  }
+  const toggleOne = (id) =>
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: () => ppobApi.adminBulkDelete(selectedIds),
+    onSuccess : (r) => {
+      qc.invalidateQueries({ queryKey: ['admin-ppob'] })
+      toast({ title: 'Transaksi dihapus.', description: r.data?.message || `${selectedIds.length} data terhapus permanen.` })
+      setSelectedIds([]); setShowBulkDelete(false)
+    },
+    onError: (e) => toast({ title: 'Gagal menghapus', description: e?.response?.data?.message, variant: 'destructive' }),
+  })
 
   const forceFreshBalance = useRef(false)
   const { data: balance, refetch: refetchBalance, isFetching: balanceFetching } = useQuery({
@@ -156,12 +186,24 @@ export default function AdminPpob() {
           className="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-sm font-semibold flex items-center gap-1.5">
           <RefreshCw className="w-4 h-4" /> Refresh
         </button>
+        {isAldeftech && selectedIds.length > 0 && (
+          <button onClick={() => setShowBulkDelete(true)}
+            className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 flex items-center gap-1.5 shadow-sm">
+            <Trash2 className="w-4 h-4" /> Hapus ({selectedIds.length})
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
+              {isAldeftech && (
+                <th className="px-4 py-3 w-10">
+                  <input type="checkbox" checked={allSelected} onChange={toggleAll} title="Pilih semua"
+                    className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer align-middle" />
+                </th>
+              )}
               <th className="text-left px-4 py-3 font-semibold text-slate-700">TRX Code</th>
               <th className="text-left px-4 py-3 font-semibold text-slate-700">User</th>
               <th className="text-left px-4 py-3 font-semibold text-slate-700">Produk</th>
@@ -173,13 +215,19 @@ export default function AdminPpob() {
           </thead>
           <tbody>
             {isLoading && (
-              <tr><td colSpan={7} className="text-center py-12 text-slate-400">Loading...</td></tr>
+              <tr><td colSpan={isAldeftech ? 8 : 7} className="text-center py-12 text-slate-400">Loading...</td></tr>
             )}
             {!isLoading && trxList.length === 0 && (
-              <tr><td colSpan={7} className="text-center py-12 text-slate-400">Tidak ada transaksi.</td></tr>
+              <tr><td colSpan={isAldeftech ? 8 : 7} className="text-center py-12 text-slate-400">Tidak ada transaksi.</td></tr>
             )}
             {trxList.map(trx => (
-              <tr key={trx.id} className="border-b border-slate-100 hover:bg-slate-50/50">
+              <tr key={trx.id} className={`border-b border-slate-100 ${selectedIds.includes(trx.id) ? 'bg-red-50/60' : 'hover:bg-slate-50/50'}`}>
+                {isAldeftech && (
+                  <td className="px-4 py-3">
+                    <input type="checkbox" checked={selectedIds.includes(trx.id)} onChange={() => toggleOne(trx.id)}
+                      className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer align-middle" />
+                  </td>
+                )}
                 <td className="px-4 py-3 font-mono text-xs text-slate-700">{trx.trxCode || trx.trx_code}</td>
                 <td className="px-4 py-3">
                   <p className="text-sm text-slate-700">{trx.user?.name || '-'}</p>
@@ -336,6 +384,32 @@ export default function AdminPpob() {
                 disabled={refundMutation.isPending}
                 className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 disabled:opacity-50">
                 {refundMutation.isPending ? 'Memproses...' : 'Ya, Refund'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk delete confirm (khusus aldeftech@gmail.com) */}
+      {showBulkDelete && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-7 h-7 text-red-600" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 mb-1">Hapus {selectedIds.length} Transaksi?</h3>
+            <p className="text-sm text-slate-500 mb-1">
+              {selectedIds.length} data transaksi PPOB terpilih akan <strong className="text-red-600">dihapus permanen</strong> dari database.
+            </p>
+            <p className="text-xs text-slate-400 mb-6">Tindakan ini tidak dapat dibatalkan.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowBulkDelete(false)}
+                className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium hover:bg-slate-50">
+                Batal
+              </button>
+              <button onClick={() => bulkDeleteMutation.mutate()} disabled={bulkDeleteMutation.isPending}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 disabled:opacity-50">
+                {bulkDeleteMutation.isPending ? 'Menghapus...' : 'Ya, Hapus Permanen'}
               </button>
             </div>
           </div>

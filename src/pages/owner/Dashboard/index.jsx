@@ -211,7 +211,7 @@ export default function OwnerDashboard() {
                   <td className="px-4 py-3 text-slate-500 max-w-[120px] truncate">{b.room?.name}</td>
                   <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{new Date(b.checkIn).toLocaleDateString('id-ID')}</td>
                   <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{new Date(b.checkOut).toLocaleDateString('id-ID')}</td>
-                  <td className="px-4 py-3 font-semibold whitespace-nowrap text-emerald-600" title={`Dibayar customer: ${formatRupiah(b.totalPrice)}`}>{formatRupiah(b.basePrice ?? b.totalPrice)}</td>
+                  <td className="px-4 py-3 font-semibold whitespace-nowrap text-emerald-600" title={`Dibayar customer: ${formatRupiah(b.totalPrice)}`}>{formatRupiah(b.ownerPayout ?? b.basePrice ?? b.totalPrice)}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadgeClass(b.status)}`}>
                       {statusLabel(b.status)}

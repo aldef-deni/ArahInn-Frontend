@@ -528,7 +528,8 @@ function OwnerPickerModal({ onClose }) {
 
 // ── CommissionModal ──────────────────────────────────────────────────────
 // Modal untuk set/ubah persentase komisi per hotel.
-// Markup "Pajak & Others" di BE = commission_percent + 2% PPh.
+// Komisi DIPOTONG dari setoran owner (owner terima harga × (1 − komisi%)).
+// Tidak ditambahkan ke harga customer — biaya customer = setting Biaya Layanan Akomodasi.
 function CommissionModal({ hotel, onClose }) {
   const { toast } = useToast()
   const qc        = useQueryClient()
@@ -552,7 +553,6 @@ function CommissionModal({ hotel, onClose }) {
 
   const numeric = Number(value)
   const isValid = Number.isFinite(numeric) && numeric >= 0 && numeric <= 100
-  const finalMarkup = isValid ? (numeric + 2).toFixed(2) : '—'
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -598,24 +598,22 @@ function CommissionModal({ hotel, onClose }) {
             </p>
           </div>
 
-          {/* Breakdown info */}
+          {/* Breakdown info — komisi DIPOTONG dari setoran owner (bukan ditambah ke customer) */}
           <div className="rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3 text-sm">
-            <p className="font-bold text-emerald-900 mb-2">Perhitungan akhir di customer:</p>
+            <p className="font-bold text-emerald-900 mb-2">Dampak ke setoran owner:</p>
             <div className="space-y-1 text-emerald-800">
               <div className="flex justify-between">
-                <span>Komisi properti</span>
+                <span>Komisi ArahInn (dipotong)</span>
                 <span className="font-semibold">{isValid ? `${numeric.toFixed(2)}%` : '—'}</span>
               </div>
-              <div className="flex justify-between">
-                <span>+ PPh</span>
-                <span className="font-semibold">2.00%</span>
-              </div>
               <div className="flex justify-between pt-1.5 mt-1.5 border-t border-emerald-200">
-                <span className="font-bold">Total "Pajak &amp; Others"</span>
-                <span className="font-extrabold">{finalMarkup}%</span>
+                <span className="font-bold">Owner terima (per kamar)</span>
+                <span className="font-extrabold">{isValid ? `${(100 - numeric).toFixed(2)}% × harga` : '—'}</span>
               </div>
-              <p className="text-[11px] text-emerald-700/80 pt-1">
-                Belum termasuk PPN 11% yang dihitung dari subtotal.
+              <p className="text-[11px] text-emerald-700/80 pt-1.5 leading-relaxed">
+                Komisi ini <b>dipotong dari setoran owner</b>, bukan ditambahkan ke harga customer.
+                Contoh: harga Rp 500.000, komisi {isValid ? `${numeric.toFixed(0)}%` : '15%'} → owner terima Rp {isValid ? (500000 * (100 - numeric) / 100).toLocaleString('id-ID') : '425.000'}.
+                Biaya yang dibayar customer ("Pajak &amp; Others") diatur terpisah di <b>Pengaturan → Biaya Layanan Akomodasi</b>.
               </p>
             </div>
           </div>
@@ -869,7 +867,7 @@ export default function AdminHotels() {
                               {Number(hotel.commissionPercent).toFixed(2)}%
                             </span>
                             <p className="text-[10px] text-slate-400 mt-1">
-                              markup {(Number(hotel.commissionPercent) + 2).toFixed(2)}%
+                              owner terima {(100 - Number(hotel.commissionPercent)).toFixed(2)}%
                             </p>
                           </div>
                         ) : (

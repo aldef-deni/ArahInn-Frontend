@@ -13,6 +13,8 @@ export const bookingApi = {
   downloadVoucher: (id)   => api.get(`/bookings/${id}/voucher`, { responseType: 'blob' }),
   getAll       : (p)      => api.get('/bookings', { params: p }),
   updateStatus : (id, d)  => api.put(`/orders/${id}/status`, d),
+  // Hapus massal pesanan — backend gate khusus akun aldeftech@gmail.com
+  bulkDelete   : (ids)    => api.post('/bookings/bulk-delete', { ids }),
 }
 
 // Public maintenance status — buat App.jsx check runtime
@@ -57,6 +59,7 @@ export const travelApi = {
   adminBookings : (p)  => api.get('/admin/travel/bookings', { params: p }),
   adminIssue    : (id, d) => api.post(`/admin/travel/bookings/${id}/issue`, d),
   adminCancel   : (id, d) => api.post(`/admin/travel/bookings/${id}/cancel`, d),
+  adminBulkDelete: (ids) => api.post('/admin/travel/bookings/bulk-delete', { ids }),
 
   // ── Pesawat ──
   airports      : ()  => api.get('/travel/flight/airports'),
@@ -299,6 +302,7 @@ export const ppobApi = {
   downloadReceipt : (code)    => api.get(`/ppob/transactions/${code}/receipt`, { responseType: 'blob' }),
   // Admin
   adminTrx        : (p)       => api.get('/admin/ppob/transactions', { params: p }),
+  adminBulkDelete : (ids)     => api.post('/admin/ppob/transactions/bulk-delete', { ids }),
   adminMarkPaid   : (code, d) => api.post(`/admin/ppob/transactions/${code}/mark-paid`, d),
   adminCancel     : (code, d) => api.post(`/admin/ppob/transactions/${code}/cancel`, d),
   adminRefund     : (code, d) => api.post(`/admin/ppob/transactions/${code}/refund`, d),

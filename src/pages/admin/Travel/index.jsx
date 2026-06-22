@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Plane, TrainFront, Ship, Ticket, CheckCircle2, Loader2, Clock, XCircle, Search, RefreshCw,
+  Plane, TrainFront, Ship, Ticket, CheckCircle2, Loader2, Clock, XCircle, Search, RefreshCw, Trash2,
 } from 'lucide-react'
 import { travelApi } from '@/services/index'
+import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
 
@@ -29,14 +30,42 @@ const fmt = (d) => d ? new Date(d).toLocaleString('id-ID', { day: '2-digit', mon
 export default function AdminTravel() {
   const qc = useQueryClient()
   const { toast } = useToast()
+  const { user } = useAuthStore()
+  const isAldeftech = (user?.email || '').trim().toLowerCase() === 'aldeftech@gmail.com'
   const [status, setStatus] = useState('pending_payment')
   const [search, setSearch] = useState('')
+  const [selectedIds, setSelectedIds] = useState([])
+  const [showBulkDelete, setShowBulkDelete] = useState(false)
 
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['admin-travel', status, search],
     queryFn: () => travelApi.adminBookings({ status: status || undefined, search: search || undefined, limit: 30 }).then(r => r.data?.data),
   })
   const rows = data?.data ?? []
+
+  // ── Hapus massal (khusus aldeftech@gmail.com) ───────────────
+  useEffect(() => { setSelectedIds([]) }, [status, search])
+  const allSelected = rows.length > 0 && rows.every(b => selectedIds.includes(b.id))
+  const toggleAll = () => {
+    if (allSelected) {
+      const ids = new Set(rows.map(b => b.id))
+      setSelectedIds(prev => prev.filter(id => !ids.has(id)))
+    } else {
+      setSelectedIds(prev => [...new Set([...prev, ...rows.map(b => b.id)])])
+    }
+  }
+  const toggleOne = (id) =>
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+
+  const bulkDeleteMut = useMutation({
+    mutationFn: () => travelApi.adminBulkDelete(selectedIds),
+    onSuccess : (r) => {
+      qc.invalidateQueries({ queryKey: ['admin-travel'] })
+      toast({ title: 'Pesanan dihapus.', description: r.data?.message || `${selectedIds.length} data terhapus permanen.` })
+      setSelectedIds([]); setShowBulkDelete(false)
+    },
+    onError: (e) => toast({ title: 'Gagal menghapus', description: e?.response?.data?.message, variant: 'destructive' }),
+  })
 
   const issueMut = useMutation({
     mutationFn: (id) => travelApi.adminIssue(id, { simulate: false }),
@@ -91,6 +120,20 @@ export default function AdminTravel() {
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari kode / rute..."
             className="w-full pl-9 pr-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
         </div>
+        {isAldeftech && rows.length > 0 && (
+          <button onClick={toggleAll}
+            className="px-3 py-1.5 rounded-xl border text-sm font-medium hover:bg-muted flex items-center gap-2">
+            <input type="checkbox" checked={allSelected} readOnly
+              className="w-4 h-4 rounded border-slate-300 text-red-600 pointer-events-none" />
+            Pilih semua
+          </button>
+        )}
+        {isAldeftech && selectedIds.length > 0 && (
+          <button onClick={() => setShowBulkDelete(true)}
+            className="px-4 py-1.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 flex items-center gap-1.5 shadow-sm">
+            <Trash2 className="w-4 h-4" /> Hapus ({selectedIds.length})
+          </button>
+        )}
       </div>
 
       {isLoading ? (
@@ -104,9 +147,13 @@ export default function AdminTravel() {
             const st = STATUS[b.status] || STATUS.pending_payment
             const M = m.Icon, S = st.Icon
             return (
-              <div key={b.id} className="bg-white border rounded-2xl p-4 shadow-card">
+              <div key={b.id} className={`bg-white border rounded-2xl p-4 shadow-card transition-colors ${selectedIds.includes(b.id) ? 'border-red-300 ring-2 ring-red-200' : ''}`}>
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="flex gap-3 min-w-0">
+                    {isAldeftech && (
+                      <input type="checkbox" checked={selectedIds.includes(b.id)} onChange={() => toggleOne(b.id)}
+                        className="w-4 h-4 mt-3 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer shrink-0" />
+                    )}
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${m.cls}`}><M className="w-5 h-5" /></div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -140,6 +187,32 @@ export default function AdminTravel() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Bulk delete confirm (khusus aldeftech@gmail.com) */}
+      {showBulkDelete && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-7 h-7 text-red-600" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 mb-1">Hapus {selectedIds.length} Pesanan?</h3>
+            <p className="text-sm text-slate-500 mb-1">
+              {selectedIds.length} pesanan tiket travel terpilih akan <strong className="text-red-600">dihapus permanen</strong> dari database.
+            </p>
+            <p className="text-xs text-slate-400 mb-6">Tindakan ini tidak dapat dibatalkan.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowBulkDelete(false)}
+                className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium hover:bg-slate-50">
+                Batal
+              </button>
+              <button onClick={() => bulkDeleteMut.mutate()} disabled={bulkDeleteMut.isPending}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 disabled:opacity-50">
+                {bulkDeleteMut.isPending ? 'Menghapus...' : 'Ya, Hapus Permanen'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

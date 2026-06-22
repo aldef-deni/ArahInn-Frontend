@@ -1,10 +1,10 @@
-import { useDeferredValue, useState } from 'react'
+import { useDeferredValue, useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminApi, bookingApi, paymentApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah, formatDateShort, statusBadgeClass, statusLabel } from '@/utils'
-import { Download, CheckCircle2, X, AlertTriangle, RefreshCw, Calendar, Building2, Search } from 'lucide-react'
+import { Download, CheckCircle2, X, AlertTriangle, RefreshCw, Calendar, Building2, Search, Trash2 } from 'lucide-react'
 
 const STATUSES = ['','pending','paid','issued','canceled','refunded','rescheduled']
 
@@ -175,6 +175,36 @@ function CancelConfirm({ order, onClose, onConfirm, isLoading }) {
   )
 }
 
+// ── Bulk delete confirm dialog (khusus akun aldeftech@gmail.com) ──
+function BulkDeleteConfirm({ count, onClose, onConfirm, isLoading }) {
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center mx-auto mb-4">
+          <Trash2 className="w-7 h-7 text-red-600" />
+        </div>
+        <h3 className="text-lg font-bold text-slate-900 mb-1">Hapus {count} Pesanan?</h3>
+        <p className="text-sm text-slate-500 mb-1">
+          {count} data pesanan terpilih akan <strong className="text-red-600">dihapus permanen</strong> dari database.
+        </p>
+        <p className="text-xs text-slate-400 mb-6">
+          Tindakan ini tidak dapat dibatalkan. Data tidak bisa dikembalikan.
+        </p>
+        <div className="flex gap-3">
+          <button onClick={onClose}
+            className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">
+            Batal
+          </button>
+          <button onClick={onConfirm} disabled={isLoading}
+            className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors">
+            {isLoading ? 'Menghapus...' : 'Ya, Hapus Permanen'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Reschedule dialog ─────────────────────────────────────
 function RescheduleDialog({ order, onClose, onConfirm, isLoading }) {
   const [checkIn,  setCheckIn]  = useState('')
@@ -248,6 +278,11 @@ export default function AdminOrders() {
   const { toast } = useToast()
   const qc        = useQueryClient()
   const isSuperAdmin = user?.role === 'superadmin'
+  // Fitur hapus pesanan KHUSUS akun ini (gate keras juga di backend).
+  const isAldeftech  = (user?.email || '').trim().toLowerCase() === 'aldeftech@gmail.com'
+
+  const [selectedIds, setSelectedIds] = useState([])
+  const [showBulkDelete, setShowBulkDelete] = useState(false)
 
   const [status, setStatus]           = useState('')
   const [dateFrom, setFrom]           = useState('')
@@ -333,6 +368,34 @@ export default function AdminOrders() {
       toast({ title: 'Voucher dikirim ulang.', description: 'E-voucher telah dikirim ke email tamu.' })
     },
     onError: (e) => toast({ title: 'Gagal kirim ulang voucher', description: e?.response?.data?.message, variant: 'destructive' }),
+  })
+
+  // ── Hapus massal (khusus aldeftech@gmail.com) ───────────────
+  const pageOrders = data?.data || []
+  // Reset pilihan saat ganti halaman / filter (hindari hapus lintas-konteks tak sengaja).
+  useEffect(() => { setSelectedIds([]) }, [page, status, dateFrom, dateTo, selectedProperty?.id])
+
+  const allPageSelected = pageOrders.length > 0 && pageOrders.every(o => selectedIds.includes(o.id))
+  const toggleAll = () => {
+    if (allPageSelected) {
+      const pageIds = new Set(pageOrders.map(o => o.id))
+      setSelectedIds(prev => prev.filter(id => !pageIds.has(id)))
+    } else {
+      setSelectedIds(prev => [...new Set([...prev, ...pageOrders.map(o => o.id)])])
+    }
+  }
+  const toggleOne = (id) =>
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: () => bookingApi.bulkDelete(selectedIds),
+    onSuccess : (r) => {
+      qc.invalidateQueries({ queryKey: ['admin-orders'] })
+      toast({ title: 'Pesanan dihapus.', description: r.data?.message || `${selectedIds.length} data terhapus permanen.` })
+      setSelectedIds([])
+      setShowBulkDelete(false)
+    },
+    onError: (e) => toast({ title: 'Gagal menghapus', description: e?.response?.data?.message, variant: 'destructive' }),
   })
 
   const exportCSV = () => {
@@ -435,6 +498,12 @@ export default function AdminOrders() {
             className="px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50" />
         </div>
         <span className="ml-auto text-sm text-muted-foreground">{data?.pagination?.total || 0} pesanan</span>
+        {isAldeftech && selectedIds.length > 0 && (
+          <button onClick={() => setShowBulkDelete(true)}
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-colors shadow-sm">
+            <Trash2 className="w-4 h-4" /> Hapus ({selectedIds.length})
+          </button>
+        )}
         <button onClick={exportCSV}
           className="flex items-center gap-1.5 px-4 py-2.5 border rounded-xl text-sm font-medium hover:bg-muted transition-colors">
           <Download className="w-4 h-4" /> Ekspor CSV
@@ -447,6 +516,13 @@ export default function AdminOrders() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40">
               <tr>
+                {isAldeftech && (
+                  <th className="px-4 py-3 w-10">
+                    <input type="checkbox" checked={allPageSelected} onChange={toggleAll}
+                      title="Pilih semua di halaman ini"
+                      className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer align-middle" />
+                  </th>
+                )}
                 {['Kode Booking','Tamu','Hotel','Kamar','Check-in','Check-out','Total','Status'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
@@ -458,10 +534,16 @@ export default function AdminOrders() {
             <tbody className="divide-y">
               {isLoading
                 ? Array(8).fill(0).map((_, i) => (
-                    <tr key={i}>{Array(isSuperAdmin ? 9 : 8).fill(0).map((_, j) => <td key={j} className="px-4 py-3"><div className="skeleton h-4 rounded" /></td>)}</tr>
+                    <tr key={i}>{Array((isSuperAdmin ? 9 : 8) + (isAldeftech ? 1 : 0)).fill(0).map((_, j) => <td key={j} className="px-4 py-3"><div className="skeleton h-4 rounded" /></td>)}</tr>
                   ))
                 : data?.data?.map(order => (
-                    <tr key={order.id} className="hover:bg-muted/20 transition-colors">
+                    <tr key={order.id} className={`transition-colors ${selectedIds.includes(order.id) ? 'bg-red-50/60' : 'hover:bg-muted/20'}`}>
+                      {isAldeftech && (
+                        <td className="px-4 py-3">
+                          <input type="checkbox" checked={selectedIds.includes(order.id)} onChange={() => toggleOne(order.id)}
+                            className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer align-middle" />
+                        </td>
+                      )}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <button onClick={() => setDetail(order)}
                           className="font-mono text-xs font-bold text-brand hover:underline hover:text-brand-700 transition-colors cursor-pointer"
@@ -605,6 +687,16 @@ export default function AdminOrders() {
       {/* Detail booking modal */}
       {detailTarget && (
         <OrderDetailModal order={detailTarget} onClose={() => setDetail(null)} />
+      )}
+
+      {/* Bulk delete confirm (khusus aldeftech@gmail.com) */}
+      {showBulkDelete && (
+        <BulkDeleteConfirm
+          count={selectedIds.length}
+          onClose={() => setShowBulkDelete(false)}
+          onConfirm={() => bulkDeleteMutation.mutate()}
+          isLoading={bulkDeleteMutation.isPending}
+        />
       )}
     </div>
   )
