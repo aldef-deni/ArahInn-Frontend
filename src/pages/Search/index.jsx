@@ -112,8 +112,10 @@ export default function SearchPage() {
 
   const query = {
     q         : form.q || undefined,
-    checkIn   : form.checkIn,
-    checkOut  : form.checkOut,
+    // Filter ketersediaan (allotment) HANYA jalan setelah klik "Cari" — yang menaruh
+    // checkIn/checkOut di URL. Tanpa itu (buka dari menu) → tampilkan semua akomodasi.
+    checkIn   : params.get('checkIn') || undefined,
+    checkOut  : params.get('checkOut') || undefined,
     guests    : form.guests,
     categories: params.get('categories') || undefined,
     category  : !params.get('categories') ? (form.category || params.get('category') || undefined) : undefined,
@@ -378,10 +380,10 @@ export default function SearchPage() {
             </div>
 
             {/* Pagination — smart compact on mobile */}
-            {data?.pagination?.total_pages > 1 && (
+            {data?.pagination?.totalPages > 1 && (
               <Pagination
                 current={page}
-                total={data.pagination.total_pages}
+                total={data.pagination.totalPages}
                 onChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
               />
             )}

@@ -364,17 +364,30 @@ function RoomCard({ room, nights, onBook, stayType = 'daily', stayUnitLabel, lon
             {/* Booking CTA */}
             <div className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Total mulai dari</p>
-                <p className="text-lg font-black text-orange-600">
-                  {formatRupiah((room.discountedPrice ?? room.basePrice) * Math.max(nights, 1))}
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  {formatRupiah(room.discountedPrice ?? room.basePrice)} × {Math.max(nights, 1)} malam
-                </p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">{isLong ? 'Harga' : 'Total mulai dari'}</p>
+                {isLong ? (
+                  longStayP != null ? (
+                    <>
+                      <p className="text-lg font-black text-orange-600">{formatRupiah(longStayP)}</p>
+                      <p className="text-[11px] text-slate-500">per {stayUnitLabel} · {stayType === 'weekly' ? '7 malam' : '30 malam'} · tanpa promo</p>
+                    </>
+                  ) : (
+                    <p className="text-sm font-semibold text-slate-400">Tidak tersedia untuk pilihan ini</p>
+                  )
+                ) : (
+                  <>
+                    <p className="text-lg font-black text-orange-600">
+                      {formatRupiah((room.discountedPrice ?? room.basePrice) * Math.max(nights, 1))}
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      {formatRupiah(room.discountedPrice ?? room.basePrice)} × {Math.max(nights, 1)} malam
+                    </p>
+                  </>
+                )}
               </div>
               <button
                 onClick={() => onBook(room)}
-                disabled={!room.available}
+                disabled={!room.available || (isLong && longStayP == null)}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-500 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
               >
                 Pesan Sekarang
