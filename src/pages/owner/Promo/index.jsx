@@ -17,6 +17,7 @@ const TYPE_STYLES = {
 const emptyForm = {
   code: '', name: '', type: 'voucher', discount_type: 'percent', discount_value: '',
   min_purchase: '', quota: '', start_date: '', end_date: '', hotel_id: '',
+  stay_types: [],   // [] = harian saja; centang weekly/monthly utk long-stay
 }
 
 export default function OwnerPromo() {
@@ -64,6 +65,10 @@ export default function OwnerPromo() {
   })
 
   const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }))
+  const toggleStay = (val) => setForm(p => {
+    const cur = p.stay_types || []
+    return { ...p, stay_types: cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val] }
+  })
 
   return (
     <div className="space-y-8">
@@ -172,6 +177,21 @@ export default function OwnerPromo() {
                   ))}
                 </select>
                 <p className="text-[11px] text-slate-400 mt-1">Pilih properti tertentu, atau "Semua Properti" untuk seluruh akomodasi Anda.</p>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Berlaku untuk tipe menginap</label>
+                <div className="flex flex-wrap gap-2">
+                  {[['daily','Harian'],['weekly','Mingguan'],['monthly','Bulanan']].map(([v,l]) => {
+                    const on = (form.stay_types || []).includes(v)
+                    return (
+                      <button key={v} type="button" onClick={() => toggleStay(v)}
+                        className={`px-3.5 py-1.5 rounded-xl text-sm font-medium border transition-colors ${on ? 'bg-brand text-white border-brand' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+                        {l}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">Kosongkan = berlaku Harian saja. Centang Mingguan/Bulanan agar promo berlaku untuk sewa jangka panjang.</p>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5">Kode Voucher <span className="text-red-500">*</span></label>

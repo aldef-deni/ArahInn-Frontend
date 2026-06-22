@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import i18n from '@/i18n'
@@ -41,9 +41,13 @@ export default function TravelPayment() {
   })
   const bank = mode?.bank
 
-  // Beri tahu layout moda transaksi → footer khusus penerbangan saat moda 'pesawat'
+  // Beri tahu layout moda transaksi → footer khusus per moda (pesawat/pelni).
+  // Pakai hint moda dari navigasi (state) agar footer langsung benar SEBELUM data booking
+  // termuat (hindari kedip footer default), lalu dikonfirmasi dari b.moda setelah load.
+  const location = useLocation()
+  const hintModa = location.state?.moda
   const setTravelModa = useSetTravelModa()
-  useEffect(() => { setTravelModa(b?.moda || null); return () => setTravelModa(null) }, [b?.moda, setTravelModa])
+  useEffect(() => { setTravelModa(b?.moda || hintModa || null); return () => setTravelModa(null) }, [b?.moda, hintModa, setTravelModa])
 
   // Deadline bayar 12 menit (tiket pesawat) — di-anchor saat order pertama dibuka & disimpan,
   // agar selalu mulai tepat 12:00 dan tak terpengaruh selisih jam server/klien (refresh tetap konsisten).

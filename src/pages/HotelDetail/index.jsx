@@ -272,7 +272,7 @@ function RoomCard({ room, nights, onBook, stayType = 'daily', stayUnitLabel, lon
               <>
                 <p className="mt-1 text-2xl font-black text-orange-600">{formatRupiah(displayLongPrice)}</p>
                 <p className="text-xs text-slate-500">per {stayUnitLabel}</p>
-                <p className="mt-1 text-[11px] text-slate-400">{stayType === 'weekly' ? '7 malam' : '30 malam'} · tanpa promo</p>
+                <p className="mt-1 text-[11px] text-slate-400">{stayType === 'weekly' ? '7 malam' : '30 malam'}</p>
               </>
             ) : (
               <p className="mt-2 text-sm font-semibold text-slate-400">Tidak tersedia untuk pilihan ini</p>
@@ -392,7 +392,7 @@ function RoomCard({ room, nights, onBook, stayType = 'daily', stayUnitLabel, lon
                   displayLongPrice != null ? (
                     <>
                       <p className="text-lg font-black text-orange-600">{formatRupiah(displayLongPrice)}</p>
-                      <p className="text-[11px] text-slate-500">per {stayUnitLabel} · {stayType === 'weekly' ? '7 malam' : '30 malam'} · tanpa promo</p>
+                      <p className="text-[11px] text-slate-500">per {stayUnitLabel} · {stayType === 'weekly' ? '7 malam' : '30 malam'}</p>
                     </>
                   ) : (
                     <p className="text-sm font-semibold text-slate-400">Tidak tersedia untuk pilihan ini</p>
@@ -772,7 +772,7 @@ function BookingModal({
                         </span>
                       )}
                       {isLong && (
-                        <span className="block mt-1 text-[10px] text-slate-400">harga tetap · tanpa promo</span>
+                        <span className="block mt-1 text-[10px] text-slate-400">harga tetap</span>
                       )}
                     </div>
                   </div>
@@ -1380,7 +1380,7 @@ export default function HotelDetail() {
                   ))}
                 </div>
                 {isLongStay && (
-                  <span className="text-[11px] text-slate-400">Harga tetap {stayType === 'weekly' ? '7 malam' : '30 malam'} · tanpa promo</span>
+                  <span className="text-[11px] text-slate-400">Harga tetap {stayType === 'weekly' ? '7 malam' : '30 malam'}</span>
                 )}
               </div>
 
@@ -1685,7 +1685,7 @@ export default function HotelDetail() {
                   </div>
                   {isLongStay && (
                     <p className="mt-1.5 text-[11px] leading-snug text-slate-400">
-                      Harga tetap {stayType === 'weekly' ? '7 malam' : '30 malam'} · tanpa promo · check-out otomatis {effectiveCheckOut ? formatDate(effectiveCheckOut) : '-'}
+                      Harga tetap {stayType === 'weekly' ? '7 malam' : '30 malam'} · check-out otomatis {effectiveCheckOut ? formatDate(effectiveCheckOut) : '-'}
                     </p>
                   )}
                 </div>

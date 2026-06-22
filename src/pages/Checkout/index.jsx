@@ -326,8 +326,7 @@ export default function Checkout() {
             </div>
           </div>
 
-          {/* Promo Code Card — disembunyikan untuk menginap mingguan/bulanan (harga tetap, tanpa promo) */}
-          {!isLongStay && (
+          {/* Promo Code Card — berlaku juga utk mingguan/bulanan bila promo di-scope long-stay (BE yang validasi). */}
           <div className="rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
             <h2 className="mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base font-bold text-slate-900">
               <Tag className="h-4 w-4 sm:h-5 sm:w-5 text-brand" /> {t('checkout.promoCode')}
@@ -367,7 +366,6 @@ export default function Checkout() {
               </div>
             )}
           </div>
-          )}
 
           {/* Redeem Poin Card — tepat di bawah Kode Promo */}
           {user && pointBalance > 0 && (

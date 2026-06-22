@@ -329,6 +329,11 @@
     "flightRequirements": "Flight Requirements",
     "flightPolicy": "Flight Policy",
     "refundPolicy": "Refund Policy",
+    "pelniDescription": "ArahInn is a PELNI sea ticket booking service that makes your sea travel to ports across Indonesia easier. Enjoy a fast, secure, and trusted e-ticket booking process, complete with schedule details, cabin classes, and sea travel terms — so your voyage is more comfortable from booking to departure.",
+    "pelniFaq": "Sea Ticket FAQ",
+    "seawifiFaq": "SEAWIFI FAQ",
+    "pelniCancel": "Cancellation & Changes",
+    "pelniBaggage": "Baggage & Terms",
     "ourPartners": "Our Partners",
     "paymentTransaction": "Payment Methods",
     "paymentSecure": "Safe & encrypted payment via"

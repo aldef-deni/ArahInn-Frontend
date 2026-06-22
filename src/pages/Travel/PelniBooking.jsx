@@ -83,7 +83,7 @@ export default function PelniBooking() {
       })
       const booking = res.data?.data
       const ref = booking?.code ?? booking?.id
-      if (ref) navigate(`/tiket/bayar/${ref}`)
+      if (ref) navigate(`/tiket/bayar/${ref}`, { state: { moda: 'pelni' } })
       else setError('Gagal membuat pesanan.')
     } catch (e) {
       setError(travelCheckoutError(e))

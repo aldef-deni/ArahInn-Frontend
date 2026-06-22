@@ -218,7 +218,7 @@ export default function FlightBooking() {
       const data = res.data?.data
       // URL pembayaran pakai KODE booking (TRV…), bukan id numerik
       const ref = isRT ? (data?.depart?.code ?? data?.depart?.id) : (data?.code ?? data?.id)
-      if (ref) { try { sessionStorage.removeItem('flight_pax_draft') } catch { /* abaikan */ } navigate(`/tiket/bayar/${ref}`) }
+      if (ref) { try { sessionStorage.removeItem('flight_pax_draft') } catch { /* abaikan */ } navigate(`/tiket/bayar/${ref}`, { state: { moda: 'pesawat' } }) }
       else setError({ msg: t('travel.createOrderFailed') })
     } catch (e) {
       setError({ msg: travelCheckoutError(e) })

@@ -73,7 +73,11 @@ export default function AdminTravel() {
       toast({ title: 'E-tiket diterbitkan', description: r.data?.message })
       qc.invalidateQueries({ queryKey: ['admin-travel'] })
     },
-    onError: (e) => toast({ title: 'Gagal terbitkan', description: e?.response?.data?.message || 'Coba lagi.', variant: 'destructive' }),
+    onError: (e) => {
+      // Termasuk kasus PARTIAL (422): refresh daftar agar admin lihat leg yang terbit vs gagal.
+      qc.invalidateQueries({ queryKey: ['admin-travel'] })
+      toast({ title: 'Gagal / sebagian terbit', description: e?.response?.data?.message || 'Coba lagi.', variant: 'destructive' })
+    },
   })
 
   const confirmIssue = (b) => {

@@ -41,6 +41,10 @@ export default function UserLayout() {
   const flightFooter = location.pathname.startsWith('/tiket/pesawat')
     || location.pathname.startsWith('/penerbangan')
     || (location.pathname.startsWith('/tiket/bayar') && travelModa === 'pesawat')
+  // Footer khusus kapal laut (PELNI): halaman pelni, pembayaran tiket pelni, & FAQ kapal laut
+  const pelniFooter = location.pathname.startsWith('/tiket/pelni')
+    || location.pathname.startsWith('/kapal-laut')
+    || (location.pathname.startsWith('/tiket/bayar') && travelModa === 'pelni')
 
   // Campaign modal (dipicu dari footer "Campaign")
   const [campaignListOpen, setCampaignListOpen] = useState(false)
@@ -377,13 +381,20 @@ export default function UserLayout() {
               <img src="/logo-arahin.png" alt="Arahinn" className="h-10 w-auto" />
             </div>
             <p className="text-slate-500 text-sm leading-relaxed text-justify">
-              {t(flightFooter ? 'footer.flightDescription' : 'footer.description')}
+              {t(pelniFooter ? 'footer.pelniDescription' : flightFooter ? 'footer.flightDescription' : 'footer.description')}
             </p>
           </div>
           <div className="md:ml-auto flex flex-col sm:flex-row gap-12 lg:gap-16">
           <div>
             <h4 className="font-display font-bold text-xl text-brand-800 mb-4">{t('footer.services')}</h4>
-            {flightFooter ? (
+            {pelniFooter ? (
+            <ul className="space-y-2.5 text-sm text-slate-500">
+              <li><Link to="/kapal-laut/faq" className="hover:text-brand transition-colors">{t('footer.pelniFaq')}</Link></li>
+              <li><Link to="/kapal-laut/seawifi" className="hover:text-brand transition-colors">{t('footer.seawifiFaq')}</Link></li>
+              <li><Link to="/kapal-laut/faq#pembatalan" className="hover:text-brand transition-colors">{t('footer.pelniCancel')}</Link></li>
+              <li><Link to="/kapal-laut/faq#bagasi" className="hover:text-brand transition-colors">{t('footer.pelniBaggage')}</Link></li>
+            </ul>
+            ) : flightFooter ? (
             <ul className="space-y-2.5 text-sm text-slate-500">
               <li><Link to="/penerbangan/persyaratan" className="hover:text-brand transition-colors">{t('footer.flightRequirements')}</Link></li>
               <li><Link to="/penerbangan/kebijakan" className="hover:text-brand transition-colors">{t('footer.flightPolicy')}</Link></li>
@@ -465,11 +476,16 @@ export default function UserLayout() {
                 <h4 className="text-xs font-bold text-brand-800 uppercase tracking-[0.18em]">{t('footer.ourPartners')}</h4>
                 <span className="h-px flex-1 bg-gradient-to-l from-brand/30 to-transparent" />
               </div>
-              <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-6">
-                {['akr.png','bawono.png','scp.png','dekorasi.png','ruangsinggah.png'].map(f => (
+              <div className={flightFooter ? 'grid grid-cols-3 gap-3 sm:gap-4 max-w-md mx-auto' : 'flex flex-wrap items-center justify-center gap-5 sm:gap-6'}>
+                {/* Footer pesawat: 6 maskapai → 3 atas, 3 bawah. Kapal laut: PELNI. Lainnya: mitra default. */}
+                {(flightFooter
+                  ? ['garuda.png','lion.png','batik.png','citilink.png','sriwijaya.png','airasia.png']
+                  : pelniFooter
+                  ? ['pelni.png']
+                  : ['akr.png','bawono.png','scp.png','dekorasi.png','ruangsinggah.png']).map(f => (
                   <div
                     key={f}
-                    className="relative h-16 w-16 flex items-center justify-center rounded-xl bg-white border border-slate-200/70 p-1"
+                    className={`relative flex items-center justify-center rounded-xl bg-white border border-slate-200/70 ${flightFooter ? 'w-full h-20 sm:h-24 px-3 py-2.5' : pelniFooter ? 'h-20 px-8 py-2 max-w-[240px]' : 'h-16 w-16 p-1'}`}
                   >
                     <img
                       src={`/our-partners/${f}`}

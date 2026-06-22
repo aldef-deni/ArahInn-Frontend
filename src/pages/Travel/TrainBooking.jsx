@@ -83,7 +83,7 @@ export default function TrainBooking() {
       })
       const booking = res.data?.data
       const ref = booking?.code ?? booking?.id
-      if (ref) navigate(`/tiket/bayar/${ref}`)
+      if (ref) navigate(`/tiket/bayar/${ref}`, { state: { moda: 'kereta' } })
       else setError('Gagal membuat pesanan.')
     } catch (e) {
       setError(travelCheckoutError(e))

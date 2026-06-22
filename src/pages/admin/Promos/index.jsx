@@ -30,11 +30,12 @@ export default function AdminPromos() {
   })
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm({
-    defaultValues: { discountType: 'percent', discountValue: 0, minPurchase: 0, dayType: '', hotelTypes: [], location: '', productTypes: [] }
+    defaultValues: { discountType: 'percent', discountValue: 0, minPurchase: 0, dayType: '', hotelTypes: [], location: '', productTypes: [], stayTypes: [] }
   })
   const discountType = watch('discountType')
   const hotelTypes   = watch('hotelTypes') || []
   const productTypes = watch('productTypes') || []
+  const stayTypes    = watch('stayTypes') || []
 
   const toggleHotelType = (val) => {
     const cur = watch('hotelTypes') || []
@@ -43,6 +44,10 @@ export default function AdminPromos() {
   const toggleProductType = (val) => {
     const cur = watch('productTypes') || []
     setValue('productTypes', cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val])
+  }
+  const toggleStayType = (val) => {
+    const cur = watch('stayTypes') || []
+    setValue('stayTypes', cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val])
   }
 
   const saveMutation = useMutation({
@@ -64,6 +69,7 @@ export default function AdminPromos() {
         hotel_types   : (d.hotelTypes && d.hotelTypes.length) ? d.hotelTypes : undefined,
         location      : d.location || undefined,
         product_types : (d.productTypes && d.productTypes.length) ? d.productTypes : undefined,
+        stay_types    : (d.stayTypes && d.stayTypes.length) ? d.stayTypes : undefined,  // [] = harian saja
         // owner_id sengaja tidak dikirim → backend set null (promo platform untuk semua customer)
       }
 
@@ -159,6 +165,7 @@ export default function AdminPromos() {
       hotelTypes   : Array.isArray(promo.hotelTypes) ? promo.hotelTypes : [],
       location     : promo.location ?? '',
       productTypes : Array.isArray(promo.productTypes) ? promo.productTypes : [],
+      stayTypes    : Array.isArray(promo.stayTypes) ? promo.stayTypes : [],
     })
   }
 
@@ -421,6 +428,26 @@ export default function AdminPromos() {
                     })}
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1.5">Kosong = berlaku untuk semua produk (akomodasi & tiket).</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Tipe menginap (akomodasi)</label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { v: 'daily',   l: 'Harian' },
+                      { v: 'weekly',  l: 'Mingguan' },
+                      { v: 'monthly', l: 'Bulanan' },
+                    ].map(({ v, l }) => {
+                      const active = stayTypes.includes(v)
+                      return (
+                        <button type="button" key={v} onClick={() => toggleStayType(v)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${active ? 'bg-brand text-white border-brand' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+                          {l}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1.5">Kosong = berlaku Harian saja. Centang Mingguan/Bulanan untuk promo sewa jangka panjang.</p>
                 </div>
 
                 <div>

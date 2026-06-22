@@ -122,13 +122,20 @@ export default function PelniSearch() {
       <SEO title={t('travel.pelniSeoTitle')} description={t('travel.pelniSeoDesc')} url="/tiket/pelni" />
 
       {showForm && (
-      <section className="bg-gradient-to-br from-cyan-500 to-blue-600 text-white">
-        <div className="container py-5 sm:py-7">
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center"><Ship className="w-5 h-5" /></div>
-            <div><h1 className="font-display text-lg sm:text-xl font-bold leading-tight">{t('travel.pelniTitle')}</h1><p className="text-[11px] sm:text-xs text-white/80">{t('travel.pelniTagline')}</p></div>
+      <section className="relative">
+        {/* Hero gradient laut (identitas Pelni) — kartu pencarian glassmorphism mengambang, gaya halaman pesawat */}
+        <div className="bg-gradient-to-br from-cyan-500 via-cyan-600 to-blue-700 pt-6 pb-28 sm:pb-32 relative overflow-hidden">
+          <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute right-1/3 bottom-2 w-40 h-40 rounded-full bg-white/5 blur-2xl" />
+          <div className="container relative z-10">
+            <div className="flex items-center gap-2.5 text-white">
+              <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0"><Ship className="w-6 h-6" /></div>
+              <div><h1 className="font-display text-xl sm:text-2xl font-bold leading-tight">{t('travel.pelniTitle')}</h1><p className="text-xs sm:text-sm text-white/85">{t('travel.pelniTagline')}</p></div>
+            </div>
           </div>
-          <div className="bg-white rounded-2xl shadow-lg p-3.5 sm:p-4 text-slate-900">
+        </div>
+        <div className="container relative z-10 -mt-20 sm:-mt-24 pb-6 sm:pb-8">
+          <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl shadow-xl p-3.5 sm:p-4 text-slate-900">
             <div className="relative grid grid-cols-1 gap-2.5">
               <button onClick={() => setPicker('origin')} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-cyan-400 text-left"><MapPin className="w-4 h-4 text-slate-400 shrink-0" /><div className="min-w-0 flex-1"><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{t('travel.from')}</p><p className={`text-sm font-semibold truncate ${origin ? 'text-slate-900' : 'text-slate-400'}`}>{origin ? `${titleCase(origin.NAME)} (${origin.CODE})` : t('travel.pickOriginPort')}</p></div></button>
               <button onClick={() => setPicker('destination')} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-cyan-400 text-left"><MapPin className="w-4 h-4 text-slate-400 shrink-0" /><div className="min-w-0 flex-1"><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{t('travel.to')}</p><p className={`text-sm font-semibold truncate ${destination ? 'text-slate-900' : 'text-slate-400'}`}>{destination ? `${titleCase(destination.NAME)} (${destination.CODE})` : t('travel.pickDestPort')}</p></div></button>
@@ -201,8 +208,14 @@ export default function PelniSearch() {
         )}
 
         {results && results.length === 0 && !searching && <div className="text-center py-12"><Ship className="w-12 h-12 text-slate-300 mx-auto mb-3" /><p className="font-semibold text-slate-700">{t('travel.noSchedule')}</p><p className="text-sm text-slate-400 mt-1">{t('travel.noScheduleDesc')}</p></div>}
-        {!results && !searching && <TravelPromoSection product="pelni" />}
       </section>
+
+      {/* Section promo KHUSUS kapal laut / PELNI — selalu tampil di body (sebelum & sesudah cari) */}
+      {!searching && (
+        <section className="container pb-8">
+          <TravelPromoSection product="pelni" />
+        </section>
+      )}
 
       <PortPicker open={picker === 'origin'} ports={origins} title={t('travel.originPort')} onPick={setOrigin} onClose={() => setPicker(null)} />
       <PortPicker open={picker === 'destination'} ports={destinations} title={t('travel.destPort')} onPick={setDestination} onClose={() => setPicker(null)} />
