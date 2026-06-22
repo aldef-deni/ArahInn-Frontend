@@ -24,6 +24,7 @@ export default function Checkout() {
   const roomCount = parseInt(sp.get('roomCount') || '1', 10)
   const stayType = sp.get('stayType') || 'daily'
   const isLongStay = stayType === 'weekly' || stayType === 'monthly'
+  const stayPlanIndex = parseInt(sp.get('stayPlanIndex') || '0', 10)
   const nights = diffDays(checkIn, checkOut)
 
   const [form, setForm] = useState({
@@ -59,7 +60,7 @@ export default function Checkout() {
   // Recalc harga dengan kombinasi kode promo + poin (eksplisit, hindari state async)
   const recalcWith = (code, points) =>
     bookingApi.calcPrice({
-      roomId, checkIn, checkOut, roomCount, stayType,
+      roomId, checkIn, checkOut, roomCount, stayType, stayPlanIndex,
       promoCode: code || undefined,
       pointsToRedeem: points || 0,
       usePoints: (points || 0) > 0,
@@ -98,7 +99,7 @@ export default function Checkout() {
         checkIn,
         checkOut,
         roomCount,
-        stayType,
+        stayType, stayPlanIndex,
         usePoints: form.usePoints,
       }),
     onSuccess: (r) => {
@@ -129,7 +130,7 @@ export default function Checkout() {
         checkOut,
         guests: parseInt(guests, 10),
         roomCount,
-        stayType,
+        stayType, stayPlanIndex,
         guestName: form.guestName,
         guestEmail: form.guestEmail,
         guestPhone: form.guestPhone,
@@ -155,7 +156,7 @@ export default function Checkout() {
         checkIn,
         checkOut,
         roomCount,
-        stayType,
+        stayType, stayPlanIndex,
         promoCode: code,
         usePoints: appliedPoints > 0,
         pointsToRedeem: appliedPoints,
@@ -427,6 +428,7 @@ export default function Checkout() {
               const basePriceFinal = Number(pricing.basePrice) || 0
               const originalBase   = Number(pricing.originalBasePrice) || basePriceFinal
               const loyaltyDisc    = Number(pricing.loyaltyDiscount) || 0
+              const taxAndOthers   = (Number(pricing.markupAmount) || 0) + (Number(pricing.taxAmount) || 0) + (Number(pricing.priceSuffix) || 0)
 
               return (
               <div className="space-y-2 text-sm">
@@ -440,12 +442,14 @@ export default function Checkout() {
                     <p className={hasPromo ? 'font-semibold text-green-600' : ''}>{formatRupiah(basePriceFinal)}</p>
                   </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">
-                    {(pricing.taxAmount || 0) > 0 ? t('checkout.taxOthers') : t('checkout.othersOnly')}
-                  </span>
-                  <span>{formatRupiah((pricing.markupAmount || 0) + (pricing.taxAmount || 0) + (pricing.priceSuffix || 0))}</span>
-                </div>
+                {taxAndOthers > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">
+                      {(pricing.taxAmount || 0) > 0 ? t('checkout.taxOthers') : t('checkout.othersOnly')}
+                    </span>
+                    <span>{formatRupiah(taxAndOthers)}</span>
+                  </div>
+                )}
                 {/* Potongan poin loyalitas — satu-satunya potongan yang benar2 mengurangi total */}
                 {loyaltyDisc > 0 && (
                   <div className="flex justify-between">

@@ -52,7 +52,19 @@ const ROOM_TYPES = [
 const roomTypeLabel = (val) => ROOM_TYPES.find(t => t.value === val)?.label ?? val
 const FACILITIES = ['ac','tv','wifi','minibar','bathtub','jacuzzi','balcony','kitchen','living_room','extra_bed']
 
-const emptyForm = { name: '', type: 'standard', base_price: '', weekly_price: '', monthly_price: '', max_guests: 2, total_units: 1, description: '', facilities: [], existingImages: [], newImages: [] }
+const emptyForm = { name: '', type: 'standard', base_price: '', weekly_plans: [], monthly_plans: [], max_guests: 2, total_units: 1, description: '', facilities: [], existingImages: [], newImages: [] }
+
+// Susun opsi menginap dari data room (fallback harga tunggal lama → 1 opsi "Standar")
+const plansFromRoom = (r, type) => {
+  const arr = type === 'weekly' ? r?.weeklyPlans : r?.monthlyPlans
+  if (Array.isArray(arr) && arr.length) return arr.map(p => ({ label: p.label || '', desc: p.desc || '', price: p.price ?? '' }))
+  const single = type === 'weekly' ? r?.weeklyPrice : r?.monthlyPrice
+  return single ? [{ label: 'Standar', desc: '', price: single }] : []
+}
+// Buang opsi tak valid (label kosong / harga ≤ 0) sebelum dikirim ke server
+const cleanPlans = (plans) => (plans || [])
+  .filter(p => p && String(p.label).trim() && Number(p.price) > 0)
+  .map(p => ({ label: String(p.label).trim(), desc: String(p.desc || '').trim(), price: Number(p.price) }))
 
 export default function PropertiUnit() {
   const { hotel }  = useOutletContext()
@@ -94,8 +106,8 @@ export default function PropertiUnit() {
       name: r.name,
       type: r.type,
       base_price: r.basePrice,
-      weekly_price: r.weeklyPrice ?? '',
-      monthly_price: r.monthlyPrice ?? '',
+      weekly_plans: plansFromRoom(r, 'weekly'),
+      monthly_plans: plansFromRoom(r, 'monthly'),
       max_guests: r.maxGuests,
       total_units: r.totalUnits,
       description: r.description || '',
@@ -107,6 +119,10 @@ export default function PropertiUnit() {
   }
   const closeModal = () => { setModal(false); setEditing(null); setImageErrors([]) }
   const toggleFacility = (f) => setForm(p => ({ ...p, facilities: p.facilities.includes(f) ? p.facilities.filter(x => x !== f) : [...p.facilities, f] }))
+  // Opsi menginap lama (weekly_plans / monthly_plans)
+  const addPlan    = (key) => setForm(p => ({ ...p, [key]: [...(p[key] || []), { label: '', desc: '', price: '' }] }))
+  const updatePlan = (key, i, field, val) => setForm(p => ({ ...p, [key]: p[key].map((pl, idx) => idx === i ? { ...pl, [field]: val } : pl) }))
+  const removePlan = (key, i) => setForm(p => ({ ...p, [key]: p[key].filter((_, idx) => idx !== i) }))
 
   const handleImagesChange = async (e) => {
     const files = Array.from(e.target.files || [])
@@ -158,8 +174,8 @@ export default function PropertiUnit() {
       fd.append('name', form.name)
       fd.append('type', form.type)
       fd.append('base_price', form.base_price)
-      fd.append('weekly_price', form.weekly_price || '')
-      fd.append('monthly_price', form.monthly_price || '')
+      fd.append('weekly_plans', JSON.stringify(cleanPlans(form.weekly_plans)))
+      fd.append('monthly_plans', JSON.stringify(cleanPlans(form.monthly_plans)))
       fd.append('max_guests', form.max_guests)
       fd.append('total_units', form.total_units)
       fd.append('description', form.description || '')
@@ -174,8 +190,8 @@ export default function PropertiUnit() {
       name: form.name,
       type: form.type,
       base_price: form.base_price,
-      weekly_price: form.weekly_price === '' ? null : form.weekly_price,
-      monthly_price: form.monthly_price === '' ? null : form.monthly_price,
+      weekly_plans: cleanPlans(form.weekly_plans),
+      monthly_plans: cleanPlans(form.monthly_plans),
       max_guests: form.max_guests,
       total_units: form.total_units,
       description: form.description || '',
@@ -304,18 +320,33 @@ export default function PropertiUnit() {
                     className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand" />
                 </div>
                 <div className="col-span-2 rounded-xl border border-slate-100 bg-slate-50/60 p-3">
-                  <p className="text-xs font-semibold text-slate-600 mb-0.5">Harga Menginap Lama <span className="font-normal text-slate-400">(opsional)</span></p>
-                  <p className="text-[11px] text-slate-400 mb-2.5">Harga tetap 1 minggu (7 malam) / 1 bulan (30 malam) — bukan kalkulasi harga harian & tidak terkena promo. Kosongkan bila tidak ditawarkan.</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-500 mb-1">Harga / Minggu</label>
-                      <PriceInput value={form.weekly_price} onChange={v => setForm(p => ({ ...p, weekly_price: v }))} suffix="/minggu" />
+                  <p className="text-xs font-semibold text-slate-600 mb-0.5">Opsi Menginap Lama <span className="font-normal text-slate-400">(opsional)</span></p>
+                  <p className="text-[11px] text-slate-400 mb-3">Harga tetap mingguan (7 malam) / bulanan (30 malam) — tidak dihitung dari harga harian &amp; tanpa promo. Tiap durasi bisa punya beberapa opsi (mis. <em>Tanpa IPL</em> / <em>Termasuk IPL</em>) dengan harga berbeda.</p>
+                  {[['weekly_plans', 'Mingguan (7 malam)', '/minggu'], ['monthly_plans', 'Bulanan (30 malam)', '/bulan']].map(([key, title, suffix]) => (
+                    <div key={key} className="mb-3 last:mb-0">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <p className="text-[11px] font-bold text-slate-600">{title}</p>
+                        <button type="button" onClick={() => addPlan(key)} className="text-[11px] font-bold text-brand-700 hover:text-brand-800">+ Tambah opsi</button>
+                      </div>
+                      {(form[key] || []).length === 0 && (
+                        <p className="text-[11px] italic text-slate-400">Belum ada opsi — kosongkan bila tidak menawarkan.</p>
+                      )}
+                      {(form[key] || []).map((pl, i) => (
+                        <div key={i} className="mb-2 rounded-lg border border-slate-200 bg-white p-2.5">
+                          <div className="flex items-center gap-2 mb-2">
+                            <input value={pl.label} onChange={e => updatePlan(key, i, 'label', e.target.value)} placeholder="Nama opsi (mis. Tanpa IPL)"
+                              className="flex-1 min-w-0 px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                            <button type="button" onClick={() => removePlan(key, i)} className="shrink-0 text-[11px] font-semibold text-red-500 hover:text-red-600">Hapus</button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <PriceInput value={pl.price} onChange={v => updatePlan(key, i, 'price', v)} suffix={suffix} />
+                            <input value={pl.desc} onChange={e => updatePlan(key, i, 'desc', e.target.value)} placeholder="Deskripsi singkat (opsional)"
+                              className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-500 mb-1">Harga / Bulan</label>
-                      <PriceInput value={form.monthly_price} onChange={v => setForm(p => ({ ...p, monthly_price: v }))} suffix="/bulan" />
-                    </div>
-                  </div>
+                  ))}
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">

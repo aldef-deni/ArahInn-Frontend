@@ -38,10 +38,10 @@ export default function BlurSelect({ value, onChange, options = [], placeholder 
         ref={btnRef}
         type="button"
         onClick={() => (open ? setOpen(false) : openMenu())}
-        className="w-full flex items-center justify-between gap-2 bg-transparent text-white text-sm font-medium focus:outline-none cursor-pointer"
+        className="w-full flex items-center justify-between gap-2 bg-transparent text-slate-800 lg:text-white text-sm font-semibold lg:font-medium focus:outline-none cursor-pointer"
       >
         <span className="truncate">{selected?.label ?? placeholder}</span>
-        <ChevronDown className={`w-4 h-4 text-white/60 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-4 h-4 text-slate-400 lg:text-white/60 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && pos && createPortal(

@@ -178,8 +178,11 @@ function GalleryLightbox({ open, images, startIdx = 0, onClose, hotelName }) {
   )
 }
 
-function RoomCard({ room, nights, onBook, stayType = 'daily', stayUnitLabel, longStayP = null }) {
+function RoomCard({ room, nights, onBook, stayType = 'daily', stayUnitLabel, longStayP = null, plans = [], selectedPlanIdx = 0, onSelectPlan }) {
   const isLong = stayType === 'weekly' || stayType === 'monthly'
+  const hasPlans = isLong && plans.length > 0
+  const selPlan = hasPlans ? (plans[selectedPlanIdx] || plans[0]) : null
+  const displayLongPrice = selPlan ? Number(selPlan.price) : longStayP
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const [imgIdx, setImgIdx] = useState(0)
@@ -240,14 +243,34 @@ function RoomCard({ room, nights, onBook, stayType = 'daily', stayUnitLabel, lon
               ))}
             </div>
           ) : null}
+
+          {hasPlans && plans.length > 1 && (
+            <div className="mt-4">
+              <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">Pilih opsi {stayUnitLabel === 'minggu' ? 'mingguan' : 'bulanan'}</p>
+              <div className="flex flex-wrap gap-2">
+                {plans.map((pl, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => onSelectPlan?.(i)}
+                    className={`text-left rounded-xl border px-3 py-2 transition-all ${selectedPlanIdx === i ? 'border-orange-500 bg-orange-50/70 ring-2 ring-orange-200' : 'border-slate-200 bg-white hover:border-orange-200'}`}
+                  >
+                    <p className="text-xs font-semibold text-slate-900">{pl.label}</p>
+                    {pl.desc ? <p className="max-w-[200px] text-[10px] leading-snug text-slate-500">{pl.desc}</p> : null}
+                    <p className="mt-0.5 text-xs font-bold text-orange-600">{formatRupiah(pl.price)}<span className="text-[9px] font-normal text-slate-400">/{stayUnitLabel}</span></p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="min-w-[220px] rounded-[24px] bg-slate-50 p-4 text-right">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{isLong ? 'Harga' : 'Mulai dari'}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{isLong ? (selPlan?.label || 'Harga') : 'Mulai dari'}</p>
           {isLong ? (
-            longStayP != null ? (
+            displayLongPrice != null ? (
               <>
-                <p className="mt-1 text-2xl font-black text-orange-600">{formatRupiah(longStayP)}</p>
+                <p className="mt-1 text-2xl font-black text-orange-600">{formatRupiah(displayLongPrice)}</p>
                 <p className="text-xs text-slate-500">per {stayUnitLabel}</p>
                 <p className="mt-1 text-[11px] text-slate-400">{stayType === 'weekly' ? '7 malam' : '30 malam'} · tanpa promo</p>
               </>
@@ -364,11 +387,11 @@ function RoomCard({ room, nights, onBook, stayType = 'daily', stayUnitLabel, lon
             {/* Booking CTA */}
             <div className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">{isLong ? 'Harga' : 'Total mulai dari'}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">{isLong ? (selPlan?.label || 'Harga') : 'Total mulai dari'}</p>
                 {isLong ? (
-                  longStayP != null ? (
+                  displayLongPrice != null ? (
                     <>
-                      <p className="text-lg font-black text-orange-600">{formatRupiah(longStayP)}</p>
+                      <p className="text-lg font-black text-orange-600">{formatRupiah(displayLongPrice)}</p>
                       <p className="text-[11px] text-slate-500">per {stayUnitLabel} · {stayType === 'weekly' ? '7 malam' : '30 malam'} · tanpa promo</p>
                     </>
                   ) : (
@@ -387,7 +410,7 @@ function RoomCard({ room, nights, onBook, stayType = 'daily', stayUnitLabel, lon
               </div>
               <button
                 onClick={() => onBook(room)}
-                disabled={!room.available || (isLong && longStayP == null)}
+                disabled={!room.available || (isLong && displayLongPrice == null)}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-500 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
               >
                 Pesan Sekarang
@@ -515,17 +538,28 @@ function BookingModal({
   initialRoomCount = 1,
   onClose,
   onSubmit,
+  stayType = 'daily',
+  plans = [],
+  stayUnitLabel = '',
+  stayNightsFixed = 0,
+  initialPlanIndex = 0,
 }) {
   const { t } = useTranslation()
+  const isLong = stayType === 'weekly' || stayType === 'monthly'
   const [draft, setDraft] = useState({
     checkIn: initialDates.checkIn,
     checkOut: initialDates.checkOut,
     guests: initialGuests,
     roomCount: initialRoomCount,
   })
+  // Opsi menginap lama yang dipilih (mis. "Tanpa IPL" / "Termasuk IPL")
+  const [planIndex, setPlanIndex] = useState(0)
+  const selectedPlan = isLong ? (plans[planIndex] || plans[0] || null) : null
+  const longStayP = selectedPlan ? Number(selectedPlan.price) : null
 
   useEffect(() => {
     if (!open) return
+    setPlanIndex(initialPlanIndex || 0)
     setDraft({
       checkIn: initialDates.checkIn,
       checkOut: initialDates.checkOut,
@@ -560,7 +594,11 @@ function BookingModal({
   }
   const maxRoomCount = Math.max(resolveMaxRoomCount(), 1)
   const maxGuests = perRoomCapacity * draft.roomCount
-  const stayNights = diffDays(draft.checkIn, draft.checkOut)
+  // Long-stay: check-out terkunci = check-in + 7/30 malam; durasi tetap.
+  const modalCheckOut = isLong && draft.checkIn
+    ? format(addDays(new Date(`${draft.checkIn}T00:00:00`), stayNightsFixed), 'yyyy-MM-dd')
+    : draft.checkOut
+  const stayNights = isLong ? stayNightsFixed : diffDays(draft.checkIn, draft.checkOut)
 
   // Clamp draft.roomCount kalau melebihi max yang baru — HARUS sebelum early return
   // supaya React Rules of Hooks tidak melanggar (hook count konsisten).
@@ -592,8 +630,9 @@ function BookingModal({
   }
 
   const handleSubmit = () => {
-    if (!draft.checkIn || !draft.checkOut || stayNights <= 0) return
-    onSubmit(draft)
+    if (!draft.checkIn || stayNights <= 0) return
+    if (isLong && longStayP == null) return
+    onSubmit({ ...draft, checkOut: modalCheckOut, stayType, stayPlanIndex: isLong ? planIndex : 0 })
   }
 
   return (
@@ -630,15 +669,49 @@ function BookingModal({
                 className="relative flex w-full cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100"
                 labelClassName="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"
               />
-              <DateField
-                label="Check-out"
-                value={draft.checkOut}
-                min={draft.checkIn || today}
-                onChange={v => setDraft(current => ({ ...current, checkOut: v }))}
-                className="relative flex w-full cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100"
-                labelClassName="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"
-              />
+              {isLong ? (
+                <div>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Check-out</label>
+                  <div className="flex w-full items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-600">
+                    <span>{modalCheckOut}</span>
+                    <span className="text-[10px] text-slate-400">otomatis ({stayNightsFixed} mlm)</span>
+                  </div>
+                </div>
+              ) : (
+                <DateField
+                  label="Check-out"
+                  value={draft.checkOut}
+                  min={draft.checkIn || today}
+                  onChange={v => setDraft(current => ({ ...current, checkOut: v }))}
+                  className="relative flex w-full cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100"
+                  labelClassName="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"
+                />
+              )}
             </div>
+
+            {isLong && plans.length > 0 && (
+              <div>
+                <p className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Pilih opsi {stayUnitLabel === 'minggu' ? 'mingguan' : 'bulanan'}</p>
+                <div className="space-y-2">
+                  {plans.map((pl, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setPlanIndex(i)}
+                      className={`w-full text-left rounded-2xl border px-4 py-3 transition-all ${planIndex === i ? 'border-orange-500 bg-orange-50/70 ring-2 ring-orange-200' : 'border-slate-200 bg-white hover:border-orange-200'}`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-slate-900 text-sm">{pl.label}</p>
+                          {pl.desc ? <p className="mt-0.5 text-xs leading-snug text-slate-500">{pl.desc}</p> : null}
+                        </div>
+                        <p className="shrink-0 font-bold text-orange-600">{formatRupiah(pl.price)}<span className="text-[10px] font-normal text-slate-400">/{stayUnitLabel}</span></p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Stepper
@@ -677,12 +750,13 @@ function BookingModal({
             <p className="mt-1 text-sm capitalize text-slate-500">{room.type}</p>
 
             {(() => {
-              const unitPrice = Number(room.discountedPrice ?? room.basePrice)
-              const hasPromo  = room.discountedPrice && room.discountedPrice < room.basePrice
+              const unitPrice = isLong ? (longStayP ?? 0) : Number(room.discountedPrice ?? room.basePrice)
+              const hasPromo  = !isLong && room.discountedPrice && room.discountedPrice < room.basePrice
+              const totalStay = isLong ? unitPrice * draft.roomCount : unitPrice * stayNights * draft.roomCount
               return (
                 <div className="mt-5 space-y-3 text-sm">
                   <div className="flex items-start justify-between gap-3">
-                    <span className="text-slate-500">Harga / malam / kamar</span>
+                    <span className="text-slate-500">{isLong ? `Harga / ${stayUnitLabel} / kamar` : 'Harga / malam / kamar'}</span>
                     <div className="text-right">
                       {hasPromo && (
                         <p className="text-xs text-slate-400 line-through leading-tight">{formatRupiah(room.basePrice)}</p>
@@ -697,12 +771,15 @@ function BookingModal({
                             : `Hemat ${formatRupiah(room.appliedPromo.discountValue)}`}
                         </span>
                       )}
+                      {isLong && (
+                        <span className="block mt-1 text-[10px] text-slate-400">harga tetap · tanpa promo</span>
+                      )}
                     </div>
                   </div>
                   {draft.roomCount > 1 && (
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-slate-500">{draft.roomCount} kamar</span>
-                      <span className="font-semibold text-slate-900">{formatRupiah(unitPrice * draft.roomCount)}/malam</span>
+                      <span className="font-semibold text-slate-900">{formatRupiah(unitPrice * draft.roomCount)}{isLong ? '' : '/malam'}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between gap-3">
@@ -711,8 +788,12 @@ function BookingModal({
                   </div>
                   {stayNights > 0 && (
                     <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
-                      <span className="text-slate-500 text-xs">{formatRupiah(unitPrice)} × {stayNights} mlm × {draft.roomCount} kmr</span>
-                      <span className="font-bold text-orange-600">{formatRupiah(unitPrice * stayNights * draft.roomCount)}</span>
+                      <span className="text-slate-500 text-xs">
+                        {isLong
+                          ? `${formatRupiah(unitPrice)} × 1 ${stayUnitLabel} × ${draft.roomCount} kmr (${stayNights} mlm)`
+                          : `${formatRupiah(unitPrice)} × ${stayNights} mlm × ${draft.roomCount} kmr`}
+                      </span>
+                      <span className="font-bold text-orange-600">{formatRupiah(totalStay)}</span>
                     </div>
                   )}
                 </div>
@@ -722,7 +803,7 @@ function BookingModal({
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={stayNights <= 0}
+              disabled={stayNights <= 0 || (isLong && longStayP == null)}
               className="mt-5 sm:mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-orange-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
             >
               Lanjutkan pemesanan
@@ -776,6 +857,9 @@ export default function HotelDetail() {
   const [roomCount, setRoomCount] = useState(1)
   // Pilihan menginap: harian (pakai tanggal) | mingguan (7 mlm) | bulanan (30 mlm) — harga tetap, tanpa promo.
   const [stayType, setStayType] = useState('daily')
+  // Opsi menginap lama yang dipilih per kamar (roomId -> index opsi)
+  const [roomPlanIdx, setRoomPlanIdx] = useState({})
+  useEffect(() => { setRoomPlanIdx({}) }, [stayType])
 
   // Modal "Pilih Tanggal Lain" — ganti tanggal untuk cek ketersediaan lain (saat kamar penuh)
   const [showDateModal, setShowDateModal] = useState(false)
@@ -855,19 +939,16 @@ export default function HotelDetail() {
 
   const handleBook = (room) => {
     if (!token) return navigate('/login')
-    if (isLongStay) {
-      if (longStayPrice(room) == null) return  // kamar tak punya harga utk pilihan ini
-      navigate(`/checkout/${room.id}?hotelId=${resolvedId}&checkIn=${dates.checkIn}&checkOut=${effectiveCheckOut}&guests=${guests}&roomCount=${roomCount}&stayType=${stayType}`)
-      return
-    }
-    setBookingRoom(room)
+    if (isLongStay && longStayPrice(room) == null) return  // kamar tak punya opsi utk durasi ini
+    setBookingRoom(room)   // long-stay & harian → modal (modal punya pemilih opsi)
   }
 
-  const handleBookingSubmit = ({ checkIn, checkOut, guests: nextGuests, roomCount }) => {
+  const handleBookingSubmit = ({ checkIn, checkOut, guests: nextGuests, roomCount, stayType: st, stayPlanIndex }) => {
     setDates({ checkIn, checkOut })
     setGuests(nextGuests)
+    const stParam = (st && st !== 'daily') ? `&stayType=${st}&stayPlanIndex=${stayPlanIndex ?? 0}` : ''
     navigate(
-      `/checkout/${bookingRoom.id}?hotelId=${resolvedId}&checkIn=${checkIn}&checkOut=${checkOut}&guests=${nextGuests}&roomCount=${roomCount}`
+      `/checkout/${bookingRoom.id}?hotelId=${resolvedId}&checkIn=${checkIn}&checkOut=${checkOut}&guests=${nextGuests}&roomCount=${roomCount}${stParam}`
     )
     setBookingRoom(null)
   }
@@ -935,11 +1016,26 @@ export default function HotelDetail() {
   const STAY_NIGHTS = { weekly: 7, monthly: 30 }
   const isLongStay = stayType === 'weekly' || stayType === 'monthly'
   const stayUnitLabel = stayType === 'weekly' ? 'minggu' : 'bulan'
-  // Harga tetap long-stay kamar (null kalau owner tak set utk pilihan ini)
+  // Opsi/varian menginap lama untuk durasi terpilih (fallback harga tunggal lama → 1 opsi)
+  const longStayPlans = (r) => {
+    const raw = stayType === 'weekly' ? r?.weeklyPlans : (stayType === 'monthly' ? r?.monthlyPlans : null)
+    if (Array.isArray(raw) && raw.length) {
+      return raw.map(p => ({ label: p.label || 'Opsi', desc: p.desc || '', price: Number(p.price) })).filter(p => p.price > 0)
+    }
+    const single = stayType === 'weekly' ? r?.weeklyPrice : (stayType === 'monthly' ? r?.monthlyPrice : null)
+    return single ? [{ label: 'Standar', desc: '', price: Number(single) }] : []
+  }
+  // Harga termurah dari opsi (untuk kartu "mulai dari"); null kalau tak ada opsi
   const longStayPrice = (r) => {
-    if (stayType === 'weekly') return r?.weeklyPrice ? Number(r.weeklyPrice) : null
-    if (stayType === 'monthly') return r?.monthlyPrice ? Number(r.monthlyPrice) : null
-    return null
+    const p = longStayPlans(r)
+    return p.length ? Math.min(...p.map(x => x.price)) : null
+  }
+  // Harga opsi yang SEDANG DIPILIH untuk kamar r (default opsi pertama)
+  const selectedLongPrice = (r) => {
+    const p = longStayPlans(r)
+    if (!p.length) return null
+    const idx = roomPlanIdx[r?.id] ?? 0
+    return Number((p[idx] || p[0]).price)
   }
   const effectiveStayNights = isLongStay ? STAY_NIGHTS[stayType] : nights
   const effectiveCheckOut = isLongStay && dates.checkIn
@@ -957,7 +1053,7 @@ export default function HotelDetail() {
 
   const sidebarOriginalPrice = selectedSidebarRoom?.basePrice ? Number(selectedSidebarRoom.basePrice) : null
   const sidebarUnitPrice = selectedSidebarRoom
-    ? (isLongStay ? longStayPrice(selectedSidebarRoom) : effectivePrice(selectedSidebarRoom))
+    ? (isLongStay ? selectedLongPrice(selectedSidebarRoom) : effectivePrice(selectedSidebarRoom))
     : null
   const sidebarTotalPrice = isLongStay
     ? (sidebarUnitPrice ? sidebarUnitPrice * roomCount : null)            // harga paket × kamar (tanpa × malam)
@@ -1314,12 +1410,8 @@ export default function HotelDetail() {
               })()}
 
               <div className="mt-5 space-y-4">
-                {availData?.map(room => (
-                  <RoomCard key={room.id} room={room} nights={nights} onBook={handleBook}
-                    stayType={stayType} stayUnitLabel={stayUnitLabel} longStayP={longStayPrice(room)} />
-                ))}
-
-                {/* Card: cari ketersediaan tanggal lain (berguna saat kamar penuh) */}
+                {/* Card: cari ketersediaan tanggal lain — diletakkan DI ATAS daftar kamar
+                    agar mudah terlihat tanpa scroll saat kamar penuh. */}
                 <button
                   type="button"
                   onClick={openDateModal}
@@ -1334,6 +1426,14 @@ export default function HotelDetail() {
                   </div>
                   <ChevronRight className="h-5 w-5 shrink-0 text-blue-400" />
                 </button>
+
+                {availData?.map(room => (
+                  <RoomCard key={room.id} room={room} nights={nights} onBook={handleBook}
+                    stayType={stayType} stayUnitLabel={stayUnitLabel} longStayP={longStayPrice(room)}
+                    plans={isLongStay ? longStayPlans(room) : []}
+                    selectedPlanIdx={roomPlanIdx[room.id] ?? 0}
+                    onSelectPlan={(i) => setRoomPlanIdx(s => ({ ...s, [room.id]: i }))} />
+                ))}
               </div>
             </section>
 
@@ -1638,9 +1738,9 @@ export default function HotelDetail() {
                               </div>
                               <div className="text-right shrink-0">
                                 {isLongStay ? (
-                                  longStayPrice(r) != null ? (
+                                  selectedLongPrice(r) != null ? (
                                     <>
-                                      <p className="text-xs font-bold text-orange-600">{formatRupiah(longStayPrice(r))}</p>
+                                      <p className="text-xs font-bold text-orange-600">{formatRupiah(selectedLongPrice(r))}</p>
                                       <p className="text-[10px] text-slate-400">/ {stayUnitLabel}</p>
                                     </>
                                   ) : (
@@ -1703,11 +1803,7 @@ export default function HotelDetail() {
                   onClick={() => {
                     if (!token) return navigate('/login')
                     if (!selectedSidebarRoom) return
-                    if (isLongStay) {
-                      navigate(`/checkout/${selectedSidebarRoom.id}?hotelId=${resolvedId}&checkIn=${dates.checkIn}&checkOut=${effectiveCheckOut}&guests=${guests}&roomCount=${roomCount}&stayType=${stayType}`)
-                      return
-                    }
-                    setBookingRoom(selectedSidebarRoom)
+                    setBookingRoom(selectedSidebarRoom)   // modal: pilih opsi (long-stay) / konfirmasi (harian)
                   }}
                   disabled={!selectedSidebarRoom || (!isLongStay && nights <= 0) || (isLongStay && !sidebarUnitPrice)}
                   className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
@@ -1795,6 +1891,11 @@ export default function HotelDetail() {
         initialRoomCount={roomCount}
         onClose={() => setBookingRoom(null)}
         onSubmit={handleBookingSubmit}
+        stayType={stayType}
+        plans={bookingRoom && isLongStay ? longStayPlans(bookingRoom) : []}
+        stayUnitLabel={stayUnitLabel}
+        stayNightsFixed={isLongStay ? STAY_NIGHTS[stayType] : 0}
+        initialPlanIndex={bookingRoom ? (roomPlanIdx[bookingRoom.id] ?? 0) : 0}
       />
 
       <GalleryLightbox

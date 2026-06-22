@@ -344,7 +344,7 @@ export default function UserLayout() {
                     </div>
                     {/* Store badges */}
                     <div className="flex flex-col gap-2">
-                      <a href="#" className="flex items-center gap-2.5 px-4 py-2 bg-black/80 hover:bg-black text-white rounded-xl transition-colors shadow-sm border border-white/10">
+                      <a href="https://play.google.com/store/apps/details?id=com.arahinn.mobile&hl=id" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 px-4 py-2 bg-black/80 hover:bg-black text-white rounded-xl transition-colors shadow-sm border border-white/10">
                         <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M3.18 23.76c.3.17.64.24.99.2l11.94-11.95L12.38 9.3 3.18 23.76zm16.49-10.69L16.8 11.4l-3.28 3.28 3.28 3.28 2.89-1.69c.82-.48.82-1.72-.02-2.2zM3.03.25C2.7.62 2.5 1.16 2.5 1.85v20.29c0 .69.2 1.23.53 1.6l.07.07L14.05 12.8v-.27L3.1.18l-.07.07zm9.35 9.05l2.72 2.71-2.72 2.72L9.66 12.3l2.72-2.99z"/></svg>
                         <div className="leading-tight text-left">
                           <p className="text-[9px] text-slate-300">GET IT ON</p>
@@ -551,7 +551,7 @@ export default function UserLayout() {
                   <p className="text-xs font-semibold">App Store</p>
                 </div>
               </a>
-              <a href="#"
+              <a href="https://play.google.com/store/apps/details?id=com.arahinn.mobile&hl=id" target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-2.5 px-4 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors shadow-sm">
                 <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M3.18 23.76c.3.17.64.24.99.2l11.94-11.95L12.38 9.3 3.18 23.76zm16.49-10.69L16.8 11.4l-3.28 3.28 3.28 3.28 2.89-1.69c.82-.48.82-1.72-.02-2.2zM3.03.25C2.7.62 2.5 1.16 2.5 1.85v20.29c0 .69.2 1.23.53 1.6l.07.07L14.05 12.8v-.27L3.1.18l-.07.07zm9.35 9.05l2.72 2.71-2.72 2.72L9.66 12.3l2.72-2.99z"/>

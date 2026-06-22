@@ -97,6 +97,26 @@ export default function AdminSettings() {
     onError: (e) => toast({ title: 'Gagal update markup', description: e?.response?.data?.message, variant: 'destructive' }),
   })
 
+  /* ── Biaya Layanan Akomodasi ("Pajak & Others" ke customer) ───────── */
+  const { data: sfData, isLoading: sfLoading } = useQuery({
+    queryKey: ['admin-accom-service-fee'],
+    queryFn : () => adminApi.getAccomServiceFee().then(r => r.data?.data),
+  })
+  const [sfAmount, setSfAmount]   = useState(0)
+  const [sfPercent, setSfPercent] = useState(0)
+  useEffect(() => {
+    if (sfData) { setSfAmount(sfData.amount ?? 0); setSfPercent(sfData.percent ?? 0) }
+  }, [sfData])
+
+  const sfMutation = useMutation({
+    mutationFn: (payload) => adminApi.setAccomServiceFee(payload),
+    onSuccess: (r) => {
+      toast({ title: 'Biaya layanan akomodasi diperbarui', description: r.data?.message })
+      qc.invalidateQueries({ queryKey: ['admin-accom-service-fee'] })
+    },
+    onError: (e) => toast({ title: 'Gagal update biaya layanan', description: e?.response?.data?.message, variant: 'destructive' }),
+  })
+
   /* ── Local form state ────────────────────────────────────────────── */
   const [bank, setBank] = useState({
     bank_name: '', account_number: '', account_name: '', expires_hours: 24,
@@ -354,6 +374,61 @@ export default function AdminSettings() {
               </p>
             )}
           </>
+        )}
+      </div>
+
+      {/* ── Biaya Layanan Akomodasi ──────────────────────────────────── */}
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
+        <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-5">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 text-white flex items-center justify-center shrink-0">
+            <Receipt className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">Biaya Layanan Akomodasi</h2>
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5 leading-relaxed">
+              Biaya yang ditambahkan ke customer saat bayar (tampil sebagai <strong>“Pajak &amp; Others”</strong>).
+              Isi <strong>persentase</strong> (dihitung dari harga kamar setelah promo) <em>atau</em> <strong>nominal flat</strong>.
+              Jika persentase &gt; 0, persentase yang dipakai.
+            </p>
+          </div>
+        </div>
+        {sfLoading ? <div className="skeleton h-20 rounded-xl" /> : (
+          <>
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+            <div className="sm:w-44">
+              <label className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide block mb-2">Persentase</label>
+              <div className="relative">
+                <input type="number" min={0} max={100} step={0.5} value={sfPercent} onChange={e => setSfPercent(e.target.value)}
+                  className="w-full pl-3 pr-9 py-3 border border-slate-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-500" />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-semibold">%</span>
+              </div>
+            </div>
+            <div className="sm:w-52">
+              <label className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide block mb-2">Nominal Flat {Number(sfPercent) > 0 && <span className="text-slate-300 normal-case">(diabaikan)</span>}</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-semibold">Rp</span>
+                <input type="number" min={0} step={1000} value={sfAmount} disabled={Number(sfPercent) > 0} onChange={e => setSfAmount(e.target.value)}
+                  className="w-full pl-9 pr-3 py-3 border border-slate-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-500 disabled:bg-slate-50 disabled:text-slate-300" />
+              </div>
+            </div>
+            <button
+              onClick={() => sfMutation.mutate({ amount: parseInt(sfAmount) || 0, percent: parseFloat(sfPercent) || 0 })}
+              disabled={sfMutation.isPending || (parseInt(sfAmount) === (sfData?.amount ?? 0) && parseFloat(sfPercent) === (sfData?.percent ?? 0))}
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm active:scale-[0.97] transition-all disabled:opacity-40"
+            >
+              <Save className="w-4 h-4" /> {sfMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+            </button>
+          </div>
+          <p className="text-[11px] sm:text-xs text-slate-500 mt-3 leading-snug">
+            Contoh: harga kamar Rp 500.000{Number(sfPercent) > 0
+              ? ` + biaya layanan ${Number(sfPercent)}% = Rp ${(500000 + Math.round(500000 * Number(sfPercent)/100)).toLocaleString('id-ID')}`
+              : ` + Rp ${(parseInt(sfAmount)||0).toLocaleString('id-ID')} = Rp ${(500000 + (parseInt(sfAmount)||0)).toLocaleString('id-ID')}`} dibayar customer.
+            Komisi properti tetap dipotong terpisah dari setoran owner.
+          </p>
+          </>
+        )}
+        {sfData?.updated_at && (
+          <p className="text-[10px] sm:text-xs text-slate-400 mt-3">Terakhir diperbarui: {new Date(sfData.updated_at).toLocaleString('id-ID')}</p>
         )}
       </div>
 
