@@ -10,7 +10,7 @@ import {
   Hotel, Search, List, User, LogOut, Menu, X,
   ChevronDown, Globe, Settings, LayoutDashboard,
   Phone, Mail, Smartphone, Building2, Sofa, Tag, Receipt, Star,
-  Megaphone, CalendarDays,
+  Megaphone, CalendarDays, Plane, Ship, Sparkles,
 } from 'lucide-react'
 import CampaignDetailModal from '@/components/CampaignDetailModal'
 import { cn, getImageUrl } from '@/utils'
@@ -34,6 +34,7 @@ export default function UserLayout() {
   const { toast } = useToast()
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropOpen, setDropOpen] = useState(false)
+  const [akomodasiOpen, setAkomodasiOpen] = useState(false) // accordion "Akomodasi" di drawer mobile
   // Moda transaksi travel aktif (di-set halaman pembayaran) → footer khusus pesawat
   const [travelModa, setTravelModa] = useState(null)
   // Footer khusus penerbangan: halaman pesawat (search/pesan), pembayaran tiket pesawat,
@@ -45,6 +46,8 @@ export default function UserLayout() {
   const pelniFooter = location.pathname.startsWith('/tiket/pelni')
     || location.pathname.startsWith('/kapal-laut')
     || (location.pathname.startsWith('/tiket/bayar') && travelModa === 'pelni')
+  // Footer khusus Design Interior (deskripsi berbeda — sinergi dengan Dekorasi.Me)
+  const interiorFooter = location.pathname.startsWith('/interior')
 
   // Campaign modal (dipicu dari footer "Campaign")
   const [campaignListOpen, setCampaignListOpen] = useState(false)
@@ -80,20 +83,22 @@ export default function UserLayout() {
     localStorage.setItem('lang', next)
   }
 
-  const navLinks = [
-    { to: '/',          label: t('nav.home'),    icon: Hotel },
-    { to: '/search',    label: t('nav.search'),  icon: Search },
-    { to: '/properti',  label: t('nav.properti'), icon: Building2 },
-    { to: '/interior',  label: t('nav.interior'), icon: Sofa },
-    { to: '/topup-tagihan', label: t('nav.topUpTagihan'), icon: Receipt },
-    { to: '/promo',         label: t('nav.promo'),        icon: Tag },
-    // Saat login: Pesanan & Poin Loyalitas dipindah ke dropdown akun (tidak di main menu)
-    ...(token ? [
-      { to: '/profile',  label: t('nav.profile'),    icon: User },
-    ] : []),
+  // Struktur main menu. "Akomodasi" = dropdown 3 sub-menu. Profil TIDAK di main menu
+  // (sudah ada di dropdown nama user). Promo diberi efek shimmer "kelap-kelip" elegan.
+  const akomodasiChildren = [
+    { to: '/search',   label: t('nav.cariPenginapan'),   icon: Search },
+    { to: '/properti', label: t('nav.propertiJualBeli'), icon: Building2 },
+    { to: '/interior', label: t('nav.jasaDesign'),       icon: Sofa },
   ]
-
-  const mobileNavLinks = navLinks.filter(l => l.to !== '/search')
+  const navLinks = [
+    { to: '/', label: t('nav.home'), icon: Hotel },
+    { label: t('nav.akomodasi'), icon: Building2, children: akomodasiChildren },
+    { to: '/tiket/pesawat', label: t('nav.tiketPesawat'), icon: Plane },
+    { to: '/tiket/pelni',   label: t('nav.tiketPelni'),   icon: Ship },
+    { to: '/topup-tagihan', label: t('nav.topUpTagihan'), icon: Receipt },
+    { to: '/promo',         label: t('nav.promo'),        icon: Tag, sparkle: true },
+  ]
+  const akomodasiActive = akomodasiChildren.some(c => location.pathname === c.to)
 
   return (
     <TravelFooterContext.Provider value={setTravelModa}>
@@ -119,17 +124,66 @@ export default function UserLayout() {
           {/* Desktop nav */}
           {!isPengelola && (
             <nav className="hidden md:flex items-center gap-1">
-              {navLinks.map(({ to, label }) => (
-                <Link key={to} to={to}
-                  className={cn(
-                    'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                    location.pathname === to
-                      ? 'bg-brand/10 text-brand-700'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                  )}>
-                  {label}
-                </Link>
-              ))}
+              {navLinks.map((item) => {
+                const Icon = item.icon
+                // Dropdown "Akomodasi" (hover)
+                if (item.children) {
+                  return (
+                    <div key={item.label} className="relative group">
+                      <button className={cn(
+                        'px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1',
+                        akomodasiActive
+                          ? 'bg-brand/10 text-brand-700'
+                          : 'text-muted-foreground group-hover:text-foreground group-hover:bg-muted'
+                      )}>
+                        {item.label}
+                        <ChevronDown className="w-3.5 h-3.5 transition-transform group-hover:rotate-180" />
+                      </button>
+                      {/* pt-2 menjembatani jarak agar hover tidak putus */}
+                      <div className="absolute left-0 top-full pt-2 hidden group-hover:block z-50">
+                        <div className="w-60 bg-white border rounded-xl shadow-card-hover overflow-hidden animate-fade-in">
+                          {item.children.map(({ to, label, icon: CIcon }) => (
+                            <Link key={to} to={to}
+                              className={cn(
+                                'flex items-center gap-2.5 px-4 py-3 text-sm transition-colors',
+                                location.pathname === to
+                                  ? 'bg-brand/10 text-brand-700 font-medium'
+                                  : 'text-foreground hover:bg-muted'
+                              )}>
+                              <CIcon className="w-4 h-4 shrink-0 text-muted-foreground" />
+                              {label}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+                // Promo — efek shimmer "kelap-kelip" elegan
+                if (item.sparkle) {
+                  return (
+                    <Link key={item.to} to={item.to}
+                      className="relative ml-1 px-4 py-2 rounded-lg text-sm font-semibold text-amber-950 overflow-hidden shadow-sm ring-1 ring-amber-300/60 bg-[linear-gradient(110deg,#fbbf24,35%,#fff7cd,50%,#fbbf24,65%,#f59e0b)] bg-[length:200%_100%] animate-shimmer">
+                      <span className="relative z-10 flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 animate-pulse" />
+                        {item.label}
+                      </span>
+                    </Link>
+                  )
+                }
+                // Link biasa
+                return (
+                  <Link key={item.to} to={item.to}
+                    className={cn(
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      location.pathname === item.to
+                        ? 'bg-brand/10 text-brand-700'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    )}>
+                    {item.label}
+                  </Link>
+                )
+              })}
             </nav>
           )}
 
@@ -228,18 +282,53 @@ export default function UserLayout() {
 
             {/* Nav links */}
             <div className="px-3 py-3 space-y-0.5">
-              {!isPengelola && mobileNavLinks.map(({ to, label, icon: Icon }) => (
-                <Link key={to} to={to} onClick={() => setMenuOpen(false)}
-                  className={cn(
-                    'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors',
-                    location.pathname === to
-                      ? 'bg-brand/10 text-brand-700'
-                      : 'text-foreground hover:bg-muted'
-                  )}>
-                  <Icon className="w-4 h-4 shrink-0" />
-                  {label}
-                </Link>
-              ))}
+              {!isPengelola && navLinks.map((item) => {
+                const Icon = item.icon
+                // Accordion "Akomodasi"
+                if (item.children) {
+                  return (
+                    <div key={item.label}>
+                      <button onClick={() => setAkomodasiOpen(o => !o)}
+                        className={cn(
+                          'w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors',
+                          akomodasiActive ? 'bg-brand/10 text-brand-700' : 'text-foreground hover:bg-muted'
+                        )}>
+                        <span className="flex items-center gap-3"><Icon className="w-4 h-4 shrink-0" />{item.label}</span>
+                        <ChevronDown className={cn('w-4 h-4 transition-transform', akomodasiOpen && 'rotate-180')} />
+                      </button>
+                      {akomodasiOpen && (
+                        <div className="ml-5 pl-3 border-l border-muted space-y-0.5 mt-0.5">
+                          {item.children.map(({ to, label, icon: CIcon }) => (
+                            <Link key={to} to={to} onClick={() => setMenuOpen(false)}
+                              className={cn(
+                                'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors',
+                                location.pathname === to ? 'bg-brand/10 text-brand-700' : 'text-foreground hover:bg-muted'
+                              )}>
+                              <CIcon className="w-4 h-4 shrink-0" />{label}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
+                // Link biasa (Promo diberi gradien + sparkle)
+                return (
+                  <Link key={item.to} to={item.to} onClick={() => setMenuOpen(false)}
+                    className={cn(
+                      'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors',
+                      item.sparkle
+                        ? 'bg-gradient-to-r from-amber-300 to-amber-500 text-amber-950 font-semibold shadow-sm'
+                        : location.pathname === item.to
+                        ? 'bg-brand/10 text-brand-700'
+                        : 'text-foreground hover:bg-muted'
+                    )}>
+                    <Icon className="w-4 h-4 shrink-0" />
+                    {item.label}
+                    {item.sparkle && <Sparkles className="w-4 h-4 ml-auto animate-pulse" />}
+                  </Link>
+                )
+              })}
 
               {token && user?.role === 'owner' && (
                 <a href={managementHref} onClick={() => setMenuOpen(false)}
@@ -380,14 +469,20 @@ export default function UserLayout() {
             <div className="flex items-center gap-2 mb-4">
               <img src="/logo-arahin.png" alt="Arahinn" className="h-10 w-auto" />
             </div>
-            <p className="text-slate-500 text-sm leading-relaxed text-justify">
-              {t(pelniFooter ? 'footer.pelniDescription' : flightFooter ? 'footer.flightDescription' : 'footer.description')}
+            <p className="text-slate-500 text-sm leading-relaxed text-justify whitespace-pre-line">
+              {t(interiorFooter ? 'footer.interiorDescription' : pelniFooter ? 'footer.pelniDescription' : flightFooter ? 'footer.flightDescription' : 'footer.description')}
             </p>
           </div>
           <div className="md:ml-auto flex flex-col sm:flex-row gap-12 lg:gap-16">
           <div>
             <h4 className="font-display font-bold text-xl text-brand-800 mb-4">{t('footer.services')}</h4>
-            {pelniFooter ? (
+            {interiorFooter ? (
+            <ul className="space-y-2.5 text-sm text-slate-500">
+              <li><Link to="/interior/layanan-kemitraan" className="hover:text-brand transition-colors">{t('footer.interiorPartnership')}</Link></li>
+              <li><Link to="/interior/keunggulan-biaya" className="hover:text-brand transition-colors">{t('footer.interiorAdvantage')}</Link></li>
+              <li><Link to="/interior/pemesanan-teknis" className="hover:text-brand transition-colors">{t('footer.interiorProcess')}</Link></li>
+            </ul>
+            ) : pelniFooter ? (
             <ul className="space-y-2.5 text-sm text-slate-500">
               <li><Link to="/kapal-laut/faq" className="hover:text-brand transition-colors">{t('footer.pelniFaq')}</Link></li>
               <li><Link to="/kapal-laut/seawifi" className="hover:text-brand transition-colors">{t('footer.seawifiFaq')}</Link></li>
@@ -476,16 +571,16 @@ export default function UserLayout() {
                 <h4 className="text-xs font-bold text-brand-800 uppercase tracking-[0.18em]">{t('footer.ourPartners')}</h4>
                 <span className="h-px flex-1 bg-gradient-to-l from-brand/30 to-transparent" />
               </div>
-              <div className={flightFooter ? 'grid grid-cols-3 gap-3 sm:gap-4 max-w-md mx-auto' : 'flex flex-wrap items-center justify-center gap-5 sm:gap-6'}>
-                {/* Footer pesawat: 6 maskapai → 3 atas, 3 bawah. Kapal laut: PELNI. Lainnya: mitra default. */}
+              <div className={flightFooter ? 'grid grid-cols-4 gap-2 sm:gap-3 max-w-lg mx-auto' : 'flex flex-wrap items-center justify-center gap-5 sm:gap-6'}>
+                {/* Footer pesawat: 8 maskapai → 4 per baris (2 baris × 4). Kapal laut: PELNI. Lainnya: mitra default. */}
                 {(flightFooter
-                  ? ['garuda.png','lion.png','batik.png','citilink.png','sriwijaya.png','airasia.png']
+                  ? ['garuda.png','lion.png','batik.png','wings.png','nam.png','citilink.png','sriwijaya.png','airasia.png']
                   : pelniFooter
                   ? ['pelni.png']
                   : ['akr.png','bawono.png','scp.png','dekorasi.png','ruangsinggah.png']).map(f => (
                   <div
                     key={f}
-                    className={`relative flex items-center justify-center rounded-xl bg-white border border-slate-200/70 ${flightFooter ? 'w-full h-20 sm:h-24 px-3 py-2.5' : pelniFooter ? 'h-20 px-8 py-2 max-w-[240px]' : 'h-16 w-16 p-1'}`}
+                    className={`relative flex items-center justify-center rounded-xl bg-white border border-slate-200/70 ${flightFooter ? 'w-full h-14 sm:h-20 px-1.5 sm:px-2.5 py-1.5 sm:py-2' : pelniFooter ? 'h-20 px-8 py-2 max-w-[240px]' : 'h-16 w-16 p-1'}`}
                   >
                     <img
                       src={`/our-partners/${f}`}

@@ -41,12 +41,16 @@ export default function PelniBooking() {
   const hargaDewasa = Number(sel.hargaDewasa) || 0
   const hargaAnak   = Number(sel.hargaAnak) || 0
   const hargaInfant = Number(sel.hargaInfant) || 0
-  const markup      = Number(sel.markup) || 0
+  const svcFee      = sel.svcFee || { amount: 0, percent: 0 }
   const adult = sel.adult || 1, child = sel.child || 0, infant = sel.infant || 0
   const payingPax = adult + child
   const fareSub   = hargaDewasa * adult + hargaAnak * child + hargaInfant * infant
-  const markupSub = markup * payingPax
-  const total     = fareSub + markupSub
+  // Biaya penanganan: persen → % dari subtotal tiket; selain itu nominal × pax.
+  const markupSub = Number(svcFee.percent) > 0
+    ? Math.round(Number(svcFee.percent) / 100 * fareSub)
+    : (Number(svcFee.amount) || 0) * payingPax
+  const adminFee  = Number(svcFee.adminAmount) || 0   // biaya admin flat (khusus PELNI)
+  const total     = fareSub + markupSub + adminFee
   const promoDiscount = appliedPromo?.discount || 0
   const finalTotal    = Math.max(0, total - promoDiscount)
   const departYmd = sel.departureDate
@@ -75,7 +79,7 @@ export default function PelniBooking() {
         departureDate: sel.departureDate,
         shipNumber: sel.shipNumber, shipName: sel.shipName, subClass: sel.subClass,
         pelabuhanAsal: sel.originName, pelabuhanTujuan: sel.destinationName,
-        hargaDewasa, hargaAnak, hargaInfant, markup,
+        hargaDewasa, hargaAnak, hargaInfant, markup: markupSub,
         promoCode: appliedPromo?.code || undefined,
         male, female, adult, child, infant,
         contact: { email: contact.email, phone: contact.phone },
@@ -152,7 +156,8 @@ export default function PelniBooking() {
             <div className="flex justify-between"><span className="text-slate-500">Dewasa ({adult} × {formatRupiah(hargaDewasa)})</span><span className="text-slate-900">{formatRupiah(hargaDewasa * adult)}</span></div>
             {child > 0 && <div className="flex justify-between"><span className="text-slate-500">Anak ({child} × {formatRupiah(hargaAnak)})</span><span className="text-slate-900">{formatRupiah(hargaAnak * child)}</span></div>}
             {infant > 0 && <div className="flex justify-between"><span className="text-slate-500">Bayi ({infant} × {formatRupiah(hargaInfant)})</span><span className="text-slate-900">{formatRupiah(hargaInfant * infant)}</span></div>}
-            {markup > 0 && <div className="flex justify-between"><span className="text-slate-500">Biaya layanan ({payingPax} × {formatRupiah(markup)})</span><span className="text-slate-900">{formatRupiah(markupSub)}</span></div>}
+            {markupSub > 0 && <div className="flex justify-between"><span className="text-slate-500">Biaya Penanganan</span><span className="text-slate-900">{formatRupiah(markupSub)}</span></div>}
+            {adminFee > 0 && <div className="flex justify-between"><span className="text-slate-500">Biaya Admin</span><span className="text-slate-900">{formatRupiah(adminFee)}</span></div>}
             {promoDiscount > 0 && <div className="flex justify-between"><span className="text-slate-500">Diskon Promo {appliedPromo?.code ? `(${appliedPromo.code})` : ''}</span><span className="font-medium text-green-600">- {formatRupiah(promoDiscount)}</span></div>}
             <div className="flex justify-between pt-1.5 border-t border-slate-100"><span className="font-bold text-slate-900">Total</span><span className="font-bold text-cyan-600">{formatRupiah(finalTotal)}</span></div>
           </div>

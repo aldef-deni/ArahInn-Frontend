@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
@@ -80,21 +80,32 @@ export default function AdminSettings() {
 
   const ppnEnabled = !!ppnData?.enabled
 
-  /* ── Markup Travel ────────────────────────────────────────────────── */
-  const { data: mkData, isLoading: mkLoading } = useQuery({
-    queryKey: ['admin-travel-markup'],
-    queryFn : () => adminApi.getTravelMarkup().then(r => r.data?.data),
+  /* ── Biaya Penanganan Tiket (per moda) ────────────────────────────── */
+  const { data: tsfData, isLoading: tsfLoading } = useQuery({
+    queryKey: ['admin-travel-service-fee'],
+    queryFn : () => adminApi.getTravelServiceFee().then(r => r.data?.data),
   })
-  const [mkAmount, setMkAmount] = useState(7500)
-  useEffect(() => { if (mkData?.amount != null) setMkAmount(mkData.amount) }, [mkData])
+  const [tsf, setTsf] = useState({
+    pesawat: { amount: 0, percent: 0 },
+    pelni:   { amount: 0, percent: 0, adminAmount: 0 },
+    kereta:  { amount: 0, percent: 0 },
+  })
+  useEffect(() => {
+    if (tsfData) setTsf({
+      pesawat: { amount: tsfData.pesawat?.amount ?? 0, percent: tsfData.pesawat?.percent ?? 0 },
+      pelni:   { amount: tsfData.pelni?.amount ?? 0,   percent: tsfData.pelni?.percent ?? 0, adminAmount: tsfData.pelni?.adminAmount ?? 0 },
+      kereta:  { amount: tsfData.kereta?.amount ?? 0,  percent: tsfData.kereta?.percent ?? 0 },
+    })
+  }, [tsfData])
+  const setTsfField = (moda, field, val) => setTsf(s => ({ ...s, [moda]: { ...s[moda], [field]: val } }))
 
-  const mkMutation = useMutation({
-    mutationFn: (payload) => adminApi.setTravelMarkup(payload),
+  const tsfMutation = useMutation({
+    mutationFn: (payload) => adminApi.setTravelServiceFee(payload),
     onSuccess: (r) => {
-      toast({ title: 'Markup travel diperbarui', description: r.data?.message })
-      qc.invalidateQueries({ queryKey: ['admin-travel-markup'] })
+      toast({ title: 'Biaya penanganan diperbarui', description: r.data?.message })
+      qc.invalidateQueries({ queryKey: ['admin-travel-service-fee'] })
     },
-    onError: (e) => toast({ title: 'Gagal update markup', description: e?.response?.data?.message, variant: 'destructive' }),
+    onError: (e) => toast({ title: 'Gagal update biaya penanganan', description: e?.response?.data?.message, variant: 'destructive' }),
   })
 
   /* ── Biaya Layanan Akomodasi ("Pajak & Others" ke customer) ───────── */
@@ -432,43 +443,75 @@ export default function AdminSettings() {
         )}
       </div>
 
-      {/* ── Markup Travel ────────────────────────────────────────────── */}
+      {/* ── Biaya Penanganan Tiket (per moda) ────────────────────────── */}
       <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
         <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-5">
           <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 text-white flex items-center justify-center shrink-0">
             <Receipt className="w-5 h-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-base sm:text-lg font-bold text-slate-900">Markup Travel (Biaya Layanan)</h2>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">Biaya Penanganan</h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5 leading-relaxed">
-              Margin flat ArahInn per penumpang di atas harga vendor — berlaku untuk <strong>kereta, pesawat, bus, pelni</strong>.
+              Biaya layanan tiket ke customer, <strong>berbeda per moda</strong>. Isi <strong>persentase</strong> (dari harga tiket) <em>atau</em> <strong>nominal</strong> (per penumpang). Persen &gt; 0 → persen yang dipakai.
+              <strong> Biaya Admin</strong> (nominal flat per pesanan) khusus <strong>Tiket Kapal Laut</strong>.
+              <strong> Kosong / 0 = tidak ditampilkan</strong> di checkout, email & invoice.
             </p>
           </div>
         </div>
-        {mkLoading ? <div className="skeleton h-20 rounded-xl" /> : (
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-            <div className="sm:w-56">
-              <label className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide block mb-2">Biaya Layanan / Penumpang</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-semibold">Rp</span>
-                <input type="number" min={0} step={500} value={mkAmount} onChange={e => setMkAmount(e.target.value)}
-                  className="w-full pl-9 pr-3 py-3 border border-slate-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-500" />
-              </div>
+        {tsfLoading ? <div className="skeleton h-28 rounded-xl" /> : (
+          <>
+            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-2 gap-y-2 items-center sm:max-w-2xl">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide" />
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide text-center w-24 sm:w-28">Persentase</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide text-center w-28 sm:w-32">Nominal / Pax</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide text-center w-28 sm:w-32">Biaya Admin</span>
+              {[['pesawat', 'Tiket Pesawat'], ['pelni', 'Tiket Kapal Laut'], ['kereta', 'Tiket Kereta Api']].map(([moda, label]) => (
+                <Fragment key={moda}>
+                  <span className="text-sm font-bold text-slate-700">{label}</span>
+                  <div className="relative w-24 sm:w-28">
+                    <input type="number" min={0} max={100} step={0.5} value={tsf[moda].percent}
+                      onChange={e => setTsfField(moda, 'percent', e.target.value)}
+                      className="w-full pl-2.5 pr-7 py-2.5 border border-slate-200 rounded-lg text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-500" placeholder="0" />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-semibold">%</span>
+                  </div>
+                  <div className="relative w-28 sm:w-32">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-semibold">Rp</span>
+                    <input type="number" min={0} step={1000} value={tsf[moda].amount} disabled={Number(tsf[moda].percent) > 0}
+                      onChange={e => setTsfField(moda, 'amount', e.target.value)}
+                      className="w-full pl-8 pr-2.5 py-2.5 border border-slate-200 rounded-lg text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-500 disabled:bg-slate-100 disabled:text-slate-300" placeholder="0" />
+                  </div>
+                  {/* Biaya Admin — nominal flat, HANYA Tiket Kapal Laut (PELNI) */}
+                  {moda === 'pelni' ? (
+                    <div className="relative w-28 sm:w-32">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-semibold">Rp</span>
+                      <input type="number" min={0} step={1000} value={tsf.pelni.adminAmount ?? 0}
+                        onChange={e => setTsfField('pelni', 'adminAmount', e.target.value)}
+                        className="w-full pl-8 pr-2.5 py-2.5 border border-slate-200 rounded-lg text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-500" placeholder="0" />
+                    </div>
+                  ) : (
+                    <span className="text-center text-xs text-slate-300">—</span>
+                  )}
+                </Fragment>
+              ))}
             </div>
             <button
-              onClick={() => mkMutation.mutate({ amount: parseInt(mkAmount) || 0 })}
-              disabled={mkMutation.isPending || parseInt(mkAmount) === mkData?.amount}
-              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm active:scale-[0.97] transition-all disabled:opacity-40"
+              onClick={() => tsfMutation.mutate({
+                pesawat: { amount: parseInt(tsf.pesawat.amount) || 0, percent: parseFloat(tsf.pesawat.percent) || 0 },
+                pelni:   { amount: parseInt(tsf.pelni.amount) || 0,   percent: parseFloat(tsf.pelni.percent) || 0, adminAmount: parseInt(tsf.pelni.adminAmount) || 0 },
+                kereta:  { amount: parseInt(tsf.kereta.amount) || 0,  percent: parseFloat(tsf.kereta.percent) || 0 },
+              })}
+              disabled={tsfMutation.isPending}
+              className="mt-4 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm active:scale-[0.97] transition-all disabled:opacity-40"
             >
-              <Save className="w-4 h-4" /> {mkMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+              <Save className="w-4 h-4" /> {tsfMutation.isPending ? 'Menyimpan...' : 'Simpan'}
             </button>
-            <p className="text-[11px] sm:text-xs text-slate-500 sm:flex-1 leading-snug">
-              Contoh: harga KAI Rp 100.000 + markup Rp {Number(mkAmount).toLocaleString('id-ID')} = customer bayar Rp {(100000 + (parseInt(mkAmount) || 0)).toLocaleString('id-ID')}/pax.
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-3 leading-snug">
+              Persen dihitung dari harga tiket; nominal dihitung per penumpang. Jika persen diisi, nominal diabaikan. Contoh: tiket Rp 500.000 + 2% = customer bayar Rp 510.000.
             </p>
-          </div>
+          </>
         )}
-        {mkData?.updated_at && (
-          <p className="text-[10px] sm:text-xs text-slate-400 mt-3">Terakhir diperbarui: {new Date(mkData.updated_at).toLocaleString('id-ID')}</p>
+        {tsfData?.updated_at && (
+          <p className="text-[10px] sm:text-xs text-slate-400 mt-3">Terakhir diperbarui: {new Date(tsfData.updated_at).toLocaleString('id-ID')}</p>
         )}
       </div>
 

@@ -7,6 +7,7 @@ import { propertyApi } from '@/services/propertyApi'
 import { formatRupiah, getImageUrl } from '@/utils'
 import { Search, MapPin, SlidersHorizontal, X, Building2, Home, Trees, Hotel, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Navigation } from 'lucide-react'
 import SEO from '@/components/SEO'
+import bannerProperti from '@/assets/banners/properti.webp'
 
 const CATEGORIES = [
   { label: 'Semua Kategori', value: '' },
@@ -410,6 +411,10 @@ export default function PropertyMarket() {
         description={t('propertyMarket.seoDesc')}
         url="/properti"
       />
+
+      {/* Header banner Properti Jual-Beli */}
+      <img src={bannerProperti} alt="Properti Jual-Beli ArahInn" width="1774" height="887"
+        className="block w-full h-auto" loading="eager" fetchpriority="high" />
 
       {/* ── Search bar top ── */}
       <div className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30">

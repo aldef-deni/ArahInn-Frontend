@@ -122,6 +122,9 @@ export default function FlightSearch() {
   const [showForm, setShowForm] = useState(true)
   const [sortBy, setSortBy] = useState('price')      // 'price' | 'departure'
   const [airlineFilter, setAirlineFilter] = useState('')  // '' = semua
+  // ⚠️ Modul PP (pulang-pergi) DIMATIKAN sementara — belum stabil di vendor.
+  // Ubah ke true untuk mengaktifkan kembali (toggle one-way/PP muncul lagi).
+  const PP_ENABLED = false
   // Pulang-pergi
   const [tripType, setTripType]   = useState('oneway')  // 'oneway' | 'roundtrip'
   const [returnDate, setReturnDate] = useState('')
@@ -134,9 +137,13 @@ export default function FlightSearch() {
   const { data: airports = [] } = useQuery({
     queryKey: ['flight-airports'], queryFn: () => travelApi.airports().then(r => r.data?.data || []), staleTime: 86400_000,
   })
-  const { data: markup = 0 } = useQuery({
-    queryKey: ['travel-markup'], queryFn: () => travelApi.settings().then(r => r.data?.data?.markupPerPax ?? 0), staleTime: 3600_000,
+  // Biaya penanganan tiket pesawat (persen ATAU nominal per pax)
+  const { data: svcFee = { amount: 0, percent: 0 } } = useQuery({
+    queryKey: ['travel-svcfee', 'pesawat'],
+    queryFn: () => travelApi.settings().then(r => r.data?.data?.serviceFees?.pesawat ?? { amount: 0, percent: 0 }), staleTime: 3600_000,
   })
+  // Biaya per pax untuk preview harga: persen → % dari harga; selain itu nominal flat/pax.
+  const feePerPax = (p) => (Number(svcFee.percent) > 0 ? Math.round(Number(svcFee.percent) / 100 * (Number(p) || 0)) : (Number(svcFee.amount) || 0))
 
   // Kalender rentang (PP) + harga termurah HANYA untuk 2 tanggal terpilih.
   const [calOpen, setCalOpen] = useState(false)
@@ -144,7 +151,7 @@ export default function FlightSearch() {
     if (!dep || !arr || !dt) return null
     const r = await travelApi.searchAllFlights({ departure: dep, arrival: arr, departureDate: dt, adult, child, infant })
     const min = Math.min(...(r.data?.data ?? []).map(f => Number(f.classes?.[0]?.[0]?.price) || Infinity))
-    return Number.isFinite(min) ? min + Number(markup || 0) : null
+    return Number.isFinite(min) ? min + feePerPax(min) : null
   }
   const departPriceQ = useQuery({
     queryKey: ['flight-cheapest', departure?.code, arrival?.code, date, adult, child, infant],
@@ -186,7 +193,7 @@ export default function FlightSearch() {
   // Filter maskapai + sort
   const view = useMemo(() => {
     if (!results) return null
-    let arr = results.filter(f => !airlineFilter || f.airline === airlineFilter)
+    let arr = results.filter(f => !airlineFilter || (f.airlineCode || f.airline) === airlineFilter)
     arr = [...arr].sort((a, b) => {
       if (sortBy === 'price') {
         const pa = priceOf(a) || Infinity, pb = priceOf(b) || Infinity
@@ -201,7 +208,7 @@ export default function FlightSearch() {
   const airlinesInResults = useMemo(() => {
     if (!results) return []
     const m = new Map()
-    results.forEach(f => { if (!m.has(f.airline)) m.set(f.airline, f.airlineName || f.airline) })
+    results.forEach(f => { const c = f.airlineCode || f.airline; if (!m.has(c)) m.set(c, f.airlineName || c) })
     return [...m.entries()].map(([code, name]) => ({ code, name }))
   }, [results])
 
@@ -235,7 +242,7 @@ export default function FlightSearch() {
     // Sekali jalan → langsung ke form pemesanan
     if (tripType === 'oneway') {
       sessionStorage.setItem('flight_selection', JSON.stringify({
-        departure, arrival, date, airline: flight.airline, adult, child, infant, flight, cls, markup,
+        departure, arrival, date, airline: flight.airline, adult, child, infant, flight, cls, svcFee,
       }))
       navigate('/tiket/pesawat/pesan'); return
     }
@@ -248,7 +255,7 @@ export default function FlightSearch() {
     // PP — leg PULANG dipilih (flight ini arrival→departure pada returnDate)
     const ret = { departure: arrival, arrival: departure, date: returnDate, airline: flight.airline, flight, cls }
     sessionStorage.setItem('flight_selection', JSON.stringify({
-      tripType: 'roundtrip', adult, child, infant, markup,
+      tripType: 'roundtrip', adult, child, infant, svcFee,
       outbound: outboundSel, return: ret,
     }))
     navigate('/tiket/pesawat/pesan')
@@ -268,16 +275,18 @@ export default function FlightSearch() {
       <section className="relative z-10">
         <div className="container -mt-[24vw] sm:-mt-[21vw] lg:-mt-[18vw] pb-6 sm:pb-8 relative z-10">
           <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl shadow-xl p-3.5 sm:p-4 text-slate-900">
-            {/* Tipe perjalanan */}
-            <div className="flex gap-2 mb-3">
-              {[['oneway', t('travel.oneWay')], ['roundtrip', t('travel.roundTrip')]].map(([k, l]) => (
-                <button key={k} type="button"
-                  onClick={() => { setTripType(k); setLeg('depart'); setOutboundSel(null); if (k === 'oneway') setReturnDate('') }}
-                  className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-colors ${tripType === k ? 'bg-sky-50 border-sky-500 text-sky-700' : 'bg-white/50 border-white/60 text-slate-600'}`}>
-                  {l}
-                </button>
-              ))}
-            </div>
+            {/* Tipe perjalanan — toggle PP disembunyikan saat modul PP dimatikan (one-way saja) */}
+            {PP_ENABLED && (
+              <div className="flex gap-2 mb-3">
+                {[['oneway', t('travel.oneWay')], ['roundtrip', t('travel.roundTrip')]].map(([k, l]) => (
+                  <button key={k} type="button"
+                    onClick={() => { setTripType(k); setLeg('depart'); setOutboundSel(null); if (k === 'oneway') setReturnDate('') }}
+                    className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-colors ${tripType === k ? 'bg-sky-50 border-sky-500 text-sky-700' : 'bg-white/50 border-white/60 text-slate-600'}`}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="relative grid grid-cols-1 gap-2.5">
               <button onClick={() => setPicker('departure')} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-sky-400 text-left transition-colors">
                 <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
@@ -387,7 +396,7 @@ export default function FlightSearch() {
                 return (
                   <div key={`${cls.flightCode}-${i}`} className="bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-2 mb-3">
-                      <AirlineLogo code={flight.airline} name={flight.airlineName} />
+                      <AirlineLogo code={flight.airlineCode || flight.airline} name={flight.airlineName} />
                       <span className="font-bold text-sm text-slate-900">{flight.airlineName}</span>
                       <span className="text-[10px] text-slate-400">· {cls.flightCode}</span>
                     </div>
@@ -403,7 +412,7 @@ export default function FlightSearch() {
                       </div>
                       <div className="text-right shrink-0">
                         {price > 0
-                          ? <p className="font-display text-sm sm:text-lg font-bold text-sky-600 leading-tight">{formatRupiah(price + markup)}<span className="text-[10px] font-normal text-slate-400">{t('travel.perPax')}</span></p>
+                          ? <p className="font-display text-sm sm:text-lg font-bold text-sky-600 leading-tight">{formatRupiah(price + feePerPax(price))}<span className="text-[10px] font-normal text-slate-400">{t('travel.perPax')}</span></p>
                           : <p className="text-[11px] font-bold text-sky-600">{t('travel.checkPrice')}</p>}
                         <button onClick={() => selectFlight(flight)} className="mt-2 px-5 py-2 rounded-full bg-sky-500 hover:bg-sky-600 text-white text-xs sm:text-sm font-bold active:scale-95 transition-all">{t('travel.select')}</button>
                       </div>

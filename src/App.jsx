@@ -33,6 +33,7 @@ import Loyalty from '@/pages/Loyalty'
 import PropertyMarket from '@/pages/PropertyMarket'
 import PropertyDetail from '@/pages/PropertyDetail'
 import InteriorPage from '@/pages/Interior'
+import InteriorFaq from '@/pages/Interior/InteriorFaq'
 import PromoPage from '@/pages/Promo'
 import Sports from '@/pages/Sports'
 import ComingSoon from '@/pages/ComingSoon'
@@ -296,6 +297,9 @@ export default function App() {
             <Route path="/properti" element={<PropertyMarket />} />
             <Route path="/properti/:id" element={<PropertyDetail />} />
             <Route path="/interior" element={<InteriorPage />} />
+            <Route path="/interior/layanan-kemitraan" element={<InteriorFaq topic="layanan-kemitraan" />} />
+            <Route path="/interior/keunggulan-biaya" element={<InteriorFaq topic="keunggulan-biaya" />} />
+            <Route path="/interior/pemesanan-teknis" element={<InteriorFaq topic="pemesanan-teknis" />} />
             <Route path="/promo" element={<PromoPage />} />
             <Route path="/sports" element={<Sports />} />
             <Route path="/coming-soon" element={<ComingSoon />} />

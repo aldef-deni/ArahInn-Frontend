@@ -4,7 +4,9 @@
     "profile": "Profile", "login": "Sign In", "register": "Register", "logout": "Sign Out", "admin": "Admin Panel",
     "logoutSuccess": "Signed out successfully.", "logoutBye": "See you soon!",
     "properti": "Properties", "interior": "Interior Design",
-    "topUpTagihan": "Top Up & Ticketing", "promo": "Promo"
+    "akomodasi": "Accommodation", "cariPenginapan": "Find Stays", "propertiJualBeli": "Property for Sale", "jasaDesign": "Interior Design",
+    "tiketPesawat": "Flight Tickets", "tiketPelni": "PELNI Tickets",
+    "topUpTagihan": "Top Up & Bills", "promo": "Promo"
   },
   "services": {
     "sectionTitle": "Choose a Service",
@@ -330,6 +332,10 @@
     "flightPolicy": "Flight Policy",
     "refundPolicy": "Refund Policy",
     "pelniDescription": "ArahInn is a PELNI sea ticket booking service that makes your sea travel to ports across Indonesia easier. Enjoy a fast, secure, and trusted e-ticket booking process, complete with schedule details, cabin classes, and sea travel terms — so your voyage is more comfortable from booking to departure.",
+    "interiorDescription": "ArahInn is an integrated ecosystem platform (superapp) for accommodation, ticket booking, travel, and lifestyle services, developed under one synergy group together with PT Wiraky Graha Indonesia.",
+    "interiorPartnership": "Services & Partnership",
+    "interiorAdvantage": "Advantages & Pricing",
+    "interiorProcess": "Booking Process & Technical",
     "pelniFaq": "Sea Ticket FAQ",
     "seawifiFaq": "SEAWIFI FAQ",
     "pelniCancel": "Cancellation & Changes",
@@ -751,7 +757,7 @@
     "selectCountry": "Select country",
     "priceBreakdown": "Price Breakdown",
     "ticketPriceLabel": "Ticket price",
-    "serviceFee": "Service fee",
+    "serviceFee": "Handling Fee",
     "promoDiscountLabel": "Promo Discount",
     "processing": "Processing...",
     "continueToPayment": "Continue to Payment",
@@ -1198,7 +1204,12 @@
     "gallerySubtitle": "Pick a concept that matches your vision, then consult directly with our team.",
     "ctaTitle": "Ready to start your project?",
     "ctaSubtitle": "Our team is ready to discuss and bring your dream space to life. Initial consultation is free.",
-    "ctaButton": "Start Consultation"
+    "ctaButton": "Start Consultation",
+    "brandIntro": "PT Wiraky Graha Indonesia oversees the Dekorasi.Me brand, specializing in custom interior design, furniture production, and building renovation.",
+    "brandQuestion": "Want your property to look stunning, or dreaming of your ideal space?",
+    "brandAnswer": "Dekorasi.Me is ready to make it happen with custom interior design and premium renovation services.",
+    "brandTagline": "One ecosystem, a million conveniences.",
+    "brandClosing": "Explore the world with ArahInn, build your dream space with Dekorasi.Me!"
   },
   "hotelDetail": {
     "back": "Back",

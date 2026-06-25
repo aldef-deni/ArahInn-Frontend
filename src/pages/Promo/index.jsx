@@ -8,6 +8,7 @@ import {
   Clock, CheckCircle2, X, Tag, Copy, Check, Sparkles, CalendarDays, Wallet, Percent, Search, Megaphone,
 } from 'lucide-react'
 import SEO from '@/components/SEO'
+import bannerPromo from '@/assets/banners/promo.webp'
 
 function checkIsUpcoming(startDate) {
   if (!startDate) return false
@@ -253,87 +254,9 @@ export default function PromoPage() {
         description="Kumpulan promo terbaru ArahInn: diskon hotel, voucher cashback, flash sale, dan penawaran spesial untuk akomodasi pilihan di seluruh Indonesia."
         url="/promo"
       />
-      {/* Hero Section */}
-      <section className="relative overflow-hidden text-white">
-        {/* Base gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0f1e3d] via-[#1d4ed8] to-[#f97316]" />
-
-        {/* Glossy overlay light */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.25)_0%,transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(255,200,100,0.3)_0%,transparent_55%)]" />
-
-        {/* Decorative orbs */}
-        <div className="absolute top-0 right-0 w-[28rem] h-[28rem] bg-white/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/3" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-yellow-300/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4" />
-
-        {/* Diagonal shine line */}
-        <div className="absolute inset-0 bg-[linear-gradient(120deg,transparent_30%,rgba(255,255,255,0.08)_50%,transparent_70%)]" />
-
-        {/* Floating ArahInn logo — watermark glossy */}
-        <img
-          src="/logo-arahin.png"
-          alt=""
-          aria-hidden="true"
-          className="hidden md:block absolute right-[-2rem] top-1/2 -translate-y-1/2 h-[18rem] lg:h-[22rem] w-auto object-contain opacity-15 pointer-events-none select-none drop-shadow-[0_8px_32px_rgba(255,255,255,0.4)]"
-        />
-        {/* Mobile variant — smaller, top right */}
-        <img
-          src="/logo-arahin.png"
-          alt=""
-          aria-hidden="true"
-          className="md:hidden absolute right-2 top-4 h-20 w-auto opacity-20 pointer-events-none select-none"
-        />
-
-        {/* Sparkle dots scattered */}
-        <div className="absolute top-12 left-1/4 w-2 h-2 bg-white rounded-full opacity-60 animate-pulse" />
-        <div className="absolute top-32 right-1/3 w-1.5 h-1.5 bg-yellow-200 rounded-full opacity-70" />
-        <div className="absolute bottom-24 left-1/3 w-1 h-1 bg-white rounded-full opacity-50" />
-
-        <div className="container py-10 sm:py-14 lg:py-24 relative">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1 sm:py-1.5 bg-white/15 backdrop-blur-md rounded-full text-[11px] sm:text-xs font-bold mb-3 sm:mb-5 border border-white/25 shadow-lg shadow-black/10">
-              <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              <span className="tracking-wide">{t('promoPage.badge')}</span>
-            </div>
-            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.25)]">
-              {t('promoPage.heroTitlePrefix')}{' '}
-              <span className="bg-gradient-to-r from-amber-200 via-orange-100 to-yellow-200 bg-clip-text text-transparent">
-                ArahInn
-              </span>
-            </h1>
-            <p className="mt-2 sm:mt-4 text-white/95 text-sm sm:text-base md:text-lg max-w-lg drop-shadow-[0_1px_4px_rgba(0,0,0,0.2)]">
-              {t('promoPage.heroSubtitle')}
-            </p>
-
-            {/* Stats */}
-            {!isLoading && items.length > 0 && (
-              <div className="mt-5 sm:mt-8 grid grid-cols-2 sm:flex sm:flex-wrap gap-2.5 sm:gap-3">
-                <div className="bg-white/15 backdrop-blur-md border border-white/25 rounded-xl sm:rounded-2xl px-3 sm:px-5 py-2.5 sm:py-3.5 flex items-center gap-2.5 sm:gap-3 shadow-lg shadow-black/10">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-400/30 backdrop-blur flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-200" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[9px] sm:text-[10px] uppercase tracking-wide text-white/70 font-bold">{t('promoPage.statusRunning')}</p>
-                    <p className="font-black text-lg sm:text-2xl leading-tight">{running}</p>
-                  </div>
-                </div>
-                <div className="bg-white/15 backdrop-blur-md border border-white/25 rounded-xl sm:rounded-2xl px-3 sm:px-5 py-2.5 sm:py-3.5 flex items-center gap-2.5 sm:gap-3 shadow-lg shadow-black/10">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-amber-300/30 backdrop-blur flex items-center justify-center shrink-0">
-                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-amber-100" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[9px] sm:text-[10px] uppercase tracking-wide text-white/70 font-bold">{t('promoPage.statusUpcoming')}</p>
-                    <p className="font-black text-lg sm:text-2xl leading-tight">{stats.upcoming}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Bottom curve fade to white */}
-        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-b from-transparent to-[#fff7ed] pointer-events-none" />
-      </section>
+      {/* ── Header banner Promo & Campaign (gambar saja) ── */}
+      <img src={bannerPromo} alt="Promo & Campaign ArahInn" width="1774" height="887"
+        className="block w-full h-auto" loading="eager" fetchpriority="high" />
 
       {/* Filter tabs */}
       <section className="container py-6 sm:py-8">

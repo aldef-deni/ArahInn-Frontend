@@ -254,16 +254,14 @@ const DATA = {
       q: 'Berapa jumlah refund tiket pesawat yang akan saya terima?',
       a: (<>
         <p>Jumlah refund yang Anda terima bergantung pada <strong>kebijakan maskapai</strong>. Beberapa tiket bersifat <em>full refundable</em>, ada yang hanya refund sebagian, dan ada pula yang tidak bisa di-refund sama sekali. Kebijakan ini juga berbeda tergantung alasan pengajuan (pribadi, sakit, pembatalan dari maskapai, dan lainnya).</p>
-        <p>Waktu pengajuan juga berpengaruh — semakin dekat dengan keberangkatan, semakin kecil dana yang mungkin diterima. Beberapa komponen tidak bisa di-refund atau akan dipotong dari jumlah refund, seperti:</p>
+        <p>Waktu pengajuan juga berpengaruh, semakin dekat dengan keberangkatan, semakin kecil dana yang mungkin diterima. Beberapa komponen tidak bisa di-refund atau akan dipotong dari jumlah refund, seperti:</p>
         <Deduct />
-        <p>Kami menyediakan estimasi jumlah dana refund dan durasi prosesnya untuk setiap tiket, sehingga Anda bisa mengecek perkiraan dana sebelum mengajukan.</p>
       </>),
     },
     {
       q: 'Bisakah refund hanya untuk satu penumpang dalam satu pesanan?',
       a: (<>
         <p>Ya, Anda bisa mengajukan refund untuk penumpang tertentu di dalam pesanan yang memuat lebih dari satu penumpang — tergantung kebijakan maskapai pada pesanan Anda.</p>
-        <p><strong>Cara mengeceknya:</strong> buka e-tiket melalui menu <strong>Pesanan</strong>, ketuk bagian <strong>Refund</strong>, lalu scroll ke bawah untuk melihat apakah <em>partial refund</em> (penumpang tertentu) diperbolehkan. Jika tidak diizinkan, refund hanya bisa diajukan untuk seluruh penumpang dalam satu pesanan.</p>
       </>),
     },
     {

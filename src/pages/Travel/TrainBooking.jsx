@@ -40,10 +40,13 @@ export default function TrainBooking() {
 
   const { origin, destination, date, train, seat } = sel
   const priceAdult = Number(seat?.priceAdult) || 0
-  const markup     = Number(sel.markup) || 0
+  const svcFee     = sel.svcFee || { amount: 0, percent: 0 }
   const pax        = sel.adult || 1            // bayi tidak kena kursi
   const ticketSub  = priceAdult * pax
-  const markupSub  = markup * pax
+  // Biaya penanganan: persen → % dari subtotal tiket; selain itu nominal × pax.
+  const markupSub  = Number(svcFee.percent) > 0
+    ? Math.round(Number(svcFee.percent) / 100 * ticketSub)
+    : (Number(svcFee.amount) || 0) * pax
   const total      = ticketSub + markupSub
   const promoDiscount = appliedPromo?.discount || 0
   const finalTotal    = Math.max(0, total - promoDiscount)
@@ -69,7 +72,7 @@ export default function TrainBooking() {
         adult: sel.adult || 1,
         infant: sel.infant || 0,
         priceAdult: priceAdult,
-        markup,
+        markup: markupSub,
         promoCode: appliedPromo?.code || undefined,
         trainName: train.trainName,
         departureStation: origin.namaStasiun,
@@ -206,8 +209,8 @@ export default function TrainBooking() {
           <p className="font-bold text-sm text-slate-900 mb-2.5">Rincian Harga</p>
           <div className="space-y-1.5 text-sm">
             <div className="flex justify-between"><span className="text-slate-500">Harga tiket ({pax} × {formatRupiah(priceAdult)})</span><span className="text-slate-900">{formatRupiah(ticketSub)}</span></div>
-            {markup > 0 && (
-              <div className="flex justify-between"><span className="text-slate-500">Biaya layanan ({pax} × {formatRupiah(markup)})</span><span className="text-slate-900">{formatRupiah(markupSub)}</span></div>
+            {markupSub > 0 && (
+              <div className="flex justify-between"><span className="text-slate-500">Biaya Penanganan</span><span className="text-slate-900">{formatRupiah(markupSub)}</span></div>
             )}
             {promoDiscount > 0 && (
               <div className="flex justify-between"><span className="text-slate-500">Diskon Promo {appliedPromo?.code ? `(${appliedPromo.code})` : ''}</span><span className="font-medium text-green-600">- {formatRupiah(promoDiscount)}</span></div>

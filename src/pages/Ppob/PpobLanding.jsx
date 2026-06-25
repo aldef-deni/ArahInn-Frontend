@@ -5,10 +5,11 @@ import { ppobApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import {
   Smartphone, Zap, Receipt, Wallet, Gamepad2,
-  History, ChevronRight, ShieldCheck, Sparkles, ArrowRight,
+  History, ChevronRight, ShieldCheck, ArrowRight,
   Plane, TrainFront, Ship,
 } from 'lucide-react'
 import SEO from '@/components/SEO'
+import bannerPpob from '@/assets/banners/ppob.webp'
 
 /**
  * Top Up & Tagihan — landing page yang elegan + mobile-responsive.
@@ -56,48 +57,29 @@ export default function PpobLanding() {
         url="/topup-tagihan"
       />
 
-      {/* ── Hero ──────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand via-orange-500 to-orange-600 text-white">
-        {/* Decorative orbs */}
-        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-yellow-300/15 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full bg-orange-300/20 blur-3xl pointer-events-none" />
-
-        <div className="container py-6 sm:py-10 relative">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 mb-2.5 sm:mb-3">
-                <Sparkles className="w-3 h-3 text-yellow-200" />
-                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">{t('topupLanding.badge')}</span>
-              </div>
-              <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">
-                {t('topupLanding.title')}
-              </h1>
-              <p className="text-xs sm:text-sm md:text-base text-white/90 mt-1.5 sm:mt-2 leading-snug max-w-md">
-                {t('topupLanding.subtitle')}
-              </p>
-            </div>
-
-            {token && (
-              <Link
-                to="/topup-tagihan/history"
-                className="relative flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/25 text-xs sm:text-sm font-semibold active:scale-95 transition-all shrink-0"
-              >
-                <History className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden xs:inline">{t('topupLanding.history')}</span>
-                {hasRecent && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-yellow-300 ring-2 ring-orange-500" />
-                )}
-              </Link>
+      {/* ── Header banner Top Up & Tagihan (gambar saja) ── */}
+      <div className="relative">
+        <img src={bannerPpob} alt="Top Up & Tagihan ArahInn" width="1774" height="887"
+          className="block w-full h-auto" loading="eager" fetchpriority="high" />
+        {token && (
+          <Link
+            to="/topup-tagihan/history"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full bg-white/85 hover:bg-white text-slate-800 backdrop-blur-sm border border-white/60 text-xs sm:text-sm font-semibold active:scale-95 transition-all shadow-sm"
+          >
+            <History className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">{t('topupLanding.history')}</span>
+            {hasRecent && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-yellow-300 ring-2 ring-white" />
             )}
-          </div>
-        </div>
-      </section>
+          </Link>
+        )}
+      </div>
 
       {/* ── Grid Layanan ───────────────────────────────────── */}
-      <section className="container py-5 sm:py-7 -mt-4 sm:-mt-6 relative">
+      <section className="container pt-7 pb-6 sm:pt-10 sm:pb-8 relative">
         {/* Section header */}
         <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h2 className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
+          <h2 className="font-display text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
             {t('topupLanding.sectionTitle')}
           </h2>
           <span className="text-[10px] sm:text-xs text-slate-400">{GROUPS.length} {t('topupLanding.categoryCount')}</span>
@@ -147,7 +129,7 @@ export default function PpobLanding() {
 
         {/* ── Ticketing (tiket perjalanan) ──────────────────── */}
         <div className="flex items-center justify-between mb-3 sm:mb-4 mt-7 sm:mt-9">
-          <h2 className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Ticketing</h2>
+          <h2 className="font-display text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Ticketing</h2>
           <span className="text-[10px] sm:text-xs text-slate-400">{TICKETS.length} layanan</span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">

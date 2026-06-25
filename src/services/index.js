@@ -168,6 +168,9 @@ export const adminApi = {
   // Biaya layanan akomodasi (tampil "Pajak & Others" ke customer)
   getAccomServiceFee: ()    => api.get('/admin/settings/accommodation-service-fee'),
   setAccomServiceFee: (d)   => api.post('/admin/settings/accommodation-service-fee', d),
+  // Biaya penanganan tiket per moda (pesawat/pelni/kereta)
+  getTravelServiceFee: ()   => api.get('/admin/settings/travel-service-fee'),
+  setTravelServiceFee: (d)  => api.post('/admin/settings/travel-service-fee', d),
   // Nomor WA konsultasi Design Interior
   getInteriorWa     : ()    => api.get('/admin/settings/interior-wa'),
   setInteriorWa     : (d)   => api.post('/admin/settings/interior-wa', d),

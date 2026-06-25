@@ -12,6 +12,7 @@ import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 import LoaderArahInn from '@/components/LoaderArahInn'
 import TravelPromoSection from '@/components/travel/TravelPromoSection'
+import bannerPelni from '@/assets/banners/banner-pelni.webp'
 
 const PELNI_LOADER_MESSAGES = [
   'Mencari kapal terbaik...',
@@ -78,7 +79,8 @@ export default function PelniSearch() {
 
   const { data: origins = [] } = useQuery({ queryKey: ['pelni-origins'], queryFn: () => travelApi.pelniOrigins().then(r => r.data?.data || []), staleTime: 86400_000 })
   const { data: destinations = [] } = useQuery({ queryKey: ['pelni-destinations'], queryFn: () => travelApi.pelniDestinations().then(r => r.data?.data || []), staleTime: 86400_000 })
-  const { data: markup = 0 } = useQuery({ queryKey: ['travel-markup'], queryFn: () => travelApi.settings().then(r => r.data?.data?.markupPerPax ?? 0), staleTime: 3600_000 })
+  const { data: svcFee = { amount: 0, percent: 0 } } = useQuery({ queryKey: ['travel-svcfee', 'pelni'], queryFn: () => travelApi.settings().then(r => r.data?.data?.serviceFees?.pelni ?? { amount: 0, percent: 0 }), staleTime: 3600_000 })
+  const feePerPax = (p) => (Number(svcFee.percent) > 0 ? Math.round(Number(svcFee.percent) / 100 * (Number(p) || 0)) : (Number(svcFee.amount) || 0))
 
   const openDatePicker = () => { const el = dateRef.current; if (!el) return; try { el.showPicker ? el.showPicker() : el.focus() } catch { el.focus() } }
   const swap = () => { setOrigin(destination); setDestination(origin) }
@@ -111,7 +113,7 @@ export default function PelniSearch() {
       hargaDewasa: fare.FARE_DETAIL?.A?.TOTAL ?? 0,
       hargaAnak: fare.FARE_DETAIL?.C?.TOTAL ?? 0,
       hargaInfant: fare.FARE_DETAIL?.I?.TOTAL ?? 0,
-      adult, child, infant, markup,
+      adult, child, infant, svcFee,
     }))
     navigate('/tiket/pelni/pesan')
   }
@@ -123,18 +125,10 @@ export default function PelniSearch() {
 
       {showForm && (
       <section className="relative">
-        {/* Hero gradient laut (identitas Pelni) — kartu pencarian glassmorphism mengambang, gaya halaman pesawat */}
-        <div className="bg-gradient-to-br from-cyan-500 via-cyan-600 to-blue-700 pt-6 pb-28 sm:pb-32 relative overflow-hidden">
-          <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/10 blur-2xl" />
-          <div className="absolute right-1/3 bottom-2 w-40 h-40 rounded-full bg-white/5 blur-2xl" />
-          <div className="container relative z-10">
-            <div className="flex items-center gap-2.5 text-white">
-              <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0"><Ship className="w-6 h-6" /></div>
-              <div><h1 className="font-display text-xl sm:text-2xl font-bold leading-tight">{t('travel.pelniTitle')}</h1><p className="text-xs sm:text-sm text-white/85">{t('travel.pelniTagline')}</p></div>
-            </div>
-          </div>
-        </div>
-        <div className="container relative z-10 -mt-20 sm:-mt-24 pb-6 sm:pb-8">
+        {/* Header banner PELNI — gaya halaman tiket pesawat (gambar full-width + kartu pencarian mengambang) */}
+        <img src={bannerPelni} alt="Cari Tiket Kapal Laut PELNI ArahInn" width="1774" height="887"
+          className="block w-full h-auto" loading="eager" fetchpriority="high" />
+        <div className="container relative z-10 mt-[calc(100px-24vw)] sm:mt-[calc(100px-21vw)] lg:mt-[calc(100px-18vw)] pb-6 sm:pb-8">
           <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl shadow-xl p-3.5 sm:p-4 text-slate-900">
             <div className="relative grid grid-cols-1 gap-2.5">
               <button onClick={() => setPicker('origin')} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-cyan-400 text-left"><MapPin className="w-4 h-4 text-slate-400 shrink-0" /><div className="min-w-0 flex-1"><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{t('travel.from')}</p><p className={`text-sm font-semibold truncate ${origin ? 'text-slate-900' : 'text-slate-400'}`}>{origin ? `${titleCase(origin.NAME)} (${origin.CODE})` : t('travel.pickOriginPort')}</p></div></button>
@@ -194,7 +188,7 @@ export default function PelniSearch() {
                         <div key={j} className="flex items-center justify-between gap-2">
                           <div><p className="text-sm font-semibold text-slate-900">{classLabel(fare.CLASS, t)} <span className="text-[10px] text-slate-400">({fare.SUBCLASS})</span></p><p className={`text-[10px] font-semibold ${soldOut ? 'text-red-500' : 'text-emerald-600'}`}>{soldOut ? t('travel.soldOut') : `${t('travel.seatsLeft', { n: avail })} (P${fare.AVAILABILITY?.M}/W${fare.AVAILABILITY?.F})`}</p></div>
                           <div className="text-right">
-                            <p className="font-display text-sm font-bold text-cyan-600">{formatRupiah(harga + markup)}<span className="text-[9px] text-slate-400">{t('travel.perPax')}</span></p>
+                            <p className="font-display text-sm font-bold text-cyan-600">{formatRupiah(harga + feePerPax(harga))}<span className="text-[9px] text-slate-400">{t('travel.perPax')}</span></p>
                             <button onClick={() => selectClass(ship, fare)} disabled={soldOut} className="mt-1 px-4 py-1.5 rounded-full bg-cyan-500 hover:bg-cyan-600 text-white text-xs font-bold disabled:opacity-40 disabled:bg-slate-300">{t('travel.select')}</button>
                           </div>
                         </div>

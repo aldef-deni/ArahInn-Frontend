@@ -4,7 +4,9 @@
     "profile": "Profil", "login": "Masuk", "register": "Daftar", "logout": "Keluar", "admin": "Panel Admin",
     "logoutSuccess": "Berhasil keluar.", "logoutBye": "Sampai jumpa!",
     "properti": "Properti", "interior": "Design Interior",
-    "topUpTagihan": "Top Up & Ticketing", "promo": "Promo"
+    "akomodasi": "Akomodasi", "cariPenginapan": "Cari Penginapan", "propertiJualBeli": "Properti Jual Beli", "jasaDesign": "Jasa Design Interior",
+    "tiketPesawat": "Tiket Pesawat", "tiketPelni": "Tiket PELNI",
+    "topUpTagihan": "Top Up & Tagihan", "promo": "Promo"
   },
   "services": {
     "sectionTitle": "Pilih Layanan",
@@ -330,6 +332,10 @@
     "flightPolicy": "Kebijakan Penerbangan",
     "refundPolicy": "Kebijakan Refund",
     "pelniDescription": "ArahInn adalah penyedia layanan pemesanan tiket kapal laut PELNI yang memudahkan perjalanan laut Anda ke berbagai pelabuhan di Nusantara. Nikmati pemesanan e-tiket yang cepat, aman, dan terpercaya, lengkap dengan informasi jadwal, kelas kabin, serta ketentuan perjalanan laut — agar pelayaran Anda lebih nyaman dari pemesanan hingga keberangkatan.",
+    "interiorDescription": "ArahInn adalah sebuah platform ekosistem terpadu (superapp) untuk layanan akomodasi, pemesanan tiket, dan perjalanan serta gaya hidup, yang dikembangkan dalam satu payung sinergi (synergy group) bersama PT Wiraky Graha Indonesia.",
+    "interiorPartnership": "Layanan & Kemitraan",
+    "interiorAdvantage": "Keunggulan & Biaya",
+    "interiorProcess": "Proses Pemesanan & Teknis",
     "pelniFaq": "FAQ Tiket Kapal Laut",
     "seawifiFaq": "FAQ SEAWIFI",
     "pelniCancel": "Pembatalan & Perubahan",
@@ -751,7 +757,7 @@
     "selectCountry": "Pilih negara",
     "priceBreakdown": "Rincian Harga",
     "ticketPriceLabel": "Harga tiket",
-    "serviceFee": "Biaya layanan",
+    "serviceFee": "Biaya Penanganan",
     "promoDiscountLabel": "Diskon Promo",
     "processing": "Memproses...",
     "continueToPayment": "Lanjutkan ke Pembayaran",
@@ -1198,7 +1204,12 @@
     "gallerySubtitle": "Pilih konsep yang sesuai dengan visi Anda, lalu konsultasikan langsung dengan tim kami.",
     "ctaTitle": "Siap memulai proyek Anda?",
     "ctaSubtitle": "Tim kami siap berdiskusi untuk mewujudkan ruang yang Anda impikan. Tidak ada biaya untuk konsultasi awal.",
-    "ctaButton": "Mulai Konsultasi"
+    "ctaButton": "Mulai Konsultasi",
+    "brandIntro": "PT Wiraky Graha Indonesia menaungi Brand Dekorasi.Me yang bergerak di bidang layanan desain interior kustom, produksi furnish serta renovasi bangunan.",
+    "brandQuestion": "Ingin properti Anda tampil memikat atau punya properti idaman??",
+    "brandAnswer": "Dekorasi.Me siap mewujudkannya dengan layanan desain interior kustom dan renovasi premium.",
+    "brandTagline": "Satu ekosistem, sejuta kemudahan.",
+    "brandClosing": "Jelajahi dunia bersama ArahInn, bangun ruang impian Anda bersama Dekorasi.Me!"
   },
   "hotelDetail": {
     "back": "Kembali",

@@ -135,11 +135,14 @@ export default function FlightBooking() {
 
   const priceOut  = Number(fareOut.data?.price ?? out?.cls?.price) || 0
   const priceRet  = isRT ? (Number(fareRet.data?.price ?? ret?.cls?.price) || 0) : 0
-  const markup    = Number(sel.markup) || 0
+  const svcFee    = sel.svcFee || { amount: 0, percent: 0 }
   const payingPax = (sel.adult || 1) + (sel.child || 0)   // bayi umumnya tanpa kursi
   const numLegs   = isRT ? 2 : 1
   const ticketSub = (priceOut + priceRet) * payingPax
-  const markupSub = markup * payingPax * numLegs
+  // Biaya penanganan: persen → % dari subtotal tiket; selain itu nominal × pax × leg.
+  const markupSub = Number(svcFee.percent) > 0
+    ? Math.round(Number(svcFee.percent) / 100 * ticketSub)
+    : (Number(svcFee.amount) || 0) * payingPax * numLegs
   const total     = ticketSub + markupSub
   const promoDiscount = appliedPromo?.discount || 0
   const finalTotal    = Math.max(0, total - promoDiscount)
@@ -203,7 +206,7 @@ export default function FlightBooking() {
       const res = isRT
         ? await travelApi.checkout({
             moda: 'pesawat', tripType: 'roundtrip',
-            adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0, markup,
+            adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0, markup: markupSub,
             promoCode: appliedPromo?.code || undefined,
             outbound: legPayload(out, priceOut),
             return:   legPayload(ret, priceRet),
@@ -211,7 +214,7 @@ export default function FlightBooking() {
           })
         : await travelApi.checkout({
             moda: 'pesawat', ...legPayload(out, priceOut),
-            adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0, markup,
+            adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0, markup: markupSub,
             promoCode: appliedPromo?.code || undefined,
             passengers: { adults, children, infants },
           })
@@ -347,7 +350,7 @@ export default function FlightBooking() {
             ) : (
               <div className="flex justify-between"><span className="text-slate-500">{t('travel.ticketPriceLabel')} ({payingPax} × {formatRupiah(priceOut)})</span><span className="text-slate-900">{formatRupiah(ticketSub)}</span></div>
             )}
-            {markup > 0 && <div className="flex justify-between"><span className="text-slate-500">{t('travel.serviceFee')} ({payingPax * numLegs} × {formatRupiah(markup)})</span><span className="text-slate-900">{formatRupiah(markupSub)}</span></div>}
+            {markupSub > 0 && <div className="flex justify-between"><span className="text-slate-500">{t('travel.serviceFee')}</span><span className="text-slate-900">{formatRupiah(markupSub)}</span></div>}
             {promoDiscount > 0 && <div className="flex justify-between"><span className="text-slate-500">{t('travel.promoDiscountLabel')} {appliedPromo?.code ? `(${appliedPromo.code})` : ''}</span><span className="font-medium text-green-600">- {formatRupiah(promoDiscount)}</span></div>}
             <div className="flex justify-between pt-1.5 border-t border-slate-100"><span className="font-bold text-slate-900">{t('travel.total')}</span><span className="font-bold text-sky-600">{formatRupiah(finalTotal)}</span></div>
           </div>
