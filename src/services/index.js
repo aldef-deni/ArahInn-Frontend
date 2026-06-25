@@ -187,7 +187,8 @@ export const adminApi = {
     }
     return api.put(`/admin/hotels/${id}`, d)
   },
-  deleteHotel    : (id)     => api.delete(`/admin/hotels/${id}`),
+  // Hapus massal akomodasi (HARD DELETE + booking history) — backend gate khusus aldeftech@gmail.com
+  bulkDeleteHotels: (ids)   => api.post('/admin/hotels/bulk-delete', { ids }),
   approveHotel   : (id)     => api.post(`/admin/hotels/${id}/approve`),
   blockHotel     : (id)     => api.post(`/admin/hotels/${id}/block`),
   // Update komisi platform (markup final = commission_percent + 2% di BE)

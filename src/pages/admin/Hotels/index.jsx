@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { adminApi, userApi } from '@/services/index'
+import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import { getImageUrl, hotelDetailUrl } from '@/utils'
 import { getCustomerPortalUrl } from '@/utils/isExtranet'
@@ -647,46 +648,27 @@ function CommissionModal({ hotel, onClose }) {
   )
 }
 
-// ── DeleteConfirm ────────────────────────────────────────────────────────
-function DeleteConfirm({ hotel, onClose }) {
-  const { toast } = useToast()
-  const qc        = useQueryClient()
-
-  const deleteMutation = useMutation({
-    mutationFn: () => adminApi.deleteHotel(hotel.id),
-    onSuccess : () => {
-      qc.invalidateQueries({ queryKey: ['admin-hotels'] })
-      toast({ title: `Hotel "${hotel.name}" berhasil dihapus.` })
-      onClose()
-    },
-    onError: (e) => toast({
-      title      : 'Gagal menghapus',
-      description: e?.response?.data?.message || 'Terjadi kesalahan.',
-      variant    : 'destructive',
-    }),
-  })
-
+// ── BulkDeleteConfirm (HARD DELETE — khusus akun aldeftech@gmail.com) ──────
+function BulkDeleteConfirm({ count, onClose, onConfirm, isLoading }) {
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
         <div className="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center mx-auto mb-4">
           <AlertTriangle className="w-7 h-7 text-red-600" />
         </div>
-        <h3 className="text-lg font-bold text-slate-900 mb-1">Hapus Hotel?</h3>
-        <p className="text-sm text-slate-500 mb-1">
-          <strong className="text-slate-700">{hotel.name}</strong>
-        </p>
+        <h3 className="text-lg font-bold text-slate-900 mb-1">Hapus Permanen {count} Akomodasi?</h3>
         <p className="text-xs text-slate-400 mb-6">
-          Tindakan ini tidak dapat dibatalkan. Semua data terkait hotel ini akan ikut terhapus.
+          Tindakan ini <strong className="text-red-600">tidak dapat dibatalkan</strong>. Seluruh data terkait
+          (kamar, booking, riwayat pembayaran, chat, ulasan) akan ikut terhapus permanen dari database.
         </p>
         <div className="flex gap-3">
-          <button onClick={onClose}
-            className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">
+          <button onClick={onClose} disabled={isLoading}
+            className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-50">
             Batal
           </button>
-          <button onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending}
+          <button onClick={onConfirm} disabled={isLoading}
             className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors">
-            {deleteMutation.isPending ? 'Menghapus...' : 'Ya, Hapus'}
+            {isLoading ? 'Menghapus...' : 'Ya, Hapus Permanen'}
           </button>
         </div>
       </div>
@@ -699,14 +681,18 @@ export default function AdminHotels() {
   const { toast } = useToast()
   const qc        = useQueryClient()
   const navigate  = useNavigate()
+  const { user }  = useAuthStore()
+  // Hapus akomodasi (HARD DELETE) KHUSUS akun ini — gate keras juga di backend.
+  const isAldeftech = (user?.email || '').trim().toLowerCase() === 'aldeftech@gmail.com'
 
   const [search,      setSearch]      = useState('')
   const [status,      setStatus]      = useState('')
   const [page,        setPage]        = useState(1)
   const [drawer,      setDrawer]      = useState(null)  // null | hotel object (untuk quick edit drawer lama, opsional)
-  const [deleteTarget,setDeleteTarget]= useState(null)
   const [ownerPickerOpen, setOwnerPickerOpen] = useState(false)
   const [commissionTarget, setCommissionTarget] = useState(null) // hotel object
+  const [selectedIds, setSelectedIds] = useState([])
+  const [showBulkDelete, setShowBulkDelete] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-hotels', search, status, page],
@@ -733,6 +719,34 @@ export default function AdminHotels() {
   const hotels     = data?.data || []
   const pagination = data?.pagination || {}
   const totalPages = pagination.totalPages || 1
+
+  // ── Hapus massal (khusus aldeftech@gmail.com) ───────────────
+  // Reset pilihan saat ganti halaman / filter (hindari hapus lintas-konteks tak sengaja).
+  useEffect(() => { setSelectedIds([]) }, [page, search, status])
+
+  const allOnPageSelected = hotels.length > 0 && hotels.every(h => selectedIds.includes(h.id))
+  const toggleSelectAll = () =>
+    setSelectedIds(allOnPageSelected ? [] : hotels.map(h => h.id))
+  const toggleSelect = (id) =>
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: () => adminApi.bulkDeleteHotels(selectedIds),
+    onSuccess : (r) => {
+      qc.invalidateQueries({ queryKey: ['admin-hotels'] })
+      qc.invalidateQueries({ queryKey: ['pending-hotels'] })
+      toast({ title: r?.data?.message || `Berhasil menghapus ${selectedIds.length} akomodasi.` })
+      setSelectedIds([])
+      setShowBulkDelete(false)
+    },
+    onError: (e) => toast({
+      title      : 'Gagal menghapus',
+      description: e?.response?.data?.message || 'Terjadi kesalahan.',
+      variant    : 'destructive',
+    }),
+  })
+
+  const COL_COUNT = isAldeftech ? 9 : 8
 
   return (
     <div className="space-y-5">
@@ -780,12 +794,39 @@ export default function AdminHotels() {
         </button>
       </div>
 
+      {/* Bulk delete bar (khusus aldeftech@gmail.com) */}
+      {isAldeftech && selectedIds.length > 0 && (
+        <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-2xl px-5 py-3">
+          <p className="text-sm font-medium text-red-700">
+            {selectedIds.length} akomodasi dipilih
+          </p>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setSelectedIds([])}
+              className="px-3 py-2 text-sm font-medium text-slate-600 hover:bg-white rounded-lg transition-colors">
+              Batal pilih
+            </button>
+            <button onClick={() => setShowBulkDelete(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors">
+              <Trash2 className="w-4 h-4" />
+              Hapus Permanen
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
+                {isAldeftech && (
+                  <th className="px-4 py-3 w-10">
+                    <input type="checkbox" checked={allOnPageSelected} onChange={toggleSelectAll}
+                      className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                      title="Pilih semua di halaman ini" />
+                  </th>
+                )}
                 {['Akomodasi', 'Kota', 'Bintang', 'Kategori', 'Pemilik', 'Status', 'Komisi', 'Aksi'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                     {h}
@@ -797,7 +838,7 @@ export default function AdminHotels() {
               {isLoading
                 ? Array(5).fill(0).map((_, i) => (
                     <tr key={i}>
-                      {Array(8).fill(0).map((_, j) => (
+                      {Array(COL_COUNT).fill(0).map((_, j) => (
                         <td key={j} className="px-4 py-3.5">
                           <div className="skeleton h-4 rounded-lg" />
                         </td>
@@ -805,7 +846,14 @@ export default function AdminHotels() {
                     </tr>
                   ))
                 : hotels.map(hotel => (
-                    <tr key={hotel.id} className="hover:bg-slate-50/70 transition-colors group">
+                    <tr key={hotel.id} className={`hover:bg-slate-50/70 transition-colors group ${selectedIds.includes(hotel.id) ? 'bg-red-50/50' : ''}`}>
+                      {/* Checkbox (khusus aldeftech) */}
+                      {isAldeftech && (
+                        <td className="px-4 py-3.5">
+                          <input type="checkbox" checked={selectedIds.includes(hotel.id)} onChange={() => toggleSelect(hotel.id)}
+                            className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer" />
+                        </td>
+                      )}
                       {/* Akomodasi */}
                       <td className="px-4 py-3.5 max-w-[220px]">
                         <div className="flex items-center gap-3">
@@ -913,12 +961,7 @@ export default function AdminHotels() {
                               <XCircle className="w-4 h-4" />
                             </button>
                           )}
-                          {/* Delete */}
-                          <button onClick={() => setDeleteTarget(hotel)}
-                            className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
-                            title="Hapus">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {/* Hapus permanen via checkbox (khusus aldeftech) — superadmin biasa tidak bisa hapus */}
                         </div>
                       </td>
                     </tr>
@@ -982,9 +1025,14 @@ export default function AdminHotels() {
         />
       )}
 
-      {/* Delete confirm */}
-      {deleteTarget && (
-        <DeleteConfirm hotel={deleteTarget} onClose={() => setDeleteTarget(null)} />
+      {/* Bulk delete confirm (khusus aldeftech@gmail.com) */}
+      {showBulkDelete && (
+        <BulkDeleteConfirm
+          count={selectedIds.length}
+          onClose={() => setShowBulkDelete(false)}
+          onConfirm={() => bulkDeleteMutation.mutate()}
+          isLoading={bulkDeleteMutation.isPending}
+        />
       )}
     </div>
   )
