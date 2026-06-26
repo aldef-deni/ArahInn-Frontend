@@ -191,9 +191,16 @@ export const adminApi = {
   bulkDeleteHotels: (ids)   => api.post('/admin/hotels/bulk-delete', { ids }),
   approveHotel   : (id)     => api.post(`/admin/hotels/${id}/approve`),
   blockHotel     : (id)     => api.post(`/admin/hotels/${id}/block`),
-  // Update komisi platform (markup final = commission_percent + 2% di BE)
-  updateHotelCommission: (id, commissionPercent) =>
-    api.put(`/admin/hotels/${id}/commission`, { commission_percent: commissionPercent }),
+  // Update komisi platform (harian + mingguan + bulanan). BE tambah PPh 2% di atas tiap nilai.
+  // Terima number (harian saja, kompat lama) ATAU object { daily, weekly, monthly }.
+  updateHotelCommission: (id, payload) => {
+    const p = (typeof payload === 'object' && payload !== null) ? payload : { daily: payload }
+    return api.put(`/admin/hotels/${id}/commission`, {
+      commission_percent: p.daily,
+      commission_percent_weekly: p.weekly ?? null,
+      commission_percent_monthly: p.monthly ?? null,
+    })
+  },
 }
 
 export const userApi = {

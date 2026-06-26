@@ -529,17 +529,42 @@ function OwnerPickerModal({ onClose }) {
 
 // ── CommissionModal ──────────────────────────────────────────────────────
 // Modal untuk set/ubah persentase komisi per hotel.
-// Komisi DIPOTONG dari setoran owner (owner terima harga × (1 − komisi%)).
+function CommissionField({ label, required, value, onChange, placeholder, autoFocus, hint }) {
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-slate-700 mb-2">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <div className="relative">
+        <input type="number" min={0} max={100} step="0.01" value={value}
+          onChange={e => onChange(e.target.value)} placeholder={placeholder} autoFocus={autoFocus}
+          className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400" />
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">%</span>
+      </div>
+      {hint && <p className="text-[11px] text-slate-500 mt-1.5">{hint}</p>}
+    </div>
+  )
+}
+
+// Komisi DIPOTONG dari setoran owner (owner terima harga × (1 − komisi% − PPh 2%)).
 // Tidak ditambahkan ke harga customer — biaya customer = setting Biaya Layanan Akomodasi.
 function CommissionModal({ hotel, onClose }) {
   const { toast } = useToast()
   const qc        = useQueryClient()
 
-  const initial = hotel.commissionPercent ?? hotel.commission_percent ?? 10
-  const [value, setValue] = useState(String(initial))
+  const PPH = 2
+  const [daily,   setDaily]   = useState(String(hotel.commissionPercent ?? hotel.commission_percent ?? 10))
+  const [weekly,  setWeekly]  = useState(hotel.commissionPercentWeekly  != null ? String(hotel.commissionPercentWeekly)  : '')
+  const [monthly, setMonthly] = useState(hotel.commissionPercentMonthly != null ? String(hotel.commissionPercentMonthly) : '')
+
+  const numOrNull = (v) => (v === '' || v == null) ? null : Number(v)
+  const inRange   = (v) => v === '' || (Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 100)
+  const dailyNum  = Number(daily)
+  const dailyValid = Number.isFinite(dailyNum) && dailyNum >= 0 && dailyNum <= 100
+  const isValid   = dailyValid && inRange(weekly) && inRange(monthly)
 
   const mutation = useMutation({
-    mutationFn: () => adminApi.updateHotelCommission(hotel.id, Number(value)),
+    mutationFn: () => adminApi.updateHotelCommission(hotel.id, { daily: dailyNum, weekly: numOrNull(weekly), monthly: numOrNull(monthly) }),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['admin-hotels'] })
       toast({ title: res?.data?.message || 'Komisi berhasil disimpan.' })
@@ -551,9 +576,6 @@ function CommissionModal({ hotel, onClose }) {
       variant: 'destructive',
     }),
   })
-
-  const numeric = Number(value)
-  const isValid = Number.isFinite(numeric) && numeric >= 0 && numeric <= 100
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -575,54 +597,50 @@ function CommissionModal({ hotel, onClose }) {
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Persentase Komisi <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type="number"
-                min={0}
-                max={100}
-                step="0.01"
-                value={value}
-                onChange={e => setValue(e.target.value)}
-                placeholder="10"
-                autoFocus
-                className="w-full px-4 py-3 pr-12 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">%</span>
-            </div>
-            <p className="text-xs text-slate-500 mt-1.5">
-              Masukkan angka 0–100. Komisi ini ditarik dari setiap pesanan kamar.
-            </p>
+        <div className="px-6 py-5 space-y-4 max-h-[65vh] overflow-y-auto">
+          {/* Harian (wajib) */}
+          <CommissionField
+            label="Komisi Harian" required value={daily} onChange={setDaily} placeholder="10" autoFocus
+            hint="Komisi untuk pemesanan harian. Wajib diisi."
+          />
+          {/* Mingguan & Bulanan (opsional) */}
+          <div className="grid grid-cols-2 gap-3">
+            <CommissionField label="Komisi Mingguan" value={weekly} onChange={setWeekly} placeholder="kosong = 0%"
+              hint="Opsional. Kosong = tanpa komisi." />
+            <CommissionField label="Komisi Bulanan" value={monthly} onChange={setMonthly} placeholder="kosong = 0%"
+              hint="Opsional. Kosong = tanpa komisi." />
           </div>
 
-          {/* Breakdown info — komisi DIPOTONG dari setoran owner (bukan ditambah ke customer) */}
+          {/* Breakdown info — komisi DIPOTONG dari setoran owner; sistem menambah PPh 2% */}
           <div className="rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3 text-sm">
-            <p className="font-bold text-emerald-900 mb-2">Dampak ke setoran owner:</p>
-            <div className="space-y-1 text-emerald-800">
-              <div className="flex justify-between">
-                <span>Komisi ArahInn (dipotong)</span>
-                <span className="font-semibold">{isValid ? `${numeric.toFixed(2)}%` : '—'}</span>
-              </div>
-              <div className="flex justify-between pt-1.5 mt-1.5 border-t border-emerald-200">
-                <span className="font-bold">Owner terima (per kamar)</span>
-                <span className="font-extrabold">{isValid ? `${(100 - numeric).toFixed(2)}% × harga` : '—'}</span>
-              </div>
-              <p className="text-[11px] text-emerald-700/80 pt-1.5 leading-relaxed">
-                Komisi ini <b>dipotong dari setoran owner</b>, bukan ditambahkan ke harga customer.
-                Contoh: harga Rp 500.000, komisi {isValid ? `${numeric.toFixed(0)}%` : '15%'} → owner terima Rp {isValid ? (500000 * (100 - numeric) / 100).toLocaleString('id-ID') : '425.000'}.
-                Biaya yang dibayar customer ("Pajak &amp; Others") diatur terpisah di <b>Pengaturan → Biaya Layanan Akomodasi</b>.
+            <p className="font-bold text-emerald-900 mb-2">Dampak ke setoran owner (sudah termasuk PPh 2%):</p>
+            <div className="space-y-1.5 text-emerald-800">
+              {[['Harian', daily], ['Mingguan', weekly], ['Bulanan', monthly]].map(([lbl, v]) => {
+                const set = v !== '' && Number.isFinite(Number(v))
+                const eff = set ? Number(v) + PPH : 0
+                return (
+                  <div key={lbl} className="flex justify-between">
+                    <span>{lbl}</span>
+                    <span className="font-semibold">
+                      {set
+                        ? <>komisi {Number(v).toFixed(2)}% + PPh {PPH}% = <b>{eff.toFixed(2)}%</b> · owner {(100 - eff).toFixed(2)}%</>
+                        : <span className="text-emerald-700/60">tanpa komisi</span>}
+                    </span>
+                  </div>
+                )
+              })}
+              <p className="text-[11px] text-emerald-700/80 pt-1.5 leading-relaxed border-t border-emerald-200 mt-1.5">
+                Komisi <b>dipotong dari setoran owner</b> (bukan ditambah ke harga customer); <b>PPh 2%</b> otomatis ditambahkan sistem.
+                Contoh harian {dailyValid ? `${dailyNum.toFixed(0)}%` : '15%'}: harga Rp 500.000 → owner terima Rp {dailyValid ? (500000 * (100 - dailyNum - PPH) / 100).toLocaleString('id-ID') : '415.000'}.
+                Biaya customer ("Pajak &amp; Others") diatur terpisah di <b>Pengaturan → Biaya Layanan Akomodasi</b>.
               </p>
             </div>
           </div>
 
-          {!isValid && value !== '' && (
+          {!isValid && (
             <p className="text-xs text-red-600 flex items-center gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5" />
-              Persentase harus antara 0 dan 100.
+              Setiap persentase harus antara 0 dan 100 (harian wajib diisi).
             </p>
           )}
         </div>
@@ -915,8 +933,14 @@ export default function AdminHotels() {
                               {Number(hotel.commissionPercent).toFixed(2)}%
                             </span>
                             <p className="text-[10px] text-slate-400 mt-1">
-                              owner terima {(100 - Number(hotel.commissionPercent)).toFixed(2)}%
+                              + PPh 2% · owner {(100 - Number(hotel.commissionPercent) - 2).toFixed(2)}%
                             </p>
+                            {(hotel.commissionPercentWeekly != null || hotel.commissionPercentMonthly != null) && (
+                              <p className="text-[10px] text-slate-400 mt-0.5">
+                                {hotel.commissionPercentWeekly != null && <>M: {Number(hotel.commissionPercentWeekly).toFixed(0)}% </>}
+                                {hotel.commissionPercentMonthly != null && <>B: {Number(hotel.commissionPercentMonthly).toFixed(0)}%</>}
+                              </p>
+                            )}
                           </div>
                         ) : (
                           <span className="text-xs text-slate-300 italic">belum diset</span>
