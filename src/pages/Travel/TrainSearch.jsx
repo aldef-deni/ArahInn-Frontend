@@ -21,37 +21,84 @@ const formatDateSlash = (ymd) => { if (!ymd) return '-'; const dt = new Date(`${
 const formatDateFull = (ymd) => { if (!ymd) return '-'; const dt = new Date(`${ymd}T00:00:00`); return dt.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) }
 const titleCase = (s) => (s || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
 
+function PassengerCounter({ label, value, min = 0, max = 9, onChange }) {
+  const dec = () => onChange(Math.max(min, value - 1))
+  const inc = () => onChange(Math.min(max, value + 1))
+
+  return (
+    <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-3">
+      <p className="text-[10px] font-semibold text-slate-400 mb-2">{label}</p>
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={dec}
+          disabled={value <= min}
+          className="w-8 h-8 rounded-full border border-slate-200 bg-white text-slate-700 text-base font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          -
+        </button>
+        <span className="min-w-[56px] text-center text-base font-bold text-slate-900 tabular-nums">{value}</span>
+        <button
+          type="button"
+          onClick={inc}
+          disabled={value >= max}
+          className="w-8 h-8 rounded-full border border-orange-200 bg-white text-orange-600 text-base font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  )
+}
+
 /* ── Station picker modal ─────────────────────────────────────────────── */
 function StationPicker({ open, stations, title, onPick, onClose }) {
   const { t } = useTranslation()
   const [q, setQ] = useState('')
-  useEffect(() => { if (open) setQ('') }, [open])
+  const inputRef = useRef(null)
+  useEffect(() => {
+    if (open) {
+      setQ('')
+      const id = setTimeout(() => inputRef.current?.focus(), 60)
+      return () => clearTimeout(id)
+    }
+  }, [open])
   if (!open) return null
 
+  const term = q.trim().toLowerCase()
   const filtered = (stations || []).filter(s => {
-    const t = `${s.namaStasiun} ${s.namaKota} ${s.idStasiun}`.toLowerCase()
-    return t.includes(q.toLowerCase())
-  }).slice(0, 60)
+    const haystack = `${s.namaStasiun} ${s.namaKota} ${s.idStasiun}`.toLowerCase()
+    return haystack.includes(term)
+  }).slice(0, 80)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:p-4" onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} className="w-full sm:max-w-md max-h-[85vh] bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden">
-        <div className="shrink-0 px-4 pt-3 pb-3 border-b border-slate-100">
-          <div className="sm:hidden mx-auto w-10 h-1 rounded-full bg-slate-300 mb-3" />
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <h2 className="font-bold text-slate-900">{title}</h2>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><X className="w-4 h-4 text-slate-600" /></button>
-          </div>
-          <div className="relative">
+    <div className="fixed inset-0 z-50 bg-white sm:bg-slate-900/60 sm:backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:p-4" onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} className="flex flex-col h-full w-full bg-white overflow-hidden sm:h-auto sm:max-h-[85vh] sm:max-w-md sm:rounded-3xl sm:shadow-2xl">
+        <div
+          className="shrink-0 flex items-center gap-2 px-3 pb-3 border-b border-slate-100"
+          style={{ paddingTop: 'max(env(safe-area-inset-top), 0.75rem)' }}
+        >
+          <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
-              autoFocus value={q} onChange={e => setQ(e.target.value)}
-              placeholder={t('travel.searchStation')}
-              className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+              ref={inputRef}
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              placeholder={title || t('travel.searchStation')}
+              className="w-full pl-9 pr-9 py-2.5 bg-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
             />
+            {q && (
+              <button
+                onClick={() => { setQ(''); inputRef.current?.focus() }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center"
+              >
+                <X className="w-3.5 h-3.5 text-slate-500" />
+              </button>
+            )}
           </div>
+          <button onClick={onClose} className="shrink-0 px-2 py-1 text-sm font-semibold text-orange-600">{t('common.cancel')}</button>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overscroll-contain bg-white">
           {filtered.length === 0 && <p className="text-center text-sm text-slate-400 py-8">{t('travel.stationNotFound')}</p>}
           {filtered.map(s => (
             <button
@@ -83,6 +130,7 @@ export default function TrainSearch() {
   const [destination, setDestination] = useState(null)
   const [date, setDate]   = useState(todayStr())
   const [adult, setAdult] = useState(1)
+  const [child, setChild] = useState(0)
   const [infant, setInfant] = useState(0)
   const [picker, setPicker] = useState(null)            // 'origin' | 'destination' | null
 
@@ -93,12 +141,17 @@ export default function TrainSearch() {
   const [sortBy, setSortBy] = useState('price')   // 'price' | 'departure'
   const resultsRef = useRef(null)
   const dateRef = useRef(null)
+  const payingPax = adult + child
 
   const openDatePicker = () => {
     const el = dateRef.current
     if (!el) return
     try { el.showPicker ? el.showPicker() : el.focus() } catch { el.focus() }
   }
+
+  useEffect(() => {
+    if (infant > payingPax) setInfant(payingPax)
+  }, [payingPax, infant])
 
   const priceOf = (t) => Number((t.seats?.[0] || {}).priceAdult) || 0
   const sortedResults = useMemo(() => {
@@ -125,7 +178,7 @@ export default function TrainSearch() {
 
   const swap = () => { setOrigin(destination); setDestination(origin) }
 
-  const canSearch = origin && destination && origin.idStasiun !== destination.idStasiun && date && adult >= 1
+  const canSearch = origin && destination && origin.idStasiun !== destination.idStasiun && date && adult >= 1 && payingPax >= 1
 
   const doSearch = async () => {
     if (!canSearch) return
@@ -134,7 +187,10 @@ export default function TrainSearch() {
       const res = await travelApi.searchTrain({
         origin: origin.idStasiun,
         destination: destination.idStasiun,
-        date, adult, infant,
+        date,
+        adult: payingPax,
+        child,
+        infant,
       })
       const data = res.data?.data || []
       setResults(data)
@@ -150,7 +206,7 @@ export default function TrainSearch() {
   const selectTrain = (train, seat) => {
     // Simpan pilihan untuk langkah booking (penumpang) — dibangun di langkah berikut
     const payload = {
-      origin, destination, date, adult, infant, train, seat, svcFee,
+      origin, destination, date, adult, child, infant, train, seat, svcFee,
     }
     sessionStorage.setItem('train_selection', JSON.stringify(payload))
     navigate('/tiket/kereta/pesan')
@@ -205,7 +261,7 @@ export default function TrainSearch() {
             </div>
 
             {/* Date + passengers */}
-            <div className="grid grid-cols-2 gap-2.5 mt-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-2.5">
               <div className="relative p-3 rounded-xl border border-slate-200 cursor-pointer" onClick={openDatePicker}>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Calendar className="w-3 h-3" /> {t('travel.date')}</p>
                 <p className="text-sm font-semibold text-slate-900 mt-0.5">{formatDateSlash(date)}</p>
@@ -214,13 +270,28 @@ export default function TrainSearch() {
               </div>
               <div className="p-3 rounded-xl border border-slate-200">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Users className="w-3 h-3" /> {t('travel.passengers')}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <select value={adult} onChange={e => setAdult(+e.target.value)} className="text-sm font-semibold bg-transparent focus:outline-none">
-                    {[1,2,3,4,5,6,7].map(n => <option key={n} value={n}>{n} {t('travel.adultLabel')}</option>)}
-                  </select>
-                  <select value={infant} onChange={e => setInfant(+e.target.value)} className="text-xs text-slate-500 bg-transparent focus:outline-none">
-                    {[0,1,2,3,4].map(n => <option key={n} value={n}>{n} {t('travel.infantLabel')}</option>)}
-                  </select>
+                <div className="grid grid-cols-1 gap-2 mt-2 sm:grid-cols-3">
+                  <PassengerCounter
+                    label={t('travel.adultLabel')}
+                    value={adult}
+                    min={1}
+                    max={7}
+                    onChange={setAdult}
+                  />
+                  <PassengerCounter
+                    label={t('travel.childLabel')}
+                    value={child}
+                    min={0}
+                    max={Math.max(0, 7 - adult)}
+                    onChange={setChild}
+                  />
+                  <PassengerCounter
+                    label={t('travel.infantLabel')}
+                    value={infant}
+                    min={0}
+                    max={Math.min(4, payingPax)}
+                    onChange={setInfant}
+                  />
                 </div>
               </div>
             </div>

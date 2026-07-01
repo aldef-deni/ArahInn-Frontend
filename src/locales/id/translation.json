@@ -5,7 +5,7 @@
     "logoutSuccess": "Berhasil keluar.", "logoutBye": "Sampai jumpa!",
     "properti": "Properti", "interior": "Design Interior",
     "akomodasi": "Akomodasi", "cariPenginapan": "Cari Penginapan", "propertiJualBeli": "Properti Jual Beli", "jasaDesign": "Jasa Design Interior",
-    "tiketPesawat": "Tiket Pesawat", "tiketPelni": "Tiket PELNI",
+    "tiketPesawat": "Tiket Pesawat", "tiketKAI": "Tiket KAI", "tiketPelni": "Tiket PELNI",
     "topUpTagihan": "Top Up & Tagihan", "promo": "Promo"
   },
   "services": {

@@ -10,7 +10,7 @@ import {
   Hotel, Search, List, User, LogOut, Menu, X,
   ChevronDown, Globe, Settings, LayoutDashboard,
   Phone, Mail, Smartphone, Building2, Sofa, Tag, Receipt, Star,
-  Megaphone, CalendarDays, Plane, Ship, Sparkles,
+  Megaphone, CalendarDays, Plane, Ship, TrainFront, Sparkles,
 } from 'lucide-react'
 import CampaignDetailModal from '@/components/CampaignDetailModal'
 import { cn, getImageUrl } from '@/utils'
@@ -94,6 +94,7 @@ export default function UserLayout() {
     { to: '/', label: t('nav.home'), icon: Hotel },
     { label: t('nav.akomodasi'), icon: Building2, children: akomodasiChildren },
     { to: '/tiket/pesawat', label: t('nav.tiketPesawat'), icon: Plane },
+    { to: '/tiket/kereta',  label: t('nav.tiketKAI'),     icon: TrainFront },
     { to: '/tiket/pelni',   label: t('nav.tiketPelni'),   icon: Ship },
     { to: '/topup-tagihan', label: t('nav.topUpTagihan'), icon: Receipt },
     { to: '/promo',         label: t('nav.promo'),        icon: Tag, sparkle: true },

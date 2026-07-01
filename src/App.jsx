@@ -314,10 +314,9 @@ export default function App() {
             <Route path="/ppob/pay/:trxCode" element={<RedirectWithParams to="/topup-tagihan/pay" param="trxCode" />} />
             <Route path="/ppob/:group" element={<RedirectWithParams to="/topup-tagihan" param="group" />} />
             <Route path="/tiket" element={<TravelLanding />} />
-            {/* Kereta — SEMENTARA COMING SOON (belum terintegrasi penuh).
-                Untuk mengaktifkan lagi: kembalikan element ke <TrainSearch /> & <TrainBooking />. */}
-            <Route path="/tiket/kereta" element={<Navigate to="/coming-soon?feature=tiket-kereta" replace />} />
-            <Route path="/tiket/kereta/pesan" element={<Navigate to="/coming-soon?feature=tiket-kereta" replace />} />
+            {/* Kereta */}
+            <Route path="/tiket/kereta" element={<TrainSearch />} />
+            <Route path="/tiket/kereta/pesan" element={<PrivateRoute><TrainBooking /></PrivateRoute>} />
             {/* Pesawat — API langsung */}
             <Route path="/tiket/pesawat" element={<FlightSearch />} />
             <Route path="/tiket/pesawat/pesan" element={<PrivateRoute><FlightBooking /></PrivateRoute>} />

@@ -99,7 +99,7 @@ export default function TravelPayment() {
     <div className="min-h-[70vh] bg-slate-50">
       <SEO title={t('travel.paymentSeo')} url={`/tiket/bayar/${id}`} />
       <div className="container max-w-lg py-5">
-        <button onClick={() => navigate(b.moda === 'pesawat' ? '/tiket/pesawat' : b.moda === 'pelni' ? '/tiket/pelni' : '/tiket')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-700"><ChevronLeft className="w-4 h-4" /> {t('travel.otherTickets')}</button>
+        <button onClick={() => navigate(b.moda === 'pesawat' ? '/tiket/pesawat' : b.moda === 'pelni' ? '/tiket/pelni' : '/tiket/kereta')} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-700"><ChevronLeft className="w-4 h-4" /> {t('travel.otherTickets')}</button>
 
         {/* Status banner */}
         {issued ? (

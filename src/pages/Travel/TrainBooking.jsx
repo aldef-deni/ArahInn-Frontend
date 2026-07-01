@@ -15,6 +15,7 @@ const gradeLabel = (g) => ({ E: 'Eksekutif', B: 'Bisnis', K: 'Ekonomi' }[g] || g
 const formatDMY = (ymd) => { if (!ymd) return '-'; const [y,m,d] = ymd.split('-'); return `${d}/${m}/${y}` }
 
 function emptyAdult()  { return { name: '', birthdate: '', phone: '', idNumber: '' } }
+function emptyChild()  { return { name: '', birthdate: '', idNumber: '' } }
 function emptyInfant() { return { name: '', birthdate: '', idNumber: '' } }
 
 export default function TrainBooking() {
@@ -24,6 +25,7 @@ export default function TrainBooking() {
   }, [])
 
   const [adults, setAdults]   = useState([])
+  const [children, setChildren] = useState([])
   const [infants, setInfants] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
@@ -33,6 +35,7 @@ export default function TrainBooking() {
   useEffect(() => {
     if (!sel) { navigate('/tiket/kereta', { replace: true }); return }
     setAdults(Array.from({ length: sel.adult || 1 }, emptyAdult))
+    setChildren(Array.from({ length: sel.child || 0 }, emptyChild))
     setInfants(Array.from({ length: sel.infant || 0 }, emptyInfant))
   }, [sel, navigate])
 
@@ -40,21 +43,25 @@ export default function TrainBooking() {
 
   const { origin, destination, date, train, seat } = sel
   const priceAdult = Number(seat?.priceAdult) || 0
+  const priceChild = Number(seat?.priceChild) || priceAdult
   const svcFee     = sel.svcFee || { amount: 0, percent: 0 }
-  const pax        = sel.adult || 1            // bayi tidak kena kursi
-  const ticketSub  = priceAdult * pax
+  const payingPax  = (sel.adult || 1) + (sel.child || 0)            // bayi tidak kena kursi
+  const pax        = payingPax
+  const ticketSub  = (priceAdult * (sel.adult || 1)) + (priceChild * (sel.child || 0))
   // Biaya penanganan: persen → % dari subtotal tiket; selain itu nominal × pax.
   const markupSub  = Number(svcFee.percent) > 0
     ? Math.round(Number(svcFee.percent) / 100 * ticketSub)
-    : (Number(svcFee.amount) || 0) * pax
+    : (Number(svcFee.amount) || 0) * payingPax
   const total      = ticketSub + markupSub
   const promoDiscount = appliedPromo?.discount || 0
   const finalTotal    = Math.max(0, total - promoDiscount)
 
   const setAdultField  = (i, k, v) => setAdults(a => a.map((p, idx) => idx === i ? { ...p, [k]: v } : p))
+  const setChildField  = (i, k, v) => setChildren(a => a.map((p, idx) => idx === i ? { ...p, [k]: v } : p))
   const setInfantField = (i, k, v) => setInfants(a => a.map((p, idx) => idx === i ? { ...p, [k]: v } : p))
 
   const valid = adults.every(p => p.name && p.birthdate && p.phone && p.idNumber)
+             && children.every(p => p.name && p.birthdate && p.idNumber)
              && infants.every(p => p.name && p.birthdate)
 
   const submit = async () => {
@@ -66,22 +73,25 @@ export default function TrainBooking() {
         origin: origin.idStasiun,
         destination: destination.idStasiun,
         date,
-        trainNumber: train.trainNumber,
+        train_number: train.trainNumber,
         grade: seat.grade,
         class: seat.class,
         adult: sel.adult || 1,
+        child: sel.child || 0,
         infant: sel.infant || 0,
-        priceAdult: priceAdult,
+        price_adult: priceAdult,
+        price_child: priceChild,
         markup: markupSub,
-        promoCode: appliedPromo?.code || undefined,
-        trainName: train.trainName,
-        departureStation: origin.namaStasiun,
-        departureTime: train.departureTime,
-        arrivalStation: destination.namaStasiun,
-        arrivalTime: train.arrivalTime,
+        promo_code: appliedPromo?.code || undefined,
+        train_name: train.trainName,
+        departure_station: origin.namaStasiun,
+        departure_time: train.departureTime,
+        arrival_station: destination.namaStasiun,
+        arrival_time: train.arrivalTime,
         passengers: {
-          adults: adults.map(p => ({ name: p.name, birthdate: p.birthdate, phone: p.phone, idNumber: p.idNumber })),
-          infants: infants.map(p => ({ name: p.name, birthdate: p.birthdate, idNumber: p.idNumber || '' })),
+          adults: adults.map(p => ({ name: p.name, birthdate: p.birthdate, phone: p.phone, id_number: p.idNumber })),
+          children: children.map(p => ({ name: p.name, birthdate: p.birthdate, id_number: p.idNumber })),
+          infants: infants.map(p => ({ name: p.name, birthdate: p.birthdate, id_number: p.idNumber || '' })),
         },
       })
       const booking = res.data?.data
@@ -186,6 +196,20 @@ export default function TrainBooking() {
           </div>
         ))}
 
+        {children.map((p, i) => (
+          <div key={`c${i}`} className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
+            <p className="font-bold text-sm text-slate-900 mb-3 flex items-center gap-1.5"><User className="w-4 h-4 text-amber-500" /> Anak-anak {i + 1}</p>
+            <div className="space-y-2.5">
+              <Field label="Nama Lengkap Anak" icon={User} value={p.name} onChange={v => setChildField(i, 'name', v)} placeholder="Nama sesuai KIA" />
+              <div className="grid grid-cols-2 gap-2.5">
+                <DateField label="Tanggal Lahir" value={p.birthdate} onChange={v => setChildField(i, 'birthdate', v)} />
+                <Field label="No. Induk KIA" icon={CreditCard} value={p.idNumber} onChange={v => setChildField(i, 'idNumber', v.replace(/[^0-9]/g, ''))} placeholder="Nomor KIA anak" inputMode="numeric" />
+              </div>
+              <p className="text-[11px] text-slate-400">Kategori anak untuk tiket kereta: usia 3-12 tahun.</p>
+            </div>
+          </div>
+        ))}
+
         {infants.map((p, i) => (
           <div key={`inf${i}`} className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
             <p className="font-bold text-sm text-slate-900 mb-3 flex items-center gap-1.5"><User className="w-4 h-4 text-sky-500" /> Bayi {i + 1}</p>
@@ -223,7 +247,7 @@ export default function TrainBooking() {
         <div className="bg-white rounded-2xl border border-slate-200 p-4 sticky bottom-2 shadow-lg">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold">Total ({sel.adult} dewasa)</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold">Total ({sel.adult || 1} dewasa{(sel.child || 0) > 0 ? `, ${sel.child} anak` : ''}{(sel.infant || 0) > 0 ? `, ${sel.infant} bayi` : ''})</p>
               <p className="font-display text-xl font-bold text-orange-600">{formatRupiah(finalTotal)}</p>
             </div>
             <div className="flex items-center gap-1 text-[10px] text-emerald-600"><ShieldCheck className="w-3.5 h-3.5" /> Resmi KAI</div>

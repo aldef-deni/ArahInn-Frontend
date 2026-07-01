@@ -36,7 +36,7 @@ export default function PpobLanding() {
   // Ticketing — tiket perjalanan
   const TICKETS = [
     { id: 'pesawat', label: 'Tiket Pesawat',    desc: 'Semua maskapai domestik', path: '/tiket/pesawat', Icon: Plane,      gradient: 'from-sky-500 to-blue-600',  iconBg: 'bg-sky-100',  iconColor: 'text-sky-600' },
-    { id: 'kereta',  label: 'Tiket Kereta',     desc: 'KAI antarkota',           path: '/coming-soon?feature=tiket-kereta',  Icon: TrainFront, gradient: 'from-amber-500 to-orange-600', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
+    { id: 'kereta',  label: 'Tiket Kereta',     desc: 'KAI antarkota',           path: '/tiket/kereta',                      Icon: TrainFront, gradient: 'from-amber-500 to-orange-600', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
     { id: 'pelni',   label: 'Tiket Kapal Laut', desc: 'PELNI semua rute',        path: '/tiket/pelni',   Icon: Ship,       gradient: 'from-cyan-500 to-blue-600', iconBg: 'bg-cyan-100', iconColor: 'text-cyan-600' },
   ]
 
