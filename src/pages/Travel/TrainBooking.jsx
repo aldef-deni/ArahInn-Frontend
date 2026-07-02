@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   TrainFront, ArrowRight, Clock, User, Calendar, Phone, CreditCard,
   Loader2, AlertCircle, CheckCircle2, ChevronLeft, ShieldCheck,
@@ -14,12 +15,13 @@ import { travelCheckoutError } from '@/utils/travelCheckoutError'
 const gradeLabel = (g) => ({ E: 'Eksekutif', B: 'Bisnis', K: 'Ekonomi' }[g] || g || '-')
 const formatDMY = (ymd) => { if (!ymd) return '-'; const [y,m,d] = ymd.split('-'); return `${d}/${m}/${y}` }
 
-function emptyAdult()  { return { name: '', birthdate: '', phone: '', idNumber: '' } }
+function emptyAdult()  { return { name: '', birthdate: '', phone: '', idNumber: '', kiaNumber: '' } }
 function emptyChild()  { return { name: '', birthdate: '', idNumber: '' } }
 function emptyInfant() { return { name: '', birthdate: '', idNumber: '' } }
 
 export default function TrainBooking() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const sel = useMemo(() => {
     try { return JSON.parse(sessionStorage.getItem('train_selection') || 'null') } catch { return null }
   }, [])
@@ -60,13 +62,47 @@ export default function TrainBooking() {
   const setChildField  = (i, k, v) => setChildren(a => a.map((p, idx) => idx === i ? { ...p, [k]: v } : p))
   const setInfantField = (i, k, v) => setInfants(a => a.map((p, idx) => idx === i ? { ...p, [k]: v } : p))
 
-  const valid = adults.every(p => p.name && p.birthdate && p.phone && p.idNumber)
-             && children.every(p => p.name && p.birthdate && p.idNumber)
+  const valid = adults.every(p => p.name && p.birthdate && p.phone && /^\d{16}$/.test(p.idNumber))
+             && children.every(p => p.name && p.birthdate && /^\d{16}$/.test(p.idNumber))
              && infants.every(p => p.name && p.birthdate)
 
+  const adultNikError = () => {
+    for (let i = 0; i < adults.length; i++) {
+      const p = adults[i]
+      const who = t('travel.adultPax', { n: i + 1 })
+      if (!p.idNumber) return t('travel.errNeedNik', { who })
+      if (!/^\d{16}$/.test(p.idNumber)) return t('travel.errNikDigits', { who })
+    }
+    return null
+  }
+
   const submit = async () => {
-    if (!valid) { setError('Lengkapi semua data penumpang.'); return }
-    setLoading(true); setError(null)
+    const childKiaError = () => {
+      for (let i = 0; i < children.length; i++) {
+        const p = children[i]
+
+        if (!p.idNumber)
+          return `No. KIA Anak ${i + 1} wajib diisi.`
+
+        if (!/^\d{16}$/.test(p.idNumber))
+          return `No. KIA Anak ${i + 1} harus terdiri dari 16 digit angka.`
+
+      }
+
+      return null
+    }
+const nikError = adultNikError()
+    const kiaError = childKiaError()
+
+    if (!valid || nikError || kiaError) {
+      setError(
+        nikError ||
+        kiaError ||
+        'Lengkapi semua data penumpang.'
+      )
+      return
+    }
+     setLoading(true); setError(null)
     try {
       const res = await travelApi.checkout({
         moda: 'kereta',
@@ -89,7 +125,7 @@ export default function TrainBooking() {
         arrival_station: destination.namaStasiun,
         arrival_time: train.arrivalTime,
         passengers: {
-          adults: adults.map(p => ({ name: p.name, birthdate: p.birthdate, phone: p.phone, id_number: p.idNumber })),
+          adults: adults.map(p => ({ name: p.name, birthdate: p.birthdate, phone: p.phone, id_number: p.idNumber, kia_number: p.kiaNumber || '' })),
           children: children.map(p => ({ name: p.name, birthdate: p.birthdate, id_number: p.idNumber })),
           infants: infants.map(p => ({ name: p.name, birthdate: p.birthdate, id_number: p.idNumber || '' })),
         },
@@ -187,11 +223,20 @@ export default function TrainBooking() {
             <p className="font-bold text-sm text-slate-900 mb-3 flex items-center gap-1.5"><User className="w-4 h-4 text-orange-500" /> Penumpang Dewasa {i + 1}</p>
             <div className="space-y-2.5">
               <Field label="Nama Lengkap (sesuai KTP)" icon={User} value={p.name} onChange={v => setAdultField(i, 'name', v)} placeholder="Nama sesuai identitas" />
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <DateField label="Tanggal Lahir" value={p.birthdate} onChange={v => setAdultField(i, 'birthdate', v)} />
-                <Field label="No. HP" icon={Phone} value={p.phone} onChange={v => setAdultField(i, 'phone', v.replace(/[^0-9]/g, ''))} placeholder="08xxx" inputMode="numeric" />
+                <Field label="No. HP" icon={Phone} value={p.phone} onChange={v => setAdultField(i, 'phone', v.replace(/[^0-9]/g, '').slice(0, 15))} placeholder="08xxx" inputMode="numeric" maxLength={15} />
               </div>
-              <Field label="No. KTP / NIK" icon={CreditCard} value={p.idNumber} onChange={v => setAdultField(i, 'idNumber', v.replace(/[^0-9]/g, ''))} placeholder="16 digit NIK" inputMode="numeric" />
+              <Field label="No. KTP / NIK" icon={CreditCard} value={p.idNumber} onChange={v => setAdultField(i, 'idNumber', v.replace(/\D/g, '').slice(0, 16))} placeholder="16 digit NIK" inputMode="numeric" maxLength={16} />
+              <Field
+                label="Input Nomor KIA"
+                icon={CreditCard}
+                value={p.kiaNumber}
+                onChange={v => setAdultField(i, 'kiaNumber', v.replace(/\D/g, '').slice(0, 16))}
+                placeholder="Opsional, 16 digit"
+                inputMode="numeric"
+                maxLength={16}
+              />
             </div>
           </div>
         ))}
@@ -201,9 +246,23 @@ export default function TrainBooking() {
             <p className="font-bold text-sm text-slate-900 mb-3 flex items-center gap-1.5"><User className="w-4 h-4 text-amber-500" /> Anak-anak {i + 1}</p>
             <div className="space-y-2.5">
               <Field label="Nama Lengkap Anak" icon={User} value={p.name} onChange={v => setChildField(i, 'name', v)} placeholder="Nama sesuai KIA" />
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <DateField label="Tanggal Lahir" value={p.birthdate} onChange={v => setChildField(i, 'birthdate', v)} />
-                <Field label="No. Induk KIA" icon={CreditCard} value={p.idNumber} onChange={v => setChildField(i, 'idNumber', v.replace(/[^0-9]/g, ''))} placeholder="Nomor KIA anak" inputMode="numeric" />
+                <Field
+                  label="No. Induk KIA"
+                  icon={CreditCard}
+                  value={p.idNumber}
+                  onChange={v =>
+                    setChildField(
+                      i,
+                      'idNumber',
+                      v.replace(/\D/g, '').slice(0, 16)
+                    )
+                  }
+                  placeholder="Nomor KIA anak"
+                  inputMode="numeric"
+                  maxLength={16}
+                />
               </div>
               <p className="text-[11px] text-slate-400">Kategori anak untuk tiket kereta: usia 3-12 tahun.</p>
             </div>
@@ -215,9 +274,17 @@ export default function TrainBooking() {
             <p className="font-bold text-sm text-slate-900 mb-3 flex items-center gap-1.5"><User className="w-4 h-4 text-sky-500" /> Bayi {i + 1}</p>
             <div className="space-y-2.5">
               <Field label="Nama Lengkap" icon={User} value={p.name} onChange={v => setInfantField(i, 'name', v)} placeholder="Nama bayi" />
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <DateField label="Tanggal Lahir" value={p.birthdate} onChange={v => setInfantField(i, 'birthdate', v)} />
-                <Field label="NIK (opsional)" icon={CreditCard} value={p.idNumber} onChange={v => setInfantField(i, 'idNumber', v.replace(/[^0-9]/g, ''))} placeholder="opsional" inputMode="numeric" />
+                <Field
+                  label="Input Nomor KIA"
+                  icon={CreditCard}
+                  value={p.idNumber}
+                  onChange={v => setInfantField(i, 'idNumber', v.replace(/\D/g, '').slice(0, 16))}
+                  placeholder="Opsional, 16 digit"
+                  inputMode="numeric"
+                  maxLength={16}
+                />
               </div>
             </div>
           </div>
@@ -262,14 +329,14 @@ export default function TrainBooking() {
   )
 }
 
-function Field({ label, icon: Icon, value, onChange, type = 'text', placeholder, inputMode }) {
+function Field({ label, icon: Icon, value, onChange, type = 'text', placeholder, inputMode, maxLength }) {
   return (
-    <div>
+    <div className="min-w-0">
       <label className="block text-[11px] font-semibold text-slate-500 mb-1">{label}</label>
-      <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-3 py-2.5 focus-within:ring-2 focus-within:ring-orange-300">
+      <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-3 py-2.5 focus-within:ring-2 focus-within:ring-orange-300 min-w-0">
         {Icon && <Icon className="w-4 h-4 text-slate-400 shrink-0" />}
         <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} inputMode={inputMode}
-          className="flex-1 text-sm text-slate-900 focus:outline-none bg-transparent" />
+          className="flex-1 min-w-0 w-full text-sm text-slate-900 focus:outline-none bg-transparent" maxLength={maxLength} />
       </div>
     </div>
   )
