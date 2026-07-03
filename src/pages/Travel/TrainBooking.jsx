@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   TrainFront, ArrowRight, Clock, User, Calendar, Phone, CreditCard,
-  Loader2, AlertCircle, CheckCircle2, ChevronLeft, ShieldCheck,
+  Loader2, AlertCircle, CheckCircle2, ChevronLeft, ShieldCheck, Mail, X, Users, ChevronRight,
+  Armchair, Check, ChevronUp, ChevronDown,
 } from 'lucide-react'
 import { travelApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
@@ -33,12 +34,22 @@ export default function TrainBooking() {
   const [error, setError]     = useState(null)
   const [booked, setBooked]   = useState(null)  // hasil book
   const [appliedPromo, setAppliedPromo] = useState(null)   // { code, discount }
+  // Data pemesan (kontak) — e-tiket dikirim ke kontak ini.
+  const [contact, setContact] = useState({ name: '', phone: '', email: '' })
+  const [contactDone, setContactDone] = useState(false)
+  const [showContact, setShowContact] = useState(false)
+  // Seat selection (setelah book): Modal 1 ringkasan, Modal 2 denah kursi.
+  const [bookingResult, setBookingResult] = useState(null)   // hasil checkout (kode, vendor codes, seats)
+  const [chosenSeats, setChosenSeats] = useState([])         // seat per penumpang bayar (aligned)
+  const [showSeatSummary, setShowSeatSummary] = useState(false)
+  const [showSeatPicker, setShowSeatPicker] = useState(false)
 
   useEffect(() => {
     if (!sel) { navigate('/tiket/kereta', { replace: true }); return }
     setAdults(Array.from({ length: sel.adult || 1 }, emptyAdult))
     setChildren(Array.from({ length: sel.child || 0 }, emptyChild))
     setInfants(Array.from({ length: sel.infant || 0 }, emptyInfant))
+    setShowContact(true)  // modal Data Pemesan muncul otomatis setelah pilih kereta
   }, [sel, navigate])
 
   if (!sel) return null
@@ -62,7 +73,9 @@ export default function TrainBooking() {
   const setChildField  = (i, k, v) => setChildren(a => a.map((p, idx) => idx === i ? { ...p, [k]: v } : p))
   const setInfantField = (i, k, v) => setInfants(a => a.map((p, idx) => idx === i ? { ...p, [k]: v } : p))
 
-  const valid = adults.every(p => p.name && p.birthdate && p.phone && /^\d{16}$/.test(p.idNumber))
+  const contactValid = contact.name.trim() && contact.phone.replace(/\D/g, '').length >= 8 && /\S+@\S+\.\S+/.test(contact.email)
+  const valid = contactDone && contactValid
+             && adults.every(p => p.name && p.birthdate && p.phone && /^\d{16}$/.test(p.idNumber))
              && children.every(p => p.name && p.birthdate && /^\d{16}$/.test(p.idNumber))
              && infants.every(p => p.name && p.birthdate)
 
@@ -94,6 +107,11 @@ export default function TrainBooking() {
 const nikError = adultNikError()
     const kiaError = childKiaError()
 
+    if (!contactDone || !contactValid) {
+      setShowContact(true)
+      setError('Lengkapi Data Pemesan (nama, no. telp, email) terlebih dahulu.')
+      return
+    }
     if (!valid || nikError || kiaError) {
       setError(
         nikError ||
@@ -124,6 +142,7 @@ const nikError = adultNikError()
         departure_time: train.departureTime,
         arrival_station: destination.namaStasiun,
         arrival_time: train.arrivalTime,
+        contact: { name: contact.name, email: contact.email, phone: contact.phone },
         passengers: {
           adults: adults.map(p => ({ name: p.name, birthdate: p.birthdate, phone: p.phone, id_number: p.idNumber, kia_number: p.kiaNumber || '' })),
           children: children.map(p => ({ name: p.name, birthdate: p.birthdate, id_number: p.idNumber })),
@@ -131,9 +150,13 @@ const nikError = adultNikError()
         },
       })
       const booking = res.data?.data
-      const ref = booking?.code ?? booking?.id
-      if (ref) navigate(`/tiket/bayar/${ref}`, { state: { moda: 'kereta' } })
-      else setError('Gagal membuat pesanan.')
+      if (booking?.code || booking?.id) {
+        // Booking berhasil (kursi auto-assigned vendor). Tampilkan Modal 1 untuk
+        // konfirmasi kursi + opsi ganti nomor kursi sebelum lanjut bayar.
+        setBookingResult(booking)
+        setChosenSeats(Array.isArray(booking?.meta?.book?.seats) ? booking.meta.book.seats : [])
+        setShowSeatSummary(true)
+      } else setError('Gagal membuat pesanan.')
     } catch (e) {
       setError(travelCheckoutError(e))
     } finally {
@@ -190,32 +213,37 @@ const nikError = adultNikError()
           <ChevronLeft className="w-4 h-4" /> Kembali
         </button>
 
-        {/* Trip summary */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-9 h-9 rounded-lg bg-orange-100 flex items-center justify-center"><TrainFront className="w-4.5 h-4.5 text-orange-600" /></div>
-            <div className="min-w-0">
-              <p className="font-bold text-sm text-slate-900 truncate">{train.trainName}</p>
-              <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{gradeLabel(seat.grade)} · {seat.class}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="text-center"><p className="font-bold text-slate-900">{train.departureTime}</p><p className="text-[10px] text-slate-400">{origin.idStasiun}</p></div>
-            <div className="flex-1 flex items-center gap-1.5">
-              <div className="h-px flex-1 bg-slate-200" />
-              <span className="text-[10px] text-slate-400 flex items-center gap-0.5"><Clock className="w-3 h-3" />{train.duration}</span>
-              <div className="h-px flex-1 bg-slate-200" /><ArrowRight className="w-3.5 h-3.5 text-slate-300" />
-            </div>
-            <div className="text-center"><p className="font-bold text-slate-900">{train.arrivalTime}</p><p className="text-[10px] text-slate-400">{destination.idStasiun}</p></div>
-          </div>
-          <p className="text-xs text-slate-400 mt-2 flex items-center gap-1"><Calendar className="w-3 h-3" /> {formatDMY(date)}</p>
-        </div>
+        {/* Jadwal & kereta yang dipilih */}
+        <div className="mb-4"><TripSummaryCard sel={sel} /></div>
 
         {error && (
           <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl mb-4">
             <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" /><p className="text-sm text-red-700">{error}</p>
           </div>
         )}
+
+        {/* Data Pemesan */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
+          <p className="font-bold text-sm text-slate-900 flex items-center gap-1.5"><Users className="w-4 h-4 text-orange-500" /> Data Pemesan</p>
+          <p className="text-[11px] text-slate-400 mt-0.5 mb-3">Semua e-Tiket / voucher akan kami kirimkan ke kontak ini.</p>
+          {contactDone && contactValid ? (
+            <button onClick={() => setShowContact(true)} className="w-full flex items-center justify-between gap-2 border border-slate-200 rounded-xl px-3.5 py-3 hover:bg-slate-50 text-left">
+              <div className="min-w-0">
+                <p className="font-semibold text-sm text-slate-900 truncate">{contact.name}</p>
+                <p className="text-xs text-slate-500 truncate">{contact.phone} · {contact.email}</p>
+              </div>
+              <span className="text-xs font-semibold text-orange-600 shrink-0">Ubah</span>
+            </button>
+          ) : (
+            <button onClick={() => setShowContact(true)} className="w-full flex items-center justify-between gap-2 border border-dashed border-orange-300 bg-orange-50/50 rounded-xl px-3.5 py-3 text-orange-600 font-semibold text-sm hover:bg-orange-50">
+              <span className="flex items-center gap-2"><User className="w-4 h-4" /> Isi Data Pemesan</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Detail Penumpang */}
+        <p className="font-bold text-sm text-slate-900 mb-2 mt-1 px-1">Detail Penumpang</p>
 
         {/* Passenger forms */}
         {adults.map((p, i) => (
@@ -322,6 +350,333 @@ const nikError = adultNikError()
           <button onClick={submit} disabled={!valid || loading}
             className="w-full py-3.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50">
             {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Memproses booking...</> : <>Lanjutkan ke Pembayaran <ArrowRight className="w-4 h-4" /></>}
+          </button>
+        </div>
+      </div>
+
+      {showContact && (
+        <ContactModal
+          sel={sel}
+          initial={contact}
+          onClose={() => setShowContact(false)}
+          onSubmit={(c) => { setContact(c); setContactDone(true); setShowContact(false); setError(null) }}
+        />
+      )}
+
+      {/* Modal 1 — ringkasan kursi + rincian harga */}
+      {showSeatSummary && bookingResult && (
+        <SeatSummaryModal
+          sel={sel}
+          pax={[...adults.map(p => ({ name: p.name, type: 'Dewasa' })), ...children.map(p => ({ name: p.name, type: 'Anak' }))]}
+          seats={chosenSeats}
+          price={{ ticketSub, markupSub, finalTotal, priceAdult, adult: sel.adult || 1, child: sel.child || 0, priceChild, originName: origin.namaStasiun }}
+          onPickSeat={() => setShowSeatPicker(true)}
+          onConfirm={() => navigate(`/tiket/bayar/${bookingResult.code ?? bookingResult.id}`, { state: { moda: 'kereta' } })}
+          onClose={() => setShowSeatSummary(false)}
+        />
+      )}
+
+      {/* Modal 2 — denah kursi gerbong */}
+      {showSeatPicker && bookingResult && (
+        <SeatPickerModal
+          sel={sel}
+          paxCount={(sel.adult || 1) + (sel.child || 0)}
+          paxNames={[...adults.map(p => p.name), ...children.map(p => p.name)]}
+          bookingCode={bookingResult.vendorBookingCode ?? bookingResult.meta?.book?.bookingCode}
+          transactionId={bookingResult.vendorTransactionId ?? bookingResult.meta?.book?.transactionId}
+          initialSeats={chosenSeats}
+          onClose={() => setShowSeatPicker(false)}
+          onSaved={(newSeats) => { setChosenSeats(newSeats); setShowSeatPicker(false) }}
+        />
+      )}
+    </div>
+  )
+}
+
+// Ringkasan jadwal & kereta yang dipilih — dipakai di halaman & modal Data Pemesan.
+function TripSummaryCard({ sel }) {
+  const { origin, destination, date, train, seat } = sel
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 p-4">
+      <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center shrink-0"><TrainFront className="w-4 h-4 text-orange-600" /></div>
+          <span className="font-bold text-sm text-slate-900">Kereta Api</span>
+        </div>
+        <span className="text-[11px] text-slate-400 flex items-center gap-1 shrink-0"><Calendar className="w-3 h-3" />{formatDMY(date)}</span>
+      </div>
+      <div className="flex items-start justify-between gap-3 mt-3">
+        <div className="min-w-0">
+          <p className="font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
+            <span className="truncate">{origin.namaStasiun}</span>
+            <ArrowRight className="w-4 h-4 text-orange-500 shrink-0" />
+            <span className="truncate">{destination.namaStasiun}</span>
+          </p>
+          <p className="text-[11px] text-slate-500 mt-1">{train.trainName} · {gradeLabel(seat.grade)} ({seat.class}) · NOMOR KA: {train.trainNumber}</p>
+        </div>
+        <div className="text-right shrink-0">
+          <p className="font-bold text-slate-900 text-sm whitespace-nowrap">{train.departureTime} - {train.arrivalTime}</p>
+          <p className="text-[10px] text-slate-400 flex items-center justify-end gap-0.5"><Clock className="w-2.5 h-2.5" />{train.duration}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-1.5 mt-3">
+        <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded-full px-2 py-0.5">Tidak bisa Refund</span>
+        <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded-full px-2 py-0.5">Tidak bisa Reschedule</span>
+      </div>
+    </div>
+  )
+}
+
+// Modal "Isi Data Pemesan" — kontak penerima e-tiket (Nama Lengkap, No. Telp, Email).
+function ContactModal({ sel, initial, onClose, onSubmit }) {
+  const [form, setForm] = useState(initial || { name: '', phone: '', email: '' })
+  const [err, setErr]   = useState(null)
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const handle = () => {
+    if (!form.name.trim())                       return setErr('Nama lengkap wajib diisi.')
+    if (form.phone.replace(/\D/g, '').length < 8) return setErr('No. telp minimal 8 digit.')
+    if (!/\S+@\S+\.\S+/.test(form.email))         return setErr('Email belum valid.')
+    onSubmit({ name: form.name.trim(), phone: form.phone, email: form.email.trim() })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center shrink-0"><Users className="w-4.5 h-4.5 text-orange-600" /></div>
+            <div className="min-w-0">
+              <h3 className="font-bold text-slate-900 text-sm">Isi Data Pemesan</h3>
+              <p className="text-[11px] text-slate-400">E-Tiket dikirim ke kontak ini</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400"><X className="w-5 h-5" /></button>
+        </div>
+
+        {/* Body */}
+        <div className="px-5 py-4 space-y-3 max-h-[70vh] overflow-y-auto">
+          {sel && <TripSummaryCard sel={sel} />}
+          {err && (
+            <div className="flex items-start gap-2 p-2.5 bg-red-50 border border-red-200 rounded-xl">
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" /><p className="text-xs text-red-700">{err}</p>
+            </div>
+          )}
+          <Field label="Nama Lengkap" icon={User} value={form.name} onChange={v => set('name', v)} placeholder="Nama pemesan" />
+          <Field label="No. Telp" icon={Phone} value={form.phone} onChange={v => set('phone', v.replace(/[^0-9]/g, '').slice(0, 15))} placeholder="08xxxxxxxxxx" inputMode="numeric" maxLength={15} />
+          <Field label="Email" icon={Mail} value={form.email} onChange={v => set('email', v)} placeholder="nama@email.com" type="email" />
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-4 border-t border-slate-100 bg-slate-50">
+          <button onClick={handle}
+            className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors">
+            Lanjut ke Data Penumpang <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Modal 1 — ringkasan kursi per penumpang + rincian harga (muncul setelah booking).
+function SeatSummaryModal({ sel, pax, seats, price, onPickSeat, onConfirm, onClose }) {
+  const [showPrice, setShowPrice] = useState(true)
+  const seatLabel = (s) => {
+    if (!s) return null
+    const col = s.column ?? s.seatColumn ?? ''
+    const row = s.row ?? s.seatRow ?? ''
+    const num = (col || row) ? `${col}${row}` : (s.seatNumber || s.seat || '')
+    return num ? `KURSI ${num}` : null
+  }
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="relative bg-slate-50 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-md max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="p-4 pb-0"><TripSummaryCard sel={sel} /></div>
+
+        <div className="p-4">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Fasilitas Tambahan</p>
+          <button onClick={onPickSeat} className="w-full flex items-center justify-between gap-2 bg-white border border-slate-200 rounded-xl px-4 py-3.5 hover:bg-slate-50">
+            <span className="flex items-center gap-2.5 font-semibold text-sm text-slate-900"><Armchair className="w-5 h-5 text-orange-500" /> Nomor Kursi</span>
+            <ChevronRight className="w-5 h-5 text-orange-500" />
+          </button>
+
+          <div className="bg-white border border-slate-200 rounded-xl mt-3 divide-y divide-slate-100">
+            {pax.map((p, i) => {
+              const sl = seatLabel(seats[i])
+              return (
+                <div key={i} className="flex items-center justify-between gap-2 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-900 truncate">{i + 1}. {p.name || '-'} <span className="text-[10px] font-bold text-orange-500 border border-orange-300 rounded-full px-1.5 py-0.5 ml-1">{p.type}</span></p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">{gradeLabel(sel.seat.grade)} / {sl || 'Kursi otomatis'}</p>
+                  </div>
+                  <button onClick={onPickSeat} className="text-xs font-bold text-orange-500 shrink-0">GANTI</button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="px-4 pb-4">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Rincian Harga</p>
+          <div className="bg-white border border-slate-200 rounded-xl">
+            <button onClick={() => setShowPrice(v => !v)} className="w-full flex items-center justify-between gap-2 px-4 py-3">
+              <span className="font-bold text-sm text-slate-900">Harga Total <span className="text-slate-300">|</span> <span className="text-orange-600">{formatRupiah(price.finalTotal)}</span></span>
+              {showPrice ? <ChevronUp className="w-4 h-4 text-orange-500" /> : <ChevronDown className="w-4 h-4 text-orange-500" />}
+            </button>
+            {showPrice && (
+              <div className="px-4 pb-3 pt-1 space-y-1.5 text-sm border-t border-slate-100">
+                <div className="flex justify-between"><span className="text-slate-500">{price.originName} (Dewasa) x{price.adult}</span><span className="text-slate-900">{formatRupiah(price.priceAdult * price.adult)}</span></div>
+                {price.child > 0 && <div className="flex justify-between"><span className="text-slate-500">Anak x{price.child}</span><span className="text-slate-900">{formatRupiah(price.priceChild * price.child)}</span></div>}
+                {price.markupSub > 0 && <div className="flex justify-between"><span className="text-slate-500">Biaya Penanganan</span><span className="text-slate-900">{formatRupiah(price.markupSub)}</span></div>}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 bg-slate-50 p-4 border-t border-slate-200">
+          <button onClick={onConfirm} className="w-full py-3.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm flex items-center justify-center gap-2">
+            Simpan &amp; Lanjut Bayar <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Modal 2 — denah kursi 1 gerbong, pilih kursi per penumpang (paginasi 1/N).
+function SeatPickerModal({ sel, paxCount, paxNames, bookingCode, transactionId, initialSeats, onClose, onSaved }) {
+  const [wagons, setWagons]   = useState([])
+  const [wagonIdx, setWagonIdx] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [err, setErr]         = useState(null)
+  const [saving, setSaving]   = useState(false)
+  const [current, setCurrent] = useState(0)
+  const [picked, setPicked]   = useState(() => (initialSeats || []).slice(0, paxCount))
+
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      setLoading(true); setErr(null)
+      try {
+        const res = await travelApi.seatLayout({
+          origin: sel.origin.idStasiun, destination: sel.destination.idStasiun,
+          date: sel.date, trainNumber: sel.train.trainNumber,
+        })
+        const data = res.data?.data
+        if (alive) setWagons(Array.isArray(data) ? data : [])
+      } catch (e) { if (alive) setErr(e?.response?.data?.message || 'Gagal memuat denah kursi.') }
+      finally { if (alive) setLoading(false) }
+    })()
+    return () => { alive = false }
+  }, [])
+
+  const wagon = wagons[wagonIdx]
+  const rows = useMemo(() => {
+    const map = new Map()
+    for (const s of (wagon?.layout || [])) {
+      const r = String(s.row)
+      if (!map.has(r)) map.set(r, [])
+      map.get(r).push(s)
+    }
+    return [...map.entries()].sort((a, b) => Number(a[0]) - Number(b[0]))
+  }, [wagon])
+
+  const seatKey   = (s) => `${wagon?.wagonCode}|${wagon?.wagonNumber}|${s.row}|${s.column}`
+  const pickedKey = (p) => p ? `${p.wagonCode}|${p.wagonNumber}|${p.row}|${p.column}` : ''
+  const isPickedByOther   = (s) => picked.some((p, idx) => idx !== current && pickedKey(p) === seatKey(s))
+  const isPickedByCurrent = (s) => pickedKey(picked[current]) === seatKey(s)
+  const isFilled = (s) => s.isFilled == 1 || s.isFilled === '1' || s.isFilled === true
+
+  const pick = (s) => {
+    if (isFilled(s) || isPickedByOther(s)) return
+    const seat = { wagonCode: wagon.wagonCode, wagonNumber: wagon.wagonNumber, row: s.row, column: s.column }
+    setPicked(prev => { const n = [...prev]; n[current] = seat; return n })
+    if (current < paxCount - 1) setCurrent(current + 1)
+  }
+
+  const allPicked = picked.filter(Boolean).length >= paxCount
+  const save = async () => {
+    if (!allPicked) { setErr('Pilih kursi untuk semua penumpang.'); return }
+    setSaving(true); setErr(null)
+    try {
+      await travelApi.changeSeat({
+        bookingCode, transactionId,
+        seats: picked.map(p => ({ wagonCode: p.wagonCode, wagonNumber: p.wagonNumber, row: p.row, column: p.column })),
+      })
+      onSaved(picked)
+    } catch (e) { setErr(e?.response?.data?.message || 'Gagal menyimpan kursi.') }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-sm max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="bg-orange-500 text-white px-4 py-3 flex items-center justify-between rounded-t-2xl">
+          <div className="flex items-center gap-2">
+            <button onClick={onClose}><ChevronLeft className="w-5 h-5" /></button>
+            <span className="font-bold text-sm">Pilih Nomor Kursi</span>
+          </div>
+          <span className="text-sm font-bold">{current + 1}/{paxCount}</span>
+        </div>
+
+        <div className="px-4 py-2 bg-orange-50 text-[11px] text-orange-700 font-semibold">Kursi untuk: {paxNames[current] || `Penumpang ${current + 1}`}</div>
+
+        <div className="flex items-center justify-center gap-4 py-2.5 text-[11px] text-slate-500">
+          <span className="flex items-center gap-1"><span className="w-4 h-4 rounded bg-slate-100 border border-slate-200" /> Tersedia</span>
+          <span className="flex items-center gap-1"><span className="w-4 h-4 rounded bg-red-400" /> Terisi</span>
+          <span className="flex items-center gap-1"><span className="w-4 h-4 rounded bg-orange-400" /> Dipilih</span>
+        </div>
+
+        {wagons.length > 1 && (
+          <div className="flex items-center justify-center gap-2 pb-2 flex-wrap px-4">
+            {wagons.map((w, i) => (
+              <button key={i} onClick={() => setWagonIdx(i)} className={`text-xs font-bold px-2.5 py-1 rounded-full ${i === wagonIdx ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-500'}`}>Gerbong {w.wagonNumber}</button>
+            ))}
+          </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto px-4 pb-4">
+          {loading ? <div className="py-16 text-center"><Loader2 className="w-6 h-6 animate-spin text-orange-500 mx-auto" /></div>
+          : (err && rows.length === 0) ? <div className="py-10 text-center text-sm text-red-600">{err}</div>
+          : rows.length === 0 ? <div className="py-10 text-center text-sm text-slate-400">Denah kursi tak tersedia.</div>
+          : (
+            <div className="space-y-1.5">
+              {rows.map(([rowNum, seatsInRow]) => {
+                const sorted = [...seatsInRow].sort((a, b) => String(a.column).localeCompare(String(b.column)))
+                const half = Math.ceil(sorted.length / 2)
+                const left = sorted.slice(0, half), right = sorted.slice(half)
+                const SeatBtn = (s) => {
+                  const filled = isFilled(s)
+                  const byOther = isPickedByOther(s)
+                  const byCur = isPickedByCurrent(s)
+                  const cls = byCur ? 'bg-orange-400 text-white border-orange-400'
+                    : filled ? 'bg-red-400 text-white border-red-400 cursor-not-allowed'
+                    : byOther ? 'bg-orange-200 text-orange-700 border-orange-200 cursor-not-allowed'
+                    : 'bg-slate-100 text-slate-500 border-slate-200 hover:border-orange-300'
+                  return (
+                    <button key={s.column} onClick={() => pick(s)} disabled={filled || byOther}
+                      className={`w-9 h-9 rounded-lg border text-xs font-bold transition-colors ${cls}`}>{s.column}</button>
+                  )
+                }
+                return (
+                  <div key={rowNum} className="flex items-center justify-center gap-2">
+                    <div className="flex gap-1.5">{left.map(SeatBtn)}</div>
+                    <span className="w-6 text-center text-xs font-bold text-slate-400">{rowNum}</span>
+                    <div className="flex gap-1.5">{right.map(SeatBtn)}</div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-slate-100">
+          {err && !loading && rows.length > 0 && <p className="text-xs text-red-600 mb-2 text-center">{err}</p>}
+          <button onClick={save} disabled={saving || loading || !allPicked}
+            className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+            {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Menyimpan...</> : 'Simpan'}
           </button>
         </div>
       </div>

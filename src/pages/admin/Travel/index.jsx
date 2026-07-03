@@ -167,6 +167,11 @@ export default function AdminTravel() {
                       <p className="text-sm font-semibold text-slate-900 mt-1">{b.originName || b.origin} → {b.destinationName || b.destination}</p>
                       <p className="text-xs text-slate-500">{b.serviceName} · {b.class || '-'} · {b.pax} pax · {fmt(b.departDate)}</p>
                       <p className="text-[11px] text-slate-400 mt-0.5">{b.user?.name} · {b.user?.email} · dibuat {fmt(b.createdAt)}</p>
+                      {b.meta?.book?.contact?.email && (
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          <span className="font-semibold text-slate-600">Pemesan:</span> {b.meta.book.contact.name || '-'} · {b.meta.book.contact.phone || '-'} · {b.meta.book.contact.email}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="text-right shrink-0">
