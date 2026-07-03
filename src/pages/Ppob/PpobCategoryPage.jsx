@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -8,14 +8,15 @@ import { formatRupiah } from '@/utils'
 import { useAuthStore } from '@/store/authStore'
 import {
   Smartphone, Wifi, Zap, Lightbulb, Droplets, HeartPulse, Router, Wallet,
-  ChevronLeft, AlertCircle, Loader2, CheckCircle,
+  ChevronLeft, AlertCircle, Loader2, CheckCircle, Tv, CreditCard, Landmark, Car, Receipt,
 } from 'lucide-react'
 import PpobPulsaDataView from './PpobPulsaDataView'
 import PpobPlnView from './PpobPlnView'
 import PpobEwalletView from './PpobEwalletView'
+import PpobGameView from './PpobGameView'
 import PpobConfirmModal from './PpobConfirmModal'
 
-const ICONS = { Smartphone, Wifi, Zap, Lightbulb, Droplets, HeartPulse, Router, Wallet }
+const ICONS = { Smartphone, Wifi, Zap, Lightbulb, Droplets, HeartPulse, Router, Wallet, Tv, CreditCard, Landmark, Car, Receipt }
 
 export default function PpobCategoryPage() {
   const { t } = useTranslation()
@@ -40,6 +41,10 @@ export default function PpobCategoryPage() {
   const [inquiry, setInquiry] = useState(null)
   const [extraParams, setExtraParams] = useState({}) // utk PLN nominal & sejenisnya
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const openAfterInquiry = useRef(false) // PLN prabayar: buka modal konfirmasi setelah cek nama
+
+  // Reset inquiry bila nomor/nominal berubah — hindari data cek yang basi.
+  useEffect(() => { setInquiry(null) }, [customerNumber, extraParams.nominal])
 
   const { data: categories = [] } = useQuery({
     queryKey: ['ppob-categories'],
@@ -50,7 +55,7 @@ export default function PpobCategoryPage() {
 
   // Auto-select category untuk single-category groups
   useEffect(() => {
-    if (['pulsa-data', 'pln', 'ewallet'].includes(group) && !selectedCategory && groupCategories.length === 1) {
+    if (['pulsa-data', 'pln', 'ewallet', 'game'].includes(group) && !selectedCategory && groupCategories.length === 1) {
       setSelectedCategory(groupCategories[0])
     }
   }, [group, groupCategories, selectedCategory])
@@ -65,10 +70,19 @@ export default function PpobCategoryPage() {
   const inquiryMutation = useMutation({
     mutationFn: (d) => ppobApi.inquiry(d).then(r => r.data),
     onSuccess: (data) => {
-      if (data.success) setInquiry(data.data)
-      else toast({ title: 'Inquiry gagal', description: data.message, variant: 'destructive' })
+      if (data.success) {
+        setInquiry(data.data)
+        // PLN prabayar: begitu nama pelanggan didapat, langsung buka modal konfirmasi.
+        if (openAfterInquiry.current) { openAfterInquiry.current = false; setConfirmOpen(true) }
+      } else {
+        openAfterInquiry.current = false
+        toast({ title: 'Inquiry gagal', description: data.message, variant: 'destructive' })
+      }
     },
-    onError: (e) => toast({ title: 'Inquiry gagal', description: e?.response?.data?.message, variant: 'destructive' }),
+    onError: (e) => {
+      openAfterInquiry.current = false
+      toast({ title: 'Inquiry gagal', description: e?.response?.data?.message, variant: 'destructive' })
+    },
   })
 
   // PREPAID 1-step purchase
@@ -131,6 +145,13 @@ export default function PpobCategoryPage() {
       return
     }
 
+    // PLN Prabayar (token): cek pelanggan dulu agar nama tampil di modal konfirmasi.
+    if (group === 'pln' && extraParams.nominal && !inquiry) {
+      openAfterInquiry.current = true
+      triggerInquiry(selectedProduct, customerNumber)
+      return
+    }
+
     setConfirmOpen(true)
   }
 
@@ -168,6 +189,7 @@ export default function PpobCategoryPage() {
   const isPulsaData = group === 'pulsa-data'
   const isPln       = group === 'pln'
   const isEwallet   = group === 'ewallet'
+  const isGame      = group === 'game'
 
   return (
     <div className="bg-slate-50 sm:bg-transparent min-h-[60vh] pb-32 sm:pb-28">
@@ -243,8 +265,21 @@ export default function PpobCategoryPage() {
         />
       )}
 
-      {/* ════════ LAYOUT LAMA: Tagihan / Game ════════ */}
-      {!isPulsaData && !isPln && !isEwallet && (
+      {/* ════════ LAYOUT BARU: GAME ONLINE (pilih game → User ID/Server → nominal) ════════ */}
+      {isGame && selectedCategory && (
+        <PpobGameView
+          products={products}
+          loadingProducts={loadingProducts}
+          customerNumber={customerNumber}
+          onCustomerChange={(v) => { setCustomerNumber(v); setInquiry(null) }}
+          selectedProduct={selectedProduct}
+          onSelectProduct={setSelectedProduct}
+          onExtraChange={setExtraParams}
+        />
+      )}
+
+      {/* ════════ LAYOUT LAMA: Tagihan (pascabayar/prabayar generik) ════════ */}
+      {!isPulsaData && !isPln && !isEwallet && !isGame && (
         <>
           {/* Step 1: Pilih kategori */}
           <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4">
@@ -350,6 +385,7 @@ export default function PpobCategoryPage() {
       {/* CTA — sticky bottom on mobile */}
       {selectedProduct && (selectedCategory?.type !== 'pascabayar' || inquiry) && (() => {
         const submitting = purchaseMutation.isPending || confirmPayMutation.isPending
+        const checking   = inquiryMutation.isPending
         const hasNominal = !!extraParams.nominal
         // Variable nominal (PLN Prabayar & E-Wallet open denom): nominal di extra
         // Pulsa fixed nominal: priceSell langsung
@@ -358,7 +394,7 @@ export default function PpobCategoryPage() {
           ?? (hasNominal ? Number(extraParams.nominal) : selectedProduct?.priceSell)
         // PLN/E-Wallet: kalau belum inquiry & belum pilih nominal → disable
         const needsNominal = (isPln || isEwallet) && !inquiry && !hasNominal
-        const ctaDisabled = submitting || needsNominal || !totalAmount
+        const ctaDisabled = submitting || checking || needsNominal || !totalAmount
         return (
           // Sticky CTA bottom — visible di mobile + desktop tanpa perlu scroll.
           <div className="fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] sm:pb-4">
@@ -368,7 +404,7 @@ export default function PpobCategoryPage() {
                 disabled={ctaDisabled}
                 className="w-full py-3.5 sm:py-4 bg-brand text-white rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-brand/30 transition-all"
               >
-                {submitting ? 'Membuat transaksi...' : `Lanjut Bayar · ${formatRupiah(totalAmount)}`}
+                {checking ? 'Mengecek pelanggan...' : submitting ? 'Membuat transaksi...' : `Lanjut Bayar · ${formatRupiah(totalAmount)}`}
               </button>
             </div>
           </div>
@@ -384,6 +420,7 @@ export default function PpobCategoryPage() {
         isLoading={purchaseMutation.isPending || confirmPayMutation.isPending}
         product={selectedProduct}
         customerNumber={customerNumber}
+        customerName={inquiry?.customer?.name}
         customerLabel={meta?.label || 'Nomor Tujuan'}
         operatorLabel={selectedProduct?.operator || meta?.title}
         totalAmount={inquiry?.pricing?.totalAmount ?? (extraParams.nominal ? Number(extraParams.nominal) : selectedProduct?.priceSell)}
@@ -392,7 +429,9 @@ export default function PpobCategoryPage() {
             ? 'Pastikan nomor meter & nominal sudah benar. Token akan terbit untuk meter ini.'
             : isEwallet
               ? 'Saldo akan masuk ke nomor e-wallet ini. Tidak bisa dialihkan setelah konfirmasi.'
-              : 'Pulsa/paket akan dikirim ke nomor ini. Tidak bisa dialihkan setelah konfirmasi.'
+              : isGame
+                ? 'Item akan dikirim ke akun game ini. Pastikan User ID (dan Server/Zone) sudah benar — tidak bisa dibatalkan.'
+                : 'Pulsa/paket akan dikirim ke nomor ini. Tidak bisa dialihkan setelah konfirmasi.'
         }
       />
     </div>

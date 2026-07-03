@@ -898,6 +898,7 @@
     "product": "Produk",
     "code": "Kode",
     "billOrPrice": "Tagihan / Harga",
+    "serviceFee": "Biaya layanan",
     "subtotal": "Subtotal",
     "uniqueCode": "Kode unik",
     "totalTransfer": "Total Transfer",

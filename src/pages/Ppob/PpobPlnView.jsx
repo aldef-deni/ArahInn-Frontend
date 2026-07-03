@@ -280,8 +280,8 @@ export default function PpobPlnView({
             </button>
           )}
 
-          {/* Inquiry result */}
-          {inquiry && (
+          {/* Inquiry result — hanya untuk pascabayar/non-taglist (prabayar tampil di modal konfirmasi) */}
+          {inquiry && subtype !== 'prabayar' && (
             <div className="mt-4 p-3.5 sm:p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle className="w-4 h-4 text-emerald-600" />

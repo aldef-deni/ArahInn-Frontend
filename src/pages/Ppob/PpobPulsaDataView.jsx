@@ -17,18 +17,23 @@ import { Smartphone, Wifi, AlertCircle, Loader2, ChevronDown, Check } from 'luci
  *   onSelectProduct
  */
 
-// Prefix nomor HP Indonesia → operator (cocok dengan p.operator dari backend).
+// Prefix nomor HP Indonesia (4 digit) → operator (cocok dengan p.operator dari backend).
 const OPERATOR_PREFIXES = {
   Telkomsel: ['0811','0812','0813','0821','0822','0823','0851','0852','0853'],
   Indosat:   ['0814','0815','0816','0855','0856','0857','0858'],
   XL:        ['0817','0818','0819','0859','0877','0878'],
-  Axis:      ['0832','0833','0838'],
+  Axis:      ['0831','0832','0833','0838'],
   Tri:       ['0895','0896','0897','0898','0899'],
   Smartfren: ['0881','0882','0883','0884','0885','0886','0887','0888','0889'],
 }
 
+// byU (sub-brand Telkomsel) memakai blok 0851 — dibedakan lewat prefix 5 digit.
+// Bila prefix ini tidak persis dengan alokasi byU Anda, tinggal sesuaikan daftar ini.
+const BYU_PREFIXES = ['08515','08516','08517','08518','08519']
+
 const OPERATOR_STYLES = {
   Telkomsel: { color: '#dc2626', bg: 'bg-red-500',     accent: 'text-red-600',     border: 'border-red-500' },
+  byU:       { color: '#7c3aed', bg: 'bg-violet-600',  accent: 'text-violet-600',  border: 'border-violet-600' },
   Indosat:   { color: '#facc15', bg: 'bg-yellow-400',  accent: 'text-yellow-600',  border: 'border-yellow-400' },
   XL:        { color: '#0ea5e9', bg: 'bg-sky-500',     accent: 'text-sky-600',     border: 'border-sky-500' },
   Axis:      { color: '#6366f1', bg: 'bg-indigo-500',  accent: 'text-indigo-600',  border: 'border-indigo-500' },
@@ -37,10 +42,12 @@ const OPERATOR_STYLES = {
   Fren:      { color: '#737373', bg: 'bg-neutral-500', accent: 'text-neutral-600', border: 'border-neutral-500' },
 }
 
-const OPERATORS_LIST = ['Telkomsel', 'Indosat', 'XL', 'Axis', 'Tri', 'Smartfren']
+const OPERATORS_LIST = ['Telkomsel', 'byU', 'Indosat', 'XL', 'Axis', 'Tri', 'Smartfren']
 
 function detectOperator(phone) {
   if (!phone || phone.length < 4) return null
+  // byU dulu (prefix 5 digit di blok 0851), agar tak tertukar dengan Telkomsel.
+  if (phone.length >= 5 && BYU_PREFIXES.includes(phone.substring(0, 5))) return 'byU'
   const prefix = phone.substring(0, 4)
   for (const [op, prefixes] of Object.entries(OPERATOR_PREFIXES)) {
     if (prefixes.includes(prefix)) return op
@@ -48,13 +55,81 @@ function detectOperator(phone) {
   return null
 }
 
-// Klasifikasi: produk dengan keyword data → Data, sisanya Pulsa.
+// Produk byU (sub-brand Telkomsel) — dipisah ke grup operator "byU" tersendiri.
+function isByUProduct(name) {
+  return /\bBYU\b|BY\.?U\b/.test(name)
+}
+
+// Varian pulsa NON-REGULER (transfer, nelpon/SMS, perpanjang masa aktif) —
+// disembunyikan dari tab Pulsa agar hanya isi ulang nominal standar yang tampil.
+function isSpecialPulsa(name) {
+  return /TRANSFER|NELPON|NELPUN|\bMENIT\b|TELEPON|\bSMS\b|MASA\s*AKTIF|TAMBAH\s*MASA/.test(name)
+}
+
+// Klasifikasi:
+//   'data'  → produk paket data (keyword)
+//   'other' → varian pulsa khusus (transfer/nelpon/masa aktif/byU) → DISEMBUNYIKAN
+//   'pulsa' → pulsa reguler (isi ulang nominal) → tampil di tab Pulsa
 function classifyType(p) {
   const name = (p.name || '').toUpperCase()
   if (/DATA|GB\b|MB\b|KUOTA|PAKET|FLASH|ORBIT|HOOQ|HOTROD|FREEDOM|YELLOW|XTRA|UNLIMIT|NETFLIX|XCS|VPN|ROAMING/.test(name)) {
     return 'data'
   }
+  if (isSpecialPulsa(name)) return 'other'
   return 'pulsa'
+}
+
+// Nominal pulsa reguler yang ANDAL. Penamaan vendor tidak konsisten:
+// "200RB"=200rb, "1000RB"=1jt, tapi "35000RB"=35rb (angka sudah rupiah).
+// Solusi: ambil angka terakhir dari nama, lalu pilih interpretasi (rupiah vs ×1000)
+// yang PALING DEKAT dengan harga jual — harga = sumber kebenaran.
+function pulsaNominal(p) {
+  const price = Number(p.priceSell ?? p.price_sell) || 0
+  const groups = (p.name || '').match(/[\d][\d.]*/g)
+  let n = groups ? parseInt(groups[groups.length - 1].replace(/\./g, ''), 10) : 0
+  if (!n) return Number(p.nominal) || price
+  const cands = [n, n * 1000]
+  return cands.reduce((best, c) => (Math.abs(c - price) < Math.abs(best - price) ? c : best))
+}
+
+// Format nominal: 5000 → "5 Ribu", 200000 → "200 Ribu", 1000000 → "1 Juta".
+function formatNominalLabel(n) {
+  if (n >= 1000000) {
+    const juta = n / 1000000
+    return `${juta % 1 === 0 ? juta : juta.toFixed(1).replace('.', ',')} Juta`
+  }
+  const ribu = n / 1000
+  return `${ribu % 1 === 0 ? ribu : ribu.toFixed(1).replace('.', ',')} Ribu`
+}
+
+// Area/region paket data (banyak paket data bersifat regional). Terdeteksi dari NAMA
+// produk; tanpa kata kunci area → 'nasional' (selalu ditampilkan). Urutan = urutan tampil.
+const DATA_REGIONS = {
+  jabodetabek: { label: 'Jabodetabek',      kw: /JABODETABEK|JADETABEK|JABOTABEK|BODETABEK|\bDKI\b|\bJAKARTA\b|\bBEKASI\b|\bDEPOK\b|TANGERANG|\bBOGOR\b/ },
+  jabar:       { label: 'Jawa Barat',        kw: /\bJABAR\b|JAWA\s*BARAT|WEST\s*JAVA|\bBANDUNG\b|CIREBON|PRIANGAN|TASIKMALAYA|SUKABUMI/ },
+  jateng:      { label: 'Jawa Tengah & DIY', kw: /\bJATENG\b|JAWA\s*TENGAH|CENTRAL\s*JAVA|\bDIY\b|YOGYA|JOGJA|SEMARANG|\bSOLO\b|PURWOKERTO|MAGELANG/ },
+  jatim:       { label: 'Jawa Timur',        kw: /\bJATIM\b|JAWA\s*TIMUR|EAST\s*JAVA|SURABAYA|\bMALANG\b|MADURA|\bKEDIRI\b|JEMBER/ },
+  balinusra:   { label: 'Bali & Nusra',      kw: /\bBALI\b|NUSRA|NUSA\s*TENGGARA|\bNTB\b|\bNTT\b|LOMBOK|DENPASAR|MATARAM|KUPANG/ },
+  sumatera:    { label: 'Sumatera',          kw: /SUMATERA|SUMATRA|SUMBAGUT|SUMBAGTENG|SUMBAGSEL|\bSUMUT\b|\bSUMSEL\b|\bSUMBAR\b|\bACEH\b|\bMEDAN\b|PALEMBANG|LAMPUNG|\bRIAU\b|\bPADANG\b|\bJAMBI\b|BENGKULU|\bBATAM\b|PEKANBARU/ },
+  kalimantan:  { label: 'Kalimantan',        kw: /KALIMANTAN|\bKALBAR\b|\bKALTIM\b|\bKALSEL\b|\bKALTENG\b|KALTARA|BALIKPAPAN|PONTIANAK|BANJARMASIN|SAMARINDA/ },
+  sulawesipua: { label: 'Sulawesi & Indonesia Timur', kw: /SULAWESI|\bSULSEL\b|\bSULUT\b|SULTENG|\bSULBAR\b|SULTRA|MAKASSAR|MANADO|\bPAPUA\b|\bMALUKU\b|\bAMBON\b|JAYAPURA|\bPUMA\b|SULMAPA|GORONTALO|TERNATE/ },
+}
+
+function detectDataRegion(name) {
+  const up = (name || '').toUpperCase()
+  for (const [key, r] of Object.entries(DATA_REGIONS)) {
+    if (r.kw.test(up)) return key
+  }
+  return 'nasional'
+}
+
+// Seragamkan penyebutan operator pada nama produk (vendor tak konsisten:
+// "TSEL" vs "TELKOMSEL", dst). Dipakai untuk nama paket data yang ditampilkan apa adanya.
+function normalizeOperatorName(name) {
+  return (name || '')
+    .replace(/\bTSEL\b/gi, 'TELKOMSEL')
+    .replace(/\bISAT\b/gi, 'INDOSAT')
+    .replace(/\bSF\b/gi, 'SMARTFREN')
 }
 
 export default function PpobPulsaDataView({
@@ -68,6 +143,7 @@ export default function PpobPulsaDataView({
   const [activeTab, setActiveTab]     = useState('pulsa')
   const [overrideOp, setOverrideOp]   = useState(null) // user manual pick
   const [showOpPicker, setShowOpPicker] = useState(false)
+  const [dataArea, setDataArea]       = useState('nasional') // area paket data terpilih
 
   const detectedOp = detectOperator(customerNumber)
   const activeOp   = overrideOp || detectedOp
@@ -77,19 +153,32 @@ export default function PpobPulsaDataView({
     if (detectedOp && overrideOp && detectedOp !== overrideOp) setOverrideOp(null)
   }, [detectedOp]) // eslint-disable-line
 
+  // Reset pilihan area saat ganti operator
+  useEffect(() => { setDataArea('nasional') }, [activeOp])
+
   // Group products by operator + type
   const grouped = useMemo(() => {
     const out = {}
     OPERATORS_LIST.forEach(op => out[op] = { pulsa: [], data: [] })
     for (const p of products) {
-      const op = OPERATORS_LIST.includes(p.operator) ? p.operator : null
-      if (!op) continue
+      const name = (p.name || '').toUpperCase()
+      // byU dipisah ke grup "byU"; produk Telkomsel byU TIDAK muncul di grup Telkomsel.
+      const op = isByUProduct(name) ? 'byU' : (OPERATORS_LIST.includes(p.operator) ? p.operator : null)
+      if (!op || op === 'Fren') continue
       const type = classifyType(p)
-      out[op][type].push(p)
+      if (type === 'other') continue   // sembunyikan varian khusus (transfer/nelpon/masa aktif)
+      if (type === 'pulsa') {
+        // Nama bersih: "{Operator} {Nominal} Ribu/Juta" (buang "SIMPATI / AS" dll).
+        const nominal = pulsaNominal(p)
+        out[op].pulsa.push({ ...p, _nominal: nominal, _display: `${op} ${formatNominalLabel(nominal)}` })
+      } else {
+        // Data: tandai area/region + seragamkan nama operator (TSEL → TELKOMSEL).
+        out[op].data.push({ ...p, _region: detectDataRegion(name), _display: normalizeOperatorName(p.name) })
+      }
     }
-    // Sort ascending by nominal/price
+    // Sort ascending by nominal (pulsa) / harga (data)
     OPERATORS_LIST.forEach(op => {
-      out[op].pulsa.sort((a, b) => (a.nominal || a.priceSell) - (b.nominal || b.priceSell))
+      out[op].pulsa.sort((a, b) => (a._nominal || 0) - (b._nominal || 0))
       out[op].data.sort((a, b) => (a.priceSell || 0) - (b.priceSell || 0))
     })
     return out
@@ -97,6 +186,17 @@ export default function PpobPulsaDataView({
 
   const availableOps = OPERATORS_LIST.filter(op => grouped[op].pulsa.length + grouped[op].data.length > 0)
   const opProducts   = activeOp ? grouped[activeOp]?.[activeTab] || [] : []
+
+  // Area yang tersedia pada paket data operator aktif (selain nasional), sesuai urutan DATA_REGIONS.
+  const availableAreas = useMemo(() => {
+    const set = new Set((grouped[activeOp]?.data || []).map(p => p._region))
+    return Object.keys(DATA_REGIONS).filter(k => set.has(k))
+  }, [grouped, activeOp])
+
+  // Paket data disaring per area: tampilkan area terpilih + Nasional, sisanya hide.
+  const shownProducts = activeTab === 'data'
+    ? opProducts.filter(p => p._region === 'nasional' || p._region === dataArea)
+    : opProducts
 
   return (
     <div className="space-y-3 sm:space-y-4">
@@ -198,24 +298,53 @@ export default function PpobPulsaDataView({
             })}
           </div>
 
+          {/* Pilih area (paket data regional) — area terpilih + Nasional yang tampil */}
+          {activeTab === 'data' && availableAreas.length > 0 && (
+            <div className="mb-4">
+              <p className="text-[11px] sm:text-xs font-bold text-slate-500 mb-1.5">Area kartu</p>
+              <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+                {['nasional', ...availableAreas].map(area => {
+                  const label = area === 'nasional' ? 'Nasional' : DATA_REGIONS[area].label
+                  const on = dataArea === area
+                  return (
+                    <button
+                      key={area}
+                      onClick={() => { setDataArea(area); onSelectProduct(null) }}
+                      className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                        on ? 'bg-brand text-white border-brand' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="mt-1.5 text-[10px] sm:text-[11px] text-slate-400 flex items-start gap-1">
+                <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                Area tidak bisa dideteksi dari nomor — pilih sesuai kartu. Paket Nasional selalu tampil.
+              </p>
+            </div>
+          )}
+
           {/* Product grid */}
           {loadingProducts && (
             <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 py-6">
               <Loader2 className="w-4 h-4 animate-spin" /> Memuat produk...
             </div>
           )}
-          {!loadingProducts && opProducts.length === 0 && (
+          {!loadingProducts && shownProducts.length === 0 && (
             <div className="text-center py-10">
               <AlertCircle className="w-10 h-10 text-slate-300 mx-auto mb-2" />
               <p className="text-sm text-slate-500 font-medium">
-                Belum ada {activeTab === 'pulsa' ? 'pulsa' : 'paket data'} untuk {activeOp}.
+                Belum ada {activeTab === 'pulsa' ? 'pulsa' : 'paket data'} untuk {activeOp}
+                {activeTab === 'data' && dataArea !== 'nasional' ? ` area ${DATA_REGIONS[dataArea]?.label}` : ''}.
               </p>
-              <p className="text-[11px] text-slate-400 mt-1">Coba operator lain atau cek lagi nanti.</p>
+              <p className="text-[11px] text-slate-400 mt-1">Coba operator/area lain atau cek lagi nanti.</p>
             </div>
           )}
-          {!loadingProducts && opProducts.length > 0 && (
+          {!loadingProducts && shownProducts.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
-              {opProducts.map(p => {
+              {shownProducts.map(p => {
                 const active = selectedProduct?.id === p.id
                 const styles = OPERATOR_STYLES[activeOp]
                 return (
@@ -232,7 +361,7 @@ export default function PpobPulsaDataView({
                     <div className={`absolute top-0 right-0 w-8 h-8 ${styles.bg} opacity-10 rounded-bl-3xl`} />
 
                     <p className="text-[11px] sm:text-xs font-semibold text-slate-700 leading-tight line-clamp-2 min-h-[28px] sm:min-h-[32px] relative">
-                      {p.name}
+                      {p._display || p.name}
                     </p>
                     <div className="mt-2 flex items-baseline gap-1 relative">
                       <span className="text-sm sm:text-base font-bold text-brand">{formatRupiah(p.priceSell)}</span>

@@ -24,10 +24,12 @@ import {
 export default function PpobConfirmModal({
   open, onClose, onConfirm, isLoading,
   product, customerNumber, customerLabel,
-  totalAmount, operatorLabel, note,
+  totalAmount, operatorLabel, note, customerName,
 }) {
   const { t } = useTranslation()
   customerLabel = customerLabel || t('topup.phoneNumber')
+  // Buang istilah internal ("H2H", "Open Denom") dari nama produk yang tampil ke customer.
+  const displayName = (product?.name || '-').replace(/\b(?:H2H|OPEN\s*DENOM)\b/gi, '').replace(/\s{2,}/g, ' ').trim() || '-'
   // Lock body scroll while open
   useEffect(() => {
     if (!open) return
@@ -96,7 +98,7 @@ export default function PpobConfirmModal({
                     </p>
                   )}
                   <p className="font-bold text-slate-900 text-sm sm:text-base leading-snug mt-0.5">
-                    {product?.name || '-'}
+                    {displayName}
                   </p>
                 </div>
               </div>
@@ -104,6 +106,7 @@ export default function PpobConfirmModal({
 
             {/* Detail rows */}
             <div className="space-y-3 mb-5">
+              {customerName && <DetailRow label={t('ppob.nameLabel')} value={customerName} />}
               <DetailRow label={customerLabel} value={customerNumber} mono />
               <div className="border-t border-dashed border-slate-200 my-3" />
               <div className="flex items-end justify-between gap-3">

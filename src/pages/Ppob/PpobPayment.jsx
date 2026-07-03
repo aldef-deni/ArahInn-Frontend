@@ -11,6 +11,11 @@ import {
 } from 'lucide-react'
 import SEO from '@/components/SEO'
 
+// Buang istilah internal ("H2H", "Open Denom") dari nama produk yang tampil ke customer.
+function cleanProductName(name) {
+  return (name || '-').replace(/\b(?:H2H|OPEN\s*DENOM)\b/gi, '').replace(/\s{2,}/g, ' ').trim() || '-'
+}
+
 function useCountdown(expiresAt) {
   const [secs, setSecs] = useState(0)
   useEffect(() => {
@@ -81,6 +86,13 @@ export default function PpobPayment() {
   const { display: countdown, expired } = useCountdown(expiresAt)
 
   const totalAmount = Number(trx?.pricing?.totalAmount || 0)
+  // Rincian harga yang menjumlah benar (hindari admin dobel):
+  //   pricing.tagihan (price_buy) SUDAH termasuk admin → base = tagihan - admin.
+  //   service = total - tagihan (markup/biaya layanan, mis. token PLN prabayar).
+  const adminFee    = Number(trx?.pricing?.adminFee || 0)
+  const priceBuy    = Number(trx?.pricing?.tagihan) || totalAmount
+  const basePrice   = Math.max(0, priceBuy - adminFee)
+  const serviceFee  = Math.max(0, totalAmount - priceBuy)
   // Kode unik 3 digit deterministik dari trx_code agar konsisten saat refetch
   const uniqueCode = (() => {
     if (!trxCode) return 0
@@ -162,7 +174,7 @@ export default function PpobPayment() {
         <div className="flex items-start justify-between gap-3 mb-3 pb-3 border-b border-slate-100">
           <div className="min-w-0">
             <p className="text-[10px] sm:text-xs uppercase tracking-wide text-slate-400 font-bold">{t('ppob.product')}</p>
-            <p className="font-bold text-sm sm:text-base text-slate-900 line-clamp-2">{trx.product?.name}</p>
+            <p className="font-bold text-sm sm:text-base text-slate-900 line-clamp-2">{cleanProductName(trx.product?.name)}</p>
             <p className="text-xs text-slate-500 mt-0.5 font-mono">{trx.customer?.number}</p>
           </div>
           <div className="text-right shrink-0">
@@ -172,9 +184,12 @@ export default function PpobPayment() {
         </div>
 
         <div className="space-y-1.5 text-xs sm:text-sm">
-          <Row label={t('ppob.billOrPrice')} value={formatRupiah(trx.pricing?.tagihan || totalAmount)} />
-          {Number(trx.pricing?.adminFee || 0) > 0 && (
-            <Row label={t('ppob.adminFee')} value={formatRupiah(trx.pricing?.adminFee)} />
+          <Row label={t('ppob.billOrPrice')} value={formatRupiah(basePrice)} />
+          {adminFee > 0 && (
+            <Row label={t('ppob.adminFee')} value={formatRupiah(adminFee)} />
+          )}
+          {serviceFee > 0 && (
+            <Row label={t('ppob.serviceFee')} value={formatRupiah(serviceFee)} />
           )}
           <Row label={t('ppob.subtotal')} value={formatRupiah(totalAmount)} />
           {paymentMode === 'manual' && (
@@ -544,7 +559,7 @@ function SuccessView({ trx, navigate }) {
       {/* ── Trx info summary ────────────────────────────── */}
       <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 sm:p-4 mb-5">
         <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
-          <InfoCell label={t('ppob.product')} value={trx.product?.name} />
+          <InfoCell label={t('ppob.product')} value={cleanProductName(trx.product?.name)} />
           <InfoCell label={t('ppob.destNumber')} value={trx.customer?.number} mono />
           <InfoCell label={t('ppob.trxCodeLabel')} value={trx.trxCode} mono />
           <InfoCell label={t('ppob.totalPaid')} value={formatRupiah(trx.pricing?.totalAmount || 0)} accent="brand" />

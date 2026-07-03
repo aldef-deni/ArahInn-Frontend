@@ -898,6 +898,7 @@
     "product": "Product",
     "code": "Code",
     "billOrPrice": "Bill / Price",
+    "serviceFee": "Service fee",
     "subtotal": "Subtotal",
     "uniqueCode": "Unique code",
     "totalTransfer": "Total Transfer",
