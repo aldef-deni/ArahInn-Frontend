@@ -58,6 +58,7 @@ import PrivacyPolicy from '@/pages/Legal/PrivacyPolicy'
 import FlightRequirements from '@/pages/Legal/FlightRequirements'
 import FlightPolicy from '@/pages/Legal/FlightPolicy'
 import FlightRefund from '@/pages/Legal/FlightRefund'
+import TrainTerms from '@/pages/Legal/TrainTerms'
 import PelniFaq from '@/pages/Legal/PelniFaq'
 import SeawifiFaq from '@/pages/Legal/SeawifiFaq'
 import HelpCenter from '@/pages/HelpCenter'
@@ -340,6 +341,7 @@ export default function App() {
             <Route path="/penerbangan/persyaratan" element={<FlightRequirements />} />
             <Route path="/penerbangan/kebijakan" element={<FlightPolicy />} />
             <Route path="/penerbangan/refund" element={<FlightRefund />} />
+            <Route path="/tiket/kereta/syarat-ketentuan" element={<TrainTerms />} />
             <Route path="/kapal-laut/faq" element={<PelniFaq />} />
             <Route path="/kapal-laut/seawifi" element={<SeawifiFaq />} />
             <Route path="/syarat-ketentuan" element={<TermsAndConditions />} />

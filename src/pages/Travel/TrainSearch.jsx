@@ -10,6 +10,8 @@ import i18n from '@/i18n'
 import { travelApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
+import TravelPromoSection from '@/components/travel/TravelPromoSection'
+import bannerKai from '@/assets/banners/banner-kai.webp'
 
 // Tanggal LOKAL (YYYY-MM-DD) — JANGAN toISOString() (itu UTC, mundur sehari di WIB).
 const pad2 = (n) => String(n).padStart(2, '0')
@@ -280,20 +282,13 @@ export default function TrainSearch() {
 
       {/* Hero + form */}
       {showForm && (
-      <section className="bg-gradient-to-br from-orange-500 to-red-600 text-white">
-        <div className="container py-5 sm:py-7">
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
-              <TrainFront className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="font-display text-lg sm:text-xl font-bold leading-tight">{t('travel.trainTitle')}</h1>
-              <p className="text-[11px] sm:text-xs text-white/80">{t('travel.trainTagline')}</p>
-            </div>
-          </div>
-
+      <section className="relative">
+        {/* Banner KAI — full-width, kartu pencarian mengambang (gaya pesawat/pelni) */}
+        <img src={bannerKai} alt="Cari Tiket Kereta Api KAI ArahInn" width="1774" height="887"
+          className="block w-full h-auto" loading="eager" fetchpriority="high" />
+        <div className="container relative z-10 mt-[calc(80px-15vw)] sm:mt-[calc(100px-14vw)] lg:mt-[calc(120px-13vw)] pb-6 sm:pb-8">
           {/* Search card */}
-          <div className="bg-white rounded-2xl shadow-lg p-3.5 sm:p-4 text-slate-900">
+          <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl shadow-xl p-3.5 sm:p-4 text-slate-900">
             {/* Origin / Destination */}
             <div className="relative grid grid-cols-1 gap-2.5">
               <button onClick={() => setPicker('origin')} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-orange-400 text-left transition-colors">
@@ -361,6 +356,13 @@ export default function TrainSearch() {
           </div>
         </div>
       </section>
+      )}
+
+      {/* Section promo KHUSUS kereta api (KAI) — selalu tampil di body */}
+      {!searching && (
+        <section className="container pb-2">
+          <TravelPromoSection product="kereta" />
+        </section>
       )}
 
       {/* Results */}

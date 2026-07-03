@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Plane, Ship, Ticket, ArrowRight, Clock } from 'lucide-react'
+import { Plane, Ship, Ticket, TrainFront, ArrowRight, Clock } from 'lucide-react'
 import { promoApi } from '@/services/index'
 import { getImageUrl } from '@/utils'
 import { PromoDetailModal, checkIsUpcoming } from '@/components/PromoFlyerCarousel'
@@ -20,6 +20,12 @@ const CONFIG = {
     chipBg: 'bg-cyan-50', chipText: 'text-cyan-700', badge: 'text-cyan-600', link: 'text-cyan-600 hover:text-cyan-700',
     emptyBg: 'bg-cyan-50', emptyIcon: 'text-cyan-300',
     tTitle: 'travel.pelniPromoTitle', tSub: 'travel.pelniPromoSubtitle', tBadge: 'travel.pelniBadge', tEmpty: 'travel.pelniEmptyPrompt',
+  },
+  kereta: {
+    Icon: TrainFront, grad: 'from-orange-500 to-red-600', glow: 'shadow-orange-200/60',
+    chipBg: 'bg-orange-50', chipText: 'text-orange-700', badge: 'text-orange-600', link: 'text-orange-600 hover:text-orange-700',
+    emptyBg: 'bg-orange-50', emptyIcon: 'text-orange-300',
+    tTitle: 'travel.trainPromoTitle', tSub: 'travel.trainPromoSubtitle', tBadge: 'travel.trainBadge', tEmpty: 'travel.trainEmptyPrompt',
   },
 }
 

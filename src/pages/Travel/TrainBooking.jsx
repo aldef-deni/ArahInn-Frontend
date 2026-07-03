@@ -46,11 +46,25 @@ export default function TrainBooking() {
 
   useEffect(() => {
     if (!sel) { navigate('/tiket/kereta', { replace: true }); return }
-    setAdults(Array.from({ length: sel.adult || 1 }, emptyAdult))
-    setChildren(Array.from({ length: sel.child || 0 }, emptyChild))
-    setInfants(Array.from({ length: sel.infant || 0 }, emptyInfant))
-    setShowContact(true)  // modal Data Pemesan muncul otomatis setelah pilih kereta
+    // Pulihkan draft penumpang & kontak agar isian tak hilang saat balik (back).
+    let draft = null
+    try { draft = JSON.parse(sessionStorage.getItem('train_pax_draft') || 'null') } catch { draft = null }
+    const build = (count, make, saved) => Array.from({ length: count }, (_, i) => ({ ...make(), ...(saved?.[i] || {}) }))
+    setAdults(build(sel.adult || 1, emptyAdult, draft?.adults))
+    setChildren(build(sel.child || 0, emptyChild, draft?.children))
+    setInfants(build(sel.infant || 0, emptyInfant, draft?.infants))
+    const c = draft?.contact
+    const contactOk = !!(c?.name && c?.phone && c?.email)
+    if (c) setContact(prev => ({ ...prev, ...c }))
+    setContactDone(contactOk)
+    setShowContact(!contactOk)  // modal Data Pemesan muncul otomatis hanya bila kontak belum lengkap
   }, [sel, navigate])
+
+  // Simpan draft tiap perubahan (bertahan lintas navigasi dalam satu sesi).
+  useEffect(() => {
+    if (!adults.length && !children.length && !infants.length) return
+    try { sessionStorage.setItem('train_pax_draft', JSON.stringify({ adults, children, infants, contact })) } catch { /* abaikan */ }
+  }, [adults, children, infants, contact])
 
   if (!sel) return null
 
@@ -359,7 +373,13 @@ const nikError = adultNikError()
           sel={sel}
           initial={contact}
           onClose={() => setShowContact(false)}
-          onSubmit={(c) => { setContact(c); setContactDone(true); setShowContact(false); setError(null) }}
+          onSubmit={(c) => {
+            setContact(c); setContactDone(true); setShowContact(false); setError(null)
+            // Auto-isi nama & No. HP Penumpang Dewasa 1 dari data pemesan bila masih kosong (tetap bisa diubah).
+            setAdults(prev => prev.map((p, i) => i === 0
+              ? { ...p, name: p.name?.trim() ? p.name : c.name, phone: p.phone?.trim() ? p.phone : c.phone }
+              : p))
+          }}
         />
       )}
 
@@ -371,7 +391,7 @@ const nikError = adultNikError()
           seats={chosenSeats}
           price={{ ticketSub, markupSub, finalTotal, priceAdult, adult: sel.adult || 1, child: sel.child || 0, priceChild, originName: origin.namaStasiun }}
           onPickSeat={() => setShowSeatPicker(true)}
-          onConfirm={() => navigate(`/tiket/bayar/${bookingResult.code ?? bookingResult.id}`, { state: { moda: 'kereta' } })}
+          onConfirm={() => { try { sessionStorage.removeItem('train_pax_draft') } catch { /* abaikan */ } navigate(`/tiket/bayar/${bookingResult.code ?? bookingResult.id}`, { state: { moda: 'kereta' } }) }}
           onClose={() => setShowSeatSummary(false)}
         />
       )}
@@ -441,10 +461,10 @@ function ContactModal({ sel, initial, onClose, onSubmit }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50" onClick={onClose}>
+      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-md max-h-[92vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-4 sm:px-5 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center shrink-0"><Users className="w-4.5 h-4.5 text-orange-600" /></div>
             <div className="min-w-0">
@@ -452,11 +472,11 @@ function ContactModal({ sel, initial, onClose, onSubmit }) {
               <p className="text-[11px] text-slate-400">E-Tiket dikirim ke kontak ini</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 shrink-0"><X className="w-5 h-5" /></button>
         </div>
 
         {/* Body */}
-        <div className="px-5 py-4 space-y-3 max-h-[70vh] overflow-y-auto">
+        <div className="px-4 sm:px-5 py-4 space-y-3 flex-1 overflow-y-auto">
           {sel && <TripSummaryCard sel={sel} />}
           {err && (
             <div className="flex items-start gap-2 p-2.5 bg-red-50 border border-red-200 rounded-xl">
@@ -469,7 +489,7 @@ function ContactModal({ sel, initial, onClose, onSubmit }) {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-slate-100 bg-slate-50">
+        <div className="px-4 sm:px-5 py-3.5 border-t border-slate-100 bg-slate-50 shrink-0">
           <button onClick={handle}
             className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors">
             Lanjut ke Data Penumpang <ArrowRight className="w-4 h-4" />
@@ -490,6 +510,8 @@ function SeatSummaryModal({ sel, pax, seats, price, onPickSeat, onConfirm, onClo
     const num = (col || row) ? `${col}${row}` : (s.seatNumber || s.seat || '')
     return num ? `KURSI ${num}` : null
   }
+  // Wajib: setiap penumpang harus punya nomor kursi sebelum lanjut bayar.
+  const allSeatsChosen = pax.length > 0 && pax.every((_, i) => !!seatLabel(seats[i]))
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={onClose}>
       <div className="relative bg-slate-50 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-md max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -527,16 +549,23 @@ function SeatSummaryModal({ sel, pax, seats, price, onPickSeat, onConfirm, onClo
             </button>
             {showPrice && (
               <div className="px-4 pb-3 pt-1 space-y-1.5 text-sm border-t border-slate-100">
-                <div className="flex justify-between"><span className="text-slate-500">{price.originName} (Dewasa) x{price.adult}</span><span className="text-slate-900">{formatRupiah(price.priceAdult * price.adult)}</span></div>
-                {price.child > 0 && <div className="flex justify-between"><span className="text-slate-500">Anak x{price.child}</span><span className="text-slate-900">{formatRupiah(price.priceChild * price.child)}</span></div>}
-                {price.markupSub > 0 && <div className="flex justify-between"><span className="text-slate-500">Biaya Penanganan</span><span className="text-slate-900">{formatRupiah(price.markupSub)}</span></div>}
+                <div className="flex justify-between gap-3"><span className="text-slate-500 min-w-0 truncate">{price.originName} (Dewasa) x{price.adult}</span><span className="text-slate-900 shrink-0">{formatRupiah(price.priceAdult * price.adult)}</span></div>
+                {price.child > 0 && <div className="flex justify-between gap-3"><span className="text-slate-500 min-w-0 truncate">Anak x{price.child}</span><span className="text-slate-900 shrink-0">{formatRupiah(price.priceChild * price.child)}</span></div>}
+                {price.markupSub > 0 && <div className="flex justify-between gap-3"><span className="text-slate-500 min-w-0 truncate">Biaya Penanganan</span><span className="text-slate-900 shrink-0">{formatRupiah(price.markupSub)}</span></div>}
               </div>
             )}
           </div>
         </div>
 
         <div className="sticky bottom-0 bg-slate-50 p-4 border-t border-slate-200">
-          <button onClick={onConfirm} className="w-full py-3.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm flex items-center justify-center gap-2">
+          {!allSeatsChosen && (
+            <div className="flex items-start gap-2 p-2.5 mb-2.5 bg-amber-50 border border-amber-200 rounded-xl">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-800">Silakan pilih <strong>nomor kursi untuk semua penumpang</strong> dulu dengan menekan tombol <strong>“Nomor Kursi”</strong> sebelum lanjut ke pembayaran.</p>
+            </div>
+          )}
+          <button onClick={onConfirm} disabled={!allSeatsChosen}
+            className="w-full py-3.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
             Simpan &amp; Lanjut Bayar <ArrowRight className="w-4 h-4" />
           </button>
         </div>
@@ -612,8 +641,8 @@ function SeatPickerModal({ sel, paxCount, paxNames, bookingCode, transactionId, 
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50" onClick={onClose}>
-      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-sm max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <div className="bg-orange-500 text-white px-4 py-3 flex items-center justify-between rounded-t-2xl">
+      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-sm max-h-[92vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="bg-orange-500 text-white px-4 py-3 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <button onClick={onClose}><ChevronLeft className="w-5 h-5" /></button>
             <span className="font-bold text-sm">Pilih Nomor Kursi</span>
