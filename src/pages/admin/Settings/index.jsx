@@ -86,15 +86,15 @@ export default function AdminSettings() {
     queryFn : () => adminApi.getTravelServiceFee().then(r => r.data?.data),
   })
   const [tsf, setTsf] = useState({
-    pesawat: { amount: 0, percent: 0 },
+    pesawat: { amount: 0, percent: 0, adminAmount: 0 },
     pelni:   { amount: 0, percent: 0, adminAmount: 0 },
-    kereta:  { amount: 0, percent: 0 },
+    kereta:  { amount: 0, percent: 0, adminAmount: 0 },
   })
   useEffect(() => {
     if (tsfData) setTsf({
-      pesawat: { amount: tsfData.pesawat?.amount ?? 0, percent: tsfData.pesawat?.percent ?? 0 },
+      pesawat: { amount: tsfData.pesawat?.amount ?? 0, percent: tsfData.pesawat?.percent ?? 0, adminAmount: tsfData.pesawat?.adminAmount ?? 0 },
       pelni:   { amount: tsfData.pelni?.amount ?? 0,   percent: tsfData.pelni?.percent ?? 0, adminAmount: tsfData.pelni?.adminAmount ?? 0 },
-      kereta:  { amount: tsfData.kereta?.amount ?? 0,  percent: tsfData.kereta?.percent ?? 0 },
+      kereta:  { amount: tsfData.kereta?.amount ?? 0,  percent: tsfData.kereta?.percent ?? 0, adminAmount: tsfData.kereta?.adminAmount ?? 0 },
     })
   }, [tsfData])
   const setTsfField = (moda, field, val) => setTsf(s => ({ ...s, [moda]: { ...s[moda], [field]: val } }))
@@ -453,8 +453,8 @@ export default function AdminSettings() {
             <h2 className="text-base sm:text-lg font-bold text-slate-900">Biaya Penanganan</h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5 leading-relaxed">
               Biaya layanan tiket ke customer, <strong>berbeda per moda</strong>. Isi <strong>persentase</strong> (dari harga tiket) <em>atau</em> <strong>nominal</strong> (per penumpang). Persen &gt; 0 → persen yang dipakai.
-              <strong> Biaya Admin</strong> (nominal flat per pesanan) khusus <strong>Tiket Kapal Laut</strong>.
-              <strong> Kosong / 0 = tidak ditampilkan</strong> di checkout, email & invoice.
+              <strong> Biaya Admin</strong> (nominal flat per pesanan) untuk <strong>Tiket Kapal Laut &amp; Kereta Api</strong>. Khusus Kereta, di sisi customer: Nominal/Pax tampil sebagai <strong>“Convenience Fee”</strong>, Biaya Admin sebagai <strong>“Biaya Penanganan”</strong>.
+              <strong> Kosong / 0 = tidak ditampilkan</strong> di checkout, email &amp; invoice.
             </p>
           </div>
         </div>
@@ -480,12 +480,12 @@ export default function AdminSettings() {
                       onChange={e => setTsfField(moda, 'amount', e.target.value)}
                       className="w-full pl-8 pr-2.5 py-2.5 border border-slate-200 rounded-lg text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-500 disabled:bg-slate-100 disabled:text-slate-300" placeholder="0" />
                   </div>
-                  {/* Biaya Admin — nominal flat, HANYA Tiket Kapal Laut (PELNI) */}
-                  {moda === 'pelni' ? (
+                  {/* Biaya Admin — nominal flat per pesanan (Tiket Kapal Laut & Kereta Api) */}
+                  {(moda === 'pelni' || moda === 'kereta') ? (
                     <div className="relative w-28 sm:w-32">
                       <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-semibold">Rp</span>
-                      <input type="number" min={0} step={1000} value={tsf.pelni.adminAmount ?? 0}
-                        onChange={e => setTsfField('pelni', 'adminAmount', e.target.value)}
+                      <input type="number" min={0} step={1000} value={tsf[moda].adminAmount ?? 0}
+                        onChange={e => setTsfField(moda, 'adminAmount', e.target.value)}
                         className="w-full pl-8 pr-2.5 py-2.5 border border-slate-200 rounded-lg text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-sky-300 focus:border-sky-500" placeholder="0" />
                     </div>
                   ) : (
@@ -496,9 +496,9 @@ export default function AdminSettings() {
             </div>
             <button
               onClick={() => tsfMutation.mutate({
-                pesawat: { amount: parseInt(tsf.pesawat.amount) || 0, percent: parseFloat(tsf.pesawat.percent) || 0 },
+                pesawat: { amount: parseInt(tsf.pesawat.amount) || 0, percent: parseFloat(tsf.pesawat.percent) || 0, adminAmount: parseInt(tsf.pesawat.adminAmount) || 0 },
                 pelni:   { amount: parseInt(tsf.pelni.amount) || 0,   percent: parseFloat(tsf.pelni.percent) || 0, adminAmount: parseInt(tsf.pelni.adminAmount) || 0 },
-                kereta:  { amount: parseInt(tsf.kereta.amount) || 0,  percent: parseFloat(tsf.kereta.percent) || 0 },
+                kereta:  { amount: parseInt(tsf.kereta.amount) || 0,  percent: parseFloat(tsf.kereta.percent) || 0, adminAmount: parseInt(tsf.kereta.adminAmount) || 0 },
               })}
               disabled={tsfMutation.isPending}
               className="mt-4 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm active:scale-[0.97] transition-all disabled:opacity-40"

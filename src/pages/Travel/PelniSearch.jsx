@@ -12,6 +12,7 @@ import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 import LoaderArahInn from '@/components/LoaderArahInn'
 import TravelPromoSection from '@/components/travel/TravelPromoSection'
+import TravelErrorModal from '@/components/travel/TravelErrorModal'
 import bannerPelni from '@/assets/banners/banner-pelni.webp'
 
 const PELNI_LOADER_MESSAGES = [
@@ -109,8 +110,17 @@ export default function PelniSearch() {
       setResults(res.data?.data || [])
       setShowForm(false)
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
-    } catch (e) { setError(e?.response?.data?.message || t('travel.shipSearchError')) }
+    } catch (e) { setError(friendlyPelniError(e?.response?.data?.message)) }
     finally { setSearching(false) }
+  }
+
+  // Error vendor → pesan ramah untuk penumpang kapal laut.
+  function friendlyPelniError(raw) {
+    const s = String(raw || '').toLowerCase()
+    if (/no current schedule|schedule.*(not|un).*avail|no\s*schedule|tidak ada jadwal|not\s*found|kosong|\b33\b/.test(s)) {
+      return { title: t('travel.errNoScheduleTitle'), msg: t('travel.errNoSchedulePelniMsg') }
+    }
+    return { title: t('travel.errSearchTitle'), msg: t('travel.shipSearchError') }
   }
 
   const selectClass = async (ship, fare) => {
@@ -126,12 +136,12 @@ export default function PelniSearch() {
         subClass: fare.SUBCLASS, male: adult, female: 0,
       })
       if (!r.data?.success) {
-        setError(r.data?.message || 'Subkelas ini tidak bisa dipesan. Pilih subkelas atau jadwal lain.')
-        window.scrollTo({ top: 0, behavior: 'smooth' }); return
+        setError({ title: t('travel.errSubclassTitle'), msg: t('travel.errSubclassMsg') })
+        return
       }
     } catch (e) {
-      setError(e?.response?.data?.message || 'Subkelas ini tidak bisa dipesan saat ini. Pilih subkelas atau jadwal lain.')
-      window.scrollTo({ top: 0, behavior: 'smooth' }); return
+      setError({ title: t('travel.errSubclassTitle'), msg: t('travel.errSubclassMsg') })
+      return
     } finally { setChecking(null) }
 
     sessionStorage.setItem('pelni_selection', JSON.stringify({
@@ -193,7 +203,7 @@ export default function PelniSearch() {
       )}
 
       <section ref={resultsRef} className="container py-5">
-        {error && <div className="flex items-start gap-2 p-3.5 bg-red-50 border border-red-200 rounded-xl mb-4"><AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" /><p className="text-sm text-red-700">{error}</p></div>}
+        <TravelErrorModal error={error} onClose={() => setError(null)} accent="cyan" />
 
         {bookableShips.length > 0 && (
           <>

@@ -49,15 +49,29 @@ export default function TravelPayment() {
   const setTravelModa = useSetTravelModa()
   useEffect(() => { setTravelModa(b?.moda || hintModa || null); return () => setTravelModa(null) }, [b?.moda, hintModa, setTravelModa])
 
-  // Deadline bayar 12 menit (tiket pesawat) — di-anchor saat order pertama dibuka & disimpan,
-  // agar selalu mulai tepat 12:00 dan tak terpengaruh selisih jam server/klien (refresh tetap konsisten).
+  // Deadline countdown pembayaran — di-anchor ke jam CLIENT (localStorage) agar konsisten
+  // saat refresh/polling & bebas selisih jam server.
+  //  - Pesawat: window 12 menit.
+  //  - Kereta : sisa detik dari server (time_left_seconds) — skema ≤3jam=15mnt, >3jam=60mnt.
   useEffect(() => {
-    if (!b || b.moda !== 'pesawat' || b.status !== 'pending_payment') { setPayDeadline(null); return }
+    if (!b || b.status !== 'pending_payment') { setPayDeadline(null); return }
     const key = `pay_deadline_${b.id}`
-    let dl = Number(localStorage.getItem(key))
-    if (!dl || Number.isNaN(dl)) { dl = Date.now() + PAY_WINDOW_MS; localStorage.setItem(key, String(dl)) }
-    setPayDeadline(dl)
-  }, [b?.id, b?.moda, b?.status])
+    if (b.moda === 'pesawat') {
+      let dl = Number(localStorage.getItem(key))
+      if (!dl || Number.isNaN(dl)) { dl = Date.now() + PAY_WINDOW_MS; localStorage.setItem(key, String(dl)) }
+      setPayDeadline(dl)
+    } else if (b.moda === 'kereta') {
+      let dl = Number(localStorage.getItem(key))
+      if (!dl || Number.isNaN(dl)) {
+        if (b.timeLeftSeconds == null) { setPayDeadline(null); return }
+        dl = Date.now() + Math.max(0, Number(b.timeLeftSeconds)) * 1000
+        localStorage.setItem(key, String(dl))
+      }
+      setPayDeadline(dl)
+    } else {
+      setPayDeadline(null)
+    }
+  }, [b?.id, b?.moda, b?.status, b?.timeLeftSeconds])
 
   const copy = (text, field) => {
     try { navigator.clipboard?.writeText(String(text)) } catch { /* noop */ }
@@ -88,12 +102,12 @@ export default function TravelPayment() {
   const failed = ['failed', 'canceled', 'expired'].includes(b.status)
   const legLabel = (l) => l.leg === 'return' ? t('travel.tripReturn') : t('travel.tripDepart')
 
-  // Countdown 12 menit (khusus tiket pesawat)
+  // Countdown pembayaran (pesawat: 12 mnt; kereta: batas server 15/60 mnt)
   const remainMs  = payDeadline ? Math.max(0, payDeadline - now) : 0
   const cdMin = Math.floor(remainMs / 60000)
   const cdSec = Math.floor((remainMs % 60000) / 1000)
   const cdExpired = payDeadline ? remainMs <= 0 : false
-  const showCountdown = b.moda === 'pesawat' && b.status === 'pending_payment' && !!payDeadline
+  const showCountdown = b.status === 'pending_payment' && !!payDeadline
 
   return (
     <div className="min-h-[70vh] bg-slate-50">
@@ -201,8 +215,8 @@ export default function TravelPayment() {
             ) : (
               <>
                 <div className="flex justify-between"><span className="text-slate-500">{t('travel.ticketPriceLabel')}</span><span className="text-slate-900">{formatRupiah(b.vendorPrice)}</span></div>
-                {b.markup > 0 && <div className="flex justify-between"><span className="text-slate-500">{t('travel.serviceFee')}</span><span className="text-slate-900">{formatRupiah(b.markup)}</span></div>}
-                {b.adminFee > 0 && <div className="flex justify-between"><span className="text-slate-500">Biaya Admin</span><span className="text-slate-900">{formatRupiah(b.adminFee)}</span></div>}
+                {b.markup > 0 && <div className="flex justify-between"><span className="text-slate-500">{b.moda === 'kereta' ? 'Convenience Fee' : t('travel.serviceFee')}</span><span className="text-slate-900">{formatRupiah(b.markup)}</span></div>}
+                {b.adminFee > 0 && <div className="flex justify-between"><span className="text-slate-500">{b.moda === 'kereta' ? 'Biaya Penanganan' : 'Biaya Admin'}</span><span className="text-slate-900">{formatRupiah(b.adminFee)}</span></div>}
               </>
             )}
             <div className="flex justify-between pt-1.5 border-t border-slate-100"><span className="font-bold text-slate-900">{t('travel.total')}</span><span className="font-bold text-brand">{formatRupiah(orderTotal)}</span></div>

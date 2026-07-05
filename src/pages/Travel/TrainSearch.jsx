@@ -12,11 +12,15 @@ import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 import TravelPromoSection from '@/components/travel/TravelPromoSection'
 import bannerKai from '@/assets/banners/banner-kai.webp'
+import TravelErrorModal from '@/components/travel/TravelErrorModal'
 
 // Tanggal LOKAL (YYYY-MM-DD) — JANGAN toISOString() (itu UTC, mundur sehari di WIB).
 const pad2 = (n) => String(n).padStart(2, '0')
 const ymdLocal = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
 const todayStr = () => ymdLocal(new Date())
+// Pemesanan tiket maksimal H-45 (45 hari ke depan). Tanggal di luar itu tak bisa dipilih.
+const MAX_ADVANCE_DAYS = 45
+const maxDateStr = () => { const d = new Date(); d.setDate(d.getDate() + MAX_ADVANCE_DAYS); return ymdLocal(d) }
 const gradeLabel = (g, t) => ({ E: t('travel.gradeE'), B: t('travel.gradeB'), K: t('travel.gradeK') }[g] || g || '-')
 const dateLocale = () => (i18n.language === 'en' ? 'en-US' : 'id-ID')
 const formatDateSlash = (ymd) => { if (!ymd) return '-'; const dt = new Date(`${ymd}T00:00:00`); return dt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long', year: 'numeric' }) }
@@ -244,6 +248,15 @@ export default function TrainSearch() {
 
   const canSearch = origin && destination && origin.idStasiun !== destination.idStasiun && date && adult >= 1 && payingPax >= 1
 
+  // Terjemahkan error vendor (mis. "EXT : No Current schedule available") jadi pesan ramah.
+  const friendlyError = (raw) => {
+    const s = String(raw || '').toLowerCase()
+    if (/no current schedule|schedule.*(not|un).*avail|no\s*schedule|tidak ada jadwal|not\s*found|kosong|\b33\b/.test(s)) {
+      return { title: t('travel.errNoScheduleTitle'), msg: t('travel.errNoScheduleMsg') }
+    }
+    return { title: t('travel.errSearchTitle'), msg: t('travel.scheduleSearchError') }
+  }
+
   const doSearch = async () => {
     if (!canSearch) return
     setSearching(true); setError(null); setResults(null)
@@ -261,7 +274,7 @@ export default function TrainSearch() {
       setShowForm(false)
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
     } catch (e) {
-      setError(e?.response?.data?.message || t('travel.scheduleSearchError'))
+      setError(friendlyError(e?.response?.data?.message))
     } finally {
       setSearching(false)
     }
@@ -322,7 +335,8 @@ export default function TrainSearch() {
               <div className="relative p-3 rounded-xl border border-slate-200 cursor-pointer" onClick={openDatePicker}>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Calendar className="w-3 h-3" /> {t('travel.date')}</p>
                 <p className="text-sm font-semibold text-slate-900 mt-0.5">{formatDateSlash(date)}</p>
-                <input ref={dateRef} type="date" value={date} min={todayStr()} onChange={e => setDate(e.target.value)}
+                <input ref={dateRef} type="date" value={date} min={todayStr()} max={maxDateStr()}
+                  onChange={e => { const v = e.target.value; if (v && (v < todayStr() || v > maxDateStr())) return; setDate(v) }}
                   className="absolute bottom-1 left-3 w-px h-px opacity-0 pointer-events-none" tabIndex={-1} aria-label={t('travel.date')} />
               </div>
               <div className="p-3 rounded-xl border border-slate-200">
@@ -367,12 +381,7 @@ export default function TrainSearch() {
 
       {/* Results */}
       <section ref={resultsRef} className="container py-5">
-        {error && (
-          <div className="flex items-start gap-2 p-3.5 bg-red-50 border border-red-200 rounded-xl mb-4">
-            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
+        <TravelErrorModal error={error} onClose={() => setError(null)} accent="orange" />
 
         {results && results.length === 0 && !searching && (
           <div className="text-center py-12">

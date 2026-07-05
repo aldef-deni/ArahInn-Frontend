@@ -13,6 +13,7 @@ import SEO from '@/components/SEO'
 import LoaderArahInn from '@/components/LoaderArahInn'
 import TravelPromoSection from '@/components/travel/TravelPromoSection'
 import FlightRangeCalendar from '@/components/travel/FlightRangeCalendar'
+import TravelErrorModal from '@/components/travel/TravelErrorModal'
 import bannerFlight from '@/assets/banners/cari-pesawat.webp'
 
 const FLIGHT_LOADER_MESSAGES = [
@@ -233,8 +234,17 @@ export default function FlightSearch() {
         setShowForm(true)
       }
     } catch (e) {
-      setError(e?.response?.data?.message || t('travel.flightSearchError'))
+      setError(friendlyFlightError(e?.response?.data?.message))
     } finally { setSearching(false) }
+  }
+
+  // Error vendor → pesan ramah untuk penumpang pesawat.
+  function friendlyFlightError(raw) {
+    const s = String(raw || '').toLowerCase()
+    if (/no current schedule|schedule.*(not|un).*avail|no\s*schedule|tidak ada jadwal|not\s*found|kosong|\b33\b/.test(s)) {
+      return { title: t('travel.errNoScheduleTitle'), msg: t('travel.errNoScheduleFlightMsg') }
+    }
+    return { title: t('travel.errSearchTitle'), msg: t('travel.flightSearchError') }
   }
 
   const selectFlight = (flight) => {
@@ -341,9 +351,7 @@ export default function FlightSearch() {
       )}
 
       <section ref={resultsRef} className="container py-5">
-        {error && (
-          <div className="flex items-start gap-2 p-3.5 bg-red-50 border border-red-200 rounded-xl mb-4"><AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" /><p className="text-sm text-red-700">{error}</p></div>
-        )}
+        <TravelErrorModal error={error} onClose={() => setError(null)} accent="sky" />
 
         {results && results.length > 0 && (
           <>

@@ -75,13 +75,29 @@ export default function TrainBooking() {
   const payingPax  = (sel.adult || 1) + (sel.child || 0)            // bayi tidak kena kursi
   const pax        = payingPax
   const ticketSub  = (priceAdult * (sel.adult || 1)) + (priceChild * (sel.child || 0))
-  // Biaya penanganan: persen → % dari subtotal tiket; selain itu nominal × pax.
+  // Convenience Fee: persen → % dari subtotal tiket; selain itu nominal × pax.
   const markupSub  = Number(svcFee.percent) > 0
     ? Math.round(Number(svcFee.percent) / 100 * ticketSub)
     : (Number(svcFee.amount) || 0) * payingPax
-  const total      = ticketSub + markupSub
+  // Biaya Penanganan: nominal flat per pesanan (biaya admin).
+  const adminFee   = Number(svcFee.adminAmount) || 0
+  const total      = ticketSub + markupSub + adminFee
   const promoDiscount = appliedPromo?.discount || 0
   const finalTotal    = Math.max(0, total - promoDiscount)
+
+  // Deadline countdown (ms) di-anchor ke jam CLIENT saat booking dibuat, dari sisa detik server
+  // (time_left_seconds) → bebas selisih jam & tak pernah lewat dari window (mis. 60:00).
+  const payDeadlineMs = useMemo(() => {
+    const s = bookingResult?.timeLeftSeconds
+    return s == null ? null : Date.now() + Math.max(0, Number(s)) * 1000
+  }, [bookingResult])
+
+  // Batas tanggal lahir: dewasa min. 3 tahun (lahir ≤ 3 thn lalu), bayi maks. 3 tahun (lahir ≥ 3 thn lalu).
+  const _todayD   = new Date()
+  const _pad2     = n => String(n).padStart(2, '0')
+  const _fmtDate  = d => `${d.getFullYear()}-${_pad2(d.getMonth() + 1)}-${_pad2(d.getDate())}`
+  const todayStr        = _fmtDate(_todayD)
+  const threeYearsAgoStr = _fmtDate(new Date(_todayD.getFullYear() - 3, _todayD.getMonth(), _todayD.getDate()))
 
   const setAdultField  = (i, k, v) => setAdults(a => a.map((p, idx) => idx === i ? { ...p, [k]: v } : p))
   const setChildField  = (i, k, v) => setChildren(a => a.map((p, idx) => idx === i ? { ...p, [k]: v } : p))
@@ -266,7 +282,7 @@ const nikError = adultNikError()
             <div className="space-y-2.5">
               <Field label="Nama Lengkap (sesuai KTP)" icon={User} value={p.name} onChange={v => setAdultField(i, 'name', v)} placeholder="Nama sesuai identitas" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <DateField label="Tanggal Lahir" value={p.birthdate} onChange={v => setAdultField(i, 'birthdate', v)} />
+                <DateField label="Tanggal Lahir" value={p.birthdate} onChange={v => setAdultField(i, 'birthdate', v)} max={threeYearsAgoStr} />
                 <Field label="No. HP" icon={Phone} value={p.phone} onChange={v => setAdultField(i, 'phone', v.replace(/[^0-9]/g, '').slice(0, 15))} placeholder="08xxx" inputMode="numeric" maxLength={15} />
               </div>
               <Field label="No. KTP / NIK" icon={CreditCard} value={p.idNumber} onChange={v => setAdultField(i, 'idNumber', v.replace(/\D/g, '').slice(0, 16))} placeholder="16 digit NIK" inputMode="numeric" maxLength={16} />
@@ -317,7 +333,7 @@ const nikError = adultNikError()
             <div className="space-y-2.5">
               <Field label="Nama Lengkap" icon={User} value={p.name} onChange={v => setInfantField(i, 'name', v)} placeholder="Nama bayi" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <DateField label="Tanggal Lahir" value={p.birthdate} onChange={v => setInfantField(i, 'birthdate', v)} />
+                <DateField label="Tanggal Lahir" value={p.birthdate} onChange={v => setInfantField(i, 'birthdate', v)} min={threeYearsAgoStr} max={todayStr} />
                 <Field
                   label="Input Nomor KIA"
                   icon={CreditCard}
@@ -343,7 +359,10 @@ const nikError = adultNikError()
           <div className="space-y-1.5 text-sm">
             <div className="flex justify-between"><span className="text-slate-500">Harga tiket ({pax} × {formatRupiah(priceAdult)})</span><span className="text-slate-900">{formatRupiah(ticketSub)}</span></div>
             {markupSub > 0 && (
-              <div className="flex justify-between"><span className="text-slate-500">Biaya Penanganan</span><span className="text-slate-900">{formatRupiah(markupSub)}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Convenience Fee</span><span className="text-slate-900">{formatRupiah(markupSub)}</span></div>
+            )}
+            {adminFee > 0 && (
+              <div className="flex justify-between"><span className="text-slate-500">Biaya Penanganan</span><span className="text-slate-900">{formatRupiah(adminFee)}</span></div>
             )}
             {promoDiscount > 0 && (
               <div className="flex justify-between"><span className="text-slate-500">Diskon Promo {appliedPromo?.code ? `(${appliedPromo.code})` : ''}</span><span className="font-medium text-green-600">- {formatRupiah(promoDiscount)}</span></div>
@@ -387,9 +406,10 @@ const nikError = adultNikError()
       {showSeatSummary && bookingResult && (
         <SeatSummaryModal
           sel={sel}
+          deadlineMs={payDeadlineMs}
           pax={[...adults.map(p => ({ name: p.name, type: 'Dewasa' })), ...children.map(p => ({ name: p.name, type: 'Anak' }))]}
           seats={chosenSeats}
-          price={{ ticketSub, markupSub, finalTotal, priceAdult, adult: sel.adult || 1, child: sel.child || 0, priceChild, originName: origin.namaStasiun }}
+          price={{ ticketSub, markupSub, adminFee, finalTotal, priceAdult, adult: sel.adult || 1, child: sel.child || 0, priceChild, originName: origin.namaStasiun }}
           onPickSeat={() => setShowSeatPicker(true)}
           onConfirm={() => { try { sessionStorage.removeItem('train_pax_draft') } catch { /* abaikan */ } navigate(`/tiket/bayar/${bookingResult.code ?? bookingResult.id}`, { state: { moda: 'kereta' } }) }}
           onClose={() => setShowSeatSummary(false)}
@@ -400,6 +420,7 @@ const nikError = adultNikError()
       {showSeatPicker && bookingResult && (
         <SeatPickerModal
           sel={sel}
+          deadlineMs={payDeadlineMs}
           paxCount={(sel.adult || 1) + (sel.child || 0)}
           paxNames={[...adults.map(p => p.name), ...children.map(p => p.name)]}
           bookingCode={bookingResult.vendorBookingCode ?? bookingResult.meta?.book?.bookingCode}
@@ -500,9 +521,45 @@ function ContactModal({ sel, initial, onClose, onSubmit }) {
   )
 }
 
+// Countdown pembayaran: deadline (ms) sudah di-anchor ke jam CLIENT di induk (bebas
+// selisih jam server/klien). Dipakai bersama Modal 1 & Modal 2.
+function usePayCountdownMs(deadlineMs) {
+  const [nowMs, setNowMs] = useState(Date.now())
+  useEffect(() => {
+    if (!deadlineMs) return
+    const t = setInterval(() => setNowMs(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [deadlineMs])
+  const validDl  = !!deadlineMs
+  const remainMs = validDl ? Math.max(0, deadlineMs - nowMs) : 0
+  return {
+    validDl,
+    cdExpired: validDl && remainMs <= 0,
+    cdMin: Math.floor(remainMs / 60000),
+    cdSec: Math.floor((remainMs % 60000) / 1000),
+  }
+}
+
+function PayCountdownBanner({ deadlineMs }) {
+  const { validDl, cdExpired, cdMin, cdSec } = usePayCountdownMs(deadlineMs)
+  if (!validDl) return null
+  const pad = (n) => String(n).padStart(2, '0')
+  return (
+    <div className={`shrink-0 mx-4 mt-3 mb-1 rounded-xl border px-3 py-2.5 flex items-center gap-2.5 ${cdExpired ? 'bg-rose-50 border-rose-200' : 'bg-amber-50 border-amber-200'}`}>
+      <Clock className={`w-4 h-4 shrink-0 ${cdExpired ? 'text-rose-600' : 'text-amber-600'}`} />
+      {cdExpired ? (
+        <p className="text-xs font-semibold text-rose-700">Waktu pemesanan habis. Silakan pesan ulang tiket.</p>
+      ) : (
+        <p className="text-xs text-amber-800 flex-1">Selesaikan pemilihan kursi &amp; pembayaran dalam <span className="font-mono font-bold text-amber-900 tabular-nums">{pad(cdMin)}:{pad(cdSec)}</span></p>
+      )}
+    </div>
+  )
+}
+
 // Modal 1 — ringkasan kursi per penumpang + rincian harga (muncul setelah booking).
-function SeatSummaryModal({ sel, pax, seats, price, onPickSeat, onConfirm, onClose }) {
+function SeatSummaryModal({ sel, pax, seats, price, deadlineMs, onPickSeat, onConfirm, onClose }) {
   const [showPrice, setShowPrice] = useState(true)
+  const { cdExpired } = usePayCountdownMs(deadlineMs)
   const seatLabel = (s) => {
     if (!s) return null
     const col = s.column ?? s.seatColumn ?? ''
@@ -515,6 +572,7 @@ function SeatSummaryModal({ sel, pax, seats, price, onPickSeat, onConfirm, onClo
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={onClose}>
       <div className="relative bg-slate-50 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-md max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <PayCountdownBanner deadlineMs={deadlineMs} />
         <div className="p-4 pb-0"><TripSummaryCard sel={sel} /></div>
 
         <div className="p-4">
@@ -551,7 +609,8 @@ function SeatSummaryModal({ sel, pax, seats, price, onPickSeat, onConfirm, onClo
               <div className="px-4 pb-3 pt-1 space-y-1.5 text-sm border-t border-slate-100">
                 <div className="flex justify-between gap-3"><span className="text-slate-500 min-w-0 truncate">{price.originName} (Dewasa) x{price.adult}</span><span className="text-slate-900 shrink-0">{formatRupiah(price.priceAdult * price.adult)}</span></div>
                 {price.child > 0 && <div className="flex justify-between gap-3"><span className="text-slate-500 min-w-0 truncate">Anak x{price.child}</span><span className="text-slate-900 shrink-0">{formatRupiah(price.priceChild * price.child)}</span></div>}
-                {price.markupSub > 0 && <div className="flex justify-between gap-3"><span className="text-slate-500 min-w-0 truncate">Biaya Penanganan</span><span className="text-slate-900 shrink-0">{formatRupiah(price.markupSub)}</span></div>}
+                {price.markupSub > 0 && <div className="flex justify-between gap-3"><span className="text-slate-500 min-w-0 truncate">Convenience Fee</span><span className="text-slate-900 shrink-0">{formatRupiah(price.markupSub)}</span></div>}
+                {price.adminFee > 0 && <div className="flex justify-between gap-3"><span className="text-slate-500 min-w-0 truncate">Biaya Penanganan</span><span className="text-slate-900 shrink-0">{formatRupiah(price.adminFee)}</span></div>}
               </div>
             )}
           </div>
@@ -564,9 +623,9 @@ function SeatSummaryModal({ sel, pax, seats, price, onPickSeat, onConfirm, onClo
               <p className="text-xs text-amber-800">Silakan pilih <strong>nomor kursi untuk semua penumpang</strong> dulu dengan menekan tombol <strong>“Nomor Kursi”</strong> sebelum lanjut ke pembayaran.</p>
             </div>
           )}
-          <button onClick={onConfirm} disabled={!allSeatsChosen}
-            className="w-full py-3.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-            Simpan &amp; Lanjut Bayar <ArrowRight className="w-4 h-4" />
+          <button onClick={cdExpired ? onClose : onConfirm} disabled={!allSeatsChosen && !cdExpired}
+            className={`w-full py-3.5 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${cdExpired ? 'bg-rose-500 hover:bg-rose-600' : 'bg-orange-500 hover:bg-orange-600'}`}>
+            {cdExpired ? 'Pesan Ulang' : <>Simpan &amp; Lanjut Bayar <ArrowRight className="w-4 h-4" /></>}
           </button>
         </div>
       </div>
@@ -575,7 +634,7 @@ function SeatSummaryModal({ sel, pax, seats, price, onPickSeat, onConfirm, onClo
 }
 
 // Modal 2 — denah kursi 1 gerbong, pilih kursi per penumpang (paginasi 1/N).
-function SeatPickerModal({ sel, paxCount, paxNames, bookingCode, transactionId, initialSeats, onClose, onSaved }) {
+function SeatPickerModal({ sel, deadlineMs, paxCount, paxNames, bookingCode, transactionId, initialSeats, onClose, onSaved }) {
   const [wagons, setWagons]   = useState([])
   const [wagonIdx, setWagonIdx] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -640,9 +699,10 @@ function SeatPickerModal({ sel, paxCount, paxNames, bookingCode, transactionId, 
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50" onClick={onClose}>
-      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-sm max-h-[92vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="bg-orange-500 text-white px-4 py-3 flex items-center justify-between shrink-0">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50 sm:p-4" onClick={onClose}>
+      {/* Mobile: full-page (isi seluruh layar). Desktop: modal kartu di tengah. */}
+      <div className="relative bg-white shadow-2xl flex flex-col overflow-hidden w-full h-full rounded-none sm:h-auto sm:max-w-sm sm:max-h-[92vh] sm:rounded-2xl" onClick={e => e.stopPropagation()}>
+        <div className="bg-orange-500 text-white px-4 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] pb-3 sm:pt-3 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <button onClick={onClose}><ChevronLeft className="w-5 h-5" /></button>
             <span className="font-bold text-sm">Pilih Nomor Kursi</span>
@@ -651,6 +711,8 @@ function SeatPickerModal({ sel, paxCount, paxNames, bookingCode, transactionId, 
         </div>
 
         <div className="px-4 py-2 bg-orange-50 text-[11px] text-orange-700 font-semibold">Kursi untuk: {paxNames[current] || `Penumpang ${current + 1}`}</div>
+
+        <PayCountdownBanner deadlineMs={deadlineMs} />
 
         <div className="flex items-center justify-center gap-4 py-2.5 text-[11px] text-slate-500">
           <span className="flex items-center gap-1"><span className="w-4 h-4 rounded bg-slate-100 border border-slate-200" /> Tersedia</span>
@@ -701,7 +763,7 @@ function SeatPickerModal({ sel, paxCount, paxNames, bookingCode, transactionId, 
           )}
         </div>
 
-        <div className="p-4 border-t border-slate-100">
+        <div className="px-4 pt-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] sm:pb-4 border-t border-slate-100 shrink-0">
           {err && !loading && rows.length > 0 && <p className="text-xs text-red-600 mb-2 text-center">{err}</p>}
           <button onClick={save} disabled={saving || loading || !allPicked}
             className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
