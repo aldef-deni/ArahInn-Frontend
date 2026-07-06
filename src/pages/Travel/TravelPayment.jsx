@@ -216,7 +216,7 @@ export default function TravelPayment() {
               <>
                 <div className="flex justify-between"><span className="text-slate-500">{t('travel.ticketPriceLabel')}</span><span className="text-slate-900">{formatRupiah(b.vendorPrice)}</span></div>
                 {b.markup > 0 && <div className="flex justify-between"><span className="text-slate-500">{b.moda === 'kereta' ? 'Convenience Fee' : t('travel.serviceFee')}</span><span className="text-slate-900">{formatRupiah(b.markup)}</span></div>}
-                {b.adminFee > 0 && <div className="flex justify-between"><span className="text-slate-500">{b.moda === 'kereta' ? 'Biaya Penanganan' : 'Biaya Admin'}</span><span className="text-slate-900">{formatRupiah(b.adminFee)}</span></div>}
+                {b.adminFee > 0 && <div className="flex justify-between"><span className="text-slate-500">Biaya Admin</span><span className="text-slate-900">{formatRupiah(b.adminFee)}</span></div>}
               </>
             )}
             <div className="flex justify-between pt-1.5 border-t border-slate-100"><span className="font-bold text-slate-900">{t('travel.total')}</span><span className="font-bold text-brand">{formatRupiah(orderTotal)}</span></div>

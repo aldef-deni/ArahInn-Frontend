@@ -362,7 +362,7 @@ const nikError = adultNikError()
               <div className="flex justify-between"><span className="text-slate-500">Convenience Fee</span><span className="text-slate-900">{formatRupiah(markupSub)}</span></div>
             )}
             {adminFee > 0 && (
-              <div className="flex justify-between"><span className="text-slate-500">Biaya Penanganan</span><span className="text-slate-900">{formatRupiah(adminFee)}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Biaya Admin</span><span className="text-slate-900">{formatRupiah(adminFee)}</span></div>
             )}
             {promoDiscount > 0 && (
               <div className="flex justify-between"><span className="text-slate-500">Diskon Promo {appliedPromo?.code ? `(${appliedPromo.code})` : ''}</span><span className="font-medium text-green-600">- {formatRupiah(promoDiscount)}</span></div>
@@ -610,7 +610,7 @@ function SeatSummaryModal({ sel, pax, seats, price, deadlineMs, onPickSeat, onCo
                 <div className="flex justify-between gap-3"><span className="text-slate-500 min-w-0 truncate">{price.originName} (Dewasa) x{price.adult}</span><span className="text-slate-900 shrink-0">{formatRupiah(price.priceAdult * price.adult)}</span></div>
                 {price.child > 0 && <div className="flex justify-between gap-3"><span className="text-slate-500 min-w-0 truncate">Anak x{price.child}</span><span className="text-slate-900 shrink-0">{formatRupiah(price.priceChild * price.child)}</span></div>}
                 {price.markupSub > 0 && <div className="flex justify-between gap-3"><span className="text-slate-500 min-w-0 truncate">Convenience Fee</span><span className="text-slate-900 shrink-0">{formatRupiah(price.markupSub)}</span></div>}
-                {price.adminFee > 0 && <div className="flex justify-between gap-3"><span className="text-slate-500 min-w-0 truncate">Biaya Penanganan</span><span className="text-slate-900 shrink-0">{formatRupiah(price.adminFee)}</span></div>}
+                {price.adminFee > 0 && <div className="flex justify-between gap-3"><span className="text-slate-500 min-w-0 truncate">Biaya Admin</span><span className="text-slate-900 shrink-0">{formatRupiah(price.adminFee)}</span></div>}
               </div>
             )}
           </div>
