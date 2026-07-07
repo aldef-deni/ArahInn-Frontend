@@ -1,16 +1,10 @@
-import { useRef } from 'react'
-
 /**
  * Field tanggal dengan tampilan DD/MM/YYYY (value internal tetap YYYY-MM-DD).
- * Seluruh kotak clickable → buka kalender native (showPicker).
+ * Seluruh kotak clickable → buka kalender native. Input transparan menutupi
+ * seluruh kotak (overlay) supaya tap langsung membuka picker native di semua
+ * browser, termasuk Safari iOS (yang tidak mendukung showPicker/focus programatik).
  */
 export default function DateField({ label, value, onChange, max, min, icon: Icon, placeholder = 'DD/MM/YYYY', className, labelClassName }) {
-  const ref = useRef(null)
-  const open = () => {
-    const el = ref.current
-    if (!el) return
-    try { el.showPicker ? el.showPicker() : el.focus() } catch { el.focus() }
-  }
   const disp = value
     ? (() => { const [y, m, d] = value.split('-'); return `${d}/${m}/${y}` })()
     : placeholder
@@ -20,21 +14,16 @@ export default function DateField({ label, value, onChange, max, min, icon: Icon
   return (
     <div>
       {label && <label className={labelClassName || 'block text-[11px] font-semibold text-slate-500 mb-1'}>{label}</label>}
-      <div
-        className={boxCls}
-        onClick={open}
-      >
+      <div className={boxCls}>
         {Icon && <Icon className="w-4 h-4 text-slate-400 shrink-0" />}
         <span className={`flex-1 text-sm ${value ? 'text-slate-900' : 'text-slate-400'}`}>{disp}</span>
         <input
-          ref={ref}
           type="date"
           value={value || ''}
           max={max}
           min={min}
           onChange={e => onChange(e.target.value)}
-          className="absolute bottom-1 left-3 w-px h-px opacity-0 pointer-events-none"
-          tabIndex={-1}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           aria-label={label}
         />
       </div>

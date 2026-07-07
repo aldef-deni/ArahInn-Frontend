@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
@@ -81,6 +81,23 @@ export default function PpobPayment() {
       return ['pending', 'paid', 'processing', 'inquired'].includes(s) ? 8000 : false
     },
   })
+
+  // Auto-redirect ke tab pesanan PPOB begitu pembayaran dikonfirmasi (status → paid,
+  // mis. superadmin submit transfer manual). Pakai ref agar HANYA memicu saat TRANSISI
+  // ke 'paid' — membuka ulang trx yang sudah 'success' (revisit) tidak ter-redirect,
+  // jadi token PLN / kode voucher tetap tampil pada modal ini bila diakses langsung.
+  const prevStatusRef = useRef(null)
+  useEffect(() => {
+    const st = trx?.status
+    const prev = prevStatusRef.current
+    prevStatusRef.current = st
+    if (!st) return
+    const wasWaiting = ['pending', 'inquired', 'processing'].includes(prev)
+    if (wasWaiting && st === 'paid') {
+      const tmr = setTimeout(() => navigate('/orders?jenis=ppob', { replace: true }), 1800)
+      return () => clearTimeout(tmr)
+    }
+  }, [trx?.status, navigate])
 
   const expiresAt = trx?.timestamps?.expiresAt
   const { display: countdown, expired } = useCountdown(expiresAt)

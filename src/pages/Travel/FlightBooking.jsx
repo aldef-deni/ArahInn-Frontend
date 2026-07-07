@@ -133,11 +133,17 @@ export default function FlightBooking() {
     if (fareFailed && fareErrorMsg) setError({ msg: fareErrorMsg, searchAgain: true })
   }, [fareFailed, fareErrorMsg])
 
-  const priceOut  = Number(fareOut.data?.price ?? out?.cls?.price) || 0
-  const priceRet  = isRT ? (Number(fareRet.data?.price ?? ret?.cls?.price) || 0) : 0
   const svcFee    = sel.svcFee || { amount: 0, percent: 0 }
   const payingPax = (sel.adult || 1) + (sel.child || 0)   // bayi umumnya tanpa kursi
   const numLegs   = isRT ? 2 : 1
+  // ⚠️ Fare vendor mengembalikan TOTAL untuk semua pax (sudah termasuk pajak), sedangkan
+  // harga search bersifat per-pax. Jadikan per-pax agar konsisten (display & BE mengalikan × pax).
+  const perPaxFromFare = (fareTotal, searchPrice) => {
+    const ft = Number(fareTotal) || 0
+    return ft > 0 ? Math.round(ft / Math.max(1, payingPax)) : (Number(searchPrice) || 0)
+  }
+  const priceOut  = perPaxFromFare(fareOut.data?.price, out?.cls?.price)
+  const priceRet  = isRT ? perPaxFromFare(fareRet.data?.price, ret?.cls?.price) : 0
   const ticketSub = (priceOut + priceRet) * payingPax
   // Biaya penanganan: persen → % dari subtotal tiket; selain itu nominal × pax × leg.
   const markupSub = Number(svcFee.percent) > 0

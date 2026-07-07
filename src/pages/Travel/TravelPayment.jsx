@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
@@ -78,6 +78,24 @@ export default function TravelPayment() {
       setPayDeadline(null)
     }
   }, [b?.id, b?.moda, b?.status])
+
+  // Auto-redirect ke tab pesanan Travel begitu pembayaran dikonfirmasi (mis. superadmin
+  // submit → status paid/issued). Pakai ref agar HANYA memicu saat TRANSISI dari
+  // menunggu → dibayar; membuka ulang order yang sudah issued (revisit) tidak ikut
+  // ter-redirect sehingga tombol download e-tiket di halaman ini tetap bisa dipakai.
+  const prevStatusRef = useRef(null)
+  useEffect(() => {
+    const st = b?.status
+    const prev = prevStatusRef.current
+    prevStatusRef.current = st
+    if (!st) return
+    const wasWaiting = prev === 'pending_payment' || prev === 'paid'
+    const nowPaid = st === 'paid' || st === 'issued'
+    if (wasWaiting && nowPaid) {
+      const tmr = setTimeout(() => navigate('/orders?jenis=travel', { replace: true }), 1800)
+      return () => clearTimeout(tmr)
+    }
+  }, [b?.status, navigate])
 
   const copy = (text, field) => {
     try { navigator.clipboard?.writeText(String(text)) } catch { /* noop */ }

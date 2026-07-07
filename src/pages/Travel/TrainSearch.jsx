@@ -344,12 +344,13 @@ export default function TrainSearch() {
 
             {/* Date + passengers */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-2.5">
-              <div className="relative p-3 rounded-xl border border-slate-200 cursor-pointer" onClick={openDatePicker}>
+              <div className="relative p-3 rounded-xl border border-slate-200 cursor-pointer">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Calendar className="w-3 h-3" /> {t('travel.date')}</p>
                 <p className="text-sm font-semibold text-slate-900 mt-0.5">{formatDateSlash(date)}</p>
+                {/* Input date transparan menutupi kotak → tap langsung buka native picker (kompatibel Safari iOS). */}
                 <input ref={dateRef} type="date" value={date} min={todayStr()} max={maxDateStr()}
                   onChange={e => { const v = e.target.value; if (v && (v < todayStr() || v > maxDateStr())) return; setDate(v) }}
-                  className="absolute bottom-1 left-3 w-px h-px opacity-0 pointer-events-none" tabIndex={-1} aria-label={t('travel.date')} />
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" aria-label={t('travel.date')} />
               </div>
               <div className="p-3 rounded-xl border border-slate-200">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Users className="w-3 h-3" /> {t('travel.passengers')}</p>

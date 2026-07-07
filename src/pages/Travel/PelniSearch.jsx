@@ -183,10 +183,11 @@ export default function PelniSearch() {
               <button onClick={swap} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-cyan-500 text-white shadow-md flex items-center justify-center active:scale-90 z-10"><ArrowLeftRight className="w-4 h-4 rotate-90" /></button>
             </div>
             <div className="grid grid-cols-2 gap-2.5 mt-2.5">
-              <div className="relative p-3 rounded-xl border border-slate-200 cursor-pointer" onClick={openDatePicker}>
+              <div className="relative p-3 rounded-xl border border-slate-200 cursor-pointer">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Calendar className="w-3 h-3" /> {t('travel.depDateRange')}</p>
                 <p className="text-sm font-semibold text-slate-900 mt-0.5">{formatDateSlash(date)}</p>
-                <input ref={dateRef} type="date" value={date} min={todayStr()} onChange={e => setDate(e.target.value)} className="absolute bottom-1 left-3 w-px h-px opacity-0 pointer-events-none" tabIndex={-1} />
+                {/* Input date transparan menutupi kotak → tap langsung buka native picker (kompatibel Safari iOS). */}
+                <input ref={dateRef} type="date" value={date} min={todayStr()} onChange={e => setDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" aria-label={t('travel.depDateRange')} />
               </div>
               <div className="p-3 rounded-xl border border-slate-200">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1"><Users className="w-3 h-3" /> {t('travel.passengers')}</p>

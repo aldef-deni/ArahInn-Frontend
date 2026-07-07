@@ -58,6 +58,13 @@ export default function Payment() {
   const { data: booking, isLoading } = useQuery({
     queryKey: ['booking-payment', bookingId],
     queryFn : () => bookingApi.getById(bookingId).then(r => r.data.data),
+    // Poll status booking selama pembayaran aktif → tangkap saat superadmin
+    // konfirmasi (status → issued) walau tidak membuat baris payment settlement.
+    refetchInterval: (q) => {
+      const st = q.state.data?.status
+      if (st === 'issued' || st === 'expired' || st === 'cancelled') return false
+      return (vaInfo || manualInfo) ? 5000 : false
+    },
   })
   // URL memakai KODE booking; ID numerik untuk panggilan payment diambil dari booking.
   const realId = booking?.id
@@ -142,6 +149,17 @@ export default function Payment() {
     }
   }, [hasActivePayment, isPaid])
 
+  // ── Auto-redirect saat pembayaran dikonfirmasi ────────────────────────────
+  // Begitu superadmin submit/konfirmasi pembayaran (manual transfer) atau gateway
+  // mengirim settlement, status booking → issued / payment → settlement. Polling
+  // 5 dtk di atas menangkap perubahan ini, lalu halaman otomatis dialihkan ke
+  // detail pesanan (yang menampilkan status sudah dibayar) tanpa perlu klik tombol.
+  useEffect(() => {
+    if (!isPaid) return
+    const t = setTimeout(() => navigate('/orders', { replace: true }), 2000)
+    return () => clearTimeout(t)
+  }, [isPaid, navigate])
+
   // ── Loading ──────────────────────────────────────────────────────────────
   if (isLoading) return (
     <div className="container py-20 text-center">
@@ -159,10 +177,14 @@ export default function Payment() {
       <p className="text-sm sm:text-base text-muted-foreground mb-1 sm:mb-2">
         Booking <strong>{booking?.bookingCode}</strong>.
       </p>
-      <p className="text-xs sm:text-sm text-muted-foreground mb-6 sm:mb-8 break-words">
+      <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 break-words">
         {t('payment.paidNote')} <strong>{booking?.guestEmail}</strong>
       </p>
-      <button onClick={() => navigate('/orders')}
+      <p className="text-[11px] sm:text-xs text-muted-foreground mb-6 sm:mb-8 flex items-center justify-center gap-2">
+        <span className="w-3.5 h-3.5 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+        Mengalihkan ke daftar pesanan…
+      </p>
+      <button onClick={() => navigate('/orders', { replace: true })}
         className="px-6 sm:px-8 py-2.5 sm:py-3 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 active:scale-95 transition-all text-sm sm:text-base">
         {t('payment.viewOrders')}
       </button>
