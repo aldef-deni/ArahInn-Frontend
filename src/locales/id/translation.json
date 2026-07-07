@@ -685,6 +685,8 @@
     "trainsCount": "{{count}} kereta",
     "seatsLeftKursi": "Sisa {{n}} kursi",
     "soldOutShort": "Habis",
+    "closedShort": "Ditutup",
+    "closed30min": "Ditutup 30 mnt sebelum berangkat",
     "trainEmptyPrompt": "Isi rute & tanggal, lalu cari tiket kereta.",
     "originStation": "Stasiun Asal",
     "destStation": "Stasiun Tujuan",

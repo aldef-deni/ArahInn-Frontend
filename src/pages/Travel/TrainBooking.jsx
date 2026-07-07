@@ -85,12 +85,26 @@ export default function TrainBooking() {
   const promoDiscount = appliedPromo?.discount || 0
   const finalTotal    = Math.max(0, total - promoDiscount)
 
-  // Deadline countdown (ms) di-anchor ke jam CLIENT saat booking dibuat, dari sisa detik server
-  // (time_left_seconds) → bebas selisih jam & tak pernah lewat dari window (mis. 60:00).
+  // Deadline countdown pakai WAKTU LOKAL (jam perangkat), BUKAN waktu server.
+  // Di-anchor ke jam client saat booking dibuat; window dari skema: ≤3 jam sebelum
+  // berangkat = 15 menit, >3 jam = 60 menit; dibatasi jadwal keberangkatan.
   const payDeadlineMs = useMemo(() => {
-    const s = bookingResult?.timeLeftSeconds
-    return s == null ? null : Date.now() + Math.max(0, Number(s)) * 1000
-  }, [bookingResult])
+    if (!bookingResult) return null
+    try {
+      const dep = new Date(`${date}T${(train?.departureTime || '00:00')}:00`).getTime()
+      if (Number.isNaN(dep)) return null
+      const now = Date.now()
+      const windowMin = ((dep - now) / 60000 <= 180) ? 15 : 60
+      return Math.min(now + windowMin * 60000, dep)
+    } catch { return null }
+  }, [bookingResult, date, train])
+
+  // Simpan deadline (lokal) agar halaman pembayaran pakai batas yang SAMA & kontinu.
+  useEffect(() => {
+    if (bookingResult?.id && payDeadlineMs) {
+      try { localStorage.setItem(`pay_deadline_${bookingResult.id}`, String(payDeadlineMs)) } catch { /* abaikan */ }
+    }
+  }, [bookingResult, payDeadlineMs])
 
   // Batas tanggal lahir: dewasa min. 3 tahun (lahir ≤ 3 thn lalu), bayi maks. 3 tahun (lahir ≥ 3 thn lalu).
   const _todayD   = new Date()
@@ -572,7 +586,7 @@ function SeatSummaryModal({ sel, pax, seats, price, deadlineMs, onPickSeat, onCo
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={onClose}>
       <div className="relative bg-slate-50 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-md max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <PayCountdownBanner deadlineMs={deadlineMs} />
+        {/* Timer TIDAK ditampilkan di ringkasan (sebelum buka pilih kursi) — hanya di grid pilih kursi. */}
         <div className="p-4 pb-0"><TripSummaryCard sel={sel} /></div>
 
         <div className="p-4">

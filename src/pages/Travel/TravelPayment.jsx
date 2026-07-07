@@ -49,10 +49,10 @@ export default function TravelPayment() {
   const setTravelModa = useSetTravelModa()
   useEffect(() => { setTravelModa(b?.moda || hintModa || null); return () => setTravelModa(null) }, [b?.moda, hintModa, setTravelModa])
 
-  // Deadline countdown pembayaran — di-anchor ke jam CLIENT (localStorage) agar konsisten
-  // saat refresh/polling & bebas selisih jam server.
+  // Deadline countdown pembayaran — pakai WAKTU LOKAL (jam perangkat), di-anchor via
+  // localStorage agar konsisten dgn halaman pilih kursi & tahan refresh/polling.
   //  - Pesawat: window 12 menit.
-  //  - Kereta : sisa detik dari server (time_left_seconds) — skema ≤3jam=15mnt, >3jam=60mnt.
+  //  - Kereta : batas dari halaman pilih kursi (localStorage); fallback skema lokal (≤3jam=15mnt, >3jam=60mnt).
   useEffect(() => {
     if (!b || b.status !== 'pending_payment') { setPayDeadline(null); return }
     const key = `pay_deadline_${b.id}`
@@ -63,15 +63,21 @@ export default function TravelPayment() {
     } else if (b.moda === 'kereta') {
       let dl = Number(localStorage.getItem(key))
       if (!dl || Number.isNaN(dl)) {
-        if (b.timeLeftSeconds == null) { setPayDeadline(null); return }
-        dl = Date.now() + Math.max(0, Number(b.timeLeftSeconds)) * 1000
-        localStorage.setItem(key, String(dl))
+        // Fallback WAKTU LOKAL dari jadwal + skema (kalau tak lewat halaman pilih kursi).
+        try {
+          const dep = new Date(`${String(b.departDate).slice(0, 10)}T${String(b.departTime || '00:00').slice(0, 5)}:00`).getTime()
+          if (Number.isNaN(dep)) { setPayDeadline(null); return }
+          const now = Date.now()
+          const windowMin = ((dep - now) / 60000 <= 180) ? 15 : 60
+          dl = Math.min(now + windowMin * 60000, dep)
+          localStorage.setItem(key, String(dl))
+        } catch { setPayDeadline(null); return }
       }
       setPayDeadline(dl)
     } else {
       setPayDeadline(null)
     }
-  }, [b?.id, b?.moda, b?.status, b?.timeLeftSeconds])
+  }, [b?.id, b?.moda, b?.status])
 
   const copy = (text, field) => {
     try { navigator.clipboard?.writeText(String(text)) } catch { /* noop */ }

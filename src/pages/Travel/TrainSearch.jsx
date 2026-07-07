@@ -132,6 +132,15 @@ function TrainCard({ train, seat, origin, destination, feePerPax, onSelect, t })
   const soldOut = (seat.availability ?? 0) <= 0
   const lowSeats = !soldOut && (seat.availability ?? 0) <= 50
   const total = (Number(seat.priceAdult) || 0) + feePerPax(Number(seat.priceAdult) || 0)
+  // Tiket ditutup 30 menit sebelum jadwal keberangkatan.
+  const depMs = (() => {
+    const d = train.departureDate, tm = train.departureTime
+    if (!d || !tm) return null
+    const ms = new Date(`${d}T${tm}:00`).getTime()
+    return Number.isNaN(ms) ? null : ms
+  })()
+  const tooLate = depMs != null && (depMs - Date.now()) < 30 * 60 * 1000
+  const disabled = soldOut || tooLate
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 transition-all hover:shadow-lg hover:border-orange-200">
@@ -173,16 +182,19 @@ function TrainCard({ train, seat, origin, destination, feePerPax, onSelect, t })
             {formatRupiah(total)}
             <span className="text-[10px] font-normal text-slate-400 ml-1">{t('travel.perPax')}</span>
           </p>
-          {lowSeats && (
+          {lowSeats && !tooLate && (
             <p className="text-[10px] text-red-500 font-semibold mt-0.5">{t('travel.seatsLeftKursi', { n: seat.availability })}</p>
+          )}
+          {tooLate && (
+            <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{t('travel.closed30min')}</p>
           )}
         </div>
         <button
           onClick={onSelect}
-          disabled={soldOut}
+          disabled={disabled}
           className="shrink-0 px-5 sm:px-6 py-2.5 rounded-full bg-orange-500 hover:bg-orange-600 text-white text-xs sm:text-sm font-bold active:scale-95 transition-all disabled:opacity-40 disabled:bg-slate-300"
         >
-          {soldOut ? t('travel.soldOutShort') : t('travel.select')}
+          {soldOut ? t('travel.soldOutShort') : tooLate ? t('travel.closedShort') : t('travel.select')}
         </button>
       </div>
     </div>

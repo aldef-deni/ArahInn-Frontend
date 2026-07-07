@@ -685,6 +685,8 @@
     "trainsCount": "{{count}} trains",
     "seatsLeftKursi": "{{n}} seats left",
     "soldOutShort": "Sold Out",
+    "closedShort": "Closed",
+    "closed30min": "Closed 30 min before departure",
     "trainEmptyPrompt": "Enter route & date, then search train tickets.",
     "originStation": "Origin Station",
     "destStation": "Destination Station",
