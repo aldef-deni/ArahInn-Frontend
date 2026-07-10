@@ -9,6 +9,7 @@ import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 import DateField from '@/components/ui/DateField'
 import PromoField from '@/components/travel/PromoField'
+import RedeemPoints from '@/components/ui/RedeemPoints'
 import { travelCheckoutError } from '@/utils/travelCheckoutError'
 
 const ymd8 = (s) => s && s.length === 8 ? `${s.slice(6,8)}/${s.slice(4,6)}/${s.slice(0,4)}` : s
@@ -73,7 +74,8 @@ export default function PelniBooking() {
   const adminFee  = Number(svcFee.adminAmount) || 0   // biaya admin flat (khusus PELNI)
   const total     = fareSub + markupSub + adminFee
   const promoDiscount = appliedPromo?.discount || 0
-  const finalTotal    = Math.max(0, total - promoDiscount)
+  const [redeem, setRedeem] = useState({ discount: 0, usePoints: false, points: 0 })
+  const finalTotal    = Math.max(0, total - promoDiscount - (redeem.discount || 0))
   const departYmd = sel.departureDate
     ? `${String(sel.departureDate).slice(0,4)}-${String(sel.departureDate).slice(4,6)}-${String(sel.departureDate).slice(6,8)}`
     : null
@@ -116,6 +118,7 @@ export default function PelniBooking() {
         pelabuhanAsal: sel.originName, pelabuhanTujuan: sel.destinationName,
         hargaDewasa, hargaAnak, hargaInfant, markup: markupSub,
         promoCode: appliedPromo?.code || undefined,
+        usePoints: redeem.usePoints, pointsToRedeem: redeem.points || 0,
         male, female, adult, child: 0, infant,
         contact: { email: contact.email, phone: contact.phone },
         passengers: { adults, children: [], infants },
@@ -177,6 +180,8 @@ export default function PelniBooking() {
           <PromoField moda="pelni" total={total} departDate={departYmd} onApplied={setAppliedPromo} />
         </div>
 
+        <RedeemPoints total={Math.max(0, total - promoDiscount)} onChange={setRedeem} className="mb-3" />
+
         <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
           <p className="font-bold text-sm text-slate-900 mb-2.5">Rincian Harga</p>
           <div className="space-y-1.5 text-sm">
@@ -185,6 +190,7 @@ export default function PelniBooking() {
             {markupSub > 0 && <div className="flex justify-between"><span className="text-slate-500">Biaya Penanganan</span><span className="text-slate-900">{formatRupiah(markupSub)}</span></div>}
             {adminFee > 0 && <div className="flex justify-between"><span className="text-slate-500">Biaya Admin</span><span className="text-slate-900">{formatRupiah(adminFee)}</span></div>}
             {promoDiscount > 0 && <div className="flex justify-between"><span className="text-slate-500">Diskon Promo {appliedPromo?.code ? `(${appliedPromo.code})` : ''}</span><span className="font-medium text-green-600">- {formatRupiah(promoDiscount)}</span></div>}
+            {redeem.discount > 0 && <div className="flex justify-between"><span className="text-slate-500">Poin Loyalitas</span><span className="font-medium text-green-600">- {formatRupiah(redeem.discount)}</span></div>}
             <div className="flex justify-between pt-1.5 border-t border-slate-100"><span className="font-bold text-slate-900">Total</span><span className="font-bold text-cyan-600">{formatRupiah(finalTotal)}</span></div>
           </div>
         </div>

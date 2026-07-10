@@ -15,6 +15,7 @@ import PpobPlnView from './PpobPlnView'
 import PpobEwalletView from './PpobEwalletView'
 import PpobGameView from './PpobGameView'
 import PpobConfirmModal from './PpobConfirmModal'
+import RedeemPoints from '@/components/ui/RedeemPoints'
 
 const ICONS = { Smartphone, Wifi, Zap, Lightbulb, Droplets, HeartPulse, Router, Wallet, Tv, CreditCard, Landmark, Car, Receipt }
 
@@ -41,6 +42,7 @@ export default function PpobCategoryPage() {
   const [inquiry, setInquiry] = useState(null)
   const [extraParams, setExtraParams] = useState({}) // utk PLN nominal & sejenisnya
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [redeem, setRedeem] = useState({ discount: 0, usePoints: false, points: 0 })
   const openAfterInquiry = useRef(false) // PLN prabayar: buka modal konfirmasi setelah cek nama
 
   // Reset inquiry bila nomor/nominal berubah — hindari data cek yang basi.
@@ -114,7 +116,7 @@ export default function PpobCategoryPage() {
 
   // POSTPAID Step 2: confirm-pay (setelah user lihat tagihan dan setuju)
   const confirmPayMutation = useMutation({
-    mutationFn: (trxCode) => ppobApi.confirmPay(trxCode).then(r => r.data),
+    mutationFn: (vars) => ppobApi.confirmPay(vars.trxCode, { usePoints: vars.usePoints, pointsToRedeem: vars.points || 0 }).then(r => r.data),
     onSuccess: (data) => {
       if (!data.success) {
         setConfirmOpen(false)
@@ -159,13 +161,15 @@ export default function PpobCategoryPage() {
   const handleConfirmPurchase = () => {
     // Postpaid path (PLN Pascabayar, PDAM, BPJS, dll) — inquiry → confirm-pay
     if (inquiry) {
-      confirmPayMutation.mutate(inquiry.trxCode)
+      confirmPayMutation.mutate({ trxCode: inquiry.trxCode, usePoints: redeem.usePoints, points: redeem.points || 0 })
       return
     }
     purchaseMutation.mutate({
       product_id: selectedProduct.id,
       customer_number: customerNumber,
       extra: extraParams,
+      usePoints: redeem.usePoints,
+      pointsToRedeem: redeem.points || 0,
     })
   }
 
@@ -424,6 +428,13 @@ export default function PpobCategoryPage() {
         customerLabel={meta?.label || 'Nomor Tujuan'}
         operatorLabel={selectedProduct?.operator || meta?.title}
         totalAmount={inquiry?.pricing?.totalAmount ?? (extraParams.nominal ? Number(extraParams.nominal) : selectedProduct?.priceSell)}
+        discount={redeem.discount}
+        redeemSlot={
+          <RedeemPoints
+            total={inquiry?.pricing?.totalAmount ?? (extraParams.nominal ? Number(extraParams.nominal) : selectedProduct?.priceSell)}
+            onChange={setRedeem}
+          />
+        }
         note={
           isPln
             ? 'Pastikan nomor meter & nominal sudah benar. Token akan terbit untuk meter ini.'

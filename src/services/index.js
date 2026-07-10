@@ -59,6 +59,9 @@ export const travelApi = {
   adminBookings : (p)  => api.get('/admin/travel/bookings', { params: p }),
   adminIssue    : (id, d) => api.post(`/admin/travel/bookings/${id}/issue`, d),
   adminCancel   : (id, d) => api.post(`/admin/travel/bookings/${id}/cancel`, d),
+  adminRebookPreview: (id) => api.post(`/admin/travel/bookings/${id}/rebook-preview`),
+  adminRebook   : (id)    => api.post(`/admin/travel/bookings/${id}/rebook`),
+  adminSyncVendor: (id)   => api.post(`/admin/travel/bookings/${id}/sync-vendor`),
   adminBulkDelete: (ids) => api.post('/admin/travel/bookings/bulk-delete', { ids }),
 
   // ── Pesawat ──
@@ -143,6 +146,8 @@ export const adminApi = {
   bookings       : (p)      => api.get('/admin/reports/bookings', { params: p }),
   canceled       : (p)      => api.get('/admin/reports/canceled', { params: p }),
   profit         : (p)      => api.get('/admin/reports/profit', { params: p }),
+  reportPpob     : (p)      => api.get('/admin/reports/ppob', { params: p }),
+  reportTravel   : (p)      => api.get('/admin/reports/travel', { params: p }),
   logs           : (p)      => api.get('/admin/logs', { params: p }),
   // Analytics
   analyticsOverview  : (p)  => api.get('/admin/analytics/overview', { params: p }),
@@ -307,7 +312,7 @@ export const ppobApi = {
   // Authenticated — PREPAID 1-step (purchase), POSTPAID 2-step (inquiry → confirmPay)
   purchase        : (d)       => api.post('/ppob/purchase', d),
   inquiry         : (d)       => api.post('/ppob/inquiry', d),
-  confirmPay      : (code)    => api.post(`/ppob/transactions/${code}/confirm-pay`),
+  confirmPay      : (code, d) => api.post(`/ppob/transactions/${code}/confirm-pay`, d),
   myTransactions  : (p)       => api.get('/ppob/my-transactions', { params: p }),
   getTrx          : (code)    => api.get(`/ppob/transactions/${code}`),
   downloadReceipt : (code)    => api.get(`/ppob/transactions/${code}/receipt`, { responseType: 'blob' }),

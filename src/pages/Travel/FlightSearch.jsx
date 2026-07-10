@@ -134,6 +134,7 @@ export default function FlightSearch() {
   const resultsRef = useRef(null)
   const dateRef = useRef(null)
   const returnDateRef = useRef(null)
+  const rebookPending = useRef(false)   // prefill "Pesan Ulang" dari panel admin
 
   const { data: airports = [] } = useQuery({
     queryKey: ['flight-airports'], queryFn: () => travelApi.airports().then(r => r.data?.data || []), staleTime: 86400_000,
@@ -237,6 +238,32 @@ export default function FlightSearch() {
       setError(friendlyFlightError(e?.response?.data?.message))
     } finally { setSearching(false) }
   }
+
+  // "Pesan Ulang" dari panel admin: prefill rute/tanggal/pax dari booking expired
+  // lalu auto-cari penerbangan terkini (data penumpang dipulihkan di form booking).
+  useEffect(() => {
+    if (!airports.length) return
+    let hint
+    try { hint = JSON.parse(sessionStorage.getItem('flight_rebook') || 'null') } catch { hint = null }
+    if (!hint) return
+    sessionStorage.removeItem('flight_rebook')
+    const dep = airports.find(a => a.code === hint.origin)
+    const arr = airports.find(a => a.code === hint.destination)
+    if (dep) setDeparture(dep)
+    if (arr) setArrival(arr)
+    if (hint.date) setDate(String(hint.date).slice(0, 10))
+    setAdult(Math.max(1, Number(hint.adult) || 1))
+    setChild(Math.max(0, Number(hint.child) || 0))
+    setInfant(Math.max(0, Number(hint.infant) || 0))
+    if (dep && arr) rebookPending.current = true
+  }, [airports])
+
+  useEffect(() => {
+    if (rebookPending.current && departure && arrival) {
+      rebookPending.current = false
+      doSearch('depart')
+    }
+  }, [departure, arrival]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Error vendor → pesan ramah untuk penumpang pesawat.
   function friendlyFlightError(raw) {

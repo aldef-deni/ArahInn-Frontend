@@ -12,6 +12,7 @@ import SEO from '@/components/SEO'
 import DateField from '@/components/ui/DateField'
 import LoaderArahInn from '@/components/LoaderArahInn'
 import PromoField from '@/components/travel/PromoField'
+import RedeemPoints from '@/components/ui/RedeemPoints'
 import { travelCheckoutError } from '@/utils/travelCheckoutError'
 import { sortedCountries, countryName } from '@/data/countries'
 
@@ -151,7 +152,8 @@ export default function FlightBooking() {
     : (Number(svcFee.amount) || 0) * payingPax * numLegs
   const total     = ticketSub + markupSub
   const promoDiscount = appliedPromo?.discount || 0
-  const finalTotal    = Math.max(0, total - promoDiscount)
+  const [redeem, setRedeem] = useState({ discount: 0, usePoints: false, points: 0 })
+  const finalTotal    = Math.max(0, total - promoDiscount - (redeem.discount || 0))
 
   const upd = (setter) => (i, k, v) => setter(a => a.map((p, idx) => idx === i ? { ...p, [k]: v } : p))
   const setA = upd(setAdults), setC = upd(setChildren), setI = upd(setInfants)
@@ -214,6 +216,7 @@ export default function FlightBooking() {
             moda: 'pesawat', tripType: 'roundtrip',
             adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0, markup: markupSub,
             promoCode: appliedPromo?.code || undefined,
+            usePoints: redeem.usePoints, pointsToRedeem: redeem.points || 0,
             outbound: legPayload(out, priceOut),
             return:   legPayload(ret, priceRet),
             passengers: { adults, children, infants },
@@ -222,6 +225,7 @@ export default function FlightBooking() {
             moda: 'pesawat', ...legPayload(out, priceOut),
             adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0, markup: markupSub,
             promoCode: appliedPromo?.code || undefined,
+            usePoints: redeem.usePoints, pointsToRedeem: redeem.points || 0,
             passengers: { adults, children, infants },
           })
       const data = res.data?.data
@@ -345,6 +349,8 @@ export default function FlightBooking() {
           <PromoField moda="pesawat" total={total} departDate={date} onApplied={setAppliedPromo} />
         </div>
 
+        <RedeemPoints total={Math.max(0, total - promoDiscount)} onChange={setRedeem} className="mb-3" />
+
         <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
           <p className="font-bold text-sm text-slate-900 mb-2.5">{t('travel.priceBreakdown')}</p>
           <div className="space-y-1.5 text-sm">
@@ -358,6 +364,7 @@ export default function FlightBooking() {
             )}
             {markupSub > 0 && <div className="flex justify-between"><span className="text-slate-500">{t('travel.serviceFee')}</span><span className="text-slate-900">{formatRupiah(markupSub)}</span></div>}
             {promoDiscount > 0 && <div className="flex justify-between"><span className="text-slate-500">{t('travel.promoDiscountLabel')} {appliedPromo?.code ? `(${appliedPromo.code})` : ''}</span><span className="font-medium text-green-600">- {formatRupiah(promoDiscount)}</span></div>}
+            {redeem.discount > 0 && <div className="flex justify-between"><span className="text-slate-500">{t('loyalty.pointsLabel', 'Poin Loyalitas')}</span><span className="font-medium text-green-600">- {formatRupiah(redeem.discount)}</span></div>}
             <div className="flex justify-between pt-1.5 border-t border-slate-100"><span className="font-bold text-slate-900">{t('travel.total')}</span><span className="font-bold text-sky-600">{formatRupiah(finalTotal)}</span></div>
           </div>
         </div>

@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { ppobApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
 import {
   Receipt, RefreshCw, RotateCcw, AlertTriangle, Search, Wallet, X, CheckCircle, Trash2,
+  Download, Calendar, Zap, ChevronLeft, ChevronRight, Eye, Copy,
 } from 'lucide-react'
 
 const STATUS_OPTS = [
@@ -27,23 +28,62 @@ export default function AdminPpob() {
 
   const [selectedIds, setSelectedIds] = useState([])
   const [showBulkDelete, setShowBulkDelete] = useState(false)
+  const [detailTrx, setDetailTrx] = useState(null)
 
   const [status, setStatus]     = useState('')
   const [search, setSearch]     = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo]     = useState('')
+  const [page, setPage]         = useState(1)
+  const [autoRefresh, setAutoRefresh] = useState(true)
+  const [exporting, setExporting] = useState(false)
   const [refundTrx, setRefundTrx] = useState(null)
   const [refundNotes, setRefundNotes] = useState('')
   const [markPaidTrx, setMarkPaidTrx] = useState(null)
   const [markPaidNotes, setMarkPaidNotes] = useState('')
 
-  const { data: txResp, isLoading } = useQuery({
-    queryKey: ['admin-ppob', status, search],
-    queryFn : () => ppobApi.adminTrx({ status, q: search, limit: 30 }).then(r => r.data?.data ?? {}),
-    refetchInterval: 30_000,
+  const { data: txResp, isLoading, isFetching } = useQuery({
+    queryKey: ['admin-ppob', status, search, dateFrom, dateTo, page],
+    queryFn : () => ppobApi.adminTrx({ status, q: search, date_from: dateFrom || undefined, date_to: dateTo || undefined, page, limit: 30 }).then(r => r.data?.data ?? {}),
+    refetchInterval: autoRefresh ? 30_000 : false,
+    placeholderData: keepPreviousData,
   })
-  const trxList = txResp?.data ?? []
+  const trxList     = txResp?.data ?? []
+  const currentPage = txResp?.currentPage ?? txResp?.current_page ?? page
+  const lastPage    = txResp?.lastPage ?? txResp?.last_page ?? 1
+  const totalRows   = txResp?.total ?? trxList.length
+
+  // Export CSV (semua yang cocok filter, bukan cuma halaman ini)
+  const doExport = async () => {
+    setExporting(true)
+    try {
+      const res = await ppobApi.adminTrx({ status, q: search, date_from: dateFrom || undefined, date_to: dateTo || undefined, limit: 100000 })
+      const rows = res.data?.data?.data ?? []
+      const header = ['TRX Code', 'Tanggal', 'User', 'Email', 'Produk', 'Kategori', 'No. Tujuan', 'Total', 'Status', 'RC', 'Alasan']
+      const body = rows.map(t => [
+        t.trxCode || t.trx_code || '',
+        (t.createdAt || t.created_at || '').toString().slice(0, 19).replace('T', ' '),
+        t.user?.name || '', t.user?.email || '',
+        t.productName || t.product_name || '', t.category?.name || '',
+        t.customerNumber || t.customer_number || '',
+        t.totalAmount ?? t.total_amount ?? '',
+        t.status || '', t.rc || '',
+        (t.failureReason || t.failure_reason || '').toString().replace(/[\r\n]+/g, ' '),
+      ])
+      const esc = (v) => { const s = String(v ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s }
+      const csv = [header, ...body].map(r => r.map(esc).join(',')).join('\n')
+      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      Object.assign(document.createElement('a'), { href: url, download: `ppob-monitoring-${new Date().toISOString().slice(0, 10)}.csv` }).click()
+      URL.revokeObjectURL(url)
+      toast({ title: 'Export selesai', description: `${rows.length} transaksi diekspor ke CSV.` })
+    } catch (e) {
+      toast({ title: 'Gagal export', description: e?.response?.data?.message || 'Coba lagi.', variant: 'destructive' })
+    } finally { setExporting(false) }
+  }
 
   // ── Hapus massal (khusus aldeftech@gmail.com) ───────────────
-  useEffect(() => { setSelectedIds([]) }, [status, search])
+  useEffect(() => { setSelectedIds([]); setPage(1) }, [status, search, dateFrom, dateTo])
   const allSelected = trxList.length > 0 && trxList.every(t => selectedIds.includes(t.id))
   const toggleAll = () => {
     if (allSelected) {
@@ -182,9 +222,35 @@ export default function AdminPpob() {
             placeholder="Cari TRX code / nomor pelanggan..."
             className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm" />
         </div>
+        {/* Filter rentang tanggal */}
+        <div className="flex items-center gap-1.5 text-sm">
+          <Calendar className="w-4 h-4 text-slate-400" />
+          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} max={dateTo || undefined}
+            className="px-2.5 py-2 border border-slate-200 rounded-xl text-sm" title="Dari tanggal" />
+          <span className="text-slate-400">–</span>
+          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} min={dateFrom || undefined}
+            className="px-2.5 py-2 border border-slate-200 rounded-xl text-sm" title="Sampai tanggal" />
+          {(dateFrom || dateTo) && (
+            <button onClick={() => { setDateFrom(''); setDateTo('') }} title="Reset tanggal"
+              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400"><X className="w-4 h-4" /></button>
+          )}
+        </div>
         <button onClick={() => qc.invalidateQueries({ queryKey: ['admin-ppob'] })}
           className="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-sm font-semibold flex items-center gap-1.5">
-          <RefreshCw className="w-4 h-4" /> Refresh
+          <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} /> Refresh
+        </button>
+        {/* Toggle auto-refresh 30 detik */}
+        <button onClick={() => setAutoRefresh(v => !v)}
+          title={autoRefresh ? 'Auto-refresh tiap 30 detik AKTIF' : 'Auto-refresh MATI'}
+          className={`px-3 py-2 rounded-xl border text-sm font-semibold flex items-center gap-1.5 transition-colors ${
+            autoRefresh ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+          }`}>
+          <Zap className={`w-4 h-4 ${autoRefresh ? 'fill-emerald-500 text-emerald-600' : ''}`} /> Auto {autoRefresh ? 'On' : 'Off'}
+        </button>
+        {/* Export CSV (semua yang cocok filter) */}
+        <button onClick={doExport} disabled={exporting}
+          className="px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-sm font-semibold flex items-center gap-1.5 disabled:opacity-50">
+          {exporting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Export
         </button>
         {isAldeftech && selectedIds.length > 0 && (
           <button onClick={() => setShowBulkDelete(true)}
@@ -256,6 +322,11 @@ export default function AdminPpob() {
                 </td>
                 <td className="px-4 py-3 text-center">
                   <div className="flex items-center justify-center gap-1">
+                    <button onClick={() => setDetailTrx(trx)}
+                      title="Lihat detail (ref Rajabiller, token listrik, dll)"
+                      className="p-2 rounded-lg hover:bg-brand/10 text-brand">
+                      <Eye className="w-4 h-4" />
+                    </button>
                     {trx.status === 'pending' && (
                       <button onClick={() => { setMarkPaidTrx(trx); setMarkPaidNotes('') }}
                         title="Tandai pembayaran diterima → eksekusi ke Raja Biller"
@@ -289,6 +360,95 @@ export default function AdminPpob() {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between gap-3 mt-3 flex-wrap">
+        <p className="text-xs text-slate-500">
+          Menampilkan {trxList.length} dari <b>{Number(totalRows).toLocaleString('id-ID')}</b> transaksi · Halaman {currentPage} / {lastPage}
+        </p>
+        <div className="flex items-center gap-1.5">
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1 || isFetching}
+            className="px-3 py-1.5 rounded-lg border border-slate-200 text-sm font-semibold hover:bg-slate-50 disabled:opacity-40 flex items-center gap-1">
+            <ChevronLeft className="w-4 h-4" /> Sebelumnya
+          </button>
+          <button onClick={() => setPage(p => Math.min(lastPage, p + 1))} disabled={currentPage >= lastPage || isFetching}
+            className="px-3 py-1.5 rounded-lg border border-slate-200 text-sm font-semibold hover:bg-slate-50 disabled:opacity-40 flex items-center gap-1">
+            Berikutnya <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Detail transaksi modal */}
+      {detailTrx && (() => {
+        const trx    = detailTrx
+        const struk  = trx.templateStruk || trx.template_struk || {}
+        const kwh    = struk.jumlah_kwh || struk.jumlahKwh
+        const tarif  = struk.tarif_daya || struk.tarifDaya
+        const sn     = trx.serialNumber || trx.serial_number
+        const isPln  = /pln|listrik|token/i.test(`${trx.productName || trx.product_name || ''} ${trx.category?.name || ''}`)
+        const reason = trx.failureReason || trx.failure_reason || trx.paymentResponse?.status
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setDetailTrx(null)}>
+            <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+              <div className="flex items-start justify-between gap-3 p-5 border-b border-slate-100">
+                <div>
+                  <h3 className="font-bold text-lg text-slate-900">Detail Transaksi</h3>
+                  <p className="text-xs text-slate-500 mt-0.5 font-mono">{trx.trxCode || trx.trx_code}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <StatusBadge status={trx.status} />
+                  <button onClick={() => setDetailTrx(null)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400"><X className="w-5 h-5" /></button>
+                </div>
+              </div>
+              <div className="p-5 space-y-4">
+                {/* Token listrik — ditonjolkan */}
+                {sn && (
+                  <div className={`rounded-xl border-2 p-3.5 ${isPln ? 'border-amber-300 bg-amber-50' : 'border-emerald-300 bg-emerald-50'}`}>
+                    <p className={`text-[10px] font-bold uppercase tracking-wide mb-1 ${isPln ? 'text-amber-700' : 'text-emerald-700'}`}>
+                      {isPln ? '⚡ Token Listrik' : 'Token / Nomor Seri (SN)'}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-lg font-black text-slate-900 break-all flex-1">{isPln ? formatToken(sn) : sn}</span>
+                      <button onClick={() => { navigator.clipboard?.writeText(String(sn).replace(/\D/g, '') || String(sn)); toast({ title: 'Token disalin' }) }}
+                        className="p-2 rounded-lg hover:bg-white/70 text-slate-500 shrink-0"><Copy className="w-4 h-4" /></button>
+                    </div>
+                    {(kwh || tarif) && (
+                      <p className="text-[11px] text-slate-500 mt-1.5">
+                        {kwh ? <>Jumlah: <b>{kwh} kWh</b></> : null}{kwh && tarif ? ' · ' : ''}{tarif ? <>Tarif/Daya: <b>{tarif}</b></> : null}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {/* Info transaksi */}
+                <div className="grid grid-cols-2 gap-x-5 gap-y-3">
+                  <DetailItem label="Kode Transaksi (kita)" value={trx.trxCode || trx.trx_code} mono copy toast={toast} />
+                  <DetailItem label="Ref ke Rajabiller" value={trx.ref1 || '-'} mono copy toast={toast} />
+                  <DetailItem label="Ref Rajabiller (vendor)" value={trx.rajaBillerRef || trx.raja_biller_ref || '-'} mono copy toast={toast} />
+                  <DetailItem label="RC Vendor" value={trx.rc || '-'} mono />
+                  <DetailItem label="Produk" value={trx.productName || trx.product_name} />
+                  <DetailItem label="Kategori" value={trx.category?.name || '-'} />
+                  <DetailItem label={isPln ? 'No. Meter / ID Pelanggan' : 'No. Tujuan'} value={trx.customerNumber || trx.customer_number} mono copy toast={toast} />
+                  <DetailItem label="Nama Pelanggan" value={trx.customerName || trx.customer_name || '-'} />
+                  <DetailItem label="Total" value={formatRupiah(trx.totalAmount || trx.total_amount)} />
+                  <DetailItem label="Pemesan" value={trx.user?.name || '-'} sub={trx.user?.email} />
+                </div>
+                {reason && (
+                  <div className="rounded-xl bg-rose-50 border border-rose-200 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-rose-600 mb-0.5">Alasan Gagal {trx.rc ? `(RC ${trx.rc})` : ''}</p>
+                    <p className="text-sm text-rose-800">{reason}</p>
+                  </div>
+                )}
+                {(trx.strukUrl || trx.struk_url) && (
+                  <a href={trx.strukUrl || trx.struk_url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:underline">
+                    Lihat struk / bukti ↗
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Mark Paid modal */}
       {markPaidTrx && (
@@ -435,5 +595,30 @@ function StatusBadge({ status }) {
     <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-${color}-100 text-${color}-700`}>
       {label}
     </span>
+  )
+}
+
+// Format token PLN ke grup 4 digit: "1234567890123456" → "1234 5678 9012 3456"
+function formatToken(raw) {
+  if (!raw) return ''
+  const d = String(raw).replace(/\D/g, '')
+  if (d.length < 8) return String(raw)
+  return d.match(/.{1,4}/g)?.join(' ') || String(raw)
+}
+
+function DetailItem({ label, value, mono, copy, toast, sub }) {
+  const hasVal = value !== undefined && value !== null && value !== '' && value !== '-'
+  const doCopy = () => { try { navigator.clipboard?.writeText(String(value)) } catch { /* noop */ }; toast?.({ title: 'Disalin' }) }
+  return (
+    <div className="min-w-0">
+      <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-0.5">{label}</p>
+      <div className="flex items-center gap-1.5">
+        <span className={`text-sm text-slate-800 break-all ${mono ? 'font-mono' : ''}`}>{hasVal ? value : '-'}</span>
+        {copy && hasVal && (
+          <button onClick={doCopy} className="p-1 rounded hover:bg-slate-100 text-slate-400 shrink-0"><Copy className="w-3.5 h-3.5" /></button>
+        )}
+      </div>
+      {sub && <p className="text-[10px] text-slate-400 truncate">{sub}</p>}
+    </div>
   )
 }

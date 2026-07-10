@@ -1270,6 +1270,11 @@
     "amenities": "Room Amenities"
   },
   "loyalty": {
+    "usePoints": "Redeem loyalty points",
+    "balanceLabel": "Points balance",
+    "max": "Max",
+    "appliedFromPoints": "from points",
+    "pointsLabel": "Loyalty Points",
     "title": "Loyalty Points",
     "subtitle": "Earn points from every transaction",
     "available": "Points available",

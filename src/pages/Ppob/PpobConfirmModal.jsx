@@ -25,6 +25,7 @@ export default function PpobConfirmModal({
   open, onClose, onConfirm, isLoading,
   product, customerNumber, customerLabel,
   totalAmount, operatorLabel, note, customerName,
+  redeemSlot = null, discount = 0,
 }) {
   const { t } = useTranslation()
   customerLabel = customerLabel || t('topup.phoneNumber')
@@ -108,14 +109,23 @@ export default function PpobConfirmModal({
             <div className="space-y-3 mb-5">
               {customerName && <DetailRow label={t('ppob.nameLabel')} value={customerName} />}
               <DetailRow label={customerLabel} value={customerNumber} mono />
+              {discount > 0 && (
+                <div className="flex items-center justify-between gap-3 text-xs sm:text-sm">
+                  <span className="text-slate-500">{t('loyalty.pointsLabel', 'Poin Loyalitas')}</span>
+                  <span className="font-semibold text-green-600">− {formatRupiah(discount)}</span>
+                </div>
+              )}
               <div className="border-t border-dashed border-slate-200 my-3" />
               <div className="flex items-end justify-between gap-3">
                 <span className="text-xs sm:text-sm text-slate-500 font-semibold">{t('confirmModal.totalPayment')}</span>
                 <span className="font-display text-xl sm:text-2xl font-bold text-brand">
-                  {formatRupiah(totalAmount)}
+                  {formatRupiah(Math.max(0, Number(totalAmount || 0) - Number(discount || 0)))}
                 </span>
               </div>
             </div>
+
+            {/* Redeem poin loyalitas */}
+            {redeemSlot && <div className="mb-4">{redeemSlot}</div>}
 
             {/* Warning */}
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 sm:p-3.5 flex items-start gap-2.5 mb-4">

@@ -11,6 +11,7 @@ import { formatRupiah } from '@/utils'
 import SEO from '@/components/SEO'
 import DateField from '@/components/ui/DateField'
 import PromoField from '@/components/travel/PromoField'
+import RedeemPoints from '@/components/ui/RedeemPoints'
 import { travelCheckoutError } from '@/utils/travelCheckoutError'
 
 const gradeLabel = (g) => ({ E: 'Eksekutif', B: 'Bisnis', K: 'Ekonomi' }[g] || g || '-')
@@ -83,7 +84,8 @@ export default function TrainBooking() {
   const adminFee   = Number(svcFee.adminAmount) || 0
   const total      = ticketSub + markupSub + adminFee
   const promoDiscount = appliedPromo?.discount || 0
-  const finalTotal    = Math.max(0, total - promoDiscount)
+  const [redeem, setRedeem] = useState({ discount: 0, usePoints: false, points: 0 })
+  const finalTotal    = Math.max(0, total - promoDiscount - (redeem.discount || 0))
 
   // Deadline countdown pakai WAKTU LOKAL (jam perangkat), BUKAN waktu server.
   // Di-anchor ke jam client saat booking dibuat; window dari skema: ≤3 jam sebelum
@@ -181,6 +183,8 @@ const nikError = adultNikError()
         price_child: priceChild,
         markup: markupSub,
         promo_code: appliedPromo?.code || undefined,
+        usePoints: redeem.usePoints,
+        pointsToRedeem: redeem.points || 0,
         train_name: train.trainName,
         departure_station: origin.namaStasiun,
         departure_time: train.departureTime,
@@ -367,6 +371,9 @@ const nikError = adultNikError()
           <PromoField moda="kereta" total={total} departDate={date} onApplied={setAppliedPromo} />
         </div>
 
+        {/* Tukar poin loyalitas */}
+        <RedeemPoints total={Math.max(0, total - promoDiscount)} onChange={setRedeem} className="mb-3" />
+
         {/* Rincian harga */}
         <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
           <p className="font-bold text-sm text-slate-900 mb-2.5">Rincian Harga</p>
@@ -380,6 +387,9 @@ const nikError = adultNikError()
             )}
             {promoDiscount > 0 && (
               <div className="flex justify-between"><span className="text-slate-500">Diskon Promo {appliedPromo?.code ? `(${appliedPromo.code})` : ''}</span><span className="font-medium text-green-600">- {formatRupiah(promoDiscount)}</span></div>
+            )}
+            {redeem.discount > 0 && (
+              <div className="flex justify-between"><span className="text-slate-500">Poin Loyalitas</span><span className="font-medium text-green-600">- {formatRupiah(redeem.discount)}</span></div>
             )}
             <div className="flex justify-between pt-1.5 border-t border-slate-100"><span className="font-bold text-slate-900">Total</span><span className="font-bold text-orange-600">{formatRupiah(finalTotal)}</span></div>
           </div>

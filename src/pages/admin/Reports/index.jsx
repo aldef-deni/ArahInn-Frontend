@@ -117,8 +117,22 @@ export default function AdminReports() {
     enabled : tab === 'canceled',
   })
 
+  const { data: ppob } = useQuery({
+    queryKey: ['report-ppob', { from, to }],
+    queryFn : () => adminApi.reportPpob({ from, to }).then(r => r.data.data),
+    enabled : tab === 'ppob',
+  })
+
+  const { data: travel } = useQuery({
+    queryKey: ['report-travel', { from, to }],
+    queryFn : () => adminApi.reportTravel({ from, to }).then(r => r.data.data),
+    enabled : tab === 'travel',
+  })
+
   const tabs = [
-    { id: 'revenue',  label: 'Pendapatan' },
+    { id: 'revenue',  label: 'Akomodasi' },
+    { id: 'ppob',     label: 'PPOB' },
+    { id: 'travel',   label: 'Tiket Travel' },
     { id: 'canceled', label: 'Pembatalan' },
   ]
 
@@ -205,9 +219,83 @@ export default function AdminReports() {
     }
   }
 
-  const currentPayload = () => (tab === 'revenue' ? buildRevenue() : buildCanceled())
+  const buildPpob = () => {
+    const txns = ppob?.transactions || []
+    return {
+      filename: `laporan-ppob-${from}_${to}`,
+      title   : 'Laporan PPOB',
+      subtitle: 'ArahInn — Transaksi PPOB berhasil',
+      period  : periodStr,
+      meta    : [],
+      summary : [
+        { label: 'Total Omzet PPOB',  value: formatRupiah(ppob?.totalOmzet || 0) },
+        { label: 'Jumlah Transaksi',  value: (ppob?.totalTransactions || 0).toLocaleString('id-ID') },
+        { label: 'Laba PPOB',         value: formatRupiah(ppob?.totalProfit || 0) },
+      ],
+      columns : [
+        { key: 'code',    header: 'Kode',       width: 16 },
+        { key: 'product', header: 'Produk',     width: 26 },
+        { key: 'number',  header: 'No. Tujuan', width: 16 },
+        { key: 'user',    header: 'User',       width: 20 },
+        { key: 'date',    header: 'Tanggal',    width: 14 },
+        { key: 'amount',  header: 'Total',      width: 16, money: true },
+      ],
+      rows: txns.map(t => ({
+        code   : t.trxCode || '-',
+        product: t.productName || '-',
+        number : t.customerNumber || '-',
+        user   : t.userName || '-',
+        date   : t.createdAt ? formatDateShort(t.createdAt) : '-',
+        amount : t.totalAmount || 0,
+      })),
+    }
+  }
+
+  const buildTravel = () => {
+    const txns = travel?.transactions || []
+    return {
+      filename: `laporan-travel-${from}_${to}`,
+      title   : 'Laporan Tiket Travel',
+      subtitle: 'ArahInn — E-tiket travel terbit',
+      period  : periodStr,
+      meta    : [],
+      summary : [
+        { label: 'Total Omzet Travel', value: formatRupiah(travel?.totalOmzet || 0) },
+        { label: 'Jumlah Tiket',       value: (travel?.totalTransactions || 0).toLocaleString('id-ID') },
+        { label: 'Laba Travel',        value: formatRupiah(travel?.totalProfit || 0) },
+      ],
+      columns : [
+        { key: 'code',    header: 'Kode',          width: 16 },
+        { key: 'moda',    header: 'Moda',          width: 12 },
+        { key: 'route',   header: 'Rute',          width: 16 },
+        { key: 'service', header: 'Layanan',       width: 18 },
+        { key: 'user',    header: 'User',          width: 20 },
+        { key: 'date',    header: 'Tgl Berangkat', width: 14 },
+        { key: 'amount',  header: 'Total',         width: 16, money: true },
+      ],
+      rows: txns.map(t => ({
+        code   : t.code || '-',
+        moda   : t.moda || '-',
+        route  : `${t.origin || ''}→${t.destination || ''}`,
+        service: t.serviceName || '-',
+        user   : t.userName || '-',
+        date   : t.departDate ? formatDateShort(t.departDate) : '-',
+        amount : t.totalPrice || 0,
+      })),
+    }
+  }
+
+  const currentPayload = () =>
+    tab === 'revenue' ? buildRevenue()
+    : tab === 'ppob'  ? buildPpob()
+    : tab === 'travel'? buildTravel()
+    : buildCanceled()
   const hasData = tab === 'revenue'
     ? (revenue?.transactions?.length > 0)
+    : tab === 'ppob'
+    ? (ppob?.transactions?.length > 0)
+    : tab === 'travel'
+    ? (travel?.transactions?.length > 0)
     : ((canceled?.canceled?.length || 0) + (canceled?.refunded?.length || 0) > 0)
 
   const handleExport = async (type) => {
@@ -266,6 +354,7 @@ export default function AdminReports() {
 
         {/* Row 3: property + owner filters + export */}
         <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100">
+          {['revenue', 'canceled'].includes(tab) && (<>
           <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Filter:</span>
           <FilterSelect icon={Building2} value={hotelId} onChange={setHotelId} options={hotelOptions} placeholder="Semua Properti" />
           <FilterSelect icon={User} value={ownerId} onChange={handleOwnerChange} options={ownerOptions} placeholder="Semua Owner" />
@@ -276,6 +365,7 @@ export default function AdminReports() {
               <X className="w-3 h-3" /> Reset filter
             </button>
           )}
+          </>)}
 
           {/* Export buttons */}
           <div className="flex items-center gap-2 ml-auto">
@@ -379,6 +469,159 @@ export default function AdminReports() {
                   <div className="px-5 py-3 text-center text-xs text-muted-foreground border-t">
                     Menampilkan 50 dari {revenue.transactions.length} transaksi — ekspor untuk data lengkap.
                   </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── PPOB report ── */}
+      {tab === 'ppob' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { label: 'Total Omzet PPOB', value: formatRupiah(ppob?.totalOmzet || 0), icon: '⚡' },
+              { label: 'Jumlah Transaksi', value: (ppob?.totalTransactions || 0).toLocaleString('id-ID'), icon: '🧾' },
+              { label: 'Laba PPOB',        value: formatRupiah(ppob?.totalProfit || 0), icon: '📈', accent: true },
+            ].map(({ label, value, icon, accent }) => (
+              <div key={label} className={cn('bg-white border rounded-2xl p-5 shadow-card', accent && 'ring-1 ring-amber-200 bg-amber-50/40')}>
+                <p className="text-2xl mb-3">{icon}</p>
+                <p className={cn('font-display text-xl lg:text-2xl font-bold break-all', accent && 'text-amber-700')}>{value}</p>
+                <p className="text-sm text-muted-foreground mt-1">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-white border rounded-2xl p-5 shadow-card">
+            <h2 className="font-semibold mb-5">Grafik Omzet PPOB Harian</h2>
+            {ppob?.daily?.length ? (
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart data={ppob.daily}>
+                  <defs>
+                    <linearGradient id="ppobGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#f59e0b" stopOpacity={0.18} />
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={d => d?.slice(5)} />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={v => v >= 1e6 ? `${(v/1e6).toFixed(1)}jt` : `${(v/1e3).toFixed(0)}rb`} />
+                  <Tooltip formatter={v => formatRupiah(v)} />
+                  <Legend />
+                  <Area type="monotone" dataKey="amount" name="Omzet PPOB" stroke="#f59e0b" strokeWidth={2} fill="url(#ppobGrad)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-56 flex items-center justify-center text-muted-foreground text-sm">Tidak ada data untuk periode ini.</div>
+            )}
+          </div>
+
+          {ppob?.transactions?.length > 0 && (
+            <div className="bg-white border rounded-2xl shadow-card overflow-hidden">
+              <div className="px-5 py-4 border-b font-semibold text-sm flex items-center justify-between">
+                <span>Daftar Transaksi PPOB</span>
+                <span className="text-xs text-muted-foreground font-normal">{ppob.transactions.length} transaksi</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40">
+                    <tr>{['Kode','Produk','No. Tujuan','User','Tanggal','Total'].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">{h}</th>
+                    ))}</tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {ppob.transactions.slice(0, 50).map(t => (
+                      <tr key={t.id} className="hover:bg-muted/20">
+                        <td className="px-4 py-3 font-mono text-xs font-bold text-brand">{t.trxCode}</td>
+                        <td className="px-4 py-3 max-w-[180px] truncate">{t.productName}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{t.customerNumber}</td>
+                        <td className="px-4 py-3 text-muted-foreground max-w-[130px] truncate">{t.userName || '–'}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">{t.createdAt ? formatDateShort(t.createdAt) : '–'}</td>
+                        <td className="px-4 py-3 font-semibold whitespace-nowrap">{formatRupiah(t.totalAmount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {ppob.transactions.length > 50 && (
+                  <div className="px-5 py-3 text-center text-xs text-muted-foreground border-t">Menampilkan 50 dari {ppob.transactions.length} — ekspor untuk data lengkap.</div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Travel report ── */}
+      {tab === 'travel' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { label: 'Total Omzet Travel', value: formatRupiah(travel?.totalOmzet || 0), icon: '✈️' },
+              { label: 'Jumlah Tiket',       value: (travel?.totalTransactions || 0).toLocaleString('id-ID'), icon: '🎟️' },
+              { label: 'Laba Travel',        value: formatRupiah(travel?.totalProfit || 0), icon: '📈', accent: true },
+            ].map(({ label, value, icon, accent }) => (
+              <div key={label} className={cn('bg-white border rounded-2xl p-5 shadow-card', accent && 'ring-1 ring-teal-200 bg-teal-50/40')}>
+                <p className="text-2xl mb-3">{icon}</p>
+                <p className={cn('font-display text-xl lg:text-2xl font-bold break-all', accent && 'text-teal-700')}>{value}</p>
+                <p className="text-sm text-muted-foreground mt-1">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-white border rounded-2xl p-5 shadow-card">
+            <h2 className="font-semibold mb-5">Grafik Omzet Tiket Travel Harian</h2>
+            {travel?.daily?.length ? (
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart data={travel.daily}>
+                  <defs>
+                    <linearGradient id="travelGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#14b8a6" stopOpacity={0.18} />
+                      <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={d => d?.slice(5)} />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={v => v >= 1e6 ? `${(v/1e6).toFixed(1)}jt` : `${(v/1e3).toFixed(0)}rb`} />
+                  <Tooltip formatter={v => formatRupiah(v)} />
+                  <Legend />
+                  <Area type="monotone" dataKey="amount" name="Omzet Travel" stroke="#14b8a6" strokeWidth={2} fill="url(#travelGrad)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-56 flex items-center justify-center text-muted-foreground text-sm">Tidak ada data untuk periode ini.</div>
+            )}
+          </div>
+
+          {travel?.transactions?.length > 0 && (
+            <div className="bg-white border rounded-2xl shadow-card overflow-hidden">
+              <div className="px-5 py-4 border-b font-semibold text-sm flex items-center justify-between">
+                <span>Daftar Tiket Travel</span>
+                <span className="text-xs text-muted-foreground font-normal">{travel.transactions.length} tiket</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40">
+                    <tr>{['Kode','Moda','Rute','Layanan','User','Berangkat','Total'].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">{h}</th>
+                    ))}</tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {travel.transactions.slice(0, 50).map(t => (
+                      <tr key={t.id} className="hover:bg-muted/20">
+                        <td className="px-4 py-3 font-mono text-xs font-bold text-brand">{t.code}</td>
+                        <td className="px-4 py-3 capitalize text-muted-foreground">{t.moda}</td>
+                        <td className="px-4 py-3 font-mono text-xs">{t.origin}→{t.destination}</td>
+                        <td className="px-4 py-3 text-muted-foreground max-w-[130px] truncate">{t.serviceName || '–'}</td>
+                        <td className="px-4 py-3 text-muted-foreground max-w-[120px] truncate">{t.userName || '–'}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">{t.departDate ? formatDateShort(t.departDate) : '–'}</td>
+                        <td className="px-4 py-3 font-semibold whitespace-nowrap">{formatRupiah(t.totalPrice)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {travel.transactions.length > 50 && (
+                  <div className="px-5 py-3 text-center text-xs text-muted-foreground border-t">Menampilkan 50 dari {travel.transactions.length} — ekspor untuk data lengkap.</div>
                 )}
               </div>
             </div>

@@ -1270,6 +1270,11 @@
     "amenities": "Fasilitas Kamar"
   },
   "loyalty": {
+    "usePoints": "Tukar poin loyalitas",
+    "balanceLabel": "Saldo poin",
+    "max": "Maks",
+    "appliedFromPoints": "dari poin",
+    "pointsLabel": "Poin Loyalitas",
     "title": "Poin Loyalitas",
     "subtitle": "Kumpulkan poin dari setiap transaksi",
     "available": "Poin tersedia",
