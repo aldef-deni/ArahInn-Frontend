@@ -10,6 +10,7 @@ import {
   Building2, ShieldCheck, CheckCircle2, Sparkles, Check, X,
 } from 'lucide-react'
 import { getCustomerPortalUrl } from '@/utils/isExtranet'
+import { applyServerErrors } from '@/utils/formErrors'
 
 // ── Password strength rules ────────────────────────────────────
 const PW_RULES = [
@@ -43,7 +44,7 @@ export default function RegisterExtranet() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [agree,       setAgree]       = useState(false)
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm()
+  const { register, handleSubmit, watch, setError, formState: { errors } } = useForm()
   const password = watch('password') || ''
   const pwStrength = getPasswordStrength(password)
 
@@ -58,11 +59,20 @@ export default function RegisterExtranet() {
       })
       navigate('/owner')
     },
-    onError: (e) => toast({
-      title: 'Registrasi gagal',
-      description: e?.response?.data?.message || 'Terjadi kesalahan saat mendaftar.',
-      variant: 'destructive',
-    }),
+    onError: (e) => {
+      // Error ditempelkan ke kolom yang bersangkutan; toast hanya untuk error umum.
+      const generalMsg = applyServerErrors(e, setError, {
+        role_already_assigned: {
+          field  : 'email',
+          message: 'Email ini sudah terdaftar sebagai pemilik properti. Silakan masuk, atau gunakan email lain.',
+        },
+      })
+      if (generalMsg) {
+        toast({ title: 'Registrasi gagal', description: generalMsg, variant: 'destructive' })
+      } else {
+        toast({ title: 'Periksa kembali data Anda', description: 'Ada kolom yang belum benar.', variant: 'destructive' })
+      }
+    },
   })
 
   const onSubmit = (d) => {
@@ -75,7 +85,10 @@ export default function RegisterExtranet() {
       return
     }
     if (d.password !== d.password_confirmation) {
-      toast({ title: 'Password tidak cocok', variant: 'destructive' })
+      setError('password_confirmation', {
+        type   : 'validate',
+        message: 'Password tidak sama dengan di atas. Ulangi lagi.',
+      }, { shouldFocus: true })
       return
     }
     const payload = { name: d.name, email: d.email, phone: d.phone, password: d.password }

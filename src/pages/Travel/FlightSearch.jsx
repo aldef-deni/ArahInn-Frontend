@@ -14,6 +14,7 @@ import LoaderArahInn from '@/components/LoaderArahInn'
 import TravelPromoSection from '@/components/travel/TravelPromoSection'
 import FlightRangeCalendar from '@/components/travel/FlightRangeCalendar'
 import TravelErrorModal from '@/components/travel/TravelErrorModal'
+import ServiceDownModal from '@/components/travel/ServiceDownModal'
 import bannerFlight from '@/assets/banners/cari-pesawat.webp'
 
 const FLIGHT_LOADER_MESSAGES = [
@@ -139,6 +140,13 @@ export default function FlightSearch() {
   const { data: airports = [] } = useQuery({
     queryKey: ['flight-airports'], queryFn: () => travelApi.airports().then(r => r.data?.data || []), staleTime: 86400_000,
   })
+  // Moda dinonaktifkan superadmin (mis. vendor gangguan) → tutup halaman dengan overlay.
+  const { data: disabledModas = [] } = useQuery({
+    queryKey: ['travel-service-status'],
+    queryFn : () => travelApi.serviceStatus().then(r => r.data?.data?.disabled ?? []),
+    staleTime: 60_000,
+  })
+  const modaDown = disabledModas.map(String).includes('pesawat')
   // Biaya penanganan tiket pesawat (persen ATAU nominal per pax)
   const { data: svcFee = { amount: 0, percent: 0 } } = useQuery({
     queryKey: ['travel-svcfee', 'pesawat'],
@@ -301,6 +309,8 @@ export default function FlightSearch() {
   return (
     <div className="min-h-[70vh] bg-slate-50">
       {searching && <LoaderArahInn messages={FLIGHT_LOADER_MESSAGES} />}
+      <ServiceDownModal open={modaDown} accent="sky" backTo="/"
+        message="Layanan untuk tiket pesawat sedang dalam gangguan, mohon kembali lagi nanti." />
       <SEO title={t('travel.flightSeoTitle')} description={t('travel.flightSeoDesc')} url="/tiket/pesawat" />
 
       {showForm && (
@@ -351,6 +361,7 @@ export default function FlightSearch() {
                 {tripType !== 'roundtrip' && (
                   <input ref={dateRef} type="date" value={date} min={todayStr()}
                     onChange={e => { setDate(e.target.value); if (returnDate && returnDate < e.target.value) setReturnDate('') }}
+                    onClick={openDatePicker}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" aria-label={t('travel.date')} />
                 )}
               </div>

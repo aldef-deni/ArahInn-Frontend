@@ -23,6 +23,10 @@ export default function DateField({ label, value, onChange, max, min, icon: Icon
           max={max}
           min={min}
           onChange={e => onChange(e.target.value)}
+          // Desktop: klik pada input type=date TIDAK membuka kalender kecuali via
+          // showPicker() (ikon kalender tersembunyi karena opacity-0). Di Safari iOS
+          // showPicker tak ada → optional chaining no-op, focus tetap buka picker.
+          onClick={e => { try { e.currentTarget.showPicker?.() } catch { /* fallback: focus buka picker */ } }}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           aria-label={label}
         />

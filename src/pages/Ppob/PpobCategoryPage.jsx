@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/authStore'
 import {
   Smartphone, Wifi, Zap, Lightbulb, Droplets, HeartPulse, Router, Wallet,
   ChevronLeft, AlertCircle, Loader2, CheckCircle, Tv, CreditCard, Landmark, Car, Receipt,
+  AlertTriangle,
 } from 'lucide-react'
 import PpobPulsaDataView from './PpobPulsaDataView'
 import PpobPlnView from './PpobPlnView'
@@ -54,6 +55,14 @@ export default function PpobCategoryPage() {
   })
 
   const groupCategories = categories.filter(c => meta?.filterGroups.includes(c.group || c.code))
+
+  // Status layanan: grup ini dimatikan superadmin (mis. e-wallet saat provider gangguan)?
+  const { data: disabledGroups = [] } = useQuery({
+    queryKey: ['ppob-groups-status'],
+    queryFn : () => ppobApi.groupsStatus().then(r => r.data?.data?.disabled ?? []),
+    staleTime: 60_000,
+  })
+  const isGroupDown = disabledGroups.map(String).includes(String(group))
 
   // Auto-select category untuk single-category groups
   useEffect(() => {
@@ -213,7 +222,7 @@ export default function PpobCategoryPage() {
         </div>
       </header>
 
-      <div className="container py-4 sm:py-6 max-w-3xl">
+      <div className={`container py-4 sm:py-6 max-w-3xl ${isGroupDown ? 'pointer-events-none select-none opacity-50 blur-[1px]' : ''}`} aria-hidden={isGroupDown}>
         {/* Desktop back button + title */}
         <div className="hidden sm:block">
           <button onClick={() => navigate("/topup-tagihan")}
@@ -445,6 +454,31 @@ export default function PpobCategoryPage() {
                 : 'Pulsa/paket akan dikirim ke nomor ini. Tidak bisa dialihkan setelah konfirmasi.'
         }
       />
+
+      {/* ── Overlay gangguan layanan (grup dimatikan superadmin) ── */}
+      {isGroupDown && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Aksen atas */}
+            <div className="h-1.5 bg-gradient-to-r from-amber-400 via-orange-500 to-red-500" />
+            <div className="p-6 sm:p-7 text-center">
+              <div className="mx-auto w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mb-4 ring-8 ring-amber-50/60">
+                <AlertTriangle className="w-8 h-8 text-amber-500" strokeWidth={2.25} />
+              </div>
+              <h2 className="text-lg font-bold text-slate-900 mb-1.5">Layanan Sedang Gangguan</h2>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                Layanan sedang dalam gangguan, cobalah beberapa saat lagi.
+              </p>
+              <button
+                onClick={() => navigate('/topup-tagihan')}
+                className="mt-6 w-full py-3 rounded-xl bg-brand text-white font-semibold text-sm hover:brightness-95 active:scale-[0.98] transition-all"
+              >
+                Kembali ke PPOB
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

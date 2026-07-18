@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { ppobApi } from '@/services/index'
+import { ppobApi, travelApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import {
   Smartphone, Zap, Receipt, Wallet, Gamepad2,
   History, ChevronRight, ShieldCheck, ArrowRight,
-  Plane, TrainFront, Ship,
+  Plane, TrainFront, Ship, AlertTriangle,
 } from 'lucide-react'
 import SEO from '@/components/SEO'
 import bannerPpob from '@/assets/banners/ppob.webp'
@@ -48,6 +48,22 @@ export default function PpobLanding() {
     staleTime: 60_000,
   })
   const hasRecent = (recentResp?.data?.length ?? 0) > 0
+
+  // Grup layanan yang dinonaktifkan superadmin (mis. e-wallet saat provider gangguan)
+  const { data: disabledGroups = [] } = useQuery({
+    queryKey: ['ppob-groups-status'],
+    queryFn : () => ppobApi.groupsStatus().then(r => r.data?.data?.disabled ?? []),
+    staleTime: 60_000,
+  })
+  const isGroupDown = (id) => disabledGroups.map(String).includes(String(id))
+
+  // Moda travel yang dinonaktifkan superadmin (mis. vendor gangguan)
+  const { data: disabledModas = [] } = useQuery({
+    queryKey: ['travel-service-status'],
+    queryFn : () => travelApi.serviceStatus().then(r => r.data?.data?.disabled ?? []),
+    staleTime: 60_000,
+  })
+  const isModaDown = (id) => disabledModas.map(String).includes(String(id))
 
   return (
     <div className="bg-slate-50 sm:bg-transparent min-h-[60vh]">
@@ -91,37 +107,67 @@ export default function PpobLanding() {
             const Icon = group.Icon
             // First card spans 2 columns on mobile (hero treatment)
             const isHero = idx === 0
-            return (
-              <Link
-                key={group.id}
-                to={group.path}
-                className={`group relative bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-5 hover:border-brand hover:shadow-lg active:scale-[0.97] transition-all overflow-hidden flex flex-col ${
-                  isHero ? 'col-span-2 sm:col-span-1' : ''
-                } min-h-[120px] sm:min-h-[150px]`}
-              >
+            const down = isGroupDown(group.id)
+
+            // Konten kartu (dipakai baik saat aktif maupun nonaktif)
+            const cardInner = (
+              <>
                 {/* Gradient accent corner */}
                 <div className={`absolute top-0 right-0 w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br ${group.gradient} opacity-10 rounded-bl-full pointer-events-none`} />
 
-                {/* Badge (kalau ada) */}
-                {group.badge && (
+                {/* Badge (kalau ada) — sembunyikan saat gangguan */}
+                {group.badge && !down && (
                   <span className="absolute top-2.5 right-2.5 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700">
                     {group.badge}
                   </span>
                 )}
+                {down && (
+                  <span className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-red-100 text-red-700">
+                    <AlertTriangle className="w-3 h-3" /> {t('topupLanding.disruptedBadge', 'Gangguan')}
+                  </span>
+                )}
 
                 {/* Icon */}
-                <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl ${group.iconBg} flex items-center justify-center mb-2.5 sm:mb-3 relative shrink-0`}>
-                  <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${group.iconColor}`} strokeWidth={2.25} />
+                <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl ${down ? 'bg-slate-100' : group.iconBg} flex items-center justify-center mb-2.5 sm:mb-3 relative shrink-0`}>
+                  <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${down ? 'text-slate-400' : group.iconColor}`} strokeWidth={2.25} />
                 </div>
 
                 {/* Label */}
-                <p className="font-bold text-slate-900 text-sm sm:text-base leading-tight relative">{group.label}</p>
+                <p className={`font-bold text-sm sm:text-base leading-tight relative ${down ? 'text-slate-400' : 'text-slate-900'}`}>{group.label}</p>
                 <p className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 sm:mt-1 line-clamp-2 leading-snug relative">
-                  {group.desc}
+                  {down ? t('topupLanding.disruptedDesc', 'Sedang gangguan, coba lagi nanti') : group.desc}
                 </p>
 
                 {/* Chevron */}
-                <ChevronRight className="w-4 h-4 text-slate-300 absolute bottom-3 right-3 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
+                {!down && (
+                  <ChevronRight className="w-4 h-4 text-slate-300 absolute bottom-3 right-3 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
+                )}
+              </>
+            )
+
+            const baseCls = `group relative rounded-2xl p-3.5 sm:p-5 overflow-hidden flex flex-col ${
+              isHero ? 'col-span-2 sm:col-span-1' : ''
+            } min-h-[120px] sm:min-h-[150px]`
+
+            if (down) {
+              return (
+                <div
+                  key={group.id}
+                  aria-disabled="true"
+                  className={`${baseCls} bg-slate-50 border border-slate-200 opacity-70 cursor-not-allowed`}
+                >
+                  {cardInner}
+                </div>
+              )
+            }
+
+            return (
+              <Link
+                key={group.id}
+                to={group.path}
+                className={`${baseCls} bg-white border border-slate-200 hover:border-brand hover:shadow-lg active:scale-[0.97] transition-all`}
+              >
+                {cardInner}
               </Link>
             )
           })}
@@ -135,19 +181,41 @@ export default function PpobLanding() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
           {TICKETS.map((group) => {
             const Icon = group.Icon
+            const down = isModaDown(group.id)
+            const baseCls = 'group relative rounded-2xl p-3.5 sm:p-5 overflow-hidden flex flex-col min-h-[120px] sm:min-h-[150px]'
+            const inner = (
+              <>
+                <div className={`absolute top-0 right-0 w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br ${group.gradient} opacity-10 rounded-bl-full pointer-events-none`} />
+                {down && (
+                  <span className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-red-100 text-red-700">
+                    <AlertTriangle className="w-3 h-3" /> {t('topupLanding.disruptedBadge', 'Gangguan')}
+                  </span>
+                )}
+                <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl ${down ? 'bg-slate-100' : group.iconBg} flex items-center justify-center mb-2.5 sm:mb-3 relative shrink-0`}>
+                  <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${down ? 'text-slate-400' : group.iconColor}`} strokeWidth={2.25} />
+                </div>
+                <p className={`font-bold text-sm sm:text-base leading-tight relative ${down ? 'text-slate-400' : 'text-slate-900'}`}>{group.label}</p>
+                <p className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 sm:mt-1 line-clamp-2 leading-snug relative">
+                  {down ? t('topupLanding.disruptedDesc', 'Sedang gangguan, coba lagi nanti') : group.desc}
+                </p>
+                {!down && <ChevronRight className="w-4 h-4 text-slate-300 absolute bottom-3 right-3 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />}
+              </>
+            )
+            if (down) {
+              return (
+                <div key={group.id} aria-disabled="true"
+                  className={`${baseCls} bg-slate-50 border border-slate-200 opacity-70 cursor-not-allowed`}>
+                  {inner}
+                </div>
+              )
+            }
             return (
               <Link
                 key={group.id}
                 to={group.path}
-                className="group relative bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-5 hover:border-brand hover:shadow-lg active:scale-[0.97] transition-all overflow-hidden flex flex-col min-h-[120px] sm:min-h-[150px]"
+                className={`${baseCls} bg-white border border-slate-200 hover:border-brand hover:shadow-lg active:scale-[0.97] transition-all`}
               >
-                <div className={`absolute top-0 right-0 w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br ${group.gradient} opacity-10 rounded-bl-full pointer-events-none`} />
-                <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl ${group.iconBg} flex items-center justify-center mb-2.5 sm:mb-3 relative shrink-0`}>
-                  <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${group.iconColor}`} strokeWidth={2.25} />
-                </div>
-                <p className="font-bold text-slate-900 text-sm sm:text-base leading-tight relative">{group.label}</p>
-                <p className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 sm:mt-1 line-clamp-2 leading-snug relative">{group.desc}</p>
-                <ChevronRight className="w-4 h-4 text-slate-300 absolute bottom-3 right-3 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
+                {inner}
               </Link>
             )
           })}

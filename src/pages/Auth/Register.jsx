@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useTranslation } from 'react-i18next'
 import { Eye, EyeOff, Mail, Lock, User, Phone, UserPlus, CheckCircle2, X } from 'lucide-react'
 import SEO from '@/components/SEO'
+import { applyServerErrors } from '@/utils/formErrors'
 
 export default function Register() {
   const { t }     = useTranslation()
@@ -18,7 +19,7 @@ export default function Register() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [registeredEmail, setEmail]   = useState('')
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm()
+  const { register, handleSubmit, watch, setError, formState: { errors } } = useForm()
   const password = watch('password')
 
   const mutation = useMutation({
@@ -29,7 +30,21 @@ export default function Register() {
       setEmail(user.email)
       setShowSuccess(true)
     },
-    onError: (e) => toast({ title: 'Registrasi gagal', description: e?.response?.data?.message || 'Coba lagi.', variant: 'destructive' }),
+    onError: (e) => {
+      // Tempelkan error ke kolom yang bersangkutan (email sudah terdaftar,
+      // password kependekan, dll). Toast hanya untuk error yang tak berkolom.
+      const generalMsg = applyServerErrors(e, setError, {
+        role_already_assigned: {
+          field  : 'email',
+          message: 'Email ini sudah terdaftar. Silakan masuk, atau gunakan email lain.',
+        },
+      })
+      if (generalMsg) {
+        toast({ title: 'Registrasi gagal', description: generalMsg, variant: 'destructive' })
+      } else {
+        toast({ title: 'Periksa kembali data Anda', description: 'Ada kolom yang belum benar.', variant: 'destructive' })
+      }
+    },
   })
 
   const handleClose = () => { setShowSuccess(false); navigate('/') }
@@ -37,10 +52,36 @@ export default function Register() {
   const onSubmit = ({ confirmPassword, ...d }) => mutation.mutate(d)
 
   const fields = [
-    { name: 'name',    label: t('auth.name'),    icon: User,  type: 'text',     placeholder: 'Nama Lengkap Anda', rules: { required: 'Nama wajib diisi', minLength: { value: 3, message: 'Minimal 3 karakter' } } },
-    { name: 'email',   label: t('auth.email'),   icon: Mail,  type: 'email',    placeholder: 'email@contoh.com', rules: { required: 'Email wajib diisi', pattern: { value: /^\S+@\S+\.\S+$/, message: 'Format email tidak valid' } } },
-    { name: 'phone',   label: t('auth.phone'),   icon: Phone, type: 'tel',      placeholder: '08xxxxxxxxxx', rules: {} },
+    {
+      name: 'name', label: t('auth.name'), icon: User, type: 'text', placeholder: 'Nama Lengkap Anda',
+      rules: {
+        required : 'Nama lengkap wajib diisi.',
+        minLength: { value: 3, message: 'Nama terlalu pendek, minimal 3 karakter.' },
+      },
+    },
+    {
+      name: 'email', label: t('auth.email'), icon: Mail, type: 'email', placeholder: 'email@contoh.com',
+      rules: {
+        required: 'Email wajib diisi.',
+        pattern : { value: /^\S+@\S+\.\S+$/, message: 'Format email belum benar. Contoh: nama@email.com' },
+      },
+    },
+    {
+      name: 'phone', label: t('auth.phone'), icon: Phone, type: 'tel', placeholder: '08xxxxxxxxxx',
+      // Opsional — tapi kalau diisi, formatnya harus benar.
+      rules: {
+        pattern: { value: /^0[0-9]{8,14}$/, message: 'Nomor HP belum benar. Contoh: 081234567890' },
+      },
+    },
   ]
+
+  // Kolom yang error → border merah supaya jelas kolom mana yang salah.
+  const inputCls = (hasError, extraPad = 'pr-4') =>
+    `w-full pl-10 ${extraPad} py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${
+      hasError
+        ? 'border-red-400 bg-red-50/40 focus:ring-red-300 focus:border-red-500'
+        : 'focus:ring-brand/50 focus:border-brand'
+    }`
 
   return (
     <>
@@ -96,7 +137,8 @@ export default function Register() {
               <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input type={type} placeholder={placeholder}
                 {...register(name, rules)}
-                className="w-full pl-10 pr-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand" />
+                aria-invalid={!!errors[name]}
+                className={inputCls(!!errors[name])} />
             </div>
             {errors[name] && <p className="text-red-500 text-xs mt-1">{errors[name].message}</p>}
           </div>
@@ -108,8 +150,12 @@ export default function Register() {
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input type={showPass ? 'text' : 'password'} placeholder="Minimal 6 karakter"
-              {...register('password', { required: 'Password wajib diisi', minLength: { value: 6, message: 'Minimal 6 karakter' } })}
-              className="w-full pl-10 pr-10 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand" />
+              {...register('password', {
+                required : 'Password wajib diisi.',
+                minLength: { value: 6, message: 'Password terlalu pendek, minimal 6 karakter.' },
+              })}
+              aria-invalid={!!errors.password}
+              className={inputCls(!!errors.password, 'pr-10')} />
             <button type="button" onClick={() => setShowPass(!showPass)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
               {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -124,8 +170,12 @@ export default function Register() {
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input type="password" placeholder="Ulangi password"
-              {...register('confirmPassword', { required: 'Konfirmasi password', validate: v => v === password || 'Password tidak cocok' })}
-              className="w-full pl-10 pr-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand" />
+              {...register('confirmPassword', {
+                required: 'Konfirmasi password wajib diisi.',
+                validate: v => v === password || 'Password tidak sama dengan di atas. Ulangi lagi.',
+              })}
+              aria-invalid={!!errors.confirmPassword}
+              className={inputCls(!!errors.confirmPassword)} />
           </div>
           {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>}
         </div>

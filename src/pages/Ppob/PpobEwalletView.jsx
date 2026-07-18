@@ -141,23 +141,30 @@ export default function PpobEwalletView({
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
             {availableBrands.map(b => {
               const active = selectedBrand?.id === b.id
+              const down = (grouped[b.id] || []).some(p => p.disrupted)
               return (
                 <button
                   key={b.id}
-                  onClick={() => setSelectedBrand(b)}
+                  onClick={() => !down && setSelectedBrand(b)}
+                  disabled={down}
+                  title={down ? 'Sedang gangguan di sisi provider — coba lagi nanti' : undefined}
                   className={`relative aspect-square sm:aspect-auto sm:p-3.5 rounded-xl border-2 flex flex-col items-center justify-center gap-1 sm:gap-1.5 transition-all active:scale-[0.96] overflow-hidden p-2 ${
-                    active
+                    down
+                      ? 'border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed'
+                      : active
                       ? `${b.border} ${b.soft} shadow-sm`
                       : 'border-slate-200 hover:border-slate-300 bg-white'
                   }`}
                 >
-                  <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg flex items-center justify-center ${b.color}`}>
+                  <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg flex items-center justify-center ${down ? 'bg-slate-400' : b.color}`}>
                     <Wallet className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-white" />
                   </div>
                   <p className={`text-[11px] sm:text-xs font-bold text-center leading-tight ${active ? b.accent : 'text-slate-800'}`}>
                     {b.label}
                   </p>
-                  {active && (
+                  {down ? (
+                    <span className="text-[9px] font-bold text-rose-600 leading-tight">⚠ Gangguan</span>
+                  ) : active && (
                     <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-sm">
                       <Check className={`w-3 h-3 ${b.accent}`} strokeWidth={3} />
                     </div>

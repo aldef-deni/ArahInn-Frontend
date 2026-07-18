@@ -27,6 +27,11 @@ const convertKeysDeep = (value, keyConverter) => {
   )
 }
 
+// Endpoint auth publik: 401/404 di sini artinya KREDENSIAL SALAH (email/password),
+// bukan sesi kedaluwarsa. Jangan dipicu refresh-token / logout / redirect —
+// biarkan halaman login & daftar menampilkan error per kolom.
+const AUTH_PUBLIC_URL = /\/auth\/(login|register|register-owner|forgot-password|reset-password|google)/
+
 const api = axios.create({
   baseURL        : import.meta.env.VITE_API_URL || '/api/v1',
   timeout        : 30000,
@@ -61,7 +66,8 @@ api.interceptors.response.use(
   },
   async err => {
     const original = err.config
-    if (err.response?.status === 401 && !original._retry) {
+    const isAuthPublic = AUTH_PUBLIC_URL.test(original?.url || '')
+    if (err.response?.status === 401 && !original._retry && !isAuthPublic) {
       original._retry = true
       const refreshToken = useAuthStore.getState().refreshToken
       if (refreshToken) {

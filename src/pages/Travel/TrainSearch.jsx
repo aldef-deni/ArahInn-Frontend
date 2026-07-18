@@ -13,6 +13,7 @@ import SEO from '@/components/SEO'
 import TravelPromoSection from '@/components/travel/TravelPromoSection'
 import bannerKai from '@/assets/banners/banner-kai.webp'
 import TravelErrorModal from '@/components/travel/TravelErrorModal'
+import ServiceDownModal from '@/components/travel/ServiceDownModal'
 
 // Tanggal LOKAL (YYYY-MM-DD) — JANGAN toISOString() (itu UTC, mundur sehari di WIB).
 const pad2 = (n) => String(n).padStart(2, '0')
@@ -248,6 +249,13 @@ export default function TrainSearch() {
     queryFn : () => travelApi.stations().then(r => r.data?.data || []),
     staleTime: 86400_000,
   })
+  // Moda dinonaktifkan superadmin (mis. vendor gangguan)
+  const { data: disabledModas = [] } = useQuery({
+    queryKey: ['travel-service-status'],
+    queryFn : () => travelApi.serviceStatus().then(r => r.data?.data?.disabled ?? []),
+    staleTime: 60_000,
+  })
+  const modaDown = disabledModas.map(String).includes('kereta')
   // Biaya penanganan tiket kereta (persen ATAU nominal per pax)
   const { data: svcFee = { amount: 0, percent: 0 } } = useQuery({
     queryKey: ['travel-svcfee', 'kereta'],
@@ -303,6 +311,8 @@ export default function TrainSearch() {
 
   return (
     <div className="min-h-[70vh] bg-slate-50">
+      <ServiceDownModal open={modaDown} accent="amber" backTo="/"
+        message="Layanan untuk tiket KAI sedang dalam gangguan, mohon kembali lagi nanti." />
       <SEO title={t('travel.trainSeoTitle')} description={t('travel.trainSeoDesc')} url="/tiket/kereta" />
 
       {/* Hero + form */}
@@ -350,6 +360,7 @@ export default function TrainSearch() {
                 {/* Input date transparan menutupi kotak → tap langsung buka native picker (kompatibel Safari iOS). */}
                 <input ref={dateRef} type="date" value={date} min={todayStr()} max={maxDateStr()}
                   onChange={e => { const v = e.target.value; if (v && (v < todayStr() || v > maxDateStr())) return; setDate(v) }}
+                  onClick={openDatePicker}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" aria-label={t('travel.date')} />
               </div>
               <div className="p-3 rounded-xl border border-slate-200">

@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { Eye, EyeOff, Mail, Lock, LogIn } from 'lucide-react'
 import { isManagementRole, isOwnerRole } from '@/utils/isExtranet'
 import SEO from '@/components/SEO'
+import { applyServerErrors } from '@/utils/formErrors'
 
 export default function Login() {
   const { t }      = useTranslation()
@@ -55,22 +56,33 @@ export default function Login() {
       navigate('/dashboard')
     },
     onError: (e) => {
-      const code = e?.response?.data?.error
-      const msg  = e?.response?.data?.message
-
-      if (code === 'email_not_found') {
-        setError('email', { type: 'server', message: 'Email Anda Salah / belum terdaftar.' })
-        toast({ title: 'Email Anda Salah', description: msg || 'Email belum terdaftar di sistem.', variant: 'destructive' })
-      } else if (code === 'wrong_password') {
-        setError('password', { type: 'server', message: 'Password Anda Salah.' })
-        toast({ title: 'Password Anda Salah', description: msg || 'Periksa kembali password yang Anda masukkan.', variant: 'destructive' })
-      } else {
-        toast({ title: 'Login gagal', description: msg || 'Email atau password salah.', variant: 'destructive' })
+      // Error ditempelkan ke kolom yang salah (email / password).
+      // Toast hanya muncul untuk error yang tidak terkait kolom tertentu.
+      const generalMsg = applyServerErrors(e, setError, {
+        email_not_found: {
+          field  : 'email',
+          message: 'Email Anda salah atau belum terdaftar. Coba ulangi lagi.',
+        },
+        wrong_password: {
+          field  : 'password',
+          message: 'Password Anda salah, coba ulangi lagi.',
+        },
+      })
+      if (generalMsg) {
+        toast({ title: 'Login gagal', description: generalMsg, variant: 'destructive' })
       }
     },
   })
 
   const onSubmit = (d) => mutation.mutate(d)
+
+  // Kolom yang error → border merah supaya jelas kolom mana yang salah.
+  const inputCls = (hasError, extraPad = 'pr-4') =>
+    `w-full pl-10 ${extraPad} py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${
+      hasError
+        ? 'border-red-400 bg-red-50/40 focus:ring-red-300 focus:border-red-500'
+        : 'focus:ring-brand/50 focus:border-brand'
+    }`
 
   return (
     <div className="animate-fade-in">
@@ -86,8 +98,12 @@ export default function Login() {
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input type="email" placeholder="email@contoh.com"
-              {...register('email', { required: 'Email wajib diisi', pattern: { value: /^\S+@\S+\.\S+$/, message: 'Format email tidak valid' } })}
-              className="w-full pl-10 pr-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand" />
+              {...register('email', {
+                required: 'Email wajib diisi.',
+                pattern : { value: /^\S+@\S+\.\S+$/, message: 'Format email belum benar. Contoh: nama@email.com' },
+              })}
+              aria-invalid={!!errors.email}
+              className={inputCls(!!errors.email)} />
           </div>
           {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
         </div>
@@ -99,9 +115,10 @@ export default function Login() {
           </div>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input type={showPass ? 'text' : 'password'} placeholder="Minimal 6 karakter"
-              {...register('password', { required: 'Password wajib diisi', minLength: { value: 6, message: 'Minimal 6 karakter' } })}
-              className="w-full pl-10 pr-10 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/50 focus:border-brand" />
+            <input type={showPass ? 'text' : 'password'} placeholder="Masukkan password Anda"
+              {...register('password', { required: 'Password wajib diisi.' })}
+              aria-invalid={!!errors.password}
+              className={inputCls(!!errors.password, 'pr-10')} />
             <button type="button" onClick={() => setShowPass(!showPass)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
               {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

@@ -33,6 +33,8 @@ export const xasApi = {
 export const travelApi = {
   // Settings publik (markup per pax)
   settings    : ()  => api.get('/travel/settings'),
+  // Status layanan travel (moda yang dinonaktifkan superadmin)
+  serviceStatus: () => api.get('/travel/service-status'),
   // Public (read-only)
   stations    : ()  => api.get('/travel/train/stations'),
   searchTrain : (d) => api.post('/travel/train/search', d),      // { origin, destination, date, adult, infant }
@@ -63,6 +65,8 @@ export const travelApi = {
   adminRebook   : (id)    => api.post(`/admin/travel/bookings/${id}/rebook`),
   adminSyncVendor: (id)   => api.post(`/admin/travel/bookings/${id}/sync-vendor`),
   adminBulkDelete: (ids) => api.post('/admin/travel/bookings/bulk-delete', { ids }),
+  adminServiceStatus   : ()         => api.get('/admin/travel/service-status'),
+  adminSetServiceStatus: (disabled) => api.post('/admin/travel/service-status', { disabled }),
 
   // ── Pesawat ──
   airports      : ()  => api.get('/travel/flight/airports'),
@@ -309,6 +313,7 @@ export const ppobApi = {
   // Public catalog
   categories      : ()        => api.get('/ppob/categories'),
   products        : (p)       => api.get('/ppob/products', { params: p }),
+  groupsStatus    : ()        => api.get('/ppob/groups-status'),
   // Authenticated — PREPAID 1-step (purchase), POSTPAID 2-step (inquiry → confirmPay)
   purchase        : (d)       => api.post('/ppob/purchase', d),
   inquiry         : (d)       => api.post('/ppob/inquiry', d),
@@ -326,5 +331,7 @@ export const ppobApi = {
   adminBalance    : (fresh)   => api.get('/admin/ppob/balance', { params: fresh ? { fresh: 1 } : {} }),
   adminCategories : ()        => api.get('/admin/ppob/categories'),
   adminUpdateCategory: (id,d) => api.put(`/admin/ppob/categories/${id}`, d),
+  adminGroupsStatus  : ()     => api.get('/admin/ppob/groups-status'),
+  adminSetGroupsStatus: (disabled) => api.post('/admin/ppob/groups-status', { disabled }),
   adminSyncCatalog: (d)       => api.post('/admin/ppob/sync-catalog', d),
 }

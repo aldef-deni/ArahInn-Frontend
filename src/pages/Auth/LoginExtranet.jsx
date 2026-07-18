@@ -15,6 +15,7 @@ import {
   isOwnerPortal,
   isOwnerRole,
 } from '@/utils/isExtranet'
+import { applyServerErrors } from '@/utils/formErrors'
 
 export default function LoginExtranet() {
   const navigate  = useNavigate()
@@ -84,17 +85,19 @@ export default function LoginExtranet() {
       navigate(ownerMode ? '/owner' : '/admin')
     },
     onError: (e) => {
-      const code = e?.response?.data?.error
-      const msg  = e?.response?.data?.message
-
-      if (code === 'email_not_found') {
-        setError('email', { type: 'server', message: 'Email Anda Salah / belum terdaftar.' })
-        toast({ title: 'Email Anda Salah', description: msg || 'Email belum terdaftar di sistem.', variant: 'destructive' })
-      } else if (code === 'wrong_password') {
-        setError('password', { type: 'server', message: 'Password Anda Salah.' })
-        toast({ title: 'Password Anda Salah', description: msg || 'Periksa kembali password yang Anda masukkan.', variant: 'destructive' })
-      } else {
-        toast({ title: 'Login gagal', description: msg || 'Email atau password salah.', variant: 'destructive' })
+      // Error ditempelkan ke kolom yang salah; toast hanya untuk error umum.
+      const generalMsg = applyServerErrors(e, setError, {
+        email_not_found: {
+          field  : 'email',
+          message: 'Email Anda salah atau belum terdaftar. Coba ulangi lagi.',
+        },
+        wrong_password: {
+          field  : 'password',
+          message: 'Password Anda salah, coba ulangi lagi.',
+        },
+      })
+      if (generalMsg) {
+        toast({ title: 'Login gagal', description: generalMsg, variant: 'destructive' })
       }
     },
   })

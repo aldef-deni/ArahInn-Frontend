@@ -2,7 +2,15 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Plane, TrainFront, Ship, Ticket, CheckCircle2, Loader2, Clock, XCircle, Search, RefreshCw, Trash2, RotateCcw,
+  Power, AlertTriangle, CheckCircle,
 } from 'lucide-react'
+
+// Moda travel yang bisa dinonaktifkan sementara (mis. vendor gangguan).
+const TRAVEL_MODAS = [
+  { id: 'pesawat', label: 'Tiket Pesawat', Icon: Plane },
+  { id: 'kereta',  label: 'Tiket Kereta',  Icon: TrainFront },
+  { id: 'pelni',   label: 'Tiket Pelni',   Icon: Ship },
+]
 import { travelApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
@@ -136,6 +144,27 @@ export default function AdminTravel() {
     },
   })
 
+  // ── Status layanan per moda (enable/disable saat vendor gangguan) ──
+  const isSuperOrAdmin = ['superadmin', 'admin'].includes(user?.role)
+  const { data: disabledModas = [] } = useQuery({
+    queryKey: ['admin-travel-service-status'],
+    queryFn : () => travelApi.adminServiceStatus().then(r => r.data?.data?.disabled ?? []),
+    staleTime: 30_000,
+  })
+  const toggleModaMut = useMutation({
+    mutationFn: (next) => travelApi.adminSetServiceStatus(next),
+    onSuccess : (r, next) => {
+      qc.setQueryData(['admin-travel-service-status'], r.data?.data?.disabled ?? next)
+      qc.invalidateQueries({ queryKey: ['travel-service-status'] }) // sinkron ke landing & halaman cari
+    },
+    onError   : (e) => toast({ title: 'Gagal ubah status layanan', description: e?.response?.data?.message, variant: 'destructive' }),
+  })
+  const toggleModa = (id) => {
+    const cur = (disabledModas || []).map(String)
+    const next = cur.includes(String(id)) ? cur.filter(m => m !== String(id)) : [...cur, String(id)]
+    toggleModaMut.mutate(next)
+  }
+
   return (
     <div className="container py-4 sm:py-6 max-w-5xl">
       <div className="flex items-center gap-3 mb-4">
@@ -146,6 +175,43 @@ export default function AdminTravel() {
         </div>
         <button onClick={() => refetch()} className="p-2 rounded-lg border hover:bg-muted"><RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} /></button>
       </div>
+
+      {/* ── Status Layanan — nonaktifkan moda saat vendor gangguan ── */}
+      {isSuperOrAdmin && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-4">
+          <div className="flex items-center gap-2 mb-1">
+            <Power className="w-4 h-4 text-slate-500" />
+            <h2 className="text-sm font-bold text-slate-900">Status Layanan</h2>
+          </div>
+          <p className="text-xs text-slate-500 mb-3">
+            Matikan moda tiket saat vendor gangguan. Moda yang dimatikan tidak bisa dicari/dipesan &amp;
+            memunculkan info gangguan di halaman customer (web &amp; app).
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {TRAVEL_MODAS.map(({ id, label, Icon }) => {
+              const down = (disabledModas || []).map(String).includes(String(id))
+              return (
+                <button
+                  key={id}
+                  onClick={() => toggleModa(id)}
+                  disabled={toggleModaMut.isPending}
+                  title={down ? 'Klik untuk mengaktifkan kembali' : 'Klik untuk menonaktifkan sementara'}
+                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-50 ${
+                    down
+                      ? 'bg-red-50 border-red-300 text-red-700 hover:bg-red-100'
+                      : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {down
+                    ? <><AlertTriangle className="w-3.5 h-3.5" /> {label} · Nonaktif</>
+                    : <><CheckCircle className="w-3.5 h-3.5" /> {label} · Aktif</>}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Tabs + search */}
       <div className="flex flex-wrap gap-2 mb-3">

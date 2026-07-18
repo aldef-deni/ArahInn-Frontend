@@ -6,8 +6,18 @@ import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
 import {
   Receipt, RefreshCw, RotateCcw, AlertTriangle, Search, Wallet, X, CheckCircle, Trash2,
-  Download, Calendar, Zap, ChevronLeft, ChevronRight, Eye, Copy,
+  Download, Calendar, Zap, ChevronLeft, ChevronRight, Eye, Copy, Power,
 } from 'lucide-react'
+
+// Grup layanan PPOB yang bisa dinonaktifkan sementara (mis. saat biller gangguan).
+// id HARUS sama dengan id grup di landing (PpobLanding GROUPS) & code/group kategori BE.
+const PPOB_GROUPS = [
+  { id: 'pulsa-data', label: 'Pulsa & Data' },
+  { id: 'pln',        label: 'Listrik PLN' },
+  { id: 'ewallet',    label: 'E-Wallet' },
+  { id: 'tagihan',    label: 'Tagihan' },
+  { id: 'game',       label: 'Game' },
+]
 
 const STATUS_OPTS = [
   { v: '',           l: 'Semua Status' },
@@ -160,6 +170,27 @@ export default function AdminPpob() {
     onError: (e) => toast({ title: 'Gagal batalkan', description: e?.response?.data?.message, variant: 'destructive' }),
   })
 
+  // ── Kontrol layanan: nonaktifkan grup PPOB sementara (mis. e-wallet gangguan) ──
+  const isSuperOrAdmin = ['superadmin', 'admin'].includes(user?.role)
+  const { data: disabledGroups = [] } = useQuery({
+    queryKey: ['admin-ppob-groups-status'],
+    queryFn : () => ppobApi.adminGroupsStatus().then(r => r.data?.data?.disabled ?? []),
+    staleTime: 30_000,
+  })
+  const toggleGroupMutation = useMutation({
+    mutationFn: (next) => ppobApi.adminSetGroupsStatus(next),
+    onSuccess : (res, next) => {
+      qc.setQueryData(['admin-ppob-groups-status'], res?.data?.data?.disabled ?? next)
+      qc.invalidateQueries({ queryKey: ['ppob-groups-status'] }) // sinkron ke landing customer
+    },
+    onError   : (e) => toast({ title: 'Gagal ubah status layanan', description: e?.response?.data?.message, variant: 'destructive' }),
+  })
+  const toggleGroup = (id) => {
+    const cur = (disabledGroups || []).map(String)
+    const next = cur.includes(String(id)) ? cur.filter(g => g !== String(id)) : [...cur, String(id)]
+    toggleGroupMutation.mutate(next)
+  }
+
   const LOW_BALANCE = 5_000_000
   const bal = balance?.balance ?? 0
   const isLow = bal > 0 && bal < LOW_BALANCE
@@ -210,6 +241,42 @@ export default function AdminPpob() {
           </div>
         </div>
       </div>
+
+      {/* ── Kontrol Layanan — nonaktifkan grup saat provider gangguan ── */}
+      {isSuperOrAdmin && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-4">
+          <div className="flex items-center gap-2 mb-1">
+            <Power className="w-4 h-4 text-slate-500" />
+            <h2 className="text-sm font-bold text-slate-900">Status Layanan</h2>
+          </div>
+          <p className="text-xs text-slate-500 mb-3">
+            Matikan grup layanan saat provider (Rajabiller) gangguan. Grup yang dimatikan tidak bisa
+            dibeli & tombolnya nonaktif di halaman customer (web &amp; app).
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {PPOB_GROUPS.map((g) => {
+              const down = (disabledGroups || []).map(String).includes(String(g.id))
+              return (
+                <button
+                  key={g.id}
+                  onClick={() => toggleGroup(g.id)}
+                  disabled={toggleGroupMutation.isPending}
+                  title={down ? 'Klik untuk mengaktifkan kembali' : 'Klik untuk menonaktifkan sementara'}
+                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-50 ${
+                    down
+                      ? 'bg-red-50 border-red-300 text-red-700 hover:bg-red-100'
+                      : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                  }`}
+                >
+                  {down
+                    ? <><AlertTriangle className="w-3.5 h-3.5" /> {g.label} · Nonaktif</>
+                    : <><CheckCircle className="w-3.5 h-3.5" /> {g.label} · Aktif</>}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-4 flex items-center gap-3 flex-wrap">
         <select value={status} onChange={e => setStatus(e.target.value)}

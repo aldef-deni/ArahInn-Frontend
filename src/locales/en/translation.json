@@ -132,6 +132,8 @@
     "game": "Online Gaming",
     "gameDesc": "Mobile Legends, FF, PUBG",
     "savingsBadge": "Save",
+    "disruptedBadge": "Down",
+    "disruptedDesc": "Temporarily unavailable, try again later",
     "trustTitle": "Safe & Official",
     "trustDesc": "Connected directly to official billers. PLN tokens, mobile credits, and vouchers are sent automatically after payment confirmation. Refunds available if there are issues.",
     "historyShortcut": "Transaction History",
