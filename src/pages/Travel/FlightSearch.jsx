@@ -308,7 +308,7 @@ export default function FlightSearch() {
 
   return (
     <div className="min-h-[70vh] bg-slate-50">
-      {searching && <LoaderArahInn messages={FLIGHT_LOADER_MESSAGES} />}
+      {searching && !error && <LoaderArahInn messages={FLIGHT_LOADER_MESSAGES} />}
       <ServiceDownModal open={modaDown} accent="sky" backTo="/"
         message="Layanan untuk tiket pesawat sedang dalam gangguan, mohon kembali lagi nanti." />
       <SEO title={t('travel.flightSeoTitle')} description={t('travel.flightSeoDesc')} url="/tiket/pesawat" />

@@ -30,7 +30,21 @@ export function travelCheckoutError(e) {
     return t('errIncomplete', { label })
   }
 
-  // Error bisnis (mis. kode promo, kuota, booking vendor gagal) — biasanya sudah jelas dari server
+  // Error vendor "kelas/kursi/jadwal tidak tersedia" — pesan mentah vendor tidak ramah
+  // (mis. "EXT: Flight is not available, Status HL1", "class closed", "sold out",
+  // "kursi habis"). HL1/HL/HN = status booking-class tutup/waitlist di sisi maskapai.
+  // Kelas termurah dari hasil search bisa sudah habis saat konfirmasi → sarankan pilih lain.
+  const raw = String(data?.message || '')
+  if (raw && /not\s*avail|unavailable|sold\s*out|no\s*seat|seat.*(full|unavail)|class.*clos|clos.*class|waitlist|\bH[LN]\d*\b|habis|penuh|tidak\s*tersedia|kelas.*(tutup|penuh)/i.test(raw)) {
+    return t('scheduleUnavailable')
+  }
+  // Error teknis/server di sisi vendor (mis. "Internal server error, SellJourneys",
+  // "GetPriceItinerary", timeout, 502/503/504) — transien, sarankan coba lagi.
+  if (raw && /internal|server\s*error|selljourney|getprice|itinerary|book|timeout|time\s*out|exception|\bext:|gateway|50[234]/i.test(raw)) {
+    return t('vendorBusy')
+  }
+
+  // Error bisnis lain (mis. kode promo) — biasanya sudah jelas dari server
   if (data?.message) return data.message
 
   return t('errGeneric')

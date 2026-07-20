@@ -119,11 +119,18 @@ export default function FlightBooking() {
   })
 
   const fareFailed  = fareOut.isError || (isRT && fareRet.isError)
-  // Pesan vendor (kursi/kelas habis) → ubah jadi bahasa awam yang membantu
+  // Pesan vendor mentah (mis. "EXT: Internal server error, GetPriceItinerary",
+  // "Flight is not available, Status HL1") TIDAK ramah → selalu ubah jadi bahasa awam.
   const friendlyFareMsg = (msg) => {
     const m = String(msg || '').toLowerCase()
-    if (/kursi|kelas|habis|penuh|sold|seat|avail|class/.test(m)) return t('travel.flightFull')
-    return msg || t('travel.fareErrorDefault')
+    // Kursi/kelas/penerbangan tidak tersedia
+    if (/kursi|kelas|habis|penuh|sold|seat|\bavail|class|\bh[ln]\d/.test(m)) return t('travel.flightFull')
+    // Error teknis/server di sisi vendor (getprice, timeout, dll) — transien, sarankan cari ulang
+    if (/internal|server\s*error|getprice|itinerary|timeout|time\s*out|exception|failed|ext:|gateway|502|503|504/.test(m)) {
+      return t('travel.fareServerError')
+    }
+    // Fallback: JANGAN tampilkan teks vendor mentah
+    return t('travel.fareErrorDefault')
   }
   const fareErrorMsg = fareFailed
     ? friendlyFareMsg((fareOut.error || fareRet.error)?.response?.data?.message)
@@ -265,7 +272,7 @@ export default function FlightBooking() {
 
   return (
     <div className="min-h-[70vh] bg-slate-50">
-      {loading && <LoaderArahInn />}
+      {loading && !error && <LoaderArahInn />}
       <SEO title={t('travel.paxDataSeo')} url="/tiket/pesawat/pesan" />
       <div className="container max-w-lg py-5">
         <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-slate-500 mb-4 hover:text-slate-700"><ChevronLeft className="w-4 h-4" /> {t('travel.back')}</button>

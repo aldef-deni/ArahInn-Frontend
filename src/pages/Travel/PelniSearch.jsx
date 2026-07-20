@@ -171,7 +171,7 @@ export default function PelniSearch() {
 
   return (
     <div className="min-h-[70vh] bg-slate-50">
-      {searching && <LoaderArahInn messages={PELNI_LOADER_MESSAGES} />}
+      {searching && !error && <LoaderArahInn messages={PELNI_LOADER_MESSAGES} />}
       <ServiceDownModal open={modaDown} accent="cyan" backTo="/"
         message="Layanan untuk tiket PELNI sedang dalam gangguan, mohon kembali lagi nanti." />
       <SEO title={t('travel.pelniSeoTitle')} description={t('travel.pelniSeoDesc')} url="/tiket/pelni" />
