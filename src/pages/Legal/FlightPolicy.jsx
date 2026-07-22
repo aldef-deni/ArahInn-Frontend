@@ -135,7 +135,7 @@ export default function FlightPolicy() {
           </div>
 
           <p className="mt-6 sm:mt-8 text-center text-[11px] sm:text-xs text-slate-400 leading-relaxed px-2">
-            © 2026 ArahInn.com — PT. Redy Hospitality Management.<br className="sm:hidden" />
+            © 2026 ArahInn.com — PT. Sukses Arahinn Hospitality.<br className="sm:hidden" />
             <span className="hidden sm:inline"> </span>Semua hak dilindungi.
           </p>
         </article>

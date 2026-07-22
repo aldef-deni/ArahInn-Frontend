@@ -3,10 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { propertyApi } from '@/services/propertyApi'
-import { reviewApi } from '@/services/reviewApi'
 import { formatRupiah, getImageUrl } from '@/utils'
-import { formatDistanceToNow } from 'date-fns'
-import { id as idLocale, enUS as enLocale } from 'date-fns/locale'
 import {
   ArrowLeft,
   Bath,
@@ -20,13 +17,10 @@ import {
   Mail,
   MapPin,
   Maximize2,
-  MessageSquare,
   Phone,
   ShieldCheck,
   Sparkles,
-  Star,
 } from 'lucide-react'
-import ReviewForm from '@/components/ReviewForm'
 import MapEmbed from '@/components/ui/MapEmbed'
 import WishlistButton from '@/components/WishlistButton'
 import SEO from '@/components/SEO'
@@ -64,13 +58,7 @@ export default function PropertyDetail() {
     queryFn: () => propertyApi.getById(id).then(r => r.data?.data),
   })
 
-  const resolvedId = data?.id
-
-  const { data: reviewData } = useQuery({
-    queryKey: ['property-reviews', resolvedId],
-    queryFn: () => reviewApi.byProperty(resolvedId).then(r => r.data?.data),
-    enabled: !!resolvedId,
-  })
+  const resolvedId = data?.id   // dipakai WishlistButton
 
   if (isLoading) {
     return (
@@ -232,7 +220,7 @@ export default function PropertyDetail() {
             <aside className="border-t border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 sm:p-5 lg:border-l lg:border-t-0">
               <div className="rounded-2xl sm:rounded-[28px] border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
                 <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{t('propertyDetail.listingPrice')}</p>
-                <p className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-black text-orange-600 break-all">{formatRupiah(data.price)}</p>
+                <p className="mt-2 sm:mt-3 text-xl sm:text-2xl font-black text-orange-600 whitespace-nowrap leading-tight tabular-nums">{formatRupiah(data.price)}</p>
                 {data.priceNegotiable ? (
                   <span className="mt-2 sm:mt-3 inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-emerald-50 px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-semibold text-emerald-700">
                     <CheckCircle2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
@@ -369,74 +357,6 @@ export default function PropertyDetail() {
                 </div>
               </section>
             ) : null}
-
-            <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{t('propertyDetail.reviews')}</p>
-                  <h2 className="mt-1.5 sm:mt-2 text-lg sm:text-xl md:text-2xl font-bold text-slate-900 leading-tight">{t('propertyDetail.reviewsHeading')}</h2>
-                </div>
-                {reviewData?.average_rating ? (
-                  <div className="rounded-2xl bg-blue-50 px-4 py-3 text-right">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-500">{t('propertyDetail.avgScore')}</p>
-                    <p className="mt-1 text-sm font-bold text-blue-700">
-                      {Number(reviewData.average_rating).toFixed(1)} / 5
-                    </p>
-                  </div>
-                ) : null}
-              </div>
-
-              {reviewData?.reviews?.length ? (
-                <div className="mt-5 space-y-4">
-                  {reviewData.reviews.map(review => (
-                    <div key={review.id} className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
-                      <div className="flex items-start gap-4">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-sm font-bold text-blue-700">
-                          {review.user?.name?.[0]?.toUpperCase() || 'T'}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="text-sm font-semibold text-slate-900">{review.user?.name || t('propertyDetail.guest')}</p>
-                            <span className="text-xs text-slate-400">
-                              {review.created_at
-                                ? formatDistanceToNow(new Date(review.created_at), { addSuffix: true, locale: i18n.language === 'en' ? enLocale : idLocale })
-                                : ''}
-                            </span>
-                          </div>
-                          <div className="mt-2 flex items-center gap-1">
-                            {Array.from({ length: 5 }, (_, index) => (
-                              <Star
-                                key={index}
-                                className={`h-3.5 w-3.5 ${
-                                  index < review.rating ? 'fill-amber-400 text-amber-400' : 'fill-slate-200 text-slate-200'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <p className="mt-3 text-sm leading-7 text-slate-600">{review.comment}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-5 rounded-[26px] border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center">
-                  <MessageSquare className="mx-auto h-10 w-10 text-slate-300" />
-                  <p className="mt-3 text-sm font-medium text-slate-600">{t('propertyDetail.noReviews')}</p>
-                  <p className="mt-1 text-sm text-slate-500">{t('propertyDetail.noReviewsHint')}</p>
-                </div>
-              )}
-
-              {resolvedId && (
-                <div className="mt-6">
-                  <ReviewForm
-                    targetType="property"
-                    targetId={resolvedId}
-                    invalidateKey={['property-reviews', resolvedId]}
-                  />
-                </div>
-              )}
-            </section>
           </div>
 
           <aside className="space-y-4 sm:space-y-5">

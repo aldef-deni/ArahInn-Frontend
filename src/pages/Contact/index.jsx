@@ -85,7 +85,7 @@ export default function Contact() {
             <div className="flex items-start gap-3">
               <span className="w-9 h-9 rounded-xl bg-brand/10 text-brand flex items-center justify-center shrink-0"><Building2 className="w-4.5 h-4.5" /></span>
               <div>
-                <p className="font-semibold text-slate-900">PT. Redy Hospitality Management</p>
+                <p className="font-semibold text-slate-900">PT. Sukses Arahinn Hospitality</p>
                 <p className="text-slate-500 mt-0.5">{en ? 'Operator of ArahInn — Accommodation, Transportation & Activities.' : 'Penyelenggara ArahInn — Akomodasi, Transportasi & Aktivitas.'}</p>
               </div>
             </div>

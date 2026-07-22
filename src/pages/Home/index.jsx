@@ -619,7 +619,7 @@ export default function Home() {
               const img = listing.images?.[0]
               return (
                 <div key={listing.id}
-                  onClick={() => navigate(`/properti/${listing.id}`)}
+                  onClick={() => navigate(`/properti/${listing.slug || listing.id}`)}
                   className="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-lg active:scale-[0.98] transition-all cursor-pointer group">
                   <div className="relative h-36 sm:h-44 bg-slate-100 overflow-hidden">
                     {img && !propImgErr[img] ? (

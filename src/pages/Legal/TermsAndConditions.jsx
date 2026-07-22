@@ -117,7 +117,7 @@ export default function TermsAndConditions() {
                 Terima kasih atas kunjungan Anda ke aplikasi, website dan Layanan Kami. Kami berharap kunjungan Anda dapat bermanfaat dan memberi kenyamanan dalam mengakses dan menggunakan seluruh Layanan yang tersedia di aplikasi atau website Kami. Kami terus menerus berupaya memperbaiki dan meningkatkan mutu pelayanan Kami, dan sangat menghargai segala kritik, saran dan masukan dari Anda. Silakan Anda menyampaikannya ke Kami melalui surel di <a href="mailto:cs@arahinn.com" className="text-brand font-semibold break-all">cs@arahinn.com</a> atau telepon di <a href="tel:+6285188136009" className="text-brand font-semibold whitespace-nowrap">+62 851-8813-6009</a>.
               </p>
               <p>
-                Aplikasi dan website ini dimiliki, dioperasikan dan diselenggarakan oleh <strong>PT. Redy Hospitality Management</strong> perseroan terbatas yang berdiri atas dasar hukum Republik Indonesia termasuk afiliasi kami, (selanjutnya secara bersama-sama disebut sebagai <em>"Kami"</em> atau <em>"ArahInn.com"</em>). Layanan Kami tersedia secara online melalui: <code>www.arahinn.com</code> atau mobile: <code>m.arahinn.com</code> atau berbagai akses, media, perangkat dan platform lainnya, baik yang sudah atau akan tersedia di kemudian hari.
+                Aplikasi dan website ini dimiliki, dioperasikan dan diselenggarakan oleh <strong>PT. Sukses Arahinn Hospitality</strong> perseroan terbatas yang berdiri atas dasar hukum Republik Indonesia termasuk afiliasi kami, (selanjutnya secara bersama-sama disebut sebagai <em>"Kami"</em> atau <em>"ArahInn.com"</em>). Layanan Kami tersedia secara online melalui: <code>www.arahinn.com</code> atau mobile: <code>m.arahinn.com</code> atau berbagai akses, media, perangkat dan platform lainnya, baik yang sudah atau akan tersedia di kemudian hari.
               </p>
             </Section>
 
@@ -336,7 +336,7 @@ export default function TermsAndConditions() {
             </div>
 
             <p className="mt-6 sm:mt-8 text-center text-[11px] sm:text-xs text-slate-400 leading-relaxed px-2">
-              © 2026 ArahInn.com — PT. Redy Hospitality Management.<br className="sm:hidden" />
+              © 2026 ArahInn.com — PT. Sukses Arahinn Hospitality.<br className="sm:hidden" />
               <span className="hidden sm:inline"> </span>Semua hak dilindungi.
             </p>
           </article>

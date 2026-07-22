@@ -275,7 +275,7 @@ function RoomCard({ room, nights, onBook, stayType = 'daily', stayUnitLabel, lon
                 <p className="mt-1 text-[11px] text-slate-400">{stayType === 'weekly' ? '7 malam' : '30 malam'}</p>
               </>
             ) : (
-              <p className="mt-2 text-sm font-semibold text-slate-400">Tidak tersedia untuk pilihan ini</p>
+              <p className="mt-2 text-sm font-semibold text-slate-400">Harga {stayType === 'weekly' ? 'mingguan' : 'bulanan'} belum diatur untuk kamar ini</p>
             )
           ) : room.discountedPrice && room.discountedPrice < room.basePrice ? (
             <>
@@ -395,7 +395,7 @@ function RoomCard({ room, nights, onBook, stayType = 'daily', stayUnitLabel, lon
                       <p className="text-[11px] text-slate-500">per {stayUnitLabel} · {stayType === 'weekly' ? '7 malam' : '30 malam'}</p>
                     </>
                   ) : (
-                    <p className="text-sm font-semibold text-slate-400">Tidak tersedia untuk pilihan ini</p>
+                    <p className="text-sm font-semibold text-slate-400">Harga {stayType === 'weekly' ? 'mingguan' : 'bulanan'} belum diatur untuk kamar ini</p>
                   )
                 ) : (
                   <>
@@ -531,6 +531,7 @@ function Stepper({ value, min = 1, max, onChange, label }) {
 function BookingModal({
   open,
   room,
+  hotelId,
   hotelName,
   today,
   initialDates,
@@ -600,6 +601,19 @@ function BookingModal({
     : draft.checkOut
   const stayNights = isLong ? stayNightsFixed : diffDays(draft.checkIn, draft.checkOut)
 
+  // ── Cek ketersediaan (allotment) untuk tanggal terpilih — sinkron dgn menu
+  //    "Harga & Ketersediaan". Long-stay: rentang = check-in + 7/30 malam. ──
+  const { data: modalAvail, isFetching: availLoading } = useQuery({
+    queryKey: ['modal-avail', hotelId, room?.id, draft.checkIn, modalCheckOut],
+    queryFn : () => hotelApi.checkAvail(hotelId, { checkIn: draft.checkIn, checkOut: modalCheckOut }).then(r => r.data.data),
+    enabled : !!open && !!hotelId && !!room?.id && !!draft.checkIn && !!modalCheckOut && modalCheckOut > draft.checkIn,
+    staleTime: 30_000,
+  })
+  const roomAvail   = Array.isArray(modalAvail) ? modalAvail.find(r => String(r.id) === String(room?.id)) : null
+  const availUnits  = roomAvail && Number.isFinite(Number(roomAvail.availableUnits)) ? Number(roomAvail.availableUnits) : null
+  // Tersedia bila kamar tak closed-out untuk rentang tanggal ini (dari allotment).
+  const roomIsAvailable = roomAvail ? (roomAvail.available !== false) : null
+
   // Clamp draft.roomCount kalau melebihi max yang baru — HARUS sebelum early return
   // supaya React Rules of Hooks tidak melanggar (hook count konsisten).
   useEffect(() => {
@@ -632,6 +646,7 @@ function BookingModal({
   const handleSubmit = () => {
     if (!draft.checkIn || stayNights <= 0) return
     if (isLong && longStayP == null) return
+    if (roomIsAvailable === false) return // kuota penuh/ditutup utk tanggal ini
     onSubmit({ ...draft, checkOut: modalCheckOut, stayType, stayPlanIndex: isLong ? planIndex : 0 })
   }
 
@@ -688,6 +703,29 @@ function BookingModal({
                 />
               )}
             </div>
+
+            {/* Status ketersediaan (allotment) untuk tanggal terpilih — muncul otomatis */}
+            {draft.checkIn && modalCheckOut > draft.checkIn && (
+              <div className={`flex items-start gap-2 rounded-2xl border px-4 py-3 text-sm ${
+                availLoading ? 'border-slate-200 bg-slate-50 text-slate-500'
+                  : roomIsAvailable === false ? 'border-red-200 bg-red-50 text-red-700'
+                  : roomIsAvailable ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  : 'border-slate-200 bg-slate-50 text-slate-500'
+              }`}>
+                {availLoading ? (
+                  <span>Mengecek ketersediaan untuk tanggal ini…</span>
+                ) : roomIsAvailable === false ? (
+                  <span className="font-semibold">Tidak tersedia — kuota penuh atau ditutup untuk tanggal ini. Silakan pilih tanggal lain.</span>
+                ) : roomIsAvailable ? (
+                  <span className="font-semibold">
+                    ✓ Tersedia untuk {isLong ? (stayUnitLabel === 'minggu' ? 'menginap mingguan' : 'menginap bulanan') : `${stayNights} malam`} ini
+                    {availUnits ? ` · ${availUnits} kamar` : ''}.
+                  </span>
+                ) : (
+                  <span>Pilih tanggal untuk cek ketersediaan.</span>
+                )}
+              </div>
+            )}
 
             {isLong && plans.length > 0 && (
               <div>
@@ -803,7 +841,7 @@ function BookingModal({
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={stayNights <= 0 || (isLong && longStayP == null)}
+              disabled={stayNights <= 0 || (isLong && longStayP == null) || roomIsAvailable === false || availLoading}
               className="mt-5 sm:mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-orange-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
             >
               Lanjutkan pemesanan
@@ -860,17 +898,34 @@ export default function HotelDetail() {
   // Opsi menginap lama yang dipilih per kamar (roomId -> index opsi)
   const [roomPlanIdx, setRoomPlanIdx] = useState({})
   useEffect(() => { setRoomPlanIdx({}) }, [stayType])
+  // Saat pilih Mingguan/Bulanan → check-out ikut menyesuaikan (check-in + 7/30 malam).
+  // NB: ditaruh di atas (sebelum early return isLoading) & nilai di-inline agar aman dari hooks order.
+  useEffect(() => {
+    const n = stayType === 'weekly' ? 7 : stayType === 'monthly' ? 30 : 0
+    if (n > 0) {
+      setDates(prev => (prev.checkIn
+        ? { ...prev, checkOut: format(addDays(new Date(`${prev.checkIn}T00:00:00`), n), 'yyyy-MM-dd') }
+        : prev))
+    }
+  }, [stayType]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Modal "Pilih Tanggal Lain" — ganti tanggal untuk cek ketersediaan lain (saat kamar penuh)
   const [showDateModal, setShowDateModal] = useState(false)
   const [draftDates, setDraftDates] = useState({ checkIn: initCheckIn, checkOut: initCheckOut })
+  // Check-out untuk long-stay (mingguan/bulanan) = check-in + 7/30 malam (terkunci).
+  const longCheckOut = (ci) => format(addDays(new Date(`${ci}T00:00:00`), STAY_NIGHTS[stayType]), 'yyyy-MM-dd')
   const openDateModal = () => {
-    setDraftDates({ checkIn: dates.checkIn, checkOut: dates.checkOut })
+    const ci = dates.checkIn
+    const co = isLongStay && ci ? longCheckOut(ci) : dates.checkOut
+    setDraftDates({ checkIn: ci, checkOut: co })
     setShowDateModal(true)
   }
   const applyDraftDates = () => {
-    if (!draftDates.checkIn || !draftDates.checkOut || draftDates.checkOut <= draftDates.checkIn) return
-    setDates({ checkIn: draftDates.checkIn, checkOut: draftDates.checkOut })
+    if (!draftDates.checkIn) return
+    // Long-stay: paksa check-out = check-in + durasi (mingguan 7 / bulanan 30).
+    const co = isLongStay ? longCheckOut(draftDates.checkIn) : draftDates.checkOut
+    if (!co || co <= draftDates.checkIn) return
+    setDates({ checkIn: draftDates.checkIn, checkOut: co })
     setShowDateModal(false)
   }
   const [selImg, setSelImg] = useState(0)
@@ -1011,6 +1066,8 @@ export default function HotelDetail() {
   // Daftar kamar (utamakan availability data; fallback ke list hotel.rooms)
   const sidebarRoomList = (availData?.length ? availData : hotel.rooms || [])
   const availableRooms = sidebarRoomList.filter(r => r.available !== false)
+  // Hotel diblokir/pending → BE menandai hotelBookable=false di tiap kamar.
+  const hotelBlocked = sidebarRoomList.length > 0 && sidebarRoomList.every(r => r.hotelBookable === false)
 
   // ── Pilihan menginap lama (mingguan/bulanan) ──────────────────────────────
   const STAY_NIGHTS = { weekly: 7, monthly: 30 }
@@ -1397,12 +1454,14 @@ export default function HotelDetail() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-red-700">
-                        Kamar sudah penuh
+                        {hotelBlocked ? 'Akomodasi tidak tersedia' : 'Kamar sudah penuh'}
                       </p>
                       <p className="mt-0.5 text-xs leading-relaxed text-red-600">
-                        {allClosed
-                          ? 'Semua tipe kamar tidak tersedia untuk tanggal yang Anda pilih. Silakan coba tanggal lain.'
-                          : `${closedRooms.length} dari ${availData.length} tipe kamar tidak dapat dipesan untuk tanggal ini: ${closedRooms.map(r => r.name).join(', ')}.`}
+                        {hotelBlocked
+                          ? 'Akomodasi ini sedang tidak tersedia untuk pemesanan.'
+                          : allClosed
+                            ? 'Semua tipe kamar tidak tersedia untuk tanggal yang Anda pilih. Silakan coba tanggal lain.'
+                            : `${closedRooms.length} dari ${availData.length} tipe kamar tidak dapat dipesan untuk tanggal ini: ${closedRooms.map(r => r.name).join(', ')}.`}
                       </p>
                     </div>
                   </div>
@@ -1473,6 +1532,8 @@ export default function HotelDetail() {
                       min={today}
                       onChange={ci => {
                         setDraftDates(prev => {
+                          // Long-stay: check-out otomatis mengikuti (check-in + 7/30 malam).
+                          if (isLongStay) return { checkIn: ci, checkOut: longCheckOut(ci) }
                           let co = prev.checkOut
                           if (!co || co <= ci) {
                             const d = new Date(ci)
@@ -1485,16 +1546,32 @@ export default function HotelDetail() {
                       className="relative flex w-full cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100"
                       labelClassName="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"
                     />
-                    <DateField
-                      label="Check-out"
-                      value={draftDates.checkOut}
-                      min={draftDates.checkIn || today}
-                      onChange={v => setDraftDates(prev => ({ ...prev, checkOut: v }))}
-                      className="relative flex w-full cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100"
-                      labelClassName="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"
-                    />
-                    {draftDates.checkIn && draftDates.checkOut && diffDays(draftDates.checkIn, draftDates.checkOut) > 0 && (
-                      <p className="text-xs font-medium text-slate-500">{diffDays(draftDates.checkIn, draftDates.checkOut)} malam menginap</p>
+                    {isLongStay ? (
+                      // Long-stay: check-out TERKUNCI (otomatis), tidak bisa diubah manual.
+                      <div>
+                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Check-out</label>
+                        <div className="relative flex w-full items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                          <span className="flex-1 text-sm font-medium text-slate-900">
+                            {draftDates.checkOut ? format(new Date(`${draftDates.checkOut}T00:00:00`), 'dd/MM/yyyy') : '—'}
+                          </span>
+                          <span className="shrink-0 text-[10px] font-semibold text-slate-400">otomatis · {STAY_NIGHTS[stayType]} malam</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <DateField
+                        label="Check-out"
+                        value={draftDates.checkOut}
+                        min={draftDates.checkIn || today}
+                        onChange={v => setDraftDates(prev => ({ ...prev, checkOut: v }))}
+                        className="relative flex w-full cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100"
+                        labelClassName="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"
+                      />
+                    )}
+                    {draftDates.checkIn && (isLongStay || (draftDates.checkOut && diffDays(draftDates.checkIn, draftDates.checkOut) > 0)) && (
+                      <p className="text-xs font-medium text-slate-500">
+                        {isLongStay ? STAY_NIGHTS[stayType] : diffDays(draftDates.checkIn, draftDates.checkOut)} malam menginap
+                        {isLongStay && <span className="text-slate-400"> · {stayUnitLabel === 'minggu' ? 'Mingguan' : 'Bulanan'}</span>}
+                      </p>
                     )}
                   </div>
 
@@ -1584,9 +1661,10 @@ export default function HotelDetail() {
                     value={dates.checkIn}
                     min={today}
                     onChange={newCheckIn => {
-                      // Auto-adjust check-out: kalau check-out lama <= check-in baru,
-                      // set check-out = check-in + 1 hari (default 1 malam)
                       setDates(prev => {
+                        // Long-stay: check-out otomatis mengikuti (check-in + 7/30 malam).
+                        if (isLongStay) return { ...prev, checkIn: newCheckIn, checkOut: longCheckOut(newCheckIn) }
+                        // Harian: kalau check-out lama <= check-in baru → set check-out = check-in + 1 hari.
                         let nextCheckOut = prev.checkOut
                         if (!nextCheckOut || nextCheckOut <= newCheckIn) {
                           const d = new Date(newCheckIn)
@@ -1599,14 +1677,27 @@ export default function HotelDetail() {
                     className="relative flex w-full cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100"
                     labelClassName="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"
                   />
-                  <DateField
-                    label="Check-out"
-                    value={dates.checkOut}
-                    min={dates.checkIn}
-                    onChange={v => setDates({ ...dates, checkOut: v })}
-                    className="relative flex w-full cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100"
-                    labelClassName="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"
-                  />
+                  {isLongStay ? (
+                    // Long-stay: check-out TERKUNCI (otomatis), tidak bisa diubah manual.
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Check-out</label>
+                      <div className="relative flex w-full items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <span className="flex-1 text-sm font-medium text-slate-900">
+                          {dates.checkOut ? format(new Date(`${dates.checkOut}T00:00:00`), 'dd/MM/yyyy') : '—'}
+                        </span>
+                        <span className="shrink-0 text-[10px] font-semibold text-slate-400">otomatis · {STAY_NIGHTS[stayType]} malam</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <DateField
+                      label="Check-out"
+                      value={dates.checkOut}
+                      min={dates.checkIn}
+                      onChange={v => setDates({ ...dates, checkOut: v })}
+                      className="relative flex w-full cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100"
+                      labelClassName="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400"
+                    />
+                  )}
 
                   <div>
                     <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
@@ -1701,7 +1792,7 @@ export default function HotelDetail() {
                     <div className="mb-2 flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 px-3 py-2.5">
                       <AlertTriangle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
                       <p className="text-[11px] font-semibold leading-snug text-red-700">
-                        Kamar sudah penuh untuk tanggal ini
+                        {hotelBlocked ? 'Akomodasi ini sedang tidak tersedia' : 'Kamar sudah penuh untuk tanggal ini'}
                       </p>
                     </div>
                   )}
@@ -1713,7 +1804,13 @@ export default function HotelDetail() {
                   ) : (
                     <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                       {sidebarRoomList.map(r => {
-                        const isAvailable = r.available !== false && (!isLongStay || longStayPrice(r) != null)
+                        // Bedakan sebab tak-tersedia: (a) harga long-stay belum diatur, (b) kuota penuh/tutup.
+                        const noLongPrice = isLongStay && longStayPrice(r) == null
+                        const allotmentBlocked = r.available === false
+                        const isAvailable = !allotmentBlocked && !noLongPrice
+                        const unavailReason = noLongPrice
+                          ? `Harga ${stayType === 'weekly' ? 'mingguan' : 'bulanan'} belum diatur`
+                          : 'Tidak tersedia untuk tanggal ini'
                         const isPicked = String(selectedSidebarRoom?.id) === String(r.id)
                         return (
                           <button
@@ -1744,7 +1841,7 @@ export default function HotelDetail() {
                                       <p className="text-[10px] text-slate-400">/ {stayUnitLabel}</p>
                                     </>
                                   ) : (
-                                    <p className="text-[10px] font-semibold text-slate-400">Tidak tersedia</p>
+                                    <p className="text-[10px] font-semibold text-slate-400">{noLongPrice ? 'Harga belum diatur' : 'Tidak tersedia'}</p>
                                   )
                                 ) : (
                                   <>
@@ -1763,7 +1860,7 @@ export default function HotelDetail() {
                             </div>
                             {!isAvailable && (
                               <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-red-500">
-                                Tidak tersedia
+                                {unavailReason}
                               </p>
                             )}
                           </button>
@@ -1884,6 +1981,7 @@ export default function HotelDetail() {
       <BookingModal
         open={!!bookingRoom}
         room={bookingRoom}
+        hotelId={resolvedId}
         hotelName={hotel.name}
         today={today}
         initialDates={dates}

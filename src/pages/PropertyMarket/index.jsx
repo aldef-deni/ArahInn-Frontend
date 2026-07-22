@@ -582,7 +582,7 @@ export default function PropertyMarket() {
                 <PropertyCard
                   key={listing.id}
                   listing={listing}
-                  onClick={() => navigate(`/properti/${listing.id}`)}
+                  onClick={() => navigate(`/properti/${listing.slug || listing.id}`)}
                 />
               ))
             ) : (

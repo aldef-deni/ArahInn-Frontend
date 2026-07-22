@@ -689,7 +689,7 @@ export default function UserLayout() {
         {/* Copyright */}
         <div className="border-t border-slate-200">
           <div className="container py-4 flex justify-center items-center text-xs text-slate-400">
-            <p>© 2026 PT. Redy Hospitality Management. {t('footer.copyright')}</p>
+            <p>© 2026 PT. Sukses Arahinn Hospitality. {t('footer.copyright')}</p>
           </div>
         </div>
       </footer>}

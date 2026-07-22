@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
@@ -766,6 +766,43 @@ export default function AdminHotels() {
 
   const COL_COUNT = isAldeftech ? 9 : 8
 
+  // ── Kolom yang bisa di-resize (tarik pembatas kiri/kanan agar fleksibel) ──
+  // w = lebar awal, min = lebar minimum (mentok di nama kolom, tak menimpa teks).
+  const COLS = useMemo(() => ([
+    ...(isAldeftech ? [{ key: 'check', label: '', w: 44, min: 44, fixed: true }] : []),
+    { key: 'name',       label: 'Akomodasi', w: 340, min: 180 },
+    { key: 'city',       label: 'Kota',      w: 150, min: 110 },
+    { key: 'star',       label: 'Bintang',   w: 100, min: 100 },
+    { key: 'cat',        label: 'Kategori',  w: 130, min: 120 },
+    { key: 'owner',      label: 'Pemilik',   w: 220, min: 130 },
+    { key: 'status',     label: 'Status',    w: 120, min: 100 },
+    { key: 'commission', label: 'Komisi',    w: 150, min: 120 },
+    { key: 'action',     label: 'Aksi',      w: 150, min: 110 },
+  ]), [isAldeftech])
+  const [colW, setColW] = useState({})
+  const wOf = (c) => Math.max(c.min ?? 60, colW[c.key] ?? c.w)
+  const dragRef = useRef(null)
+  const startResize = (col, e) => {
+    e.preventDefault(); e.stopPropagation()
+    const th = e.currentTarget.closest('th')
+    dragRef.current = { key: col.key, min: col.min ?? 60, startX: e.clientX, startW: th ? th.offsetWidth : col.w }
+    const onMove = (ev) => {
+      if (!dragRef.current) return
+      // Tak boleh lebih kecil dari min → divider "mentok" di nama kolom, bukan menimpa.
+      const w = Math.max(dragRef.current.min, dragRef.current.startW + (ev.clientX - dragRef.current.startX))
+      setColW(prev => ({ ...prev, [dragRef.current.key]: w }))
+    }
+    const onUp = () => {
+      dragRef.current = null
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+      document.body.style.cursor = ''; document.body.style.userSelect = ''
+    }
+    document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none'
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
+
   return (
     <div className="space-y-5">
 
@@ -792,7 +829,7 @@ export default function AdminHotels() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
-            placeholder="Cari nama / kota / alamat..."
+            placeholder="Cari ID / nama / kota / alamat..."
             className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand" />
         </div>
         <select value={status} onChange={e => { setStatus(e.target.value); setPage(1) }}
@@ -835,19 +872,33 @@ export default function AdminHotels() {
       {/* Table */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table
+            className="text-sm [&_th]:border-r [&_th]:border-slate-200 [&_td]:border-r [&_td]:border-slate-100 [&_th:last-child]:border-r-0 [&_td:last-child]:border-r-0"
+            style={{ tableLayout: 'fixed', width: COLS.reduce((s, c) => s + wOf(c), 0), minWidth: '100%' }}
+          >
+            <colgroup>
+              {COLS.map(c => <col key={c.key} style={{ width: wOf(c) }} />)}
+            </colgroup>
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
-                {isAldeftech && (
-                  <th className="px-4 py-3 w-10">
-                    <input type="checkbox" checked={allOnPageSelected} onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer"
-                      title="Pilih semua di halaman ini" />
-                  </th>
-                )}
-                {['Akomodasi', 'Kota', 'Bintang', 'Kategori', 'Pemilik', 'Status', 'Komisi', 'Aksi'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
-                    {h}
+                {COLS.map(c => (
+                  <th key={c.key} className="relative px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap select-none">
+                    {c.key === 'check'
+                      ? <input type="checkbox" checked={allOnPageSelected} onChange={toggleSelectAll}
+                          className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                          title="Pilih semua di halaman ini" />
+                      : c.label}
+                    {!c.fixed && (
+                      // Zona tarik di garis pembatas (straddle border kanan). Tak menimpa teks
+                      // karena kolom tak bisa lebih kecil dari min-width-nya.
+                      <span
+                        onMouseDown={(e) => startResize(c, e)}
+                        title="Tarik untuk mengubah lebar kolom"
+                        className="group/resize absolute top-0 -right-1.5 z-10 flex h-full w-3 cursor-col-resize items-stretch justify-center"
+                      >
+                        <span className="w-0.5 rounded bg-transparent transition-colors group-hover/resize:bg-brand" />
+                      </span>
+                    )}
                   </th>
                 ))}
               </tr>
@@ -873,16 +924,17 @@ export default function AdminHotels() {
                         </td>
                       )}
                       {/* Akomodasi */}
-                      <td className="px-4 py-3.5 max-w-[220px]">
+                      <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 shrink-0">
                             {hotel.images?.[0]
                               ? <img src={getImageUrl(hotel.images[0])} alt="" className="w-full h-full object-cover" />
                               : <div className="w-full h-full flex items-center justify-center text-xl">🏨</div>}
                           </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-slate-900 truncate cursor-help" title={hotel.name}>{hotel.name}</p>
-                            <p className="text-xs text-slate-400 truncate cursor-help" title={hotel.address}>{hotel.address}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[10px] font-mono text-slate-400 leading-tight truncate">ID {hotel.propertyCode || `#${hotel.id}`}</p>
+                            <p className="font-semibold text-slate-900 truncate" title={hotel.name}>{hotel.name}</p>
+                            <p className="text-xs text-slate-400 truncate" title={hotel.address}>{hotel.address}</p>
                           </div>
                         </div>
                       </td>
@@ -913,9 +965,9 @@ export default function AdminHotels() {
                       {/* Pemilik */}
                       <td className="px-4 py-3.5">
                         {hotel.owner
-                          ? <div>
-                              <p className="font-medium text-slate-800 whitespace-nowrap">{hotel.owner.name}</p>
-                              <p className="text-xs text-slate-400">{hotel.owner.email}</p>
+                          ? <div className="min-w-0">
+                              <p className="font-medium text-slate-800 truncate" title={hotel.owner.name}>{hotel.owner.name}</p>
+                              <p className="text-xs text-slate-400 truncate" title={hotel.owner.email}>{hotel.owner.email}</p>
                             </div>
                           : <span className="text-slate-300">–</span>}
                       </td>

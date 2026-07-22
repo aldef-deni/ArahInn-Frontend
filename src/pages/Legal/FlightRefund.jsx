@@ -160,7 +160,7 @@ export default function FlightRefund() {
             </div>
 
             <p className="mt-6 sm:mt-8 text-center text-[11px] sm:text-xs text-slate-400 leading-relaxed px-2">
-              © 2026 ArahInn.com — PT. Redy Hospitality Management. Semua hak dilindungi.
+              © 2026 ArahInn.com — PT. Sukses Arahinn Hospitality. Semua hak dilindungi.
             </p>
           </div>
         </div>
