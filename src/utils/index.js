@@ -5,8 +5,11 @@ export function cn(...inputs) {
   return twMerge(clsx(inputs))
 }
 
-export const formatRupiah = (amount) =>
-  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount || 0)
+// Harga otomatis: IDR (Bahasa Indonesia) / USD kurs terkini (English).
+// Lihat src/utils/currency.js — konversi berdasarkan i18n.language.
+import { formatMoney, loadFxRate, getUsdIdr } from './currency'
+export { formatMoney, loadFxRate, getUsdIdr }
+export const formatRupiah = (amount) => formatMoney(amount)
 
 export const formatDate = (date, opts = {}) =>
   new Intl.DateTimeFormat('id-ID', { year: 'numeric', month: 'long', day: 'numeric', ...opts }).format(new Date(date))

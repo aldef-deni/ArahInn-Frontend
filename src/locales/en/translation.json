@@ -919,7 +919,7 @@
     "totalTransfer": "Total Transfer",
     "transferAmount": "Transfer Amount",
     "uniqueNominal": "UNIQUE AMOUNT",
-    "transferExactInfo": "Transfer exactly {{amount}} (including the 3-digit unique code {{code}}) so admin can verify faster.",
+    "transferExactInfo": "Transfer exactly {{amount}} (matching the invoice amount) so admin can verify faster.",
     "destBank": "Destination Bank",
     "accountNumberFull": "Account Number",
     "accountNameLabel": "Account Name",

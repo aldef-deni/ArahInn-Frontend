@@ -919,7 +919,7 @@
     "totalTransfer": "Total Transfer",
     "transferAmount": "Nominal Transfer",
     "uniqueNominal": "NOMINAL UNIK",
-    "transferExactInfo": "Transfer tepat {{amount}} (termasuk 3 digit kode unik {{code}}) supaya admin lebih cepat verifikasi.",
+    "transferExactInfo": "Transfer tepat sebesar {{amount}} (sesuai nominal invoice) supaya admin lebih cepat verifikasi.",
     "destBank": "Bank Tujuan",
     "accountNumberFull": "Nomor Rekening",
     "accountNameLabel": "Atas Nama",

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
@@ -17,7 +17,7 @@ import {
   Mail,
   MapPin,
   Maximize2,
-  Phone,
+  MessageCircle,
   ShieldCheck,
   Sparkles,
 } from 'lucide-react'
@@ -59,6 +59,22 @@ export default function PropertyDetail() {
   })
 
   const resolvedId = data?.id   // dipakai WishlistButton
+
+  // Nomor telepon → link WhatsApp (normalisasi 0.. → 62..).
+  const waLink = (phone) => {
+    let d = String(phone || '').replace(/\D/g, '')
+    if (d.startsWith('0')) d = '62' + d.slice(1)
+    else if (!d.startsWith('62')) d = '62' + d
+    return `https://wa.me/${d}`
+  }
+
+  // Mobile: naikkan tombol Live Chat (FAB) di atas CTA bar agar tak saling menutupi.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia('(max-width: 1023px)').matches) return
+    if (!data?.contactPhone && !data?.contactEmail) return
+    document.documentElement.style.setProperty('--chat-fab-bottom', '5.75rem')
+    return () => document.documentElement.style.removeProperty('--chat-fab-bottom')
+  }, [data?.contactPhone, data?.contactEmail])
 
   if (isLoading) {
     return (
@@ -233,11 +249,13 @@ export default function PropertyDetail() {
                 <div className="space-y-2.5 sm:space-y-3">
                   {data.contactPhone ? (
                     <a
-                      href={`tel:${data.contactPhone}`}
+                      href={waLink(data.contactPhone)}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="flex w-full items-center gap-2.5 sm:gap-3 rounded-xl sm:rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-emerald-600 active:scale-[0.98]"
                     >
-                      <Phone className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{data.contactPhone}</span>
+                      <MessageCircle className="h-4 w-4 shrink-0" />
+                      <span className="truncate">WhatsApp · {data.contactPhone}</span>
                     </a>
                   ) : null}
                   {data.contactEmail ? (
@@ -407,10 +425,10 @@ export default function PropertyDetail() {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {data.contactPhone && (
-                <a href={`tel:${data.contactPhone}`}
+                <a href={waLink(data.contactPhone)} target="_blank" rel="noopener noreferrer"
                   className="h-11 w-11 rounded-xl bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 active:scale-95 transition-all shadow-md"
                   aria-label={t('propertyDetail.phoneAria')}>
-                  <Phone className="h-4 w-4" />
+                  <MessageCircle className="h-4 w-4" />
                 </a>
               )}
               {data.contactEmail && (

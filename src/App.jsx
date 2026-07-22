@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom'
 import GoogleOneTap from '@/components/GoogleOneTap'
+import { loadFxRate } from '@/utils'
 
 // Reset scroll ke atas tiap pindah halaman (pathname berubah) — bukan saat
 // hanya ganti filter (search params), supaya filter tidak loncat ke atas.
@@ -237,6 +238,9 @@ function GuestRoute({ children }) {
 }
 
 export default function App() {
+  // Ambil kurs USD/IDR terbaru (untuk tampilan harga USD saat bahasa English).
+  useEffect(() => { loadFxRate() }, [])
+
   // Token handoff dari app My ArahInn: jika URL punya ?app_token=...,
   // auto-login (tanpa minta login lagi) lalu strip param dari URL.
   useEffect(() => {

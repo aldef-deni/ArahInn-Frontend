@@ -110,14 +110,8 @@ export default function PpobPayment() {
   const priceBuy    = Number(trx?.pricing?.tagihan) || totalAmount
   const basePrice   = Math.max(0, priceBuy - adminFee)
   const serviceFee  = Math.max(0, totalAmount - priceBuy)
-  // Kode unik 3 digit deterministik dari trx_code agar konsisten saat refetch
-  const uniqueCode = (() => {
-    if (!trxCode) return 0
-    let h = 0
-    for (let i = 0; i < trxCode.length; i++) h = (h * 31 + trxCode.charCodeAt(i)) >>> 0
-    return h % 1000
-  })()
-  const finalAmount = totalAmount + uniqueCode
+  // Transaksi PPOB TIDAK memakai kode unik → nominal transfer = total invoice (tanpa selisih).
+  const finalAmount = totalAmount
 
   const copyText = (text, field) => {
     if (text == null) return
@@ -209,9 +203,6 @@ export default function PpobPayment() {
             <Row label={t('ppob.serviceFee')} value={formatRupiah(serviceFee)} />
           )}
           <Row label={t('ppob.subtotal')} value={formatRupiah(totalAmount)} />
-          {paymentMode === 'manual' && (
-            <Row label={t('ppob.uniqueCode')} value={`+ ${String(uniqueCode).padStart(3, '0')}`} accent="brand" />
-          )}
           <div className="pt-2 border-t border-slate-100 flex justify-between items-center font-bold">
             <span className="text-sm sm:text-base">{t('ppob.totalTransfer')}</span>
             <span className="text-base sm:text-xl text-brand">{formatRupiah(finalAmount)}</span>
@@ -225,7 +216,6 @@ export default function PpobPayment() {
           {/* Amount */}
           <div className="flex items-center justify-between gap-2 mb-1">
             <p className="text-xs sm:text-sm text-slate-500">{t('ppob.transferAmount')}</p>
-            <span className="text-[10px] sm:text-xs font-semibold text-brand bg-brand/10 px-2 py-0.5 rounded">{t('ppob.uniqueNominal')}</span>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 bg-slate-50 rounded-xl px-3 sm:px-4 py-3 sm:py-4 mb-2">
             <span className="font-mono text-xl sm:text-3xl font-black tracking-tight flex-1 min-w-0 text-slate-900 truncate">
@@ -241,7 +231,7 @@ export default function PpobPayment() {
           <p className="text-[11px] sm:text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4 sm:mb-5 flex items-start gap-2 leading-relaxed">
             <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
             <span>
-              {t('ppob.transferExactInfo', { amount: formatRupiah(finalAmount), code: String(uniqueCode).padStart(3, '0') })}
+              {t('ppob.transferExactInfo', { amount: formatRupiah(finalAmount) })}
             </span>
           </p>
 

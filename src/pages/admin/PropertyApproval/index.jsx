@@ -129,10 +129,12 @@ function PropertyFormDrawer({ onClose, editing }) {
 
   const mutation = useMutation({
     mutationFn: () => {
+      // FormData TIDAK dikonversi otomatis oleh interceptor → key wajib snake_case.
+      const toSnake = (key) => key.replace(/([A-Z])/g, '_$1').toLowerCase()
       const fd = new FormData()
       Object.entries(form).forEach(([k, v]) => {
         if (k === 'facilities') v.forEach(fac => fd.append('facilities[]', fac))
-        else if (v !== '' && v !== null && v !== undefined) fd.append(k, v)
+        else if (v !== '' && v !== null && v !== undefined) fd.append(toSnake(k), v)
       })
       newImages.forEach(img => fd.append('images[]', img))
 

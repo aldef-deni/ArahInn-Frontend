@@ -956,6 +956,21 @@ export default function HotelDetail() {
 
   const resolvedId = hotel?.id
 
+  // Opsi menginap yang DITAMPILKAN = hanya yang harganya sudah di-set owner.
+  // Harian selalu ada; Mingguan/Bulanan muncul bila minimal 1 kamar punya harganya.
+  const stayRooms = hotel?.rooms || []
+  const hasWeekly  = stayRooms.some(r => (Array.isArray(r.weeklyPlans)  && r.weeklyPlans.length  > 0) || Number(r.weeklyPrice)  > 0)
+  const hasMonthly = stayRooms.some(r => (Array.isArray(r.monthlyPlans) && r.monthlyPlans.length > 0) || Number(r.monthlyPrice) > 0)
+  const stayTypeOptions = [
+    { v: 'daily', label: 'Harian' },
+    ...(hasWeekly  ? [{ v: 'weekly',  label: 'Mingguan' }] : []),
+    ...(hasMonthly ? [{ v: 'monthly', label: 'Bulanan' }] : []),
+  ]
+  // Reset ke Harian bila opsi yang sedang dipilih ternyata tak tersedia.
+  useEffect(() => {
+    if (stayType !== 'daily' && !stayTypeOptions.some(o => o.v === stayType)) setStayType('daily')
+  }, [hasWeekly, hasMonthly]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Unread untuk hotel ini saja
   const inquiryUnread = (myInquiries || []).find(r => String(r.hotelId) === String(resolvedId))?.unreadCount ?? 0
 
@@ -1425,11 +1440,12 @@ export default function HotelDetail() {
                 </div>
               </div>
 
-              {/* Pilihan menginap (harian / mingguan / bulanan) */}
+              {/* Pilihan menginap — hanya tampil bila ada opsi selain harian (mingguan/bulanan di-set) */}
+              {stayTypeOptions.length > 1 && (
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Pilihan menginap</span>
-                <div className="inline-grid grid-cols-3 gap-1.5 rounded-2xl bg-slate-100 p-1">
-                  {[{ v: 'daily', label: 'Harian' }, { v: 'weekly', label: 'Mingguan' }, { v: 'monthly', label: 'Bulanan' }].map(o => (
+                <div className="inline-flex gap-1.5 rounded-2xl bg-slate-100 p-1">
+                  {stayTypeOptions.map(o => (
                     <button key={o.v} type="button" onClick={() => setStayType(o.v)}
                       className={`rounded-xl px-4 py-1.5 text-xs font-semibold transition-all ${stayType === o.v ? 'bg-white text-blue-700 shadow-sm ring-1 ring-blue-100' : 'text-slate-500 hover:text-slate-700'}`}>
                       {o.label}
@@ -1440,6 +1456,7 @@ export default function HotelDetail() {
                   <span className="text-[11px] text-slate-400">Harga tetap {stayType === 'weekly' ? '7 malam' : '30 malam'}</span>
                 )}
               </div>
+              )}
 
               {/* Danger banner: ada kamar yang penuh/tutup */}
               {(() => {
@@ -1761,15 +1778,16 @@ export default function HotelDetail() {
                   </div>
                 ) : null}
 
-                {/* Pilihan menginap (harian / mingguan / bulanan) */}
+                {/* Pilihan menginap — hanya bila mingguan/bulanan di-set */}
+                {stayTypeOptions.length > 1 && (
                 <div className="mt-4">
                   <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
                     Pilihan menginap
                   </label>
-                  <div className="grid grid-cols-3 gap-1.5 rounded-2xl bg-slate-100 p-1">
-                    {[{ v: 'daily', label: 'Harian' }, { v: 'weekly', label: 'Mingguan' }, { v: 'monthly', label: 'Bulanan' }].map(o => (
+                  <div className="inline-flex w-full gap-1.5 rounded-2xl bg-slate-100 p-1">
+                    {stayTypeOptions.map(o => (
                       <button key={o.v} type="button" onClick={() => setStayType(o.v)}
-                        className={`rounded-xl py-2 text-xs font-semibold transition-all ${stayType === o.v ? 'bg-white text-blue-700 shadow-sm ring-1 ring-blue-100' : 'text-slate-500 hover:text-slate-700'}`}>
+                        className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-all ${stayType === o.v ? 'bg-white text-blue-700 shadow-sm ring-1 ring-blue-100' : 'text-slate-500 hover:text-slate-700'}`}>
                         {o.label}
                       </button>
                     ))}
@@ -1780,6 +1798,7 @@ export default function HotelDetail() {
                     </p>
                   )}
                 </div>
+                )}
 
                 {/* Daftar kamar tersedia */}
                 <div className="mt-4">
