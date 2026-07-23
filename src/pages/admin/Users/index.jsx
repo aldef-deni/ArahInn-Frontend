@@ -420,7 +420,7 @@ export default function AdminUsers() {
       role  : pRole || undefined,
       search: pSearch || undefined,
       page  : pPage,
-      limit : 10,
+      limit : 20,
     }).then(r => r.data),
     enabled: isPengelola,
   })
@@ -431,7 +431,7 @@ export default function AdminUsers() {
       group : 'pengguna',
       search: uSearch || undefined,
       page  : uPage,
-      limit : 10,
+      limit : 20,
     }).then(r => r.data),
     enabled: !isPengelola,
   })
@@ -447,7 +447,7 @@ export default function AdminUsers() {
     onError: () => toast({ title: 'Gagal memperbarui status.', variant: 'destructive' }),
   })
 
-  const pengelolaUsers = (pData?.data || []).filter(u => getRole(u) !== 'owner')
+  const pengelolaUsers = pData?.data || []
   const penggunaUsers  = uData?.data || []
 
   return (

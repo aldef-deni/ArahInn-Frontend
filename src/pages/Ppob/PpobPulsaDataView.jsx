@@ -27,10 +27,6 @@ const OPERATOR_PREFIXES = {
   Smartfren: ['0881','0882','0883','0884','0885','0886','0887','0888','0889'],
 }
 
-// byU (sub-brand Telkomsel) memakai blok 0851 — dibedakan lewat prefix 5 digit.
-// Bila prefix ini tidak persis dengan alokasi byU Anda, tinggal sesuaikan daftar ini.
-const BYU_PREFIXES = ['08515','08516','08517','08518','08519']
-
 const OPERATOR_STYLES = {
   Telkomsel: { color: '#dc2626', bg: 'bg-red-500',     accent: 'text-red-600',     border: 'border-red-500' },
   byU:       { color: '#7c3aed', bg: 'bg-violet-600',  accent: 'text-violet-600',  border: 'border-violet-600' },
@@ -46,8 +42,8 @@ const OPERATORS_LIST = ['Telkomsel', 'byU', 'Indosat', 'XL', 'Axis', 'Tri', 'Sma
 
 function detectOperator(phone) {
   if (!phone || phone.length < 4) return null
-  // byU dulu (prefix 5 digit di blok 0851), agar tak tertukar dengan Telkomsel.
-  if (phone.length >= 5 && BYU_PREFIXES.includes(phone.substring(0, 5))) return 'byU'
+  // by.U TIDAK bisa dideteksi dari prefix — berbagi blok 0851 dengan Telkomsel reguler.
+  // Maka 0851/0852/0853 default ke Telkomsel; pelanggan by.U memilih operator "byU" manual.
   const prefix = phone.substring(0, 4)
   for (const [op, prefixes] of Object.entries(OPERATOR_PREFIXES)) {
     if (prefixes.includes(prefix)) return op

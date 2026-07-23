@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
 import {
   Receipt, RefreshCw, RotateCcw, AlertTriangle, Search, Wallet, X, CheckCircle, Trash2,
-  Download, Calendar, Zap, ChevronLeft, ChevronRight, Eye, Copy, Power,
+  Download, Calendar, Zap, ChevronLeft, ChevronRight, Eye, Copy, Power, ArrowLeftRight,
 } from 'lucide-react'
 
 // Grup layanan PPOB yang bisa dinonaktifkan sementara (mis. saat biller gangguan).
@@ -51,6 +51,11 @@ export default function AdminPpob() {
   const [refundNotes, setRefundNotes] = useState('')
   const [markPaidTrx, setMarkPaidTrx] = useState(null)
   const [markPaidNotes, setMarkPaidNotes] = useState('')
+  // Proses ulang ke produk lain (mis. by.U → Telkomsel)
+  const [reproTrx, setReproTrx] = useState(null)
+  const [reproSearch, setReproSearch] = useState('')
+  const [reproSel, setReproSel] = useState(null)     // produk terpilih
+  const [reproPreview, setReproPreview] = useState(null)
 
   const { data: txResp, isLoading, isFetching } = useQuery({
     queryKey: ['admin-ppob', status, search, dateFrom, dateTo, page],
@@ -148,6 +153,44 @@ export default function AdminPpob() {
       qc.invalidateQueries({ queryKey: ['admin-ppob'] })
     },
     onError: (e) => toast({ title: 'Gagal re-hit', description: e?.response?.data?.message, variant: 'destructive' }),
+  })
+
+  const checkStatusMutation = useMutation({
+    mutationFn: (code) => ppobApi.adminCheckStatus(code),
+    onSuccess: (res) => {
+      toast({ title: res?.data?.message || 'Status dicek.' })
+      qc.invalidateQueries({ queryKey: ['admin-ppob'] })
+    },
+    onError: (e) => toast({ title: 'Gagal cek status', description: e?.response?.data?.message, variant: 'destructive' }),
+  })
+
+  // Produk untuk modal proses-ulang (cari saat modal terbuka)
+  const { data: reproProducts, isFetching: reproLoading } = useQuery({
+    queryKey: ['ppob-repro-products', reproSearch],
+    queryFn : () => ppobApi.products({ q: reproSearch }).then(r => r.data?.data || []),
+    enabled : !!reproTrx && reproSearch.trim().length >= 2,
+  })
+
+  const selectReproProduct = async (p) => {
+    setReproSel(p)
+    setReproPreview(null)
+    try {
+      const code = reproTrx.trxCode || reproTrx.trx_code
+      const res = await ppobApi.adminReprocessPreview(code, p.id)
+      setReproPreview(res.data?.data)
+    } catch (e) {
+      toast({ title: 'Gagal ambil pratinjau', description: e?.response?.data?.message, variant: 'destructive' })
+    }
+  }
+
+  const reprocessMutation = useMutation({
+    mutationFn: ({ code, productId }) => ppobApi.adminReprocess(code, productId),
+    onSuccess: (res) => {
+      toast({ title: res?.data?.message || 'Diproses ulang.' })
+      setReproTrx(null); setReproSel(null); setReproPreview(null); setReproSearch('')
+      qc.invalidateQueries({ queryKey: ['admin-ppob'] })
+    },
+    onError: (e) => toast({ title: 'Gagal proses ulang', description: e?.response?.data?.message, variant: 'destructive' }),
   })
 
   const markPaidMutation = useMutation({
@@ -401,6 +444,18 @@ export default function AdminPpob() {
                         <CheckCircle className="w-4 h-4" />
                       </button>
                     )}
+                    {(trx.status === 'pending' || trx.status === 'processing') && (
+                      <button onClick={() => {
+                        const code = trx.trxCode || trx.trx_code
+                        if (window.confirm(`Cek status transaksi ${code} ke Raja Biller?\n\nSistem query status terakhir pakai trxid & finalisasi otomatis bila vendor sudah punya hasil (untuk transaksi yang callback-nya nyangkut).`))
+                          checkStatusMutation.mutate(code)
+                      }}
+                        disabled={checkStatusMutation.isPending}
+                        title="Cek status ke Raja Biller (finalisasi transaksi nyangkut)"
+                        className="p-2 rounded-lg hover:bg-amber-50 text-amber-600">
+                        <Search className="w-4 h-4" />
+                      </button>
+                    )}
                     {(trx.status === 'failed' || trx.status === 'paid' || trx.status === 'refundable') && (
                       <button onClick={() => {
                         const code = trx.trxCode || trx.trx_code
@@ -411,6 +466,13 @@ export default function AdminPpob() {
                         title="Re-hit ke Raja Biller (kirim ulang, ref baru)"
                         className="p-2 rounded-lg hover:bg-blue-50 text-blue-600">
                         <RotateCcw className="w-4 h-4" />
+                      </button>
+                    )}
+                    {(trx.status === 'failed' || trx.status === 'refundable') && (
+                      <button onClick={() => { setReproTrx(trx); setReproSel(null); setReproPreview(null); setReproSearch('') }}
+                        title="Proses ulang ke produk lain (mis. salah pilih by.U → Telkomsel)"
+                        className="p-2 rounded-lg hover:bg-violet-50 text-violet-600">
+                        <ArrowLeftRight className="w-4 h-4" />
                       </button>
                     )}
                     {(trx.status === 'failed' || trx.status === 'refundable') && (
@@ -611,6 +673,90 @@ export default function AdminPpob() {
                 disabled={refundMutation.isPending}
                 className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 disabled:opacity-50">
                 {refundMutation.isPending ? 'Memproses...' : 'Ya, Refund'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Proses ulang ke produk lain (mis. by.U → Telkomsel) */}
+      {reproTrx && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <h3 className="font-bold text-slate-900">Proses Ulang ke Produk Lain</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Buat transaksi baru dgn produk berbeda ke nomor yang sama, lalu hit ke Raja Biller.</p>
+              </div>
+              <button onClick={() => setReproTrx(null)} className="text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5 mb-4 text-sm">
+              <p className="text-slate-600">Transaksi lama: <b className="font-mono">{reproTrx.trxCode || reproTrx.trx_code}</b></p>
+              <p className="text-slate-600">{reproTrx.productName || reproTrx.product_name} → <span className="font-mono">{reproTrx.customerNumber || reproTrx.customer_number}</span></p>
+              <p className="text-slate-600">Total lama: <b>{formatRupiah(reproTrx.totalAmount || reproTrx.total_amount)}</b></p>
+            </div>
+
+            <label className="text-xs font-semibold text-slate-600">Cari produk pengganti (mis. "Telkomsel 100")</label>
+            <div className="relative mt-1 mb-2">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input value={reproSearch} onChange={e => setReproSearch(e.target.value)}
+                placeholder="Ketik nama produk..." autoFocus
+                className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            </div>
+
+            <div className="max-h-52 overflow-y-auto border border-slate-100 rounded-xl divide-y divide-slate-100 mb-4">
+              {reproSearch.trim().length < 2 ? (
+                <p className="text-xs text-slate-400 p-3">Ketik minimal 2 huruf untuk mencari produk.</p>
+              ) : reproLoading ? (
+                <p className="text-xs text-slate-400 p-3">Mencari...</p>
+              ) : !(reproProducts?.length) ? (
+                <p className="text-xs text-slate-400 p-3">Produk tak ditemukan.</p>
+              ) : reproProducts.map(p => (
+                <button key={p.id} onClick={() => selectReproProduct(p)}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-violet-50 flex items-center justify-between gap-2 ${reproSel?.id === p.id ? 'bg-violet-50' : ''}`}>
+                  <span className="min-w-0"><span className="font-medium text-slate-800 truncate block">{p.name}</span>
+                    <span className="text-[11px] text-slate-400">{p.operator} · {p.rajaBillerCode || p.raja_biller_code}</span></span>
+                  <span className="font-semibold text-slate-700 shrink-0">{formatRupiah(p.priceSell ?? p.price_sell)}</span>
+                </button>
+              ))}
+            </div>
+
+            {reproPreview && (() => {
+              const diff = Number(reproPreview.price_diff) || 0
+              const avail = reproPreview.new?.available
+              return (
+                <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-3 mb-4 text-sm">
+                  <div className="flex justify-between"><span className="text-slate-500">Produk baru</span><b className="text-slate-800">{reproPreview.new?.product}</b></div>
+                  <div className="flex justify-between mt-1"><span className="text-slate-500">Total baru</span><b className="text-slate-800">{formatRupiah(reproPreview.new?.total)}</b></div>
+                  <div className="flex justify-between mt-1 pt-1 border-t border-violet-200">
+                    <span className="text-slate-500">Selisih vs lama</span>
+                    <b className={diff > 0 ? 'text-red-600' : diff < 0 ? 'text-emerald-600' : 'text-slate-600'}>
+                      {diff > 0 ? `+${formatRupiah(diff)}` : formatRupiah(diff)}
+                    </b>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1.5">
+                    {diff > 0 ? 'Customer kurang bayar — tagih selisih ke customer.'
+                      : diff < 0 ? 'Customer lebih bayar — kembalikan selisih ke customer.'
+                      : 'Harga sama.'}
+                  </p>
+                  {!avail && <p className="text-[11px] text-red-600 font-semibold mt-1">⚠️ Produk ini sedang tidak tersedia.</p>}
+                </div>
+              )
+            })()}
+
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setReproTrx(null)}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50">Batal</button>
+              <button
+                onClick={() => {
+                  const code = reproTrx.trxCode || reproTrx.trx_code
+                  if (window.confirm(`Proses ulang ${code} ke produk "${reproSel?.name}" untuk nomor ${reproTrx.customerNumber || reproTrx.customer_number}?\n\nTransaksi baru akan dibuat & langsung di-hit ke Raja Biller. Transaksi lama ditutup (canceled). Selisih harga tangani manual.`))
+                    reprocessMutation.mutate({ code, productId: reproSel.id })
+                }}
+                disabled={!reproSel || reprocessMutation.isPending}
+                className="px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-bold hover:bg-violet-700 disabled:opacity-50">
+                {reprocessMutation.isPending ? 'Memproses...' : 'Proses & Hit'}
               </button>
             </div>
           </div>
