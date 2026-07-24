@@ -70,6 +70,7 @@ import AccountDeletion from '@/pages/Legal/AccountDeletion'
 // Auth Pages
 import Login from '@/pages/Auth/Login'
 import LoginExtranet from '@/pages/Auth/LoginExtranet'
+import ResetPassword from '@/pages/Auth/ResetPassword'
 import RegisterExtranet from '@/pages/Auth/RegisterExtranet'
 import Register from '@/pages/Auth/Register'
 import AuthCallback from '@/pages/Auth/Callback'
@@ -367,6 +368,7 @@ export default function App() {
 
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<GuestRoute>{extranetMode ? <LoginExtranet /> : <Login />}</GuestRoute>} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           {/* Register: owner portal pakai RegisterExtranet, customer pakai Register biasa, management tidak ada */}
           {(ownerMode || !extranetMode) && (
             <Route path="/register" element={

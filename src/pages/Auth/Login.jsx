@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { Eye, EyeOff, Mail, Lock, LogIn } from 'lucide-react'
 import { isManagementRole, isOwnerRole } from '@/utils/isExtranet'
 import SEO from '@/components/SEO'
+import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal'
 import { applyServerErrors } from '@/utils/formErrors'
 
 export default function Login() {
@@ -17,6 +18,7 @@ export default function Login() {
   const setAuth    = useAuthStore(s => s.setAuth)
   const { toast }  = useToast()
   const [showPass, setShowPass] = useState(false)
+  const [forgotOpen, setForgotOpen] = useState(false)
 
   const { register, handleSubmit, formState: { errors }, setError } = useForm()
 
@@ -116,7 +118,7 @@ export default function Login() {
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-sm font-medium">{t('auth.password')}</label>
-            <Link to="/forgot-password" className="text-xs text-brand hover:underline">{t('auth.forgot')}</Link>
+            <button type="button" onClick={() => setForgotOpen(true)} className="text-xs text-brand hover:underline">{t('auth.forgot')}</button>
           </div>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -156,6 +158,8 @@ export default function Login() {
           </a>
         )
       })()}
+
+      <ForgotPasswordModal open={forgotOpen} onClose={() => setForgotOpen(false)} />
     </div>
   )
 }

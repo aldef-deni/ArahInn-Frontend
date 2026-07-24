@@ -192,21 +192,19 @@ function SectionSecurity() {
         <p className="text-xs sm:text-sm text-slate-500">{t('profilePage.securitySubtitle')}</p>
       </div>
 
-      {isSuperadmin && (
+      {isSuperadmin && user?.twoFactorEnabled && (
         <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
           <div className="flex items-start gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${user?.twoFactorEnabled ? 'bg-emerald-50' : 'bg-amber-50'}`}>
-              <ShieldCheck className={`w-5 h-5 ${user?.twoFactorEnabled ? 'text-emerald-600' : 'text-amber-600'}`} />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-emerald-50">
+              <ShieldCheck className="w-5 h-5 text-emerald-600" />
             </div>
             <div className="min-w-0">
               <h3 className="font-semibold text-slate-900">Autentikasi 2 Langkah (Google Authenticator)</h3>
               <p className="text-sm text-slate-500 mt-0.5 leading-relaxed">
-                {user?.twoFactorEnabled
-                  ? 'Aktif — akun superadmin Anda dilindungi 2FA. Setiap login butuh kode dari aplikasi Authenticator.'
-                  : 'Wajib untuk superadmin. Anda akan diminta mengaktifkannya saat login berikutnya.'}
+                Aktif — akun superadmin Anda dilindungi 2FA. Setiap login butuh kode dari aplikasi Authenticator.
               </p>
-              <span className={`inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-xs font-semibold ${user?.twoFactorEnabled ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                {user?.twoFactorEnabled ? 'Aktif' : 'Belum aktif'}
+              <span className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700">
+                Aktif
               </span>
             </div>
           </div>
