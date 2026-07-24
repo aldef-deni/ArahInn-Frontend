@@ -69,8 +69,8 @@ export default function AuthLayout() {
           style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }}
         />
         <div className="relative h-full flex flex-col justify-center items-center text-white px-12 text-center">
-          <div className="w-24 h-24 rounded-3xl bg-white/20 flex items-center justify-center mb-8 shadow-2xl">
-            <img src="/logo-arahin.png" alt="Arahinn" className="w-20 h-20 object-contain" />
+          <div className="w-24 h-24 rounded-3xl bg-white flex items-center justify-center mb-8 shadow-2xl p-2">
+            <img src="/logo-kelola.png" alt="ArahInn" className="w-full h-full object-contain" />
           </div>
           <h2 className="font-display text-4xl font-bold mb-4 leading-tight">
             Temukan Penginapan<br />Impian Anda
