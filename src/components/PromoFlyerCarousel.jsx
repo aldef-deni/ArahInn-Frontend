@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { promoApi } from '@/services/index'
 import { formatRupiah, formatDateShort, getImageUrl } from '@/utils'
@@ -17,6 +18,7 @@ export function checkIsUpcoming(startDate) {
 }
 
 export function PromoDetailModal({ promo, onClose }) {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [copied, setCopied] = useState(false)
 
@@ -24,7 +26,7 @@ export function PromoDetailModal({ promo, onClose }) {
     if (!promo.code) return
     navigator.clipboard.writeText(promo.code)
     setCopied(true)
-    toast({ title: 'Kode promo disalin.' })
+    toast({ title: t('promoModal.codeCopied') })
     setTimeout(() => setCopied(false), 1800)
   }
 
@@ -55,7 +57,7 @@ export function PromoDetailModal({ promo, onClose }) {
           </button>
           {isUpcoming && (
             <span className="absolute top-3 left-3 px-3 py-1.5 bg-amber-500 text-white rounded-full text-xs font-bold shadow-md">
-              Segera Hadir
+              {t('promoModal.comingSoon')}
             </span>
           )}
         </div>
@@ -65,23 +67,23 @@ export function PromoDetailModal({ promo, onClose }) {
           <div>
             <h2 className="text-2xl font-bold text-slate-900 leading-tight">{promo.name}</h2>
             <p className="mt-1.5 text-xs text-slate-400 uppercase tracking-wide font-semibold">
-              {promo.type === 'flash_sale' ? 'Flash Sale' : promo.type === 'loyalty' ? 'Loyalty' : 'Voucher'}
+              {promo.type === 'flash_sale' ? t('promoModal.flashSale') : promo.type === 'loyalty' ? t('promoModal.loyalty') : t('promoModal.voucher')}
             </p>
           </div>
 
           {/* Discount big */}
           <div className="rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100 p-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-orange-500">Diskon</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-orange-500">{t('promoModal.discount')}</p>
             <p className="mt-1 text-4xl font-black text-orange-600">{discountLabel}</p>
             {promo.maxDiscount > 0 && promo.discountType === 'percent' && (
-              <p className="mt-1 text-xs text-orange-700/80">Maks. {formatRupiah(promo.maxDiscount)}</p>
+              <p className="mt-1 text-xs text-orange-700/80">{t('promoModal.max')} {formatRupiah(promo.maxDiscount)}</p>
             )}
           </div>
 
           {/* Code */}
           {promo.code && (
             <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Kode Promo</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{t('promoModal.promoCode')}</p>
               <button onClick={copy}
                 className="w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl border-2 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 transition-colors">
                 <div className="flex items-center gap-2">
@@ -89,7 +91,7 @@ export function PromoDetailModal({ promo, onClose }) {
                   <span className="font-mono font-bold text-blue-700 tracking-wider">{promo.code}</span>
                 </div>
                 <span className="text-xs text-blue-600 font-semibold inline-flex items-center gap-1.5">
-                  {copied ? <><Check className="w-3.5 h-3.5" /> Tersalin</> : <><Copy className="w-3.5 h-3.5" /> Salin</>}
+                  {copied ? <><Check className="w-3.5 h-3.5" /> {t('promoModal.copied')}</> : <><Copy className="w-3.5 h-3.5" /> {t('promoModal.copy')}</>}
                 </span>
               </button>
             </div>
@@ -100,14 +102,14 @@ export function PromoDetailModal({ promo, onClose }) {
             {promo.minPurchase > 0 && (
               <div className="flex items-center gap-3 text-slate-600">
                 <Wallet className="w-4 h-4 text-slate-400 shrink-0" />
-                <span>Min. transaksi <strong className="text-slate-900">{formatRupiah(promo.minPurchase)}</strong></span>
+                <span>{t('promoModal.minTransaction')} <strong className="text-slate-900">{formatRupiah(promo.minPurchase)}</strong></span>
               </div>
             )}
             {promo.startDate && (
               <div className="flex items-center gap-3 text-slate-600">
                 <CalendarDays className="w-4 h-4 text-slate-400 shrink-0" />
                 <span>
-                  Mulai berlaku <strong className="text-slate-900">{formatDateShort(promo.startDate)}</strong>
+                  {t('promoModal.validFrom')} <strong className="text-slate-900">{formatDateShort(promo.startDate)}</strong>
                 </span>
               </div>
             )}
@@ -115,7 +117,7 @@ export function PromoDetailModal({ promo, onClose }) {
               <div className="flex items-center gap-3 text-slate-600">
                 <CalendarDays className="w-4 h-4 text-slate-400 shrink-0" />
                 <span>
-                  Berakhir <strong className="text-slate-900">{formatDateShort(promo.endDate)}</strong>
+                  {t('promoModal.ends')} <strong className="text-slate-900">{formatDateShort(promo.endDate)}</strong>
                 </span>
               </div>
             )}
@@ -123,7 +125,7 @@ export function PromoDetailModal({ promo, onClose }) {
               <div className="flex items-center gap-3 text-slate-600">
                 <Sparkles className="w-4 h-4 text-slate-400 shrink-0" />
                 <span>
-                  Sisa kuota <strong className="text-slate-900">{Math.max(0, promo.quota - (promo.usedCount || 0))}</strong> / {promo.quota}
+                  {t('promoModal.remainingQuota')} <strong className="text-slate-900">{Math.max(0, promo.quota - (promo.usedCount || 0))}</strong> / {promo.quota}
                 </span>
               </div>
             )}
@@ -132,7 +134,7 @@ export function PromoDetailModal({ promo, onClose }) {
           {/* Description */}
           {promo.description && (
             <div className="border-t pt-4">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Detail & Syarat</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{t('promoModal.detailsTerms')}</p>
               <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{promo.description}</p>
             </div>
           )}
@@ -143,6 +145,7 @@ export function PromoDetailModal({ promo, onClose }) {
 }
 
 export default function PromoFlyerCarousel() {
+  const { t } = useTranslation()
   const scrollRef = useRef(null)
   const [selected, setSelected] = useState(null)
 
@@ -165,8 +168,8 @@ export default function PromoFlyerCarousel() {
     <section className="container py-12">
       <div className="flex items-end justify-between mb-8 gap-4">
         <div>
-          <h2 className="font-display text-2xl lg:text-3xl font-bold text-foreground">Promo Spesial ArahInn</h2>
-          <p className="text-muted-foreground mt-1">Ikuti Promo Menarik dari ArahInn</p>
+          <h2 className="font-display text-2xl lg:text-3xl font-bold text-foreground">{t('promoModal.sectionTitle')}</h2>
+          <p className="text-muted-foreground mt-1">{t('promoModal.sectionSubtitle')}</p>
         </div>
         <div className="flex items-center gap-3">
           {promos.length > 1 && (
@@ -183,7 +186,7 @@ export default function PromoFlyerCarousel() {
           )}
           <Link to="/promo"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:text-brand-700 transition-colors whitespace-nowrap">
-            Lihat Semua <ArrowRight className="w-4 h-4" />
+            {t('promoModal.viewAll')} <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </div>
@@ -206,7 +209,7 @@ export default function PromoFlyerCarousel() {
               />
               {isUpcoming && (
                 <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500 text-white rounded-full text-[10px] font-bold shadow">
-                  <Clock className="w-3 h-3" /> Segera Hadir
+                  <Clock className="w-3 h-3" /> {t('promoModal.comingSoon')}
                 </span>
               )}
             </button>

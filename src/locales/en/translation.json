@@ -1305,5 +1305,25 @@
     "seeAll": "See all",
     "empty": "No point activity yet.",
     "loginPrompt": "Sign in to view your loyalty points."
+  },
+  "promoModal": {
+    "sectionTitle": "ArahInn Special Promos",
+    "sectionSubtitle": "Discover ArahInn's latest promos",
+    "viewAll": "View All",
+    "comingSoon": "Coming Soon",
+    "discount": "Discount",
+    "max": "Max.",
+    "promoCode": "Promo Code",
+    "copy": "Copy",
+    "copied": "Copied",
+    "codeCopied": "Promo code copied.",
+    "minTransaction": "Min. transaction",
+    "validFrom": "Valid from",
+    "ends": "Ends",
+    "remainingQuota": "Remaining quota",
+    "detailsTerms": "Details & Terms",
+    "voucher": "Voucher",
+    "flashSale": "Flash Sale",
+    "loyalty": "Loyalty"
   }
 }

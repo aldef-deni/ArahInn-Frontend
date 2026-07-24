@@ -1305,5 +1305,25 @@
     "seeAll": "Lihat semua",
     "empty": "Belum ada aktivitas poin.",
     "loginPrompt": "Masuk untuk melihat poin loyalitas Anda."
+  },
+  "promoModal": {
+    "sectionTitle": "Promo Spesial ArahInn",
+    "sectionSubtitle": "Ikuti Promo Menarik dari ArahInn",
+    "viewAll": "Lihat Semua",
+    "comingSoon": "Segera Hadir",
+    "discount": "Diskon",
+    "max": "Maks.",
+    "promoCode": "Kode Promo",
+    "copy": "Salin",
+    "copied": "Tersalin",
+    "codeCopied": "Kode promo disalin.",
+    "minTransaction": "Min. transaksi",
+    "validFrom": "Mulai berlaku",
+    "ends": "Berakhir",
+    "remainingQuota": "Sisa kuota",
+    "detailsTerms": "Detail & Syarat",
+    "voucher": "Voucher",
+    "flashSale": "Flash Sale",
+    "loyalty": "Loyalty"
   }
 }
