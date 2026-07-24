@@ -111,10 +111,19 @@ export default function LoginExtranet() {
 
   return (
     <div className="animate-fade-in">
-      <h2 className="font-display text-3xl font-bold mb-2">Masuk Extranet</h2>
-      <p className="text-muted-foreground mb-8">
-        Portal khusus pengelola properti Arahinn.
-      </p>
+      {managementMode ? (
+        <div className="text-center mb-8">
+          <h2 className="font-display text-2xl font-bold text-slate-900">Selamat Datang</h2>
+          <p className="text-slate-500 text-sm mt-1.5">Masuk untuk mengelola dashboard ArahInn</p>
+        </div>
+      ) : (
+        <>
+          <h2 className="font-display text-3xl font-bold mb-2">Masuk Extranet</h2>
+          <p className="text-muted-foreground mb-8">
+            Portal khusus pengelola properti Arahinn.
+          </p>
+        </>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
@@ -167,12 +176,14 @@ export default function LoginExtranet() {
         </div>
       )}
 
-      <p className="mt-8 pt-6 border-t border-muted text-center text-xs text-muted-foreground">
-        Bukan pengelola properti?{' '}
-        <a href={getCustomerPortalUrl()} className="text-brand hover:underline font-medium">
-          Kembali ke Arahinn.com
-        </a>
-      </p>
+      {!managementMode && (
+        <p className="mt-8 pt-6 border-t border-muted text-center text-xs text-muted-foreground">
+          Bukan pengelola properti?{' '}
+          <a href={getCustomerPortalUrl()} className="text-brand hover:underline font-medium">
+            Kembali ke Arahinn.com
+          </a>
+        </p>
+      )}
     </div>
   )
 }

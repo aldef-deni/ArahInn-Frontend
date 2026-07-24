@@ -1,12 +1,44 @@
 import { Outlet, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft } from 'lucide-react'
-import { getCustomerPortalUrl, isExtranet } from '@/utils/isExtranet'
+import { getCustomerPortalUrl, isExtranet, isManagementPortal } from '@/utils/isExtranet'
+
+const DOT_PATTERN = 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")'
 
 export default function AuthLayout() {
   const { i18n } = useTranslation()
   const managementMode = isExtranet()
   const homeHref = managementMode ? getCustomerPortalUrl() : '/'
+  const backLabel = i18n.language === 'id'
+    ? (managementMode ? 'Kembali ke Arahinn.com' : 'Kembali ke Beranda')
+    : (managementMode ? 'Back to Arahinn.com' : 'Back to Home')
+
+  // ── KELOLA (portal manajemen): tampilan TERPUSAT & elegan (tanpa split hero) ──
+  if (isManagementPortal()) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden hero-gradient">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: DOT_PATTERN }} />
+        <div className="relative w-full max-w-md">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-white/40 px-8 py-10 sm:px-10">
+            <div className="flex flex-col items-center mb-8">
+              <img src="/logo-kelola.png" alt="ArahInn" className="h-24 w-auto object-contain" />
+            </div>
+            <Outlet />
+            <div className="mt-8 pt-6 border-t border-slate-100">
+              <a href={homeHref}
+                className="flex items-center justify-center gap-2 text-sm text-slate-500 hover:text-brand transition-colors group">
+                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                {backLabel}
+              </a>
+            </div>
+          </div>
+          <p className="text-center text-white/70 text-xs mt-6">
+            © {new Date().getFullYear()} ArahInn · Panel Pengelola
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
