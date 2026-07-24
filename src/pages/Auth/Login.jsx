@@ -23,6 +23,11 @@ export default function Login() {
   const mutation = useMutation({
     mutationFn: (d) => authApi.login(d),
     onSuccess : (r) => {
+      // Superadmin (2FA) tak login lewat portal customer — arahkan ke kelola.
+      if (r.data?.two_factor) {
+        toast({ title: 'Login superadmin', description: 'Silakan masuk melalui kelola.arahinn.com.', variant: 'destructive' })
+        return
+      }
       const { user, accessToken, refreshToken } = r.data.data
       const rolesPayload = user.roles || user.role
       const hasCustomer  = (user.roles || []).includes('user') || user.role === 'user'

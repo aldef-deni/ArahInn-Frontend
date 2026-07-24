@@ -280,6 +280,7 @@ export const authApi = {
   register      : (d)    => api.post('/auth/register', d),
   registerOwner : (d)    => api.post('/auth/register-owner', d),
   login       : (d)    => api.post('/auth/login', d),
+  twoFactorVerify: (d) => api.post('/auth/2fa/verify', d),
   logout      : ()     => api.post('/auth/logout'),
   refresh     : (d)    => api.post('/auth/refresh-token', d),
   forgot      : (d)    => api.post('/auth/forgot-password', d),
