@@ -9,6 +9,17 @@ import {
   Download, Calendar, Zap, ChevronLeft, ChevronRight, Eye, Copy, Power, ArrowLeftRight,
 } from 'lucide-react'
 
+// Format tanggal + jam transaksi (mis. "24 Jul 2026 · 16:44").
+const fmtTrxDateTime = (v) => {
+  if (!v) return ''
+  const d = new Date(typeof v === 'string' ? v.replace(' ', 'T') : v)
+  if (isNaN(d.getTime())) return ''
+  const tz = { timeZone: 'Asia/Jakarta' }
+  const tgl = d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', ...tz })
+  const jam = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', ...tz })
+  return `${tgl} · ${jam} WIB`
+}
+
 // Grup layanan PPOB yang bisa dinonaktifkan sementara (mis. saat biller gangguan).
 // id HARUS sama dengan id grup di landing (PpobLanding GROUPS) & code/group kategori BE.
 const PPOB_GROUPS = [
@@ -404,7 +415,10 @@ export default function AdminPpob() {
                       className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer align-middle" />
                   </td>
                 )}
-                <td className="px-4 py-3 font-mono text-xs text-slate-700">{trx.trxCode || trx.trx_code}</td>
+                <td className="px-4 py-3">
+                  <div className="font-mono text-xs text-slate-700">{trx.trxCode || trx.trx_code}</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5 whitespace-nowrap">{fmtTrxDateTime(trx.createdAt || trx.created_at)}</div>
+                </td>
                 <td className="px-4 py-3">
                   <p className="text-sm text-slate-700">{trx.user?.name || '-'}</p>
                   <p className="text-[10px] text-slate-400">{trx.user?.email}</p>

@@ -13,6 +13,7 @@ function ScrollToTop() {
 import { useQuery } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/toaster'
 import { useAuthStore } from '@/store/authStore'
+import { useLocationStore } from '@/store/locationStore'
 import { maintenanceApi, authApi } from '@/services/index'
 
 // Layouts
@@ -240,6 +241,10 @@ function GuestRoute({ children }) {
 export default function App() {
   // Ambil kurs USD/IDR terbaru (untuk tampilan harga USD saat bahasa English).
   useEffect(() => { loadFxRate() }, [])
+
+  // Sambungkan lokasi real user (untuk cari akomodasi terdekat). Sekali izin
+  // diberikan & koordinat tersimpan, kunjungan berikutnya tak perlu minta izin lagi.
+  useEffect(() => { useLocationStore.getState().acquire() }, [])
 
   // Token handoff dari app My ArahInn: jika URL punya ?app_token=...,
   // auto-login (tanpa minta login lagi) lalu strip param dari URL.

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
 import { MapPin, Navigation, Loader2, Building2, ArrowLeft, Search, X } from 'lucide-react'
+import { useLocationStore } from '@/store/locationStore'
 
 /**
  * Input destinasi + dropdown ala Traveloka:
@@ -77,10 +78,21 @@ export default function DestinationSearch({
 
   const handleNearMe = () => {
     setGeoErr('')
+    // Pakai lokasi yang SUDAH tersambung di awal app (tak perlu minta izin lagi).
+    const saved = useLocationStore.getState().coords
+    if (saved?.lat && saved?.lng) {
+      setOpen(false)
+      onNearMe?.(saved.lat, saved.lng)
+      return
+    }
     if (!navigator.geolocation) { setGeoErr('Browser tidak mendukung lokasi.'); return }
     setLocating(true)
     navigator.geolocation.getCurrentPosition(
-      (pos) => { setLocating(false); setOpen(false); onNearMe?.(pos.coords.latitude, pos.coords.longitude) },
+      (pos) => {
+        setLocating(false); setOpen(false)
+        useLocationStore.getState().acquire() // simpan utk kunjungan berikutnya
+        onNearMe?.(pos.coords.latitude, pos.coords.longitude)
+      },
       () => { setLocating(false); setGeoErr('Tidak bisa akses lokasi. Izinkan akses lokasi di browser.') },
       { enableHighAccuracy: true, timeout: 10000 },
     )
