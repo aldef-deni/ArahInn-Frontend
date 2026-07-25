@@ -233,7 +233,7 @@ export default function PpobCategoryPage() {
           <p className="text-xs sm:text-sm text-slate-500 mt-1 mb-4 sm:mb-6">
             {isPulsaData
               ? 'Masukkan nomor HP, pilih jenis layanan, lalu lanjut pembayaran.'
-              : 'Pilih kategori, isi nomor, lalu lanjut pembayaran.'}
+              : 'Pilih kategori, pilih opsi pembayaran, isi nomor, lalu lanjut pembayaran.'}
           </p>
         </div>
 
@@ -291,10 +291,10 @@ export default function PpobCategoryPage() {
         />
       )}
 
-      {/* ════════ LAYOUT LAMA: Tagihan (pascabayar/prabayar generik) ════════ */}
+      {/* ════════ LAYOUT: Tagihan (kategori → opsi/produk → nomor → cek/bayar) ════════ */}
       {!isPulsaData && !isPln && !isEwallet && !isGame && (
         <>
-          {/* Step 1: Pilih kategori */}
+          {/* Step 1: Pilih layanan (kategori) */}
           <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4">
             <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5 sm:mb-3">1. Pilih layanan</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -304,7 +304,7 @@ export default function PpobCategoryPage() {
                 return (
                   <button
                     key={cat.id}
-                    onClick={() => { setSelectedCategory(cat); setSelectedProduct(null); setInquiry(null) }}
+                    onClick={() => { setSelectedCategory(cat); setSelectedProduct(null); setCustomerNumber(''); setInquiry(null); setExtraParams({}) }}
                     className={`p-3 rounded-xl border-2 flex flex-col items-center gap-1.5 transition-all active:scale-95 ${
                       active ? 'border-brand bg-brand/5' : 'border-slate-200 hover:border-slate-300'
                     }`}
@@ -320,10 +320,49 @@ export default function PpobCategoryPage() {
             </div>
           </div>
 
-          {/* Step 2: Nomor pelanggan */}
+          {/* Step 2: Pilih opsi/produk — LANGSUNG muncul saat kategori diklik */}
           {selectedCategory && (
             <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4">
-              <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5 sm:mb-3">2. {meta.label}</p>
+              <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5 sm:mb-3">
+                2. Pilih {selectedCategory.name}
+              </p>
+              {loadingProducts && (
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500"><Loader2 className="w-4 h-4 animate-spin" /> Memuat opsi...</div>
+              )}
+              {!loadingProducts && products.length === 0 && (
+                <div className="text-center py-6">
+                  <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="text-xs sm:text-sm text-slate-500">Belum ada opsi untuk kategori ini.</p>
+                </div>
+              )}
+              {!loadingProducts && products.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {products.map(p => {
+                    const active = selectedProduct?.id === p.id
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => { setSelectedProduct(p); setInquiry(null) }}
+                        className={`p-3 rounded-xl border-2 text-left transition-all active:scale-95 ${
+                          active ? 'border-brand bg-brand/5' : 'border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <p className="text-[11px] sm:text-xs font-semibold text-slate-700 leading-snug line-clamp-2">{p.name}</p>
+                        {selectedCategory.type === 'prabayar' && (
+                          <p className="text-sm font-bold text-brand mt-1">{formatRupiah(p.priceSell)}</p>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 3: Nomor pelanggan — setelah opsi dipilih */}
+          {selectedProduct && (
+            <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4">
+              <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5 sm:mb-3">3. {meta.label}</p>
               <input
                 type="tel"
                 inputMode="numeric"
@@ -332,52 +371,18 @@ export default function PpobCategoryPage() {
                 placeholder={meta.placeholder}
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
               />
-            </div>
-          )}
 
-          {/* Step 3: Pilih produk / nominal */}
-          {selectedCategory && customerNumber.length >= 4 && (
-            <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4">
-              <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5 sm:mb-3">
-                3. {selectedCategory.type === 'pascabayar' ? 'Cek tagihan' : 'Pilih nominal'}
-              </p>
-              {loadingProducts && (
-                <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500"><Loader2 className="w-4 h-4 animate-spin" /> Memuat produk...</div>
-              )}
-              {!loadingProducts && products.length === 0 && (
-                <div className="text-center py-6">
-                  <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                  <p className="text-xs sm:text-sm text-slate-500">Belum ada produk untuk kategori ini.</p>
-                </div>
-              )}
-              {selectedCategory.type === 'prabayar' && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {products.map(p => {
-                    const active = selectedProduct?.id === p.id
-                    return (
-                      <button
-                        key={p.id}
-                        onClick={() => setSelectedProduct(p)}
-                        className={`p-3 rounded-xl border-2 text-left transition-all active:scale-95 ${
-                          active ? 'border-brand bg-brand/5' : 'border-slate-200 hover:border-slate-300'
-                        }`}
-                      >
-                        <p className="text-[11px] sm:text-xs font-semibold text-slate-700 leading-snug line-clamp-2">{p.name}</p>
-                        <p className="text-sm font-bold text-brand mt-1">{formatRupiah(p.priceSell)}</p>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-              {selectedCategory.type === 'pascabayar' && products[0] && (
+              {/* Pascabayar: tombol Cek Tagihan (pakai produk yang dipilih) */}
+              {selectedCategory.type === 'pascabayar' && customerNumber.length >= 4 && !inquiry && (
                 <button
-                  onClick={() => { setSelectedProduct(products[0]); inquiryMutation.mutate({ product_id: products[0].id, customer_number: customerNumber }) }}
+                  onClick={() => inquiryMutation.mutate({ product_id: selectedProduct.id, customer_number: customerNumber })}
                   disabled={inquiryMutation.isPending}
-                  className="w-full py-3 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 transition-all"
+                  className="w-full mt-3 py-3 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 transition-all"
                 >
                   {inquiryMutation.isPending ? 'Mengecek...' : 'Cek Tagihan'}
                 </button>
               )}
+
               {inquiry && (
                 <div className="mt-4 p-3.5 sm:p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
                   <div className="flex items-center gap-2 mb-2">
@@ -396,7 +401,7 @@ export default function PpobCategoryPage() {
       )}
 
       {/* CTA — sticky bottom on mobile */}
-      {selectedProduct && (selectedCategory?.type !== 'pascabayar' || inquiry) && (() => {
+      {selectedProduct && customerNumber.trim().length >= 3 && (selectedCategory?.type !== 'pascabayar' || inquiry) && (() => {
         const submitting = purchaseMutation.isPending || confirmPayMutation.isPending
         const checking   = inquiryMutation.isPending
         const hasNominal = !!extraParams.nominal
