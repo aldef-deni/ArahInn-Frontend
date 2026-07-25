@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { ppobApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
+import { pdamRegion, pdamProvinces } from '@/utils/pdamRegion'
+import { multifinanceGroup, multifinanceGroupsAvailable } from '@/utils/multifinanceGroup'
 import { useAuthStore } from '@/store/authStore'
 import {
   Smartphone, Wifi, Zap, Lightbulb, Droplets, HeartPulse, Router, Wallet,
@@ -19,6 +21,24 @@ import PpobConfirmModal from './PpobConfirmModal'
 import RedeemPoints from '@/components/ui/RedeemPoints'
 
 const ICONS = { Smartphone, Wifi, Zap, Lightbulb, Droplets, HeartPulse, Router, Wallet, Tv, CreditCard, Landmark, Car, Receipt }
+
+// Label & format input NOMOR per kategori tagihan (override default "Nomor Pelanggan").
+const CAT_INPUT = {
+  'kartu-kredit':  { label: 'Nomor Kartu Kredit',        placeholder: '16 digit nomor kartu',        maxLen: 16 },
+  'multifinance':  { label: 'Nomor Kontrak',             placeholder: 'Nomor kontrak / pelanggan',   maxLen: 20 },
+  'telepon-pasca': { label: 'Nomor Telepon',             placeholder: 'Contoh: 0217xxxxxx',          maxLen: 15 },
+  'telkom':        { label: 'Nomor Telepon / IndiHome',  placeholder: 'Nomor telepon / IndiHome',    maxLen: 16 },
+  'pajak':         { label: 'Nomor Objek Pajak (NOP)',   placeholder: '18 digit NOP',                maxLen: 18 },
+}
+
+// Meta (ikon + warna) tiap jenis Multifinance.
+const MF_META = {
+  'Pembiayaan Kendaraan':        { Icon: Car,        color: '#2563eb' },
+  'Pinjaman Online / Multiguna': { Icon: Smartphone, color: '#7c3aed' },
+  'BPR & BPRS':                  { Icon: Landmark,   color: '#0d9488' },
+  'Koperasi / KSP':              { Icon: Wallet,     color: '#ea580c' },
+  'Bank & Lainnya':              { Icon: CreditCard, color: '#475569' },
+}
 
 export default function PpobCategoryPage() {
   const { t } = useTranslation()
@@ -38,6 +58,8 @@ export default function PpobCategoryPage() {
   const { token } = useAuthStore()
 
   const [selectedCategory, setSelectedCategory] = useState(null)
+  const [pdamProvince, setPdamProvince]         = useState('') // filter wilayah utk PDAM
+  const [mfGroup, setMfGroup]                   = useState('') // jenis pembiayaan utk Multifinance
   const [customerNumber, setCustomerNumber]     = useState('')
   const [selectedProduct, setSelectedProduct]   = useState(null)
   const [inquiry, setInquiry] = useState(null)
@@ -304,7 +326,7 @@ export default function PpobCategoryPage() {
                 return (
                   <button
                     key={cat.id}
-                    onClick={() => { setSelectedCategory(cat); setSelectedProduct(null); setCustomerNumber(''); setInquiry(null); setExtraParams({}) }}
+                    onClick={() => { setSelectedCategory(cat); setSelectedProduct(null); setCustomerNumber(''); setInquiry(null); setExtraParams({}); setPdamProvince(''); setMfGroup('') }}
                     className={`p-3 rounded-xl border-2 flex flex-col items-center gap-1.5 transition-all active:scale-95 ${
                       active ? 'border-brand bg-brand/5' : 'border-slate-200 hover:border-slate-300'
                     }`}
@@ -320,55 +342,119 @@ export default function PpobCategoryPage() {
             </div>
           </div>
 
-          {/* Step 2: Pilih opsi/produk — LANGSUNG muncul saat kategori diklik */}
-          {selectedCategory && (
-            <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4">
-              <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5 sm:mb-3">
-                2. Pilih {selectedCategory.name}
-              </p>
-              {loadingProducts && (
-                <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500"><Loader2 className="w-4 h-4 animate-spin" /> Memuat opsi...</div>
-              )}
-              {!loadingProducts && products.length === 0 && (
-                <div className="text-center py-6">
-                  <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                  <p className="text-xs sm:text-sm text-slate-500">Belum ada opsi untuk kategori ini.</p>
-                </div>
-              )}
-              {!loadingProducts && products.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {products.map(p => {
-                    const active = selectedProduct?.id === p.id
-                    return (
-                      <button
-                        key={p.id}
-                        onClick={() => { setSelectedProduct(p); setInquiry(null) }}
-                        className={`p-3 rounded-xl border-2 text-left transition-all active:scale-95 ${
-                          active ? 'border-brand bg-brand/5' : 'border-slate-200 hover:border-slate-300'
-                        }`}
-                      >
-                        <p className="text-[11px] sm:text-xs font-semibold text-slate-700 leading-snug line-clamp-2">{p.name}</p>
-                        {selectedCategory.type === 'prabayar' && (
-                          <p className="text-sm font-bold text-brand mt-1">{formatRupiah(p.priceSell)}</p>
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )}
+          {/* Step 2: Pilih opsi/produk — LANGSUNG muncul saat kategori diklik.
+              PDAM: dropdown WILAYAH dulu. Multifinance: 5 kartu JENIS dulu. */}
+          {selectedCategory && (() => {
+            const code = String(selectedCategory.code).toLowerCase()
+            const isRegion = code === 'pdam' || code === 'pajak' // dikelompokkan per WILAYAH (provinsi)
+            const isMf = code === 'multifinance'
+            const provinces = isRegion ? pdamProvinces(products) : []
+            const mfGroups = isMf ? multifinanceGroupsAvailable(products) : []
+            const shownProducts = isRegion
+              ? (pdamProvince ? products.filter(p => pdamRegion(p.name) === pdamProvince) : [])
+              : isMf
+                ? (mfGroup ? products.filter(p => multifinanceGroup(p.name) === mfGroup) : [])
+                : products
+            const showList = !loadingProducts && products.length > 0 && (isRegion ? !!pdamProvince : isMf ? !!mfGroup : true)
+            return (
+              <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4">
+                <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5 sm:mb-3">
+                  2. {isRegion ? 'Pilih wilayah' : isMf ? 'Pilih jenis pembiayaan' : `Pilih ${selectedCategory.name}`}
+                </p>
 
-          {/* Step 3: Nomor pelanggan — setelah opsi dipilih */}
-          {selectedProduct && (
+                {loadingProducts && (
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500"><Loader2 className="w-4 h-4 animate-spin" /> Memuat opsi...</div>
+                )}
+                {!loadingProducts && products.length === 0 && (
+                  <div className="text-center py-6">
+                    <AlertCircle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs sm:text-sm text-slate-500">Belum ada opsi untuk kategori ini.</p>
+                  </div>
+                )}
+
+                {/* Dropdown wilayah (PDAM & Pajak PBB) */}
+                {isRegion && !loadingProducts && products.length > 0 && (
+                  <div className="mb-3">
+                    <label className="block text-[11px] sm:text-xs font-semibold text-slate-500 mb-1.5">Wilayah (Provinsi)</label>
+                    <select
+                      value={pdamProvince}
+                      onChange={e => { setPdamProvince(e.target.value); setSelectedProduct(null); setInquiry(null) }}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+                    >
+                      <option value="">— Pilih provinsi —</option>
+                      {provinces.map(prov => (
+                        <option key={prov} value={prov}>{prov}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Kartu jenis pembiayaan (Multifinance) */}
+                {isMf && !loadingProducts && products.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+                    {mfGroups.map(key => {
+                      const meta = MF_META[key] || {}
+                      const MfIcon = meta.Icon || Wallet
+                      const count = products.filter(p => multifinanceGroup(p.name) === key).length
+                      const active = mfGroup === key
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => { setMfGroup(key); setSelectedProduct(null); setInquiry(null) }}
+                          className={`p-3 rounded-xl border-2 flex flex-col items-center gap-1.5 transition-all active:scale-95 ${
+                            active ? 'border-brand bg-brand/5' : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: meta.color || '#1d4ed8' }}>
+                            <MfIcon className="w-5 h-5 text-white" />
+                          </div>
+                          <p className="text-[11px] sm:text-xs font-semibold text-slate-700 text-center leading-tight">{key}</p>
+                          <span className="text-[10px] text-slate-400">{count} penyedia</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {/* Daftar produk (langsung; PDAM setelah provinsi; Multifinance setelah jenis) */}
+                {showList && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {shownProducts.map(p => {
+                      const active = selectedProduct?.id === p.id
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => { setSelectedProduct(p); setInquiry(null) }}
+                          className={`p-3 rounded-xl border-2 text-left transition-all active:scale-95 ${
+                            active ? 'border-brand bg-brand/5' : 'border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <p className="text-[11px] sm:text-xs font-semibold text-slate-700 leading-snug line-clamp-2">{p.name}</p>
+                          {selectedCategory.type === 'prabayar' && (
+                            <p className="text-sm font-bold text-brand mt-1">{formatRupiah(p.priceSell)}</p>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
+          {/* Step 3: Nomor pelanggan — setelah opsi dipilih (label & format per kategori) */}
+          {selectedProduct && (() => {
+            const ci = CAT_INPUT[String(selectedCategory.code).toLowerCase()] || { label: meta.label, placeholder: meta.placeholder, maxLen: 20 }
+            return (
             <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4">
-              <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5 sm:mb-3">3. {meta.label}</p>
+              <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5 sm:mb-3">3. {ci.label}</p>
               <input
                 type="tel"
                 inputMode="numeric"
+                maxLength={ci.maxLen}
                 value={customerNumber}
                 onChange={e => { setCustomerNumber(e.target.value.replace(/\D/g, '')); setInquiry(null) }}
-                placeholder={meta.placeholder}
+                placeholder={ci.placeholder}
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
               />
 
@@ -396,7 +482,8 @@ export default function PpobCategoryPage() {
                 </div>
               )}
             </div>
-          )}
+            )
+          })()}
         </>
       )}
 
@@ -439,7 +526,7 @@ export default function PpobCategoryPage() {
         product={selectedProduct}
         customerNumber={customerNumber}
         customerName={inquiry?.customer?.name}
-        customerLabel={meta?.label || 'Nomor Tujuan'}
+        customerLabel={CAT_INPUT[String(selectedCategory?.code).toLowerCase()]?.label || meta?.label || 'Nomor Tujuan'}
         operatorLabel={selectedProduct?.operator || meta?.title}
         totalAmount={inquiry?.pricing?.totalAmount ?? (extraParams.nominal ? Number(extraParams.nominal) : selectedProduct?.priceSell)}
         discount={redeem.discount}
