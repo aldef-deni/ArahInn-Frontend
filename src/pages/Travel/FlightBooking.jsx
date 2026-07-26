@@ -99,8 +99,11 @@ export default function FlightBooking() {
   const intl = isIntlRoute(out.departure, out.arrival) || (!!ret && isIntlRoute(ret.departure, ret.arrival))
 
   // Fare per leg (banyak maskapai kasih harga di fare, bukan search)
+  // ⚠️ Query key WAJIB menyertakan jumlah pax: fare vendor mengembalikan TOTAL untuk semua
+  // pax, jadi kalau user ubah jumlah tiket (mis. 3→5) fare HARUS refetch. Tanpa pax di key,
+  // React Query kembalikan fare pax lama → harga tampil salah (kekecilan) vs biaya vendor.
   const fareOut = useQuery({
-    queryKey: ['flight-fare', 'out', out?.cls?.seat],
+    queryKey: ['flight-fare', 'out', out?.cls?.seat, sel.adult || 1, sel.child || 0, sel.infant || 0],
     queryFn: () => travelApi.flightFare({
       airline: out.airline, departure: out.departure.code, arrival: out.arrival.code,
       departureDate: out.date, returnDate: '',
@@ -109,7 +112,7 @@ export default function FlightBooking() {
     enabled: !!out?.cls?.seat, retry: 1,
   })
   const fareRet = useQuery({
-    queryKey: ['flight-fare', 'ret', ret?.cls?.seat],
+    queryKey: ['flight-fare', 'ret', ret?.cls?.seat, sel.adult || 1, sel.child || 0, sel.infant || 0],
     queryFn: () => travelApi.flightFare({
       airline: ret.airline, departure: ret.departure.code, arrival: ret.arrival.code,
       departureDate: ret.date, returnDate: '',
