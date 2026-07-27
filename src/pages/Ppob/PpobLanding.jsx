@@ -1,15 +1,35 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { ppobApi, travelApi } from '@/services/index'
+import { ppobApi } from '@/services/index'
 import { useAuthStore } from '@/store/authStore'
 import {
   Smartphone, Zap, Receipt, Wallet, Gamepad2,
-  History, ChevronRight, ShieldCheck, ArrowRight,
-  Plane, TrainFront, Ship, AlertTriangle,
+  History, ChevronRight, ShieldCheck, ArrowRight, AlertTriangle,
+  Wifi, Lightbulb, Droplets, HeartPulse, Router, Tv, CreditCard, Landmark, Car, Building2, GraduationCap,
+  Bike, Milestone, AppWindow, Gift, Gem,
 } from 'lucide-react'
 import SEO from '@/components/SEO'
 import bannerPpob from '@/assets/banners/ppob.webp'
+
+// Ikon kategori tagihan (nama ikon dari API kategori → komponen lucide). Sinkron dgn PpobCategoryPage.
+const CAT_ICONS = { Smartphone, Wifi, Zap, Lightbulb, Droplets, HeartPulse, Router, Wallet, Tv, CreditCard, Landmark, Car, Receipt, Building2, GraduationCap, Bike, Milestone, AppWindow, Gift, Gem }
+
+// Deskripsi ringkas default per kode kategori (dipakai bila API tak menyertakan `description`).
+const TAGIHAN_DESC = {
+  pdam: 'Air PDAM daerah', telkom: 'Telepon & IndiHome', 'tv-kabel': 'TV berlangganan',
+  multifinance: 'Cicilan & leasing', asuransi: 'Premi asuransi', 'kartu-kredit': 'Tagihan kartu kredit',
+  'telepon-pasca': 'Telepon pascabayar', pajak: 'Pajak PBB (Objek Pajak)', samsat: 'Pajak kendaraan',
+  bpjs: 'Iuran BPJS', gas: 'Gas PGN',
+}
+
+// #RRGGBB → rgba() untuk latar ikon pastel (mirip iconBg tailwind pada kartu utama).
+const hexToRgba = (hex, a) => {
+  const h = String(hex || '#1d4ed8').replace('#', '')
+  const n = h.length === 3 ? h.split('').map(c => c + c).join('') : h
+  const r = parseInt(n.slice(0, 2), 16), g = parseInt(n.slice(2, 4), 16), b = parseInt(n.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${a})`
+}
 
 /**
  * Top Up & Tagihan — landing page yang elegan + mobile-responsive.
@@ -29,15 +49,7 @@ export default function PpobLanding() {
     { id: 'pulsa-data', label: t('topupLanding.pulsaData'),    desc: t('topupLanding.pulsaDataDesc'),    path: '/topup-tagihan/pulsa-data', Icon: Smartphone, gradient: 'from-blue-500 to-indigo-600', iconBg: 'bg-blue-100',   iconColor: 'text-blue-600',   badge: t('topupLanding.savingsBadge') },
     { id: 'pln',        label: t('topupLanding.listrikPln'),  desc: t('topupLanding.listrikPlnDesc'),  path: '/topup-tagihan/pln',        Icon: Zap,        gradient: 'from-amber-500 to-orange-600', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
     { id: 'ewallet',    label: t('topupLanding.ewallet'),     desc: t('topupLanding.ewalletDesc'),     path: '/topup-tagihan/ewallet',    Icon: Wallet,     gradient: 'from-violet-500 to-purple-600', iconBg: 'bg-violet-100', iconColor: 'text-violet-600' },
-    { id: 'tagihan',    label: t('topupLanding.tagihan'),     desc: t('topupLanding.tagihanDesc'),     path: '/topup-tagihan/tagihan',    Icon: Receipt,    gradient: 'from-emerald-500 to-green-600', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
     { id: 'game',       label: t('topupLanding.game'),        desc: t('topupLanding.gameDesc'),        path: '/topup-tagihan/game',       Icon: Gamepad2,   gradient: 'from-rose-500 to-pink-600', iconBg: 'bg-rose-100',     iconColor: 'text-rose-600' },
-  ]
-
-  // Ticketing — tiket perjalanan
-  const TICKETS = [
-    { id: 'pesawat', label: 'Tiket Pesawat',    desc: 'Semua maskapai domestik', path: '/tiket/pesawat', Icon: Plane,      gradient: 'from-sky-500 to-blue-600',  iconBg: 'bg-sky-100',  iconColor: 'text-sky-600' },
-    { id: 'kereta',  label: 'Tiket Kereta',     desc: 'KAI antarkota',           path: '/tiket/kereta',                      Icon: TrainFront, gradient: 'from-amber-500 to-orange-600', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
-    { id: 'pelni',   label: 'Tiket Kapal Laut', desc: 'PELNI semua rute',        path: '/tiket/pelni',   Icon: Ship,       gradient: 'from-cyan-500 to-blue-600', iconBg: 'bg-cyan-100', iconColor: 'text-cyan-600' },
   ]
 
   // Recent trx untuk shortcut "Riwayat" (kalau ada)
@@ -57,13 +69,15 @@ export default function PpobLanding() {
   })
   const isGroupDown = (id) => disabledGroups.map(String).includes(String(id))
 
-  // Moda travel yang dinonaktifkan superadmin (mis. vendor gangguan)
-  const { data: disabledModas = [] } = useQuery({
-    queryKey: ['travel-service-status'],
-    queryFn : () => travelApi.serviceStatus().then(r => r.data?.data?.disabled ?? []),
+  // Kategori "Bayar Tagihan" (PDAM, Telkom, TV Kabel, Multifinance, dst) — dulu tersembunyi di
+  // submenu /topup-tagihan/tagihan, kini ditampilkan langsung sebagai kartu di landing.
+  const { data: categories = [] } = useQuery({
+    queryKey: ['ppob-categories'],
+    queryFn : () => ppobApi.categories().then(r => r.data?.data ?? []),
     staleTime: 60_000,
   })
-  const isModaDown = (id) => disabledModas.map(String).includes(String(id))
+  const tagihanCats = categories.filter(c => (c.group || c.code) === 'tagihan')
+  const tagihanDown = isGroupDown('tagihan')
 
   return (
     <div className="bg-slate-50 sm:bg-transparent min-h-[60vh]">
@@ -98,7 +112,7 @@ export default function PpobLanding() {
           <h2 className="font-display text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
             {t('topupLanding.sectionTitle')}
           </h2>
-          <span className="text-[10px] sm:text-xs text-slate-400">{GROUPS.length} {t('topupLanding.categoryCount')}</span>
+          <span className="text-[10px] sm:text-xs text-slate-400">{GROUPS.length + tagihanCats.length} {t('topupLanding.categoryCount')}</span>
         </div>
 
         {/* Cards — 2 col mobile, 3 col tablet+ */}
@@ -171,39 +185,39 @@ export default function PpobLanding() {
               </Link>
             )
           })}
-        </div>
 
-        {/* ── Ticketing (tiket perjalanan) ──────────────────── */}
-        <div className="flex items-center justify-between mb-3 sm:mb-4 mt-7 sm:mt-9">
-          <h2 className="font-display text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Ticketing</h2>
-          <span className="text-[10px] sm:text-xs text-slate-400">{TICKETS.length} layanan</span>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-          {TICKETS.map((group) => {
-            const Icon = group.Icon
-            const down = isModaDown(group.id)
+          {/* Kartu kategori "Bayar Tagihan" — dikeluarkan dari submenu, tampil MENYAMBUNG
+              setelah Game Online dalam grid yang sama (gaya kartu besar, tanpa pemisah section). */}
+          {tagihanCats.map((cat) => {
+            const Icon = CAT_ICONS[cat.icon] || Receipt
+            const color = cat.color || '#1d4ed8'
             const baseCls = 'group relative rounded-2xl p-3.5 sm:p-5 overflow-hidden flex flex-col min-h-[120px] sm:min-h-[150px]'
             const inner = (
               <>
-                <div className={`absolute top-0 right-0 w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br ${group.gradient} opacity-10 rounded-bl-full pointer-events-none`} />
-                {down && (
+                <div className="absolute top-0 right-0 w-20 h-20 sm:w-24 sm:h-24 opacity-10 rounded-bl-full pointer-events-none"
+                  style={{ background: tagihanDown ? undefined : color }} />
+                {tagihanDown && (
                   <span className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-red-100 text-red-700">
                     <AlertTriangle className="w-3 h-3" /> {t('topupLanding.disruptedBadge', 'Gangguan')}
                   </span>
                 )}
-                <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl ${down ? 'bg-slate-100' : group.iconBg} flex items-center justify-center mb-2.5 sm:mb-3 relative shrink-0`}>
-                  <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${down ? 'text-slate-400' : group.iconColor}`} strokeWidth={2.25} />
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-2.5 sm:mb-3 relative shrink-0"
+                  style={{ backgroundColor: tagihanDown ? '#f1f5f9' : hexToRgba(color, 0.12) }}>
+                  <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${tagihanDown ? 'text-slate-400' : ''}`} strokeWidth={2.25}
+                    style={{ color: tagihanDown ? undefined : color }} />
                 </div>
-                <p className={`font-bold text-sm sm:text-base leading-tight relative ${down ? 'text-slate-400' : 'text-slate-900'}`}>{group.label}</p>
+                <p className={`font-bold text-sm sm:text-base leading-tight relative ${tagihanDown ? 'text-slate-400' : 'text-slate-900'}`}>{cat.name}</p>
                 <p className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 sm:mt-1 line-clamp-2 leading-snug relative">
-                  {down ? t('topupLanding.disruptedDesc', 'Sedang gangguan, coba lagi nanti') : group.desc}
+                  {tagihanDown ? t('topupLanding.disruptedDesc', 'Sedang gangguan, coba lagi nanti') : (cat.description || TAGIHAN_DESC[String(cat.code).toLowerCase()] || t('topupLanding.tagihanDesc'))}
                 </p>
-                {!down && <ChevronRight className="w-4 h-4 text-slate-300 absolute bottom-3 right-3 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />}
+                {!tagihanDown && (
+                  <ChevronRight className="w-4 h-4 text-slate-300 absolute bottom-3 right-3 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
+                )}
               </>
             )
-            if (down) {
+            if (tagihanDown) {
               return (
-                <div key={group.id} aria-disabled="true"
+                <div key={cat.id} aria-disabled="true"
                   className={`${baseCls} bg-slate-50 border border-slate-200 opacity-70 cursor-not-allowed`}>
                   {inner}
                 </div>
@@ -211,8 +225,8 @@ export default function PpobLanding() {
             }
             return (
               <Link
-                key={group.id}
-                to={group.path}
+                key={cat.id}
+                to={`/topup-tagihan/${encodeURIComponent(cat.code)}`}
                 className={`${baseCls} bg-white border border-slate-200 hover:border-brand hover:shadow-lg active:scale-[0.97] transition-all`}
               >
                 {inner}

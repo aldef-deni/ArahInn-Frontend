@@ -1,17 +1,17 @@
 // Klasifikasi produk Multifinance ke 5 jenis (dari pola nama).
 export const MF_GROUP_KEYS = [
-  'Pembiayaan Kendaraan',
+  'Leasing',
   'Pinjaman Online / Multiguna',
   'BPR & BPRS',
   'Koperasi / KSP',
   'Bank & Lainnya',
 ]
 
-// Kata kunci brand pembiayaan kendaraan / leasing otomotif.
+// Kata kunci brand leasing / pembiayaan (otomotif + WOM Finance dll).
 const AUTO_KW = [
   'BCA FINANCE', 'MANDIRI TUNAS', 'MANDIRI UTAMA', 'BUSSAN', '(BAF)', 'AUTO FINANCE',
   'FIF', 'MPM', 'MEGA AUTO', 'MEGA CENTRAL', 'MEGA FINANCE', 'OTO MULTI', 'OTO SUMMIT',
-  'RADANA', 'SMART FINANCE', 'SUZUKI FINANCE', 'TOYOTA ASTRA', '(TAF)', 'KREDITPLUS',
+  'RADANA', 'SMART FINANCE', 'SUZUKI FINANCE', 'TOYOTA ASTRA', '(TAF)', 'KREDITPLUS', 'WOM',
 ]
 
 // Kata kunci fintech / pinjaman online / multiguna.
@@ -31,8 +31,8 @@ export function multifinanceGroup(name) {
     return 'Koperasi / KSP'
   }
 
-  // 3) Pembiayaan kendaraan (leasing otomotif).
-  if (AUTO_KW.some(k => up.includes(k))) return 'Pembiayaan Kendaraan'
+  // 3) Leasing / pembiayaan (otomotif + WOM dll).
+  if (AUTO_KW.some(k => up.includes(k))) return 'Leasing'
 
   // 4) Pinjaman online / multiguna.
   if (ONLINE_KW.some(k => up.includes(k))) return 'Pinjaman Online / Multiguna'

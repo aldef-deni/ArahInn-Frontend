@@ -196,11 +196,9 @@ export default function PpobPayment() {
 
         <div className="space-y-1.5 text-xs sm:text-sm">
           <Row label={t('ppob.billOrPrice')} value={formatRupiah(basePrice)} />
-          {adminFee > 0 && (
-            <Row label={t('ppob.adminFee')} value={formatRupiah(adminFee)} />
-          )}
-          {serviceFee > 0 && (
-            <Row label={t('ppob.serviceFee')} value={formatRupiah(serviceFee)} />
+          {/* PPOB: gabung admin vendor + biaya layanan/margin jadi satu baris "Biaya Admin". */}
+          {(adminFee + serviceFee) > 0 && (
+            <Row label={t('ppob.adminFee')} value={formatRupiah(adminFee + serviceFee)} />
           )}
           <Row label={t('ppob.subtotal')} value={formatRupiah(totalAmount)} />
           <div className="pt-2 border-t border-slate-100 flex justify-between items-center font-bold">

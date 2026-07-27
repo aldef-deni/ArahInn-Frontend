@@ -19,7 +19,9 @@ import { Wallet, AlertCircle, Loader2, Check } from 'lucide-react'
 
 // Mapping keyword di nama produk → brand label & styling
 const EWALLET_BRANDS = [
-  { id: 'GOPAY',      label: 'GoPay',     match: /\bGO[\s-]?PAY\b|\bGOPAY\b/,             color: 'bg-emerald-500',  soft: 'bg-emerald-50',  accent: 'text-emerald-700',  border: 'border-emerald-500' },
+  { id: 'GOPAY',      label: 'GoPay',     match: /\bGO[\s-]?PAY\b|\bGOPAY\b|\bGOJEK\b/,    color: 'bg-emerald-500',  soft: 'bg-emerald-50',  accent: 'text-emerald-700',  border: 'border-emerald-500' },
+  { id: 'GRAB',       label: 'GrabPay',   match: /\bGRAB\b/,                               color: 'bg-green-600',    soft: 'bg-green-50',    accent: 'text-green-700',    border: 'border-green-600' },
+  { id: 'MAXIM',      label: 'Maxim',     match: /\bMAXIM\b/,                              color: 'bg-yellow-500',   soft: 'bg-yellow-50',   accent: 'text-yellow-700',   border: 'border-yellow-500' },
   { id: 'OVO',        label: 'OVO',       match: /\bOVO\b/,                                color: 'bg-violet-600',   soft: 'bg-violet-50',   accent: 'text-violet-700',   border: 'border-violet-600' },
   { id: 'DANA',       label: 'DANA',      match: /\bDANA\b/,                               color: 'bg-sky-500',      soft: 'bg-sky-50',      accent: 'text-sky-700',      border: 'border-sky-500' },
   { id: 'SHOPEEPAY',  label: 'ShopeePay', match: /\bSHOPEE[\s-]?PAY\b|\bSHOPEE\b|\bSPAY\b/,color: 'bg-orange-500',   soft: 'bg-orange-50',   accent: 'text-orange-700',   border: 'border-orange-500' },

@@ -180,6 +180,9 @@ export const adminApi = {
   // Biaya penanganan tiket per moda (pesawat/pelni/kereta)
   getTravelServiceFee: ()   => api.get('/admin/settings/travel-service-fee'),
   setTravelServiceFee: (d)  => api.post('/admin/settings/travel-service-fee', d),
+  // Biaya admin PPOB per kategori (masuk laba ArahInn)
+  getPpobAdminFee   : ()    => api.get('/admin/settings/ppob-admin-fee'),
+  setPpobAdminFee   : (d)   => api.post('/admin/settings/ppob-admin-fee', d),
   // Nomor WA konsultasi Design Interior
   getInteriorWa     : ()    => api.get('/admin/settings/interior-wa'),
   setInteriorWa     : (d)   => api.post('/admin/settings/interior-wa', d),

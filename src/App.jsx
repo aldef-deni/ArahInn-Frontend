@@ -54,6 +54,7 @@ import PelniBooking from '@/pages/Travel/PelniBooking'
 import TravelPayment from '@/pages/Travel/TravelPayment'
 import Maintenance from '@/pages/Maintenance'
 import AdminPpob from '@/pages/admin/Ppob'
+import AdminPpobFee from '@/pages/admin/Ppob/AdminFee'
 import AdminTravel from '@/pages/admin/Travel'
 import TermsAndConditions from '@/pages/Legal/TermsAndConditions'
 import PrivacyPolicy from '@/pages/Legal/PrivacyPolicy'
@@ -402,6 +403,7 @@ export default function App() {
           <Route path="reviews" element={<BlockRoles roles={['design_interior']}><AdminReviews /></BlockRoles>} />
           <Route path="interior" element={<AdminInterior />} />
           <Route path="ppob" element={<AdminPpob />} />
+          <Route path="ppob-admin-fee" element={<BlockRoles roles={['admin', 'finance', 'design_interior']}><AdminPpobFee /></BlockRoles>} />
           <Route path="travel" element={<AdminTravel />} />
           <Route path="customer-chat" element={<BlockRoles roles={['design_interior']}><AdminCustomerChat /></BlockRoles>} />
           <Route path="harga" element={<BlockRoles roles={['design_interior']}><AdminHarga /></BlockRoles>}>
