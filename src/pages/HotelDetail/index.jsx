@@ -39,6 +39,7 @@ import {
 import MapEmbed from '@/components/ui/MapEmbed'
 import DateField from '@/components/ui/DateField'
 import ReviewForm from '@/components/ReviewForm'
+import NearbyDestinations from '@/components/NearbyDestinations'
 import InquiryChatModal from '@/components/chat/InquiryChatModal'
 import WishlistButton from '@/components/WishlistButton'
 import SEO from '@/components/SEO'
@@ -1602,6 +1603,9 @@ export default function HotelDetail() {
                 </div>
               </div>
             )}
+
+            {/* Destinasi Terdekat — di atas Ulasan tamu */}
+            <NearbyDestinations hotelId={resolvedId} />
 
             <section className="rounded-2xl sm:rounded-3xl lg:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-6 shadow-sm md:p-7">
               <div className="flex flex-wrap items-center justify-between gap-3">

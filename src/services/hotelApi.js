@@ -13,6 +13,7 @@ export const hotelApi = {
   search    : (params) => api.get('/hotels/search', { params }),
   popularDestinations: () => api.get('/hotels/popular-destinations'),
   getById   : (id)     => api.get(`/hotels/${id}`),
+  nearby    : (id)     => api.get(`/hotels/${id}/nearby`),
   getRooms  : (id)     => api.get(`/hotels/${id}/rooms`),
   getCities : ()       => api.get('/hotels/cities'),
   checkAvail: (id, params) => api.get(`/hotels/${id}/availability`, { params }),
