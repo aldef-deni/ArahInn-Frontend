@@ -9,6 +9,7 @@ import { pdamRegion, pdamProvinces } from '@/utils/pdamRegion'
 import { multifinanceGroup, multifinanceGroupsAvailable } from '@/utils/multifinanceGroup'
 import { pegadaianGroup, pegadaianGroupsAvailable } from '@/utils/pegadaianGroup'
 import { eduGroup, eduGroupsAvailable } from '@/utils/eduGroup'
+import { etollGroup, etollGroupsAvailable } from '@/utils/etollGroup'
 import { useAuthStore } from '@/store/authStore'
 import {
   Smartphone, Wifi, Zap, Lightbulb, Droplets, HeartPulse, Router, Wallet,
@@ -34,7 +35,7 @@ const CAT_INPUT = {
   'telkom':        { label: 'Nomor Telepon / IndiHome',  placeholder: 'Nomor telepon / IndiHome',    maxLen: 16 },
   'pajak':         { label: 'Nomor Objek Pajak (NOP)',   placeholder: '18 digit NOP',                maxLen: 18 },
   'saldo-driver':  { label: 'Nomor HP Driver',           placeholder: 'Nomor HP terdaftar',          maxLen: 15 },
-  'e-toll':        { label: 'Nomor HP / ID Pelanggan',   placeholder: 'Nomor HP terdaftar',          maxLen: 20 },
+  'e-toll':        { label: 'Nomor Kartu',                placeholder: '16 digit nomor kartu',        maxLen: 16 },
   'voucher-apps':  { label: 'Nomor HP',                  placeholder: 'Nomor HP untuk kirim kode',   maxLen: 15 },
   'gift-sosmed':   { label: 'ID Tujuan',                 placeholder: 'User ID tujuan',              maxLen: 30 },
 }
@@ -53,6 +54,15 @@ const PEGADAIAN_META = {
   'Cicilan Mikro': { Icon: Package,   color: '#0d9488' },
   'Gadai Ulang':   { Icon: RefreshCw, color: '#7c3aed' },
   'Tebus':         { Icon: HandCoins, color: '#ea580c' },
+}
+
+// Meta (ikon + warna) tiap bank E-Toll.
+const ETOLL_META = {
+  'Brizzi (BRI)':      { Icon: CreditCard, color: '#1e40af' },
+  'e-Money (Mandiri)': { Icon: CreditCard, color: '#ca8a04' },
+  'TapCash (BNI)':     { Icon: CreditCard, color: '#ea580c' },
+  'Flazz (BCA)':       { Icon: CreditCard, color: '#2563eb' },
+  'Lainnya':           { Icon: CreditCard, color: '#475569' },
 }
 
 // Meta (ikon + warna) tiap jenjang Edukasi.
@@ -413,12 +423,14 @@ export default function PpobCategoryPage() {
             const isMf = code === 'multifinance'
             const isPegadaian = code === 'pegadaian'
             const isEdu = code === 'edukasi'
-            const isGrouped = isMf || isPegadaian || isEdu  // dikelompokkan per JENIS/JENJANG (kartu)
-            const groupClassify = isMf ? multifinanceGroup : isPegadaian ? pegadaianGroup : eduGroup
-            const groupMeta = isMf ? MF_META : isPegadaian ? PEGADAIAN_META : EDU_META
+            const isEtoll = code === 'e-toll'
+            const isGrouped = isMf || isPegadaian || isEdu || isEtoll  // dikelompokkan per JENIS/JENJANG/BANK (kartu)
+            const groupClassify = isMf ? multifinanceGroup : isPegadaian ? pegadaianGroup : isEtoll ? etollGroup : eduGroup
+            const groupMeta = isMf ? MF_META : isPegadaian ? PEGADAIAN_META : isEtoll ? ETOLL_META : EDU_META
             const provinces = isRegion ? pdamProvinces(products) : []
             const subGroups = isMf ? multifinanceGroupsAvailable(products)
               : isPegadaian ? pegadaianGroupsAvailable(products)
+              : isEtoll ? etollGroupsAvailable(products)
               : isEdu ? eduGroupsAvailable(products) : []
             const baseProducts = isRegion
               ? (pdamProvince ? products.filter(p => pdamRegion(p.name) === pdamProvince) : [])
@@ -439,7 +451,7 @@ export default function PpobCategoryPage() {
             return (
               <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4">
                 <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5 sm:mb-3">
-                  {directCat ? '1' : '2'}. {isRegion ? 'Pilih wilayah' : isMf ? 'Pilih jenis pembiayaan' : isPegadaian ? 'Pilih jenis layanan' : isEdu ? 'Pilih jenjang' : `Pilih ${selectedCategory.name}`}
+                  {directCat ? '1' : '2'}. {isRegion ? 'Pilih wilayah' : isMf ? 'Pilih jenis pembiayaan' : isPegadaian ? 'Pilih jenis layanan' : isEtoll ? 'Pilih bank / kartu' : isEdu ? 'Pilih jenjang' : `Pilih ${selectedCategory.name}`}
                 </p>
 
                 {loadingProducts && (
@@ -489,7 +501,7 @@ export default function PpobCategoryPage() {
                             <MfIcon className="w-5 h-5 text-white" />
                           </div>
                           <p className="text-[11px] sm:text-xs font-semibold text-slate-700 text-center leading-tight">{key}</p>
-                          {(isMf || isEdu) && <span className="text-[10px] text-slate-400">{count} {isMf ? 'penyedia' : 'produk'}</span>}
+                          {(isMf || isEdu || isEtoll) && <span className="text-[10px] text-slate-400">{count} {isMf ? 'penyedia' : isEtoll ? 'nominal' : 'produk'}</span>}
                         </button>
                       )
                     })}
