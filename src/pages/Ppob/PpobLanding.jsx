@@ -191,31 +191,40 @@ export default function PpobLanding() {
           {tagihanCats.map((cat) => {
             const Icon = CAT_ICONS[cat.icon] || Receipt
             const color = cat.color || '#1d4ed8'
+            // E-Toll dinonaktifkan sementara (tidak bisa diklik) — atas permintaan.
+            const isEtoll = String(cat.code).toLowerCase() === 'e-toll'
+            const catDown = tagihanDown || isEtoll
+            const badgeTxt = isEtoll && !tagihanDown
+              ? t('topupLanding.unavailableBadge', 'Nonaktif')
+              : t('topupLanding.disruptedBadge', 'Gangguan')
+            const downDesc = isEtoll && !tagihanDown
+              ? t('topupLanding.unavailableDesc', 'Sementara tidak tersedia')
+              : t('topupLanding.disruptedDesc', 'Sedang gangguan, coba lagi nanti')
             const baseCls = 'group relative rounded-2xl p-3.5 sm:p-5 overflow-hidden flex flex-col min-h-[120px] sm:min-h-[150px]'
             const inner = (
               <>
                 <div className="absolute top-0 right-0 w-20 h-20 sm:w-24 sm:h-24 opacity-10 rounded-bl-full pointer-events-none"
-                  style={{ background: tagihanDown ? undefined : color }} />
-                {tagihanDown && (
+                  style={{ background: catDown ? undefined : color }} />
+                {catDown && (
                   <span className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-red-100 text-red-700">
-                    <AlertTriangle className="w-3 h-3" /> {t('topupLanding.disruptedBadge', 'Gangguan')}
+                    <AlertTriangle className="w-3 h-3" /> {badgeTxt}
                   </span>
                 )}
                 <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-2.5 sm:mb-3 relative shrink-0"
-                  style={{ backgroundColor: tagihanDown ? '#f1f5f9' : hexToRgba(color, 0.12) }}>
-                  <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${tagihanDown ? 'text-slate-400' : ''}`} strokeWidth={2.25}
-                    style={{ color: tagihanDown ? undefined : color }} />
+                  style={{ backgroundColor: catDown ? '#f1f5f9' : hexToRgba(color, 0.12) }}>
+                  <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${catDown ? 'text-slate-400' : ''}`} strokeWidth={2.25}
+                    style={{ color: catDown ? undefined : color }} />
                 </div>
-                <p className={`font-bold text-sm sm:text-base leading-tight relative ${tagihanDown ? 'text-slate-400' : 'text-slate-900'}`}>{cat.name}</p>
+                <p className={`font-bold text-sm sm:text-base leading-tight relative ${catDown ? 'text-slate-400' : 'text-slate-900'}`}>{cat.name}</p>
                 <p className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 sm:mt-1 line-clamp-2 leading-snug relative">
-                  {tagihanDown ? t('topupLanding.disruptedDesc', 'Sedang gangguan, coba lagi nanti') : (cat.description || TAGIHAN_DESC[String(cat.code).toLowerCase()] || t('topupLanding.tagihanDesc'))}
+                  {catDown ? downDesc : (cat.description || TAGIHAN_DESC[String(cat.code).toLowerCase()] || t('topupLanding.tagihanDesc'))}
                 </p>
-                {!tagihanDown && (
+                {!catDown && (
                   <ChevronRight className="w-4 h-4 text-slate-300 absolute bottom-3 right-3 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
                 )}
               </>
             )
-            if (tagihanDown) {
+            if (catDown) {
               return (
                 <div key={cat.id} aria-disabled="true"
                   className={`${baseCls} bg-slate-50 border border-slate-200 opacity-70 cursor-not-allowed`}>
