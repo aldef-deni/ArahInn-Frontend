@@ -10,6 +10,7 @@ import { multifinanceGroup, multifinanceGroupsAvailable } from '@/utils/multifin
 import { pegadaianGroup, pegadaianGroupsAvailable } from '@/utils/pegadaianGroup'
 import { eduGroup, eduGroupsAvailable } from '@/utils/eduGroup'
 import { etollGroup, etollGroupsAvailable } from '@/utils/etollGroup'
+import { identifyEmoneyCard } from '@/utils/emoneyCardBin'
 import { useAuthStore } from '@/store/authStore'
 import {
   Smartphone, Wifi, Zap, Lightbulb, Droplets, HeartPulse, Router, Wallet,
@@ -55,6 +56,9 @@ const PEGADAIAN_META = {
   'Gadai Ulang':   { Icon: RefreshCw, color: '#7c3aed' },
   'Tebus':         { Icon: HandCoins, color: '#ea580c' },
 }
+
+// Daftar bank E-Toll yang SELALU ditampilkan (yang belum tersedia → non-aktif + modal info).
+const ETOLL_BANK_KEYS = ['e-Money (Mandiri)', 'Brizzi (BRI)', 'TapCash (BNI)', 'Flazz (BCA)']
 
 // Meta (ikon + warna) tiap bank E-Toll.
 const ETOLL_META = {
@@ -105,6 +109,7 @@ export default function PpobCategoryPage() {
   const [pdamProvince, setPdamProvince]         = useState('') // filter wilayah utk PDAM
   const [mfGroup, setMfGroup]                   = useState('') // jenis pembiayaan utk Multifinance
   const [productSearch, setProductSearch]       = useState('') // pencarian produk utk kategori besar (mis. Edukasi)
+  const [etollInfoOpen, setEtollInfoOpen]       = useState(false) // modal: bank e-toll selain Mandiri belum tersedia
   const [customerNumber, setCustomerNumber]     = useState('')
   const [selectedProduct, setSelectedProduct]   = useState(null)
   const [inquiry, setInquiry] = useState(null)
@@ -290,6 +295,11 @@ export default function PpobCategoryPage() {
   const isEwallet   = group === 'ewallet'
   const isGame      = group === 'game'
 
+  // E-Toll: identifikasi bank dari BIN nomor kartu → blokir kartu selain Mandiri.
+  const isEtollCat     = String(selectedCategory?.code || '').toLowerCase() === 'e-toll'
+  const etollCard      = isEtollCat ? identifyEmoneyCard(customerNumber) : null
+  const etollWrongBank = !!(etollCard && etollCard.bank !== 'Mandiri' && etollCard.bank !== 'Unknown')
+
   // Deep-link kategori (dari kartu landing): langsung ke fungsi kategori, sembunyikan grid pemilih.
   const directCat = !!catParam
   const pageTitle = (directCat && selectedCategory) ? selectedCategory.name : meta.title
@@ -428,9 +438,11 @@ export default function PpobCategoryPage() {
             const groupClassify = isMf ? multifinanceGroup : isPegadaian ? pegadaianGroup : isEtoll ? etollGroup : eduGroup
             const groupMeta = isMf ? MF_META : isPegadaian ? PEGADAIAN_META : isEtoll ? ETOLL_META : EDU_META
             const provinces = isRegion ? pdamProvinces(products) : []
+            // E-Toll: tampilkan SEMUA bank (yang tak ada produk aktif → non-aktif + modal info).
+            const etollAvail = isEtoll ? new Set(etollGroupsAvailable(products)) : null
             const subGroups = isMf ? multifinanceGroupsAvailable(products)
               : isPegadaian ? pegadaianGroupsAvailable(products)
-              : isEtoll ? etollGroupsAvailable(products)
+              : isEtoll ? ETOLL_BANK_KEYS
               : isEdu ? eduGroupsAvailable(products) : []
             const baseProducts = isRegion
               ? (pdamProvince ? products.filter(p => pdamRegion(p.name) === pdamProvince) : [])
@@ -489,19 +501,25 @@ export default function PpobCategoryPage() {
                       const MfIcon = meta.Icon || Wallet
                       const count = products.filter(p => groupClassify(p.name) === key).length
                       const active = mfGroup === key
+                      const disabled = isEtoll && !etollAvail.has(key)   // bank belum tersedia
                       return (
                         <button
                           key={key}
-                          onClick={() => { setMfGroup(key); setSelectedProduct(null); setInquiry(null); setProductSearch('') }}
+                          onClick={() => disabled
+                            ? setEtollInfoOpen(true)
+                            : (setMfGroup(key), setSelectedProduct(null), setInquiry(null), setProductSearch(''))}
                           className={`p-3 rounded-xl border-2 flex flex-col items-center gap-1.5 transition-all active:scale-95 ${
-                            active ? 'border-brand bg-brand/5' : 'border-slate-200 hover:border-slate-300'
+                            disabled ? 'border-slate-200 bg-slate-50 opacity-60'
+                              : active ? 'border-brand bg-brand/5' : 'border-slate-200 hover:border-slate-300'
                           }`}
                         >
-                          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: meta.color || '#1d4ed8' }}>
+                          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: disabled ? '#cbd5e1' : (meta.color || '#1d4ed8') }}>
                             <MfIcon className="w-5 h-5 text-white" />
                           </div>
-                          <p className="text-[11px] sm:text-xs font-semibold text-slate-700 text-center leading-tight">{key}</p>
-                          {(isMf || isEdu || isEtoll) && <span className="text-[10px] text-slate-400">{count} {isMf ? 'penyedia' : isEtoll ? 'nominal' : 'produk'}</span>}
+                          <p className={`text-[11px] sm:text-xs font-semibold text-center leading-tight ${disabled ? 'text-slate-400' : 'text-slate-700'}`}>{key}</p>
+                          {(isMf || isEdu || isEtoll) && (
+                            <span className="text-[10px] text-slate-400">{disabled ? 'Belum tersedia' : `${count} ${isMf ? 'penyedia' : isEtoll ? 'nominal' : 'produk'}`}</span>
+                          )}
                         </button>
                       )
                     })}
@@ -574,6 +592,16 @@ export default function PpobCategoryPage() {
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
               />
 
+              {/* E-Toll: peringatan bila nomor kartu terdeteksi bukan Mandiri */}
+              {etollWrongBank && (
+                <div className="mt-2.5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2">
+                  <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                  <p className="text-[11px] sm:text-xs font-semibold text-red-600">
+                    Kartu {etollCard.produk} ({etollCard.bank}) belum bisa di-top up. Saat ini hanya E-Money Mandiri.
+                  </p>
+                </div>
+              )}
+
               {/* Pascabayar: tombol Cek Tagihan (pakai produk yang dipilih) */}
               {selectedCategory.type === 'pascabayar' && customerNumber.length >= 4 && !inquiry && (
                 <button
@@ -615,7 +643,7 @@ export default function PpobCategoryPage() {
           ?? (hasNominal ? Number(extraParams.nominal) : selectedProduct?.priceSell)
         // PLN/E-Wallet: kalau belum inquiry & belum pilih nominal → disable
         const needsNominal = (isPln || isEwallet) && !inquiry && !hasNominal
-        const ctaDisabled = submitting || checking || needsNominal || !totalAmount
+        const ctaDisabled = submitting || checking || needsNominal || !totalAmount || etollWrongBank
         return (
           // Sticky CTA bottom — visible di mobile + desktop tanpa perlu scroll.
           <div className="fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] sm:pb-4">
@@ -682,6 +710,30 @@ export default function PpobCategoryPage() {
                 className="mt-6 w-full py-3 rounded-xl bg-brand text-white font-semibold text-sm hover:brightness-95 active:scale-[0.98] transition-all"
               >
                 Kembali ke PPOB
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal info: bank e-toll selain Mandiri belum tersedia ── */}
+      {etollInfoOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" onClick={() => setEtollInfoOpen(false)}>
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="h-1.5 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500" />
+            <div className="p-6 sm:p-7 text-center">
+              <div className="mx-auto w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mb-4 ring-8 ring-amber-50/60">
+                <AlertCircle className="w-8 h-8 text-amber-500" strokeWidth={2.25} />
+              </div>
+              <h2 className="text-lg font-bold text-slate-900 mb-1.5">Belum Tersedia</h2>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                Maaf, selain E-Money Mandiri belum bisa dilakukan Top Up.
+              </p>
+              <button
+                onClick={() => setEtollInfoOpen(false)}
+                className="mt-6 w-full py-3 rounded-xl bg-brand text-white font-semibold text-sm hover:brightness-95 active:scale-[0.98] transition-all"
+              >
+                Mengerti
               </button>
             </div>
           </div>
