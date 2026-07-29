@@ -21,6 +21,8 @@ export default function NearbyDestinations({ hotelId }) {
     queryFn: () => hotelApi.nearby(hotelId).then(r => r.data?.data ?? { categories: [], items: [] }),
     enabled: !!hotelId,
     staleTime: 24 * 60 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
   })
 
   const items = data?.items ?? []
@@ -75,7 +77,7 @@ export default function NearbyDestinations({ hotelId }) {
                     <p className="text-sm font-semibold text-slate-800 truncate">{it.name}</p>
                     <p className="text-[11px] text-slate-400">{it.type}</p>
                   </div>
-                  <span className="text-xs sm:text-sm font-bold text-slate-600 shrink-0">{fmtDist(it.distance_m)}</span>
+                  <span className="text-xs sm:text-sm font-bold text-slate-600 shrink-0">{fmtDist(it.distanceM ?? it.distance_m)}</span>
                 </li>
               )
             })}
