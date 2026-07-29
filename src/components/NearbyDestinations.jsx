@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
-import { Utensils, ShoppingBag, TrainFront, HeartPulse, Palmtree, MapPin, Loader2 } from 'lucide-react'
+import { Utensils, ShoppingBag, TrainFront, HeartPulse, Palmtree, BedDouble, MapPin, Loader2 } from 'lucide-react'
 
 const CAT_ICON = {
-  Kuliner: Utensils, Belanja: ShoppingBag, Transportasi: TrainFront, Kesehatan: HeartPulse, Wisata: Palmtree,
+  Kuliner: Utensils, Belanja: ShoppingBag, Transportasi: TrainFront, Kesehatan: HeartPulse, Wisata: Palmtree, Akomodasi: BedDouble,
 }
 const CAT_COLOR = {
-  Kuliner: '#f97316', Belanja: '#8b5cf6', Transportasi: '#0ea5e9', Kesehatan: '#ef4444', Wisata: '#10b981',
+  Kuliner: '#f97316', Belanja: '#8b5cf6', Transportasi: '#0ea5e9', Kesehatan: '#ef4444', Wisata: '#10b981', Akomodasi: '#2563eb',
 }
 // 637 → "637 m"; 1600 → "1,6 km"; 2000 → "2 km"
 const fmtDist = (m) => (m < 1000 ? `${m} m` : `${(m / 1000).toFixed(m % 1000 === 0 ? 0 : 1).replace('.', ',')} km`)
