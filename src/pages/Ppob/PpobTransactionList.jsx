@@ -21,11 +21,28 @@ const STATUS_META = {
   refundable  : { labelKey: 'ppob.statusRefundable', color: 'amber',   Icon: RotateCcw },
   refunded    : { labelKey: 'ppob.statusRefunded',   color: 'slate',   Icon: RotateCcw },
   canceled    : { labelKey: 'ppob.statusCanceled',   color: 'slate',   Icon: XCircle },
+  expired     : { labelKey: 'ppob.statusExpired',    color: 'slate',   Icon: XCircle },
 }
+
+// Filter status (disamakan dgn Akomodasi & Travel): Semua, Menunggu, Berhasil, Gagal, Kadaluarsa.
+const FILTERS = [
+  { value: '',        labelKey: 'ppob.filterAll',     fallback: 'Semua' },
+  { value: 'waiting', labelKey: 'ppob.filterWaiting', fallback: 'Menunggu' },
+  { value: 'success', labelKey: 'ppob.filterSuccess', fallback: 'Berhasil' },
+  { value: 'failed',  labelKey: 'ppob.filterFailed',  fallback: 'Gagal' },
+  { value: 'expired', labelKey: 'ppob.filterExpired', fallback: 'Kadaluarsa' },
+]
+// Petakan status mentah PPOB → grup filter. 'expired' & 'canceled' → grup Kadaluarsa.
+const ppobGroup = (st) =>
+  st === 'success' ? 'success'
+  : (['expired', 'canceled'].includes(st) ? 'expired'
+  : (['failed', 'refundable', 'refunded'].includes(st) ? 'failed'
+  : 'waiting'))   // pending, paid, processing
 
 export default function PpobTransactionList({ limit = 30, emptyCta = true }) {
   const { t } = useTranslation()
   const [downloading, setDownloading] = useState(null)
+  const [filter, setFilter] = useState('')
   const { data: response, isLoading } = useQuery({
     queryKey: ['ppob-my-trx', limit],
     queryFn : () => ppobApi.myTransactions({ limit }).then(r => r.data?.data ?? { data: [] }),
@@ -67,9 +84,33 @@ export default function PpobTransactionList({ limit = 30, emptyCta = true }) {
     )
   }
 
+  const shown = filter ? trxList.filter(x => ppobGroup(x.status) === filter) : trxList
+
   return (
-    <div className="space-y-3">
-      {trxList.map(trx => {
+    <div>
+      {/* Filter status — disamakan dgn Akomodasi & Travel */}
+      <div className="-mx-4 px-4 sm:mx-0 sm:px-0 flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-thin">
+        {FILTERS.map(f => {
+          const count = f.value ? trxList.filter(x => ppobGroup(x.status) === f.value).length : trxList.length
+          return (
+            <button key={f.value || 'all'} onClick={() => setFilter(f.value)}
+              className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all border active:scale-95 ${
+                filter === f.value ? 'bg-brand text-white border-brand' : 'hover:bg-muted border-transparent'
+              }`}>
+              {t(f.labelKey, f.fallback)}{count > 0 ? ` · ${count}` : ''}
+            </button>
+          )
+        })}
+      </div>
+
+      {shown.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center">
+          <Receipt className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+          <p className="text-sm text-slate-500">{t('ppob.noTrxFilter', 'Tidak ada transaksi pada filter ini.')}</p>
+        </div>
+      ) : (
+      <div className="space-y-3">
+      {shown.map(trx => {
         const meta       = STATUS_META[trx.status] || STATUS_META.pending
         const StatusIcon = meta.Icon
         const trxCode    = trx.trxCode
@@ -142,6 +183,8 @@ export default function PpobTransactionList({ limit = 30, emptyCta = true }) {
           </div>
         )
       })}
+      </div>
+      )}
     </div>
   )
 }

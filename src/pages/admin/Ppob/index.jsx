@@ -39,6 +39,8 @@ const STATUS_OPTS = [
   { v: 'failed',     l: 'Gagal' },
   { v: 'refundable', l: 'Perlu Refund' },
   { v: 'refunded',   l: 'Direfund' },
+  { v: 'expired',    l: 'Kadaluarsa' },
+  { v: 'canceled',   l: 'Dibatalkan' },
 ]
 
 export default function AdminPpob() {
@@ -816,6 +818,7 @@ function StatusBadge({ status }) {
     refundable  : ['Perlu Refund', 'amber'],
     refunded    : ['Direfund',  'red'],
     canceled    : ['Dibatalkan','red'],
+    expired     : ['Kadaluarsa','slate'],
   }
   const [label, color] = map[status] || [status, 'slate']
   return (
