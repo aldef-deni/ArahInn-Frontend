@@ -17,14 +17,18 @@ import { Smartphone, Wifi, AlertCircle, Loader2, ChevronDown, Check } from 'luci
  *   onSelectProduct
  */
 
-// Prefix nomor HP Indonesia (4 digit) → operator (cocok dengan p.operator dari backend).
-const OPERATOR_PREFIXES = {
-  Telkomsel: ['0811','0812','0813','0821','0822','0823','0851','0852','0853'],
-  Indosat:   ['0814','0815','0816','0855','0856','0857','0858'],
-  XL:        ['0817','0818','0819','0859','0877','0878'],
-  Axis:      ['0831','0832','0833','0838'],
-  Tri:       ['0895','0896','0897','0898','0899'],
-  Smartfren: ['0881','0882','0883','0884','0885','0886','0887','0888','0889'],
+// Deteksi operator HIERARKIS: cek prefix 6 digit dulu (mengisolasi by.U dari blok 0851
+// yang juga dipakai Telkomsel Kartu As lama), lalu fallback ke prefix 4 digit.
+const BYU_PREFIX6 = ['085155','085156','085157','085158','085159']  // sub-blok by.U (bisa diperluas)
+const OPERATOR_PREFIX4 = {
+  '0811':'Telkomsel','0812':'Telkomsel','0813':'Telkomsel','0821':'Telkomsel','0822':'Telkomsel',
+  '0823':'Telkomsel','0851':'Telkomsel','0852':'Telkomsel','0853':'Telkomsel',
+  '0814':'Indosat','0815':'Indosat','0816':'Indosat','0855':'Indosat','0856':'Indosat','0857':'Indosat','0858':'Indosat',
+  '0817':'XL','0818':'XL','0819':'XL','0859':'XL','0877':'XL','0878':'XL',
+  '0831':'Axis','0832':'Axis','0833':'Axis','0838':'Axis',
+  '0895':'Tri','0896':'Tri','0897':'Tri','0898':'Tri','0899':'Tri',
+  '0881':'Smartfren','0882':'Smartfren','0883':'Smartfren','0884':'Smartfren','0885':'Smartfren',
+  '0886':'Smartfren','0887':'Smartfren','0888':'Smartfren','0889':'Smartfren',
 }
 
 const OPERATOR_STYLES = {
@@ -40,15 +44,24 @@ const OPERATOR_STYLES = {
 
 const OPERATORS_LIST = ['Telkomsel', 'byU', 'Indosat', 'XL', 'Axis', 'Tri', 'Smartfren']
 
+function normalizePhone(phone) {
+  let n = String(phone || '').replace(/\D/g, '')
+  if (n.startsWith('62')) n = '0' + n.slice(2)
+  return n
+}
 function detectOperator(phone) {
-  if (!phone || phone.length < 4) return null
-  // by.U TIDAK bisa dideteksi dari prefix — berbagi blok 0851 dengan Telkomsel reguler.
-  // Maka 0851/0852/0853 default ke Telkomsel; pelanggan by.U memilih operator "byU" manual.
-  const prefix = phone.substring(0, 4)
-  for (const [op, prefixes] of Object.entries(OPERATOR_PREFIXES)) {
-    if (prefixes.includes(prefix)) return op
-  }
-  return null
+  const n = normalizePhone(phone)
+  if (n.length < 4) return null
+  if (BYU_PREFIX6.includes(n.substring(0, 6))) return 'byU'   // isolasi by.U (6 digit)
+  return OPERATOR_PREFIX4[n.substring(0, 4)] ?? null
+}
+
+// Prefix UMUM pascabayar → tak bisa beli pulsa/paket prabayar. Rajabiller tak sediakan HLR,
+// jadi pakai prefix: Halo(0811), Matrix(0815/0816/0855), XL Prioritas(0817).
+const POSTPAID_PREFIX4 = ['0811', '0815', '0816', '0855', '0817']
+export function isPostpaidNumber(phone) {
+  const n = normalizePhone(phone)
+  return n.length >= 4 && POSTPAID_PREFIX4.includes(n.substring(0, 4))
 }
 
 // Produk byU (sub-brand Telkomsel) — dipisah ke grup operator "byU" tersendiri.
@@ -262,10 +275,18 @@ export default function PpobPulsaDataView({
             Prefix {customerNumber.substring(0, 4)} biasanya {detectedOp}, tapi Anda pilih {overrideOp}.
           </p>
         )}
+        {isPostpaidNumber(customerNumber) && (
+          <div className="mt-2 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+            <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+            <p className="text-[11px] sm:text-xs font-semibold text-red-700 leading-snug">
+              Nomor ini terdeteksi <b>PASCABAYAR</b> — tidak bisa membeli pulsa/paket data prabayar. Gunakan menu <b>Pascabayar / Bayar Tagihan</b> untuk membayar tagihannya.
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Tabs Pulsa | Paket Data */}
-      {activeOp && (
+      {/* Tabs Pulsa | Paket Data — disembunyikan bila nomor pascabayar */}
+      {activeOp && !isPostpaidNumber(customerNumber) && (
         <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5">
           <div className="grid grid-cols-2 bg-slate-100 rounded-xl p-1 gap-1 mb-4">
             {[

@@ -67,13 +67,25 @@ const SUBTYPES = [
   },
 ]
 
-function classifySubtype(name) {
+export function classifySubtype(name) {
   const n = (name || '').toUpperCase()
   if (/NON\s*TAGLIST/.test(n)) return 'non_taglist'
   if (/PASCABAYAR|PASCA\s*BAYAR/.test(n)) return 'pascabayar'
   if (/PRABAYAR|PRA\s*BAYAR/.test(n)) return 'prabayar'
   return null
 }
+
+// Panjang ID PLN yang valid per sub-tipe (Standar PPOB):
+//   Prabayar = No. Meter (11) atau ID Pelanggan (12); Pascabayar = ID Pelanggan (12);
+//   Non-taglis = No. Registrasi (13). Panjang lain → blokir agar transaksi tak gagal.
+export const PLN_ID_LEN = { prabayar: [11, 12], pascabayar: [12], non_taglist: [13] }
+export const PLN_ID_HINT = {
+  prabayar: 'No. Meter (11 digit) atau ID Pelanggan (12 digit)',
+  pascabayar: 'ID Pelanggan (12 digit)',
+  non_taglist: 'No. Registrasi (13 digit)',
+}
+export const plnLenBadFor = (subtype, len) =>
+  !!subtype && len > 0 && !(PLN_ID_LEN[subtype] ?? []).includes(len)
 
 // Pilih produk channel default.
 // Strategi: prefer code dengan suffix H (granted production), skip ADMIN variants.
@@ -138,8 +150,10 @@ export default function PpobPlnView({
     }
   }, [nominal, subtype]) // eslint-disable-line
 
+  const plnLenBad = plnLenBadFor(subtype, customerNumber.length)
+
   const handleInquiry = () => {
-    if (!selectedProduct || customerNumber.length < 4) return
+    if (!selectedProduct || customerNumber.length < 4 || plnLenBad) return
     onInquiry(selectedProduct, customerNumber)
   }
 
@@ -205,13 +219,23 @@ export default function PpobPlnView({
             inputMode="numeric"
             value={customerNumber}
             onChange={e => onCustomerChange(e.target.value.replace(/\D/g, ''))}
-            placeholder={t('ppob.plnMeterPlaceholder')}
-            maxLength={14}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-base font-mono focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+            placeholder={PLN_ID_HINT[subtype]}
+            maxLength={13}
+            className={`w-full px-4 py-3 border rounded-xl text-base font-mono focus:outline-none focus:ring-2 ${
+              plnLenBad ? 'border-red-300 focus:ring-red-200 focus:border-red-400' : 'border-slate-200 focus:ring-brand/30 focus:border-brand'
+            }`}
           />
           <p className="mt-2 text-[11px] text-slate-500 leading-relaxed">
-            {t('ppob.plnMeterHint')}
+            Format: <b>{PLN_ID_HINT[subtype]}</b>.
           </p>
+          {plnLenBad && (
+            <div className="mt-2 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+              <p className="text-[11px] sm:text-xs font-semibold text-red-700 leading-snug">
+                ID PLN belum sesuai ({customerNumber.length} digit). Masukkan {PLN_ID_HINT[subtype]}.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -271,8 +295,8 @@ export default function PpobPlnView({
           {(subtype === 'pascabayar' || subtype === 'non_taglist') && selectedProduct && !inquiry && (
             <button
               onClick={handleInquiry}
-              disabled={inquiryPending}
-              className={`w-full py-3 text-white rounded-xl font-semibold active:scale-[0.98] disabled:opacity-50 transition-all ${
+              disabled={inquiryPending || plnLenBad}
+              className={`w-full py-3 text-white rounded-xl font-semibold active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all ${
                 subtype === 'pascabayar' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-rose-600 hover:bg-rose-700'
               }`}
             >

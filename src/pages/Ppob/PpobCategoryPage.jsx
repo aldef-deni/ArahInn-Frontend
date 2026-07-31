@@ -19,7 +19,8 @@ import {
   Gem, Package, RefreshCw, HandCoins,
   Blocks, Pencil, BookOpen, School, Moon, Laptop, Library,
 } from 'lucide-react'
-import PpobPulsaDataView from './PpobPulsaDataView'
+import PpobPulsaDataView, { isPostpaidNumber } from './PpobPulsaDataView'
+import { classifySubtype as plnSubtypeOf, plnLenBadFor } from './PpobPlnView'
 import PpobPlnView from './PpobPlnView'
 import PpobEwalletView from './PpobEwalletView'
 import PpobGameView from './PpobGameView'
@@ -294,6 +295,10 @@ export default function PpobCategoryPage() {
   const isPln       = group === 'pln'
   const isEwallet   = group === 'ewallet'
   const isGame      = group === 'game'
+  // Nomor pascabayar tak bisa beli pulsa/paket prabayar → blokir CTA.
+  const pulsaPostpaid = isPulsaData && isPostpaidNumber(customerNumber)
+  // PLN: panjang ID harus sesuai sub-tipe (prabayar 11/12, pascabayar 12, non-taglis 13).
+  const plnLenBad = isPln && plnLenBadFor(plnSubtypeOf(selectedProduct?.name), String(customerNumber).replace(/\D/g, '').length)
 
   // E-Toll: identifikasi bank dari BIN nomor kartu → blokir kartu selain Mandiri.
   const isEtollCat     = String(selectedCategory?.code || '').toLowerCase() === 'e-toll'
@@ -652,9 +657,11 @@ export default function PpobCategoryPage() {
         // Postpaid: total dari inquiry
         const totalAmount = inquiry?.pricing?.totalAmount
           ?? (hasNominal ? Number(extraParams.nominal) : selectedProduct?.priceSell)
-        // PLN/E-Wallet: kalau belum inquiry & belum pilih nominal → disable
-        const needsNominal = (isPln || isEwallet) && !inquiry && !hasNominal
-        const ctaDisabled = submitting || checking || needsNominal || !totalAmount || etollWrongBank
+        // PLN/E-Wallet OPEN-DENOM (priceSell ≤ 5000 = admin fee saja) butuh extra.nominal dulu.
+        // E-Wallet NOMINAL TETAP (priceSell > 5000) sudah punya harga di produk → JANGAN diblokir.
+        const openDenom = (isPln || isEwallet) && Number(selectedProduct?.priceSell || 0) <= 5000
+        const needsNominal = openDenom && !inquiry && !hasNominal
+        const ctaDisabled = submitting || checking || needsNominal || !totalAmount || etollWrongBank || pulsaPostpaid || plnLenBad
         return (
           // Sticky CTA bottom — visible di mobile + desktop tanpa perlu scroll.
           <div className="fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] sm:pb-4">
