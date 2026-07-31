@@ -613,18 +613,29 @@ export default function PpobCategoryPage() {
                 </button>
               )}
 
-              {inquiry && (
+              {inquiry && (() => {
+                // Rincian yang MENJUMLAH benar & konsisten dgn halaman bayar:
+                //   pricing.tagihan (price_buy) = tagihan pokok + admin vendor.
+                //   Biaya admin ditampilkan = admin vendor + admin ArahInn (= total − tagihan pokok),
+                //   supaya admin yang diset superadmin ikut terlihat (bukan disembunyikan di total).
+                const priceBuy    = Number(inquiry.pricing?.tagihan || 0)
+                const vendorAdmin = Number(inquiry.pricing?.adminFee || 0)
+                const total       = Number(inquiry.pricing?.totalAmount || 0)
+                const basePrice   = Math.max(0, priceBuy - vendorAdmin)
+                const adminShown  = Math.max(0, total - basePrice)
+                return (
                 <div className="mt-4 p-3.5 sm:p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle className="w-4 h-4 text-emerald-600" />
                     <p className="text-xs sm:text-sm font-bold text-emerald-700">Tagihan ditemukan</p>
                   </div>
                   <p className="text-xs sm:text-sm text-slate-700">Nama: <b>{inquiry.customer?.name || '-'}</b></p>
-                  <p className="text-xs sm:text-sm text-slate-700">Tagihan: <b>{formatRupiah(inquiry.pricing?.tagihan || 0)}</b></p>
-                  <p className="text-xs sm:text-sm text-slate-700">Biaya admin: <b>{formatRupiah(inquiry.pricing?.adminFee || 0)}</b></p>
-                  <p className="text-sm sm:text-base font-bold text-slate-900 mt-2">Total: {formatRupiah(inquiry.pricing?.totalAmount || 0)}</p>
+                  <p className="text-xs sm:text-sm text-slate-700">Tagihan: <b>{formatRupiah(basePrice)}</b></p>
+                  <p className="text-xs sm:text-sm text-slate-700">Biaya admin: <b>{formatRupiah(adminShown)}</b></p>
+                  <p className="text-sm sm:text-base font-bold text-slate-900 mt-2">Total: {formatRupiah(total)}</p>
                 </div>
-              )}
+                )
+              })()}
             </div>
             )
           })()}
