@@ -14,7 +14,9 @@
       "Bash(php -l app/Services/NotificationService.php)",
       "Bash(php -l app/Models/AppNotification.php)",
       "Bash(php -l app/Http/Controllers/Admin/BadgeController.php)",
-      "Bash(DB_CONNECTION=sqlite DB_DATABASE=\"C:/Users/ade zulham/Downloads/komunitas/database/database.sqlite\" APP_DEBUG=false MAIL_MAILER=log php -d extension=pdo_sqlite -d extension=sqlite3 artisan tinker --execute=\"require 'C:/Users/ADEZUL~1/AppData/Local/Temp/claude/c--Users-ade-zulham-Downloads-arahinn-files-ota-frontend-react-ota-frontend/948cdebe-8d57-4d2c-aec5-743e211916f1/scratchpad/uji_badge.php';\")"
+      "Bash(DB_CONNECTION=sqlite DB_DATABASE=\"C:/Users/ade zulham/Downloads/komunitas/database/database.sqlite\" APP_DEBUG=false MAIL_MAILER=log php -d extension=pdo_sqlite -d extension=sqlite3 artisan tinker --execute=\"require 'C:/Users/ADEZUL~1/AppData/Local/Temp/claude/c--Users-ade-zulham-Downloads-arahinn-files-ota-frontend-react-ota-frontend/948cdebe-8d57-4d2c-aec5-743e211916f1/scratchpad/uji_badge.php';\")",
+      "Bash(python \"C:/Users/ADEZUL~1/AppData/Local/Temp/claude/c--Users-ade-zulham-Downloads-arahinn-files-ota-frontend-react-ota-frontend/948cdebe-8d57-4d2c-aec5-743e211916f1/scratchpad/cek_css.py\")",
+      "Bash(DB_CONNECTION=sqlite DB_DATABASE=\"C:/Users/ade zulham/Downloads/komunitas/database/database.sqlite\" APP_DEBUG=false MAIL_MAILER=log php -d extension=pdo_sqlite -d extension=sqlite3 artisan tinker --execute=\"require 'C:/Users/ADEZUL~1/AppData/Local/Temp/claude/c--Users-ade-zulham-Downloads-arahinn-files-ota-frontend-react-ota-frontend/948cdebe-8d57-4d2c-aec5-743e211916f1/scratchpad/uji_buat_komunitas.php';\")"
     ],
     "additionalDirectories": [
       "C:\\arahinn-mobile\\app\\(tabs)",
