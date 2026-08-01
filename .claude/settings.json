@@ -13,7 +13,8 @@
       "Bash(ls \"c:\\\\Users\\\\ade zulham\\\\Downloads\\\\arahinn\\\\files\")",
       "Read(//c/Users/ade zulham/Downloads/arahinn/files/**)",
       "Bash(npm install *)",
-      "Bash(npx expo *)"
+      "Bash(npx expo *)",
+      "Bash(DB_CONNECTION=sqlite DB_DATABASE=\"C:/Users/ade zulham/Downloads/komunitas/database/database.sqlite\" php -d extension=pdo_sqlite -d extension=sqlite3 artisan touring:reset --force)"
     ],
     "additionalDirectories": [
       "c:\\Users\\ade zulham\\Downloads\\arahinn\\files\\mobile-apps"

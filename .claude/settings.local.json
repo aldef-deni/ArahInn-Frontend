@@ -6,7 +6,15 @@
       "Read(//c/arahinn-mobile/**)",
       "PowerShell($env:JAVA_HOME='C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr'; Set-Location 'C:\\\\arahinn-mobile\\\\android'; .\\\\gradlew assembleRelease 2>&1 | Tee-Object -FilePath 'C:\\\\arahinn-mobile\\\\release-build.log')",
       "PowerShell(Set-Location 'C:\\\\arahinn-mobile\\\\assets'; Copy-Item 'logo1.png' 'icon.png' -Force; Copy-Item 'logo1.png' 'adaptive-icon.png' -Force; Copy-Item 'logo1.png' 'favicon.png' -Force; Get-ChildItem | Where-Object { $_.Name -in 'icon.png','adaptive-icon.png','favicon.png','logo1.png' } | Format-Table Name, Length -AutoSize)",
-      "Bash(grep -n \"use App\\\\\\\\\\\\\\\\Models\\\\\\\\\\\\\\\\Hotel\\\\|use App\\\\\\\\\\\\\\\\Models\\\\\\\\\\\\\\\\Hotel;\" \"C:/Users/ade zulham/Downloads/arahinn/files/ota-backend/app/Http/Controllers/Admin/HotelManageController.php\")"
+      "Bash(grep -n \"use App\\\\\\\\\\\\\\\\Models\\\\\\\\\\\\\\\\Hotel\\\\|use App\\\\\\\\\\\\\\\\Models\\\\\\\\\\\\\\\\Hotel;\" \"C:/Users/ade zulham/Downloads/arahinn/files/ota-backend/app/Http/Controllers/Admin/HotelManageController.php\")",
+      "Bash(DB_CONNECTION=sqlite DB_DATABASE=\"C:/Users/ade zulham/Downloads/komunitas/database/database.sqlite\" APP_DEBUG=false MAIL_MAILER=log php -d extension=pdo_sqlite -d extension=sqlite3 artisan tinker --execute=\"require 'C:/Users/ADEZUL~1/AppData/Local/Temp/claude/c--Users-ade-zulham-Downloads-arahinn-files-ota-frontend-react-ota-frontend/948cdebe-8d57-4d2c-aec5-743e211916f1/scratchpad/smoke_kosong.php';\")",
+      "Bash(DB_CONNECTION=sqlite DB_DATABASE='C:/Users/ade zulham/Downloads/komunitas/database/database.sqlite' APP_DEBUG=false php -d extension=pdo_sqlite -d extension=sqlite3 artisan tinker '--execute= *)",
+      "Bash(python \"C:/Users/ADEZUL~1/AppData/Local/Temp/claude/c--Users-ade-zulham-Downloads-arahinn-files-ota-frontend-react-ota-frontend/948cdebe-8d57-4d2c-aec5-743e211916f1/scratchpad/pengelola.py\")",
+      "Bash(DB_CONNECTION=sqlite DB_DATABASE=\"C:/Users/ade zulham/Downloads/komunitas/database/database.sqlite\" APP_DEBUG=false MAIL_MAILER=log php -d extension=pdo_sqlite -d extension=sqlite3 artisan tinker --execute=\"require 'C:/Users/ADEZUL~1/AppData/Local/Temp/claude/c--Users-ade-zulham-Downloads-arahinn-files-ota-frontend-react-ota-frontend/948cdebe-8d57-4d2c-aec5-743e211916f1/scratchpad/uji_pengelola.php';\")",
+      "Bash(php -l app/Services/NotificationService.php)",
+      "Bash(php -l app/Models/AppNotification.php)",
+      "Bash(php -l app/Http/Controllers/Admin/BadgeController.php)",
+      "Bash(DB_CONNECTION=sqlite DB_DATABASE=\"C:/Users/ade zulham/Downloads/komunitas/database/database.sqlite\" APP_DEBUG=false MAIL_MAILER=log php -d extension=pdo_sqlite -d extension=sqlite3 artisan tinker --execute=\"require 'C:/Users/ADEZUL~1/AppData/Local/Temp/claude/c--Users-ade-zulham-Downloads-arahinn-files-ota-frontend-react-ota-frontend/948cdebe-8d57-4d2c-aec5-743e211916f1/scratchpad/uji_badge.php';\")"
     ],
     "additionalDirectories": [
       "C:\\arahinn-mobile\\app\\(tabs)",
