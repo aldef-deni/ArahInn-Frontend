@@ -16,15 +16,15 @@ import { Gamepad2, AlertCircle, Loader2, Check } from 'lucide-react'
 // Keyword → judul game. Nama vendor pola: "MOBILE LEGENDS 86 DIAMOND", "PUBG MOBILE 60 UC", dst.
 // needsServer → tampilkan kolom Server/Zone (wajib) sebelum bisa lanjut.
 const GAME_BRANDS = [
-  { id: 'ML',       label: 'Mobile Legends',   match: /MOBILE\s*LEGEND|MLBB/,                 needsServer: true,  serverLabel: 'Zone ID', serverPlaceholder: 'Contoh: 2325',                 color: 'bg-blue-600',   soft: 'bg-blue-50',   accent: 'text-blue-700',   border: 'border-blue-600' },
-  { id: 'FF',       label: 'Free Fire',        match: /FREE\s*FIRE|GARENA\s*FF/,              needsServer: false, color: 'bg-orange-500', soft: 'bg-orange-50', accent: 'text-orange-700', border: 'border-orange-500' },
-  { id: 'PUBG',     label: 'PUBG Mobile',      match: /PUBG/,                                 needsServer: false, color: 'bg-amber-600',  soft: 'bg-amber-50',  accent: 'text-amber-700',  border: 'border-amber-600' },
+  { id: 'ML',       label: 'Mobile Legends',   match: /MOBILE\s*LEGEND|MLBB/,                 needsServer: true,  serverLabel: 'Zone ID', serverPlaceholder: 'Contoh: 2325',                 logo: '/games/mobile-legend.png', color: 'bg-blue-600',   soft: 'bg-blue-50',   accent: 'text-blue-700',   border: 'border-blue-600' },
+  { id: 'FF',       label: 'Free Fire',        match: /FREE\s*FIRE|GARENA\s*FF/,              needsServer: false, logo: '/games/free-fire.png', color: 'bg-orange-500', soft: 'bg-orange-50', accent: 'text-orange-700', border: 'border-orange-500' },
+  { id: 'PUBG',     label: 'PUBG Mobile',      match: /PUBG/,                                 needsServer: false, logo: '/games/pubg.png', color: 'bg-amber-600',  soft: 'bg-amber-50',  accent: 'text-amber-700',  border: 'border-amber-600' },
   { id: 'GENSHIN',  label: 'Genshin Impact',   match: /GENSHIN/,                              needsServer: true,  serverLabel: 'Server', serverPlaceholder: 'Asia / America / Europe / TW-HK-MO', color: 'bg-cyan-600',   soft: 'bg-cyan-50',   accent: 'text-cyan-700',   border: 'border-cyan-600' },
   { id: 'HSR',      label: 'Honkai: Star Rail',match: /HONKAI\s*STAR|STAR\s*RAIL/,            needsServer: true,  serverLabel: 'Server', serverPlaceholder: 'Asia / America / Europe / TW-HK-MO', color: 'bg-violet-600', soft: 'bg-violet-50', accent: 'text-violet-700', border: 'border-violet-600' },
   { id: 'HI',       label: 'Honkai Impact 3',  match: /HONKAI\s*IMPACT/,                      needsServer: true,  serverLabel: 'Server', serverPlaceholder: 'Asia / America / Europe / TW-HK-MO', color: 'bg-fuchsia-600',soft: 'bg-fuchsia-50',accent: 'text-fuchsia-700',border: 'border-fuchsia-600' },
   { id: 'VALORANT', label: 'Valorant',         match: /VALORANT/,                             needsServer: false, color: 'bg-rose-600',   soft: 'bg-rose-50',   accent: 'text-rose-700',   border: 'border-rose-600' },
   { id: 'CODM',     label: 'COD Mobile',       match: /CALL\s*OF\s*DUTY|COD\s*MOBILE|\bCODM\b/,needsServer: false, color: 'bg-slate-700',  soft: 'bg-slate-100', accent: 'text-slate-700',  border: 'border-slate-700' },
-  { id: 'AOV',      label: 'Arena of Valor',   match: /ARENA\s*OF\s*VALOR|\bAOV\b/,           needsServer: false, color: 'bg-indigo-600', soft: 'bg-indigo-50', accent: 'text-indigo-700', border: 'border-indigo-600' },
+  { id: 'AOV',      label: 'Arena of Valor',   match: /ARENA\s*OF\s*VALOR|\bAOV\b/,           needsServer: false, logo: '/games/arena-of-valor.png', color: 'bg-indigo-600', soft: 'bg-indigo-50', accent: 'text-indigo-700', border: 'border-indigo-600' },
   { id: 'PB',       label: 'Point Blank',      match: /POINT\s*BLANK/,                        needsServer: false, color: 'bg-red-700',    soft: 'bg-red-50',    accent: 'text-red-700',    border: 'border-red-700' },
   { id: 'SM',       label: 'Sausage Man',      match: /SAUSAGE\s*MAN/,                        needsServer: false, color: 'bg-pink-500',   soft: 'bg-pink-50',   accent: 'text-pink-700',   border: 'border-pink-500' },
   { id: 'AER',      label: 'Undawn / Lainnya', match: /UNDAWN/,                               needsServer: false, color: 'bg-teal-600',   soft: 'bg-teal-50',   accent: 'text-teal-700',   border: 'border-teal-600' },
@@ -133,9 +133,13 @@ export default function PpobGameView({
                     active ? `${g.border} ${g.soft} shadow-sm` : 'border-slate-200 hover:border-slate-300 bg-white'
                   }`}
                 >
-                  <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg flex items-center justify-center ${g.color}`}>
-                    <Gamepad2 className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-white" />
-                  </div>
+                  {g.logo ? (
+                    <img src={g.logo} alt={g.label} className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg object-contain" loading="lazy" />
+                  ) : (
+                    <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg flex items-center justify-center ${g.color}`}>
+                      <Gamepad2 className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-white" />
+                    </div>
+                  )}
                   <p className={`text-[10px] sm:text-xs font-bold text-center leading-tight ${active ? g.accent : 'text-slate-800'}`}>
                     {g.label}
                   </p>

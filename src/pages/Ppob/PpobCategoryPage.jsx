@@ -135,7 +135,9 @@ export default function PpobCategoryPage() {
     queryFn : () => ppobApi.groupsStatus().then(r => r.data?.data?.disabled ?? []),
     staleTime: 60_000,
   })
-  const isGroupDown = disabledGroups.map(String).includes(String(isSubCat ? 'tagihan' : group))
+  // Nonaktif bila: kode kategori ini dinonaktifkan, ATAU (untuk sub-tagihan) master 'tagihan' mati.
+  const disabledSet = disabledGroups.map(String)
+  const isGroupDown = disabledSet.includes(String(group)) || (isSubCat && disabledSet.includes('tagihan'))
 
   // Auto-select category untuk single-category groups
   useEffect(() => {

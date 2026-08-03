@@ -246,6 +246,16 @@ export default function AdminPpob() {
     const next = cur.includes(String(id)) ? cur.filter(g => g !== String(id)) : [...cur, String(id)]
     toggleGroupMutation.mutate(next)
   }
+  // Semua kategori PPOB (selain grup utama) → bisa dinonaktifkan sendiri per-kode.
+  const { data: allCats = [] } = useQuery({
+    queryKey: ['ppob-categories-admin'],
+    queryFn : () => ppobApi.categories().then(r => r.data?.data ?? []),
+    staleTime: 300_000,
+  })
+  const MAIN_GROUP_IDS = ['pulsa-data', 'pln', 'ewallet', 'game']
+  const subCats = (allCats || [])
+    .filter(c => c.code !== 'tagihan' && !MAIN_GROUP_IDS.includes(c.code))
+    .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
 
   const LOW_BALANCE = 5_000_000
   const bal = balance?.balance ?? 0
@@ -309,13 +319,14 @@ export default function AdminPpob() {
             Matikan grup layanan saat provider (Rajabiller) gangguan. Grup yang dimatikan tidak bisa
             dibeli & tombolnya nonaktif di halaman customer (web &amp; app).
           </p>
-          <div className="flex flex-wrap gap-2">
-            {PPOB_GROUPS.map((g) => {
-              const down = (disabledGroups || []).map(String).includes(String(g.id))
+          {(() => {
+            const isDown = (id) => (disabledGroups || []).map(String).includes(String(id))
+            const Toggle = ({ id, label }) => {
+              const down = isDown(id)
               return (
                 <button
-                  key={g.id}
-                  onClick={() => toggleGroup(g.id)}
+                  key={id}
+                  onClick={() => toggleGroup(id)}
                   disabled={toggleGroupMutation.isPending}
                   title={down ? 'Klik untuk mengaktifkan kembali' : 'Klik untuk menonaktifkan sementara'}
                   className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-50 ${
@@ -325,12 +336,29 @@ export default function AdminPpob() {
                   }`}
                 >
                   {down
-                    ? <><AlertTriangle className="w-3.5 h-3.5" /> {g.label} · Nonaktif</>
-                    : <><CheckCircle className="w-3.5 h-3.5" /> {g.label} · Aktif</>}
+                    ? <><AlertTriangle className="w-3.5 h-3.5" /> {label} · Nonaktif</>
+                    : <><CheckCircle className="w-3.5 h-3.5" /> {label} · Aktif</>}
                 </button>
               )
-            })}
-          </div>
+            }
+            return (
+              <>
+                {/* Grup utama */}
+                <div className="flex flex-wrap gap-2">
+                  {PPOB_GROUPS.map(g => <Toggle key={g.id} id={g.id} label={g.label} />)}
+                </div>
+                {/* Kategori spesifik (Tagihan & lainnya) — bisa dinonaktifkan sendiri */}
+                {subCats.length > 0 && (
+                  <>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mt-4 mb-2">Kategori Spesifik</p>
+                    <div className="flex flex-wrap gap-2">
+                      {subCats.map(c => <Toggle key={c.code} id={c.code} label={c.name} />)}
+                    </div>
+                  </>
+                )}
+              </>
+            )
+          })()}
         </div>
       )}
 

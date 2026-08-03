@@ -21,6 +21,10 @@ const TAGIHAN_DESC = {
   multifinance: 'Cicilan & leasing', asuransi: 'Premi asuransi', 'kartu-kredit': 'Tagihan kartu kredit',
   'telepon-pasca': 'Telepon pascabayar', pajak: 'Pajak PBB (Objek Pajak)', samsat: 'Pajak kendaraan',
   bpjs: 'Iuran BPJS', gas: 'Gas PGN',
+  ipl: 'Iuran pengelolaan lingkungan', edukasi: 'Pembayaran pendidikan / SPP',
+  pegadaian: 'Gadai, cicilan & tebus', 'saldo-driver': 'Top up saldo mitra driver',
+  'e-toll': 'Saldo kartu e-money / e-Toll', 'voucher-apps': 'Voucher aplikasi (Google Play, iTunes, dll)',
+  'gift-sosmed': 'Koin & gift media sosial',
 }
 
 // #RRGGBB → rgba() untuk latar ikon pastel (mirip iconBg tailwind pada kartu utama).
@@ -193,7 +197,9 @@ export default function PpobLanding() {
             const color = cat.color || '#1d4ed8'
             // E-Toll dinonaktifkan sementara (tidak bisa diklik) — atas permintaan.
             const isEtoll = String(cat.code).toLowerCase() === 'e-toll'
-            const catDown = tagihanDown || isEtoll
+            // Kategori bisa dinonaktifkan superadmin per-kode (selain master 'tagihan').
+            const catDisabled = isGroupDown(cat.code)
+            const catDown = tagihanDown || isEtoll || catDisabled
             const badgeTxt = isEtoll && !tagihanDown
               ? t('topupLanding.unavailableBadge', 'Nonaktif')
               : t('topupLanding.disruptedBadge', 'Gangguan')
