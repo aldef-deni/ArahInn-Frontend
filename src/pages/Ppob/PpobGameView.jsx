@@ -27,6 +27,7 @@ const GAME_BRANDS = [
   { id: 'AOV',      label: 'Arena of Valor',   match: /ARENA\s*OF\s*VALOR|\bAOV\b/,           needsServer: false, logo: '/games/arena-of-valor.png', color: 'bg-indigo-600', soft: 'bg-indigo-50', accent: 'text-indigo-700', border: 'border-indigo-600' },
   { id: 'PB',       label: 'Point Blank',      match: /POINT\s*BLANK/,                        needsServer: false, color: 'bg-red-700',    soft: 'bg-red-50',    accent: 'text-red-700',    border: 'border-red-700' },
   { id: 'SM',       label: 'Sausage Man',      match: /SAUSAGE\s*MAN/,                        needsServer: false, color: 'bg-pink-500',   soft: 'bg-pink-50',   accent: 'text-pink-700',   border: 'border-pink-500' },
+  { id: 'ROBLOX',   label: 'Roblox',           match: /ROBLOX/,                               needsServer: false, logo: '/games/roblox.png', color: 'bg-red-600',    soft: 'bg-red-50',    accent: 'text-red-700',    border: 'border-red-600' },
   { id: 'AER',      label: 'Undawn / Lainnya', match: /UNDAWN/,                               needsServer: false, color: 'bg-teal-600',   soft: 'bg-teal-50',   accent: 'text-teal-700',   border: 'border-teal-600' },
 ]
 

@@ -115,6 +115,7 @@ export default function PpobCategoryPage() {
   const [selectedProduct, setSelectedProduct]   = useState(null)
   const [inquiry, setInquiry] = useState(null)
   const [extraParams, setExtraParams] = useState({}) // utk PLN nominal & sejenisnya
+  const [kkNominal, setKkNominal] = useState('') // Kartu Kredit = open-amount (nominal pembayaran, min 10rb)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [redeem, setRedeem] = useState({ discount: 0, usePoints: false, points: 0 })
   const openAfterInquiry = useRef(false) // PLN prabayar: buka modal konfirmasi setelah cek nama
@@ -586,6 +587,11 @@ export default function PpobCategoryPage() {
           {/* Step 3: Nomor pelanggan — setelah opsi dipilih (label & format per kategori) */}
           {selectedProduct && (() => {
             const ci = CAT_INPUT[String(selectedCategory.code).toLowerCase()] || { label: meta.label, placeholder: meta.placeholder, maxLen: 20 }
+            const isKK = String(selectedCategory.code).toLowerCase() === 'kartu-kredit'
+            const kkNum = Number(kkNominal) || 0
+            const kkOk = !isKK || kkNum >= 10000
+            const isPajak = String(selectedCategory.code).toLowerCase() === 'pajak'  // PBB NOP wajib 18 digit
+            const pajakOk = !isPajak || customerNumber.length === 18
             return (
             <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-4 sm:p-5 mb-3 sm:mb-4">
               <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5 sm:mb-3">{directCat ? '2' : '3'}. {ci.label}</p>
@@ -609,14 +615,38 @@ export default function PpobCategoryPage() {
                 </div>
               )}
 
+              {/* Kartu Kredit = OPEN-AMOUNT: customer isi nominal pembayaran (min 10.000) → dikirim
+                  sebagai extra.nominal. Tanpa ini vendor tolak "invalid request" (rc=16). */}
+              {isKK && (
+                <div className="mt-3">
+                  <p className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Nominal Pembayaran</p>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    value={kkNominal}
+                    onChange={e => { setKkNominal(e.target.value.replace(/\D/g, '')); setInquiry(null) }}
+                    placeholder="Minimal Rp 10.000"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+                  />
+                  {kkNominal && !kkOk && (
+                    <p className="mt-1.5 text-[11px] sm:text-xs font-semibold text-red-600">Nominal minimal Rp 10.000.</p>
+                  )}
+                </div>
+              )}
+
+              {/* PBB: NOP wajib 18 digit */}
+              {isPajak && customerNumber.length > 0 && !pajakOk && (
+                <p className="mt-2 text-[11px] sm:text-xs font-semibold text-red-600">Nomor Objek Pajak (NOP) harus 18 digit.</p>
+              )}
+
               {/* Pascabayar: tombol Cek Tagihan (pakai produk yang dipilih) */}
               {selectedCategory.type === 'pascabayar' && customerNumber.length >= 4 && !inquiry && (
                 <button
-                  onClick={() => inquiryMutation.mutate({ product_id: selectedProduct.id, customer_number: customerNumber })}
-                  disabled={inquiryMutation.isPending}
-                  className="w-full mt-3 py-3 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 transition-all"
+                  onClick={() => inquiryMutation.mutate({ product_id: selectedProduct.id, customer_number: customerNumber, ...(isKK ? { extra: { nominal: String(kkNum) } } : {}) })}
+                  disabled={inquiryMutation.isPending || !kkOk || !pajakOk}
+                  className="w-full mt-3 py-3 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                  {inquiryMutation.isPending ? 'Mengecek...' : 'Cek Tagihan'}
+                  {inquiryMutation.isPending ? 'Mengecek...' : isKK ? 'Lanjutkan' : 'Cek Tagihan'}
                 </button>
               )}
 
