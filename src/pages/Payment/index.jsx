@@ -607,6 +607,7 @@ export default function Payment() {
                     setVaInfo(null)
                     setManualInfo(null)
                     setSnapPending(false)
+                    setSnapToken(null)
                   }
                 }}
                 className="w-full px-5 py-3.5 rounded-2xl text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"

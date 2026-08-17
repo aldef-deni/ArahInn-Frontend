@@ -323,6 +323,7 @@ export const ppobApi = {
   purchase        : (d)       => api.post('/ppob/purchase', d),
   inquiry         : (d)       => api.post('/ppob/inquiry', d),
   confirmPay      : (code, d) => api.post(`/ppob/transactions/${code}/confirm-pay`, d),
+  pay             : (code)    => api.post(`/ppob/transactions/${code}/pay`), // Midtrans Snap (QRIS)
   myTransactions  : (p)       => api.get('/ppob/my-transactions', { params: p }),
   getTrx          : (code)    => api.get(`/ppob/transactions/${code}`),
   downloadReceipt : (code)    => api.get(`/ppob/transactions/${code}/receipt`, { responseType: 'blob' }),

@@ -7,9 +7,25 @@ import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
 import {
   Clock, Copy, CheckCircle, XCircle, ArrowLeft, Info, Loader2,
-  Receipt, Building2, X, Zap, Smartphone, Wallet, ShoppingBag, Share2,
+  Receipt, Building2, X, Zap, Smartphone, Wallet, ShoppingBag, Share2, QrCode,
 } from 'lucide-react'
 import SEO from '@/components/SEO'
+
+// Muat Snap.js Midtrans sekali (client key + environment dari respons pay)
+function loadSnap(clientKey, isProduction) {
+  return new Promise((resolve, reject) => {
+    if (window.snap) return resolve(window.snap)
+    const existing = document.getElementById('midtrans-snap')
+    if (existing) { existing.addEventListener('load', () => resolve(window.snap), { once: true }); return }
+    const s = document.createElement('script')
+    s.id  = 'midtrans-snap'
+    s.src = isProduction ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js'
+    s.setAttribute('data-client-key', clientKey || '')
+    s.onload  = () => resolve(window.snap)
+    s.onerror = () => reject(new Error('Gagal memuat Midtrans Snap'))
+    document.body.appendChild(s)
+  })
+}
 
 // Buang istilah internal ("H2H", "Open Denom") dari nama produk yang tampil ke customer.
 function cleanProductName(name) {
@@ -48,6 +64,9 @@ export default function PpobPayment() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const [copiedField, setCopiedField] = useState('')
+  const [snapPending, setSnapPending] = useState(false)
+  const [snapToken, setSnapToken]     = useState(null)
+  const [paying, setPaying]           = useState(false)
 
   // Mode pembayaran (manual/doku) + bank info
   const { data: modeData } = useQuery({
@@ -118,6 +137,34 @@ export default function PpobPayment() {
     navigator.clipboard.writeText(String(text))
     setCopiedField(field)
     setTimeout(() => setCopiedField(''), 2000)
+  }
+
+  // ── Midtrans Snap (QRIS) ──────────────────────────────────────────────────
+  const openSnapPopup = (snap, token) => {
+    snap.pay(token, {
+      onSuccess: () => setSnapPending(true),
+      onPending: () => setSnapPending(true),
+      onError:   () => toast({ title: 'Pembayaran gagal', description: 'Silakan coba lagi.', variant: 'destructive' }),
+      onClose:   () => { /* user tutup popup — biarkan bisa dibuka lagi */ },
+    })
+  }
+  const startSnap = async () => {
+    setPaying(true)
+    try {
+      const res = await ppobApi.pay(trxCode)
+      const d = res.data?.data
+      setSnapToken(d.snapToken)
+      setSnapPending(true)
+      const snap = await loadSnap(d.clientKey, d.isProduction)
+      openSnapPopup(snap, d.snapToken)
+    } catch (e) {
+      toast({ title: 'Gagal', description: e?.response?.data?.message || 'Gagal memulai pembayaran.', variant: 'destructive' })
+      setSnapPending(false)
+    } finally { setPaying(false) }
+  }
+  const reopenSnap = () => {
+    if (window.snap && snapToken) openSnapPopup(window.snap, snapToken)
+    else startSnap()
   }
 
   if (isLoading) {
@@ -262,7 +309,36 @@ export default function PpobPayment() {
         </div>
       )}
 
-      {paymentMode !== 'manual' && (
+      {/* ═════ MIDTRANS SNAP — QRIS ═════ */}
+      {paymentMode === 'midtrans' && (
+        snapPending ? (
+          <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-5 text-center shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-brand/10 flex items-center justify-center mx-auto mb-3"><Loader2 className="w-6 h-6 text-brand animate-spin" /></div>
+            <p className="font-bold text-sm text-slate-900 mb-1">Menyelesaikan pembayaran</p>
+            <p className="text-xs text-slate-500 mb-4 leading-relaxed max-w-xs mx-auto">Selesaikan pembayaran QRIS di jendela Midtrans. Halaman ini otomatis diperbarui.</p>
+            <button onClick={reopenSnap} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-700 text-white font-bold text-sm">
+              <QrCode className="w-4 h-4" /> Buka kembali QRIS
+            </button>
+          </div>
+        ) : (
+          <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center gap-2.5 mb-4">
+              <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-brand/10 text-brand shrink-0"><QrCode className="w-5 h-5" /></span>
+              <div className="min-w-0">
+                <p className="font-bold text-sm text-slate-900 leading-tight">Bayar dengan QRIS</p>
+                <p className="text-[11px] text-slate-500">Scan pakai GoPay, OVO, DANA, ShopeePay, m-banking, dll</p>
+              </div>
+            </div>
+            <button onClick={startSnap} disabled={paying || expired}
+              className="w-full py-3.5 rounded-xl font-bold text-white text-sm bg-gradient-to-r from-brand to-brand-700 hover:brightness-110 active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2">
+              {paying ? (<><Loader2 className="w-5 h-5 animate-spin" /> Menyiapkan…</>) : (<>Bayar QRIS — {formatRupiah(finalAmount)}</>)}
+            </button>
+            {expired && <p className="text-[11px] text-rose-600 text-center mt-2">Waktu pembayaran habis.</p>}
+          </div>
+        )
+      )}
+
+      {paymentMode !== 'manual' && paymentMode !== 'midtrans' && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-700">
           {t('ppob.modeUnsupported', { mode: paymentMode })}
         </div>
