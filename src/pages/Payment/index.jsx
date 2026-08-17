@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { bookingApi, paymentApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
-import { Clock, Copy, CheckCircle, XCircle, Building2, X, ArrowLeft, ListOrdered, Info, ChevronDown } from 'lucide-react'
+import { Clock, Copy, CheckCircle, XCircle, Building2, X, ArrowLeft, ListOrdered, Info, ChevronDown, Wallet, QrCode, CreditCard, ShieldCheck, Loader2 } from 'lucide-react'
 
 const BANKS = [
   { id: 'bca',     label: 'BCA',     logo: '/banks/bca.png' },
@@ -29,6 +29,27 @@ function useCountdown(expiresAt) {
   return { secs, display: `${h}:${m}:${s}`, expired: secs === 0 && !!expiresAt }
 }
 
+// Muat Snap.js Midtrans sekali, pakai client key + environment dari respons initiate.
+function loadSnap(clientKey, isProduction) {
+  return new Promise((resolve, reject) => {
+    if (window.snap) return resolve(window.snap)
+    const existing = document.getElementById('midtrans-snap')
+    if (existing) {
+      existing.addEventListener('load', () => resolve(window.snap), { once: true })
+      return
+    }
+    const script = document.createElement('script')
+    script.id  = 'midtrans-snap'
+    script.src = isProduction
+      ? 'https://app.midtrans.com/snap/snap.js'
+      : 'https://app.sandbox.midtrans.com/snap/snap.js'
+    script.setAttribute('data-client-key', clientKey || '')
+    script.onload  = () => resolve(window.snap)
+    script.onerror = () => reject(new Error('Gagal memuat Midtrans Snap'))
+    document.body.appendChild(script)
+  })
+}
+
 export default function Payment() {
   const { t } = useTranslation()
   const { bookingId } = useParams()
@@ -45,6 +66,8 @@ export default function Payment() {
   // Deadline countdown (ms, di-anchor ke jam CLIENT) — diisi SETELAH klik "Lanjut ke
   // Instruksi Transfer" agar countdown mulai tepat (mis. 1:00:00) & tidak muncul sebelum klik.
   const [paymentDeadline, setPaymentDeadline] = useState(null)
+  const [snapPending, setSnapPending] = useState(false) // Midtrans: popup Snap sudah dibuka
+  const [snapToken, setSnapToken]     = useState(null)  // simpan token utk buka ulang popup
 
   // Cek mode pembayaran (doku/manual) — backend yang nentuin
   const { data: modeData } = useQuery({
@@ -63,7 +86,7 @@ export default function Payment() {
     refetchInterval: (q) => {
       const st = q.state.data?.status
       if (st === 'issued' || st === 'expired' || st === 'cancelled') return false
-      return (vaInfo || manualInfo) ? 5000 : false
+      return (vaInfo || manualInfo || snapPending) ? 5000 : false
     },
   })
   // URL memakai KODE booking; ID numerik untuk panggilan payment diambil dari booking.
@@ -79,7 +102,7 @@ export default function Payment() {
 
   const { secs, display: countdown, expired } = useCountdown(paymentDeadline)
 
-  const hasActivePayment = !!(vaInfo || manualInfo)
+  const hasActivePayment = !!(vaInfo || manualInfo || snapPending)
 
   const { data: paymentData } = useQuery({
     queryKey: ['payment-status', realId],
@@ -116,6 +139,40 @@ export default function Payment() {
     },
     onError: (e) => toast({ title: 'Gagal', description: e?.response?.data?.message, variant: 'destructive' }),
   })
+
+  // ── Midtrans Snap ─────────────────────────────────────────────────────────
+  const openSnapPopup = (snap, token) => {
+    snap.pay(token, {
+      onSuccess: () => { setSnapPending(true); toast({ title: 'Pembayaran diterima', description: 'Sedang memproses pesananmu…' }) },
+      onPending: () => { setSnapPending(true); toast({ title: 'Menunggu pembayaran', description: 'Selesaikan sesuai instruksi. Halaman ini update otomatis.' }) },
+      onError:   () => toast({ title: 'Pembayaran gagal', description: 'Silakan coba lagi.', variant: 'destructive' }),
+      onClose:   () => { /* user menutup popup tanpa menyelesaikan — biarkan bisa dibuka lagi */ },
+    })
+  }
+
+  const midtransMutation = useMutation({
+    mutationFn: () => paymentApi.initiate({ bookingId: realId }),
+    onSuccess : async (r) => {
+      const data = r.data.data
+      const secsLeft = Number(data?.expiresInSeconds)
+      if (Number.isFinite(secsLeft) && secsLeft > 0) setPaymentDeadline(Date.now() + secsLeft * 1000)
+      else if (data?.expiredAt) setPaymentDeadline(new Date(data.expiredAt).getTime())
+      setSnapToken(data.snapToken)
+      setSnapPending(true)
+      try {
+        const snap = await loadSnap(data.clientKey, data.isProduction)
+        openSnapPopup(snap, data.snapToken)
+      } catch {
+        toast({ title: 'Gagal memuat pembayaran', description: 'Periksa koneksi, lalu coba lagi.', variant: 'destructive' })
+      }
+    },
+    onError: (e) => toast({ title: 'Gagal', description: e?.response?.data?.message, variant: 'destructive' }),
+  })
+
+  const reopenSnap = () => {
+    if (window.snap && snapToken) openSnapPopup(window.snap, snapToken)
+    else midtransMutation.mutate()
+  }
 
   const copyText = (text, fieldKey = 'va') => {
     if (!text) return
@@ -434,6 +491,81 @@ export default function Payment() {
         </div>
       )}
 
+      {/* ═════ MIDTRANS SNAP MODE ═════ */}
+      {paymentMode === 'midtrans' && !snapPending && (
+        <>
+          <div className="relative overflow-hidden bg-white border rounded-xl sm:rounded-2xl p-5 sm:p-6 mb-4 sm:mb-6 shadow-card">
+            {/* aksen dekoratif */}
+            <div className="pointer-events-none absolute -top-16 -right-16 w-40 h-40 rounded-full bg-brand/5 blur-2xl" />
+            <div className="relative">
+              <div className="flex items-center gap-2.5 mb-3">
+                <span className="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-brand/10 text-brand shrink-0">
+                  <ShieldCheck className="w-5 h-5" />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="font-semibold text-sm sm:text-base leading-tight">Pembayaran Aman</h2>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground">Diproses &amp; dienkripsi oleh Midtrans</p>
+                </div>
+              </div>
+
+              <p className="text-xs sm:text-sm text-muted-foreground mb-4">
+                Pilih metode favoritmu di langkah berikutnya — semuanya dalam satu jendela.
+              </p>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+                {[
+                  { icon: Building2,  label: 'Virtual Account' },
+                  { icon: QrCode,     label: 'QRIS' },
+                  { icon: Wallet,     label: 'E-Wallet' },
+                  { icon: CreditCard, label: 'Kartu Kredit' },
+                ].map(({ icon: Icon, label }) => (
+                  <div key={label}
+                    className="flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-xl border border-slate-200 bg-slate-50/60 text-center">
+                    <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-brand" />
+                    <span className="text-[10px] sm:text-[11px] font-medium text-slate-600 leading-tight">{label}</span>
+                  </div>
+                ))}
+              </div>
+
+              <p className="mt-4 text-[10px] sm:text-[11px] text-slate-400 flex items-center gap-1.5 leading-relaxed">
+                <Wallet className="w-3.5 h-3.5 shrink-0" />
+                GoPay · OVO · DANA · ShopeePay · BCA · Mandiri · BRI · dan lainnya
+              </p>
+            </div>
+          </div>
+
+          <button onClick={() => midtransMutation.mutate()} disabled={midtransMutation.isPending}
+            className="w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base text-white bg-gradient-to-r from-brand to-brand-700 hover:brightness-110 active:scale-[0.98] disabled:opacity-60 transition-all shadow-lg shadow-brand/25 flex items-center justify-center gap-2">
+            {midtransMutation.isPending
+              ? (<><Loader2 className="w-5 h-5 animate-spin" /> Menyiapkan pembayaran…</>)
+              : (<>Bayar Sekarang — {formatRupiah(booking?.totalPrice)}</>)}
+          </button>
+
+          <p className="text-[11px] text-muted-foreground text-center mt-3 flex items-center justify-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-green-600" /> Transaksi terlindungi. Kami tidak menyimpan data kartu Anda.
+          </p>
+        </>
+      )}
+
+      {paymentMode === 'midtrans' && snapPending && (
+        <div className="bg-white border rounded-xl sm:rounded-2xl p-6 sm:p-8 shadow-card text-center">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-brand/10 flex items-center justify-center mx-auto mb-4">
+            <Loader2 className="w-7 h-7 sm:w-8 sm:h-8 text-brand animate-spin" />
+          </div>
+          <h2 className="font-semibold text-base sm:text-lg mb-1.5">Menyelesaikan pembayaran</h2>
+          <p className="text-xs sm:text-sm text-muted-foreground mb-5 sm:mb-6 leading-relaxed max-w-sm mx-auto">
+            Selesaikan pembayaran di jendela Midtrans. Halaman ini otomatis diperbarui begitu pembayaran diterima.
+          </p>
+          <button onClick={reopenSnap}
+            className="w-full sm:w-auto sm:px-8 py-3 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 active:scale-95 transition-all text-sm sm:text-base inline-flex items-center justify-center gap-2">
+            <CreditCard className="w-4 h-4" /> Buka kembali jendela pembayaran
+          </button>
+          <p className="text-[11px] text-muted-foreground mt-4">
+            Sudah bayar? Tunggu sebentar, status diperbarui otomatis.
+          </p>
+        </div>
+      )}
+
       {/* ── Leave Page Confirmation Modal ── */}
       {showLeaveModal && (
         <div
@@ -474,6 +606,7 @@ export default function Payment() {
                   } else {
                     setVaInfo(null)
                     setManualInfo(null)
+                    setSnapPending(false)
                   }
                 }}
                 className="w-full px-5 py-3.5 rounded-2xl text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
