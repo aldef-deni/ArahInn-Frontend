@@ -7,6 +7,7 @@ import { useSetTravelModa } from '@/contexts/TravelFooterContext'
 import {
   TrainFront, Plane, Ship, ArrowRight, Clock, Loader2, AlertCircle,
   CheckCircle2, Ticket, ChevronLeft, Download, Building2, Copy, Check,
+  ShieldCheck, CreditCard, QrCode, Wallet,
 } from 'lucide-react'
 import { travelApi, paymentApi } from '@/services/index'
 import { formatRupiah } from '@/utils'
@@ -15,6 +16,22 @@ import SEO from '@/components/SEO'
 const fmtDMY = (s) => { if (!s) return '-'; const [y,m,d] = String(s).slice(0,10).split('-'); return `${d}/${m}/${y}` }
 const pad2 = (n) => String(n).padStart(2, '0')
 const PAY_WINDOW_MS = 12 * 60 * 1000   // batas bayar tiket pesawat: 12 menit
+
+// Muat Snap.js Midtrans sekali (client key + environment dari respons pay)
+function loadSnap(clientKey, isProduction) {
+  return new Promise((resolve, reject) => {
+    if (window.snap) return resolve(window.snap)
+    const existing = document.getElementById('midtrans-snap')
+    if (existing) { existing.addEventListener('load', () => resolve(window.snap), { once: true }); return }
+    const s = document.createElement('script')
+    s.id  = 'midtrans-snap'
+    s.src = isProduction ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js'
+    s.setAttribute('data-client-key', clientKey || '')
+    s.onload  = () => resolve(window.snap)
+    s.onerror = () => reject(new Error('Gagal memuat Midtrans Snap'))
+    document.body.appendChild(s)
+  })
+}
 
 export default function TravelPayment() {
   const { t } = useTranslation()
@@ -25,6 +42,9 @@ export default function TravelPayment() {
   const [copied, setCopied] = useState('')
   const [now, setNow] = useState(Date.now())
   const [payDeadline, setPayDeadline] = useState(null)
+  const [snapPending, setSnapPending] = useState(false)
+  const [snapToken, setSnapToken]     = useState(null)
+  const [paying, setPaying]           = useState(false)
 
   // Tick tiap detik untuk countdown pembayaran
   useEffect(() => { const tmr = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(tmr) }, [])
@@ -40,6 +60,7 @@ export default function TravelPayment() {
     queryFn: () => paymentApi.mode().then(r => r.data?.data),
   })
   const bank = mode?.bank
+  const paymentMode = mode?.mode
 
   // Beri tahu layout moda transaksi → footer khusus per moda (pesawat/pelni).
   // Pakai hint moda dari navigasi (state) agar footer langsung benar SEBELUM data booking
@@ -100,6 +121,34 @@ export default function TravelPayment() {
   const copy = (text, field) => {
     try { navigator.clipboard?.writeText(String(text)) } catch { /* noop */ }
     setCopied(field); setTimeout(() => setCopied(''), 1500)
+  }
+
+  // ── Midtrans Snap ─────────────────────────────────────────────────────────
+  const openSnapPopup = (snap, token) => {
+    snap.pay(token, {
+      onSuccess: () => setSnapPending(true),
+      onPending: () => setSnapPending(true),
+      onError:   () => setErr('Pembayaran gagal. Silakan coba lagi.'),
+      onClose:   () => { /* user tutup popup — biarkan bisa dibuka lagi */ },
+    })
+  }
+  const startSnap = async () => {
+    setErr(null); setPaying(true)
+    try {
+      const res = await travelApi.payMidtrans(b.id ?? id)
+      const d = res.data?.data
+      setSnapToken(d.snapToken)
+      setSnapPending(true)
+      const snap = await loadSnap(d.clientKey, d.isProduction)
+      openSnapPopup(snap, d.snapToken)
+    } catch (e) {
+      setErr(e?.response?.data?.message || 'Gagal memulai pembayaran.')
+      setSnapPending(false)
+    } finally { setPaying(false) }
+  }
+  const reopenSnap = () => {
+    if (window.snap && snapToken) openSnapPopup(window.snap, snapToken)
+    else startSnap()
   }
 
   const downloadEtiket = async (legId = id, code = b.code) => {
@@ -249,8 +298,41 @@ export default function TravelPayment() {
 
         {err && <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl mb-4"><AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" /><p className="text-sm text-red-700">{err}</p></div>}
 
-        {/* Transfer instructions (pending) */}
-        {!issued && !failed && (
+        {/* ═════ MIDTRANS SNAP (pending) ═════ */}
+        {!issued && !failed && paymentMode === 'midtrans' && (
+          snapPending ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center mb-4">
+              <div className="w-14 h-14 rounded-2xl bg-brand/10 flex items-center justify-center mx-auto mb-3"><Loader2 className="w-7 h-7 text-brand animate-spin" /></div>
+              <h2 className="font-display text-lg font-bold text-slate-900 mb-1">Menyelesaikan pembayaran</h2>
+              <p className="text-sm text-slate-500 mb-5 leading-relaxed max-w-sm mx-auto">Selesaikan pembayaran di jendela Midtrans. Halaman ini otomatis diperbarui setelah pembayaran diterima.</p>
+              <button onClick={reopenSnap} className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-brand hover:bg-brand-700 text-white font-bold text-sm">
+                <CreditCard className="w-4 h-4" /> Buka kembali jendela pembayaran
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-4">
+              <div className="flex items-center gap-2.5 mb-3">
+                <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-brand/10 text-brand shrink-0"><ShieldCheck className="w-5 h-5" /></span>
+                <div className="min-w-0"><p className="font-bold text-sm text-slate-900 leading-tight">Pembayaran Aman</p><p className="text-[11px] text-slate-500">Diproses &amp; dienkripsi oleh Midtrans</p></div>
+              </div>
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                {[{ icon: Building2, label: 'VA' }, { icon: QrCode, label: 'QRIS' }, { icon: Wallet, label: 'E-Wallet' }, { icon: CreditCard, label: 'Kartu' }].map(({ icon: Icon, label }) => (
+                  <div key={label} className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl border border-slate-200 bg-slate-50/60">
+                    <Icon className="w-5 h-5 text-brand" /><span className="text-[10px] font-medium text-slate-600">{label}</span>
+                  </div>
+                ))}
+              </div>
+              <button onClick={startSnap} disabled={paying || cdExpired}
+                className="w-full py-3.5 rounded-xl font-bold text-white text-sm bg-gradient-to-r from-brand to-brand-700 hover:brightness-110 active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2">
+                {paying ? (<><Loader2 className="w-5 h-5 animate-spin" /> Menyiapkan…</>) : (<>Bayar Sekarang — {formatRupiah(orderTotal)}</>)}
+              </button>
+              {cdExpired && <p className="text-[11px] text-rose-600 text-center mt-2">Batas waktu pembayaran habis. Silakan pesan ulang.</p>}
+            </div>
+          )
+        )}
+
+        {/* Transfer instructions (pending) — mode non-Midtrans */}
+        {!issued && !failed && paymentMode && paymentMode !== 'midtrans' && (
           <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-4">
             <div className="flex items-center gap-2 mb-3"><Building2 className="w-4.5 h-4.5 text-brand" /><p className="font-bold text-sm text-slate-900">{t('travel.bankTransfer')}</p></div>
 

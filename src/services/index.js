@@ -56,6 +56,7 @@ export const travelApi = {
   validatePromo : (d)  => api.post('/travel/promo/validate', d),
   myBookings    : ()   => api.get('/travel/bookings'),
   getBooking    : (id) => api.get(`/travel/bookings/${id}`),
+  payMidtrans   : (id) => api.post(`/travel/bookings/${id}/pay`), // Midtrans Snap
   downloadEtiket: (id) => api.get(`/travel/bookings/${id}/etiket`, { responseType: 'blob' }),
   // Admin: verifikasi pembayaran travel → terbitkan e-tiket
   adminBookings : (p)  => api.get('/admin/travel/bookings', { params: p }),
