@@ -76,10 +76,11 @@ export default function SupportChatWidget() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-[var(--chat-fab-bottom,1.25rem)] right-5 z-40 flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-full shadow-lg shadow-orange-500/40 transition-all hover:-translate-y-0.5"
+          aria-label={t('supportChat.liveChat')}
+          className="fixed bottom-[var(--chat-fab-bottom,5.5rem)] sm:bottom-[var(--chat-fab-bottom,1.25rem)] right-4 sm:right-5 z-40 flex items-center justify-center gap-2 w-14 h-14 sm:w-auto sm:h-auto sm:px-5 sm:py-3.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-full shadow-lg shadow-orange-500/40 transition-all hover:-translate-y-0.5"
         >
-          <MessageCircle className="w-5 h-5" />
-          <span className="font-semibold text-sm">{t('supportChat.liveChat')}</span>
+          <MessageCircle className="w-6 h-6 sm:w-5 sm:h-5" />
+          <span className="hidden sm:inline font-semibold text-sm">{t('supportChat.liveChat')}</span>
         </button>
       )}
 
