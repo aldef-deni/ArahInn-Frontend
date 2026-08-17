@@ -304,7 +304,7 @@ export default function TravelPayment() {
             <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center mb-4">
               <div className="w-14 h-14 rounded-2xl bg-brand/10 flex items-center justify-center mx-auto mb-3"><Loader2 className="w-7 h-7 text-brand animate-spin" /></div>
               <h2 className="font-display text-lg font-bold text-slate-900 mb-1">Menyelesaikan pembayaran</h2>
-              <p className="text-sm text-slate-500 mb-5 leading-relaxed max-w-sm mx-auto">Selesaikan pembayaran di jendela Midtrans. Halaman ini otomatis diperbarui setelah pembayaran diterima.</p>
+              <p className="text-sm text-slate-500 mb-5 leading-relaxed max-w-sm mx-auto">Selesaikan pembayaran pada jendela yang terbuka. Halaman ini akan diperbarui otomatis setelah pembayaran diterima.</p>
               <button onClick={reopenSnap} className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-brand hover:bg-brand-700 text-white font-bold text-sm">
                 <CreditCard className="w-4 h-4" /> Buka kembali jendela pembayaran
               </button>
@@ -313,7 +313,7 @@ export default function TravelPayment() {
             <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-4">
               <div className="flex items-center gap-2.5 mb-3">
                 <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-brand/10 text-brand shrink-0"><ShieldCheck className="w-5 h-5" /></span>
-                <div className="min-w-0"><p className="font-bold text-sm text-slate-900 leading-tight">Pembayaran Aman</p><p className="text-[11px] text-slate-500">Diproses &amp; dienkripsi oleh Midtrans</p></div>
+                <div className="min-w-0"><p className="font-bold text-sm text-slate-900 leading-tight">Pembayaran Aman</p><p className="text-[11px] text-slate-500">Diproses dengan aman &amp; terenkripsi</p></div>
               </div>
               <div className="grid grid-cols-4 gap-2 mb-4">
                 {[{ icon: Building2, label: 'VA' }, { icon: QrCode, label: 'QRIS' }, { icon: Wallet, label: 'E-Wallet' }, { icon: CreditCard, label: 'Kartu' }].map(({ icon: Icon, label }) => (

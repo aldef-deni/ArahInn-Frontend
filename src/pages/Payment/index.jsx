@@ -504,7 +504,7 @@ export default function Payment() {
                 </span>
                 <div className="min-w-0">
                   <h2 className="font-semibold text-sm sm:text-base leading-tight">Pembayaran Aman</h2>
-                  <p className="text-[11px] sm:text-xs text-muted-foreground">Diproses &amp; dienkripsi oleh Midtrans</p>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground">Diproses dengan aman &amp; terenkripsi</p>
                 </div>
               </div>
 
@@ -554,7 +554,7 @@ export default function Payment() {
           </div>
           <h2 className="font-semibold text-base sm:text-lg mb-1.5">Menyelesaikan pembayaran</h2>
           <p className="text-xs sm:text-sm text-muted-foreground mb-5 sm:mb-6 leading-relaxed max-w-sm mx-auto">
-            Selesaikan pembayaran di jendela Midtrans. Halaman ini otomatis diperbarui begitu pembayaran diterima.
+            Selesaikan pembayaran pada jendela yang terbuka. Halaman ini akan diperbarui otomatis begitu pembayaran diterima.
           </p>
           <button onClick={reopenSnap}
             className="w-full sm:w-auto sm:px-8 py-3 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 active:scale-95 transition-all text-sm sm:text-base inline-flex items-center justify-center gap-2">

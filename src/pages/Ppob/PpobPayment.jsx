@@ -315,7 +315,7 @@ export default function PpobPayment() {
           <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-5 text-center shadow-sm">
             <div className="w-12 h-12 rounded-2xl bg-brand/10 flex items-center justify-center mx-auto mb-3"><Loader2 className="w-6 h-6 text-brand animate-spin" /></div>
             <p className="font-bold text-sm text-slate-900 mb-1">Menyelesaikan pembayaran</p>
-            <p className="text-xs text-slate-500 mb-4 leading-relaxed max-w-xs mx-auto">Selesaikan pembayaran QRIS di jendela Midtrans. Halaman ini otomatis diperbarui.</p>
+            <p className="text-xs text-slate-500 mb-4 leading-relaxed max-w-xs mx-auto">Selesaikan pembayaran QRIS pada jendela yang terbuka. Halaman ini akan diperbarui otomatis.</p>
             <button onClick={reopenSnap} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-700 text-white font-bold text-sm">
               <QrCode className="w-4 h-4" /> Buka kembali QRIS
             </button>
