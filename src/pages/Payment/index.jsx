@@ -50,6 +50,20 @@ function loadSnap(clientKey, isProduction) {
   })
 }
 
+// Reset TOTAL Snap: tutup popup + buang iframe/script + window.snap, supaya inisialisasi
+// berikutnya benar-benar bersih. Penting untuk kasus VA (transaksi terlanjur dibuat →
+// state snap.js nyangkut di halaman VA; hide() saja tak cukup, harus re-init).
+function resetSnap() {
+  try { window.snap?.hide?.() } catch { /* noop */ }
+  try {
+    document.querySelectorAll('iframe[src*="midtrans"], #snap-midtrans, .snap-container, #snap-container')
+      .forEach(el => el.remove())
+    const scr = document.getElementById('midtrans-snap')
+    if (scr) scr.remove()
+    try { delete window.snap } catch { window.snap = undefined }
+  } catch { /* noop */ }
+}
+
 export default function Payment() {
   const { t } = useTranslation()
   const { bookingId } = useParams()
@@ -604,8 +618,9 @@ export default function Payment() {
                   if (paymentMode === 'manual') {
                     navigate('/', { replace: true })
                   } else {
-                    // Tutup overlay Snap agar pilihan pembayaran langsung tampil (tanpa refresh)
-                    try { window.snap?.hide?.() } catch { /* noop */ }
+                    // Reset penuh Snap agar pilihan pembayaran langsung tampil bersih (tanpa refresh),
+                    // termasuk kasus VA yang state-nya nyangkut.
+                    resetSnap()
                     setVaInfo(null)
                     setManualInfo(null)
                     setSnapPending(false)
