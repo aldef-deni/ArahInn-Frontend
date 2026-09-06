@@ -9,8 +9,8 @@ import { useToast } from '@/hooks/use-toast'
 import {
   Hotel, Search, List, User, LogOut, Menu, X,
   ChevronDown, Globe, Settings, LayoutDashboard,
-  Phone, Mail, Smartphone, Building2, Sofa, Tag, Receipt, Star,
-  Megaphone, CalendarDays, Plane, Ship, TrainFront, Sparkles,
+  Phone, Mail, Smartphone, Building2, Sofa, Receipt, Star,
+  Megaphone, CalendarDays, Plane, Ship, TrainFront, Sparkles, ShoppingBag,
 } from 'lucide-react'
 import CampaignDetailModal from '@/components/CampaignDetailModal'
 import { cn, getImageUrl } from '@/utils'
@@ -21,6 +21,7 @@ import {
   isOwnerRole,
 } from '@/utils/isExtranet'
 import SupportChatWidget from '@/components/chat/SupportChatWidget'
+import MarketplacePopup from '@/components/MarketplacePopup'
 import NotificationBell from '@/components/ui/NotificationBell'
 import queryClient from '@/lib/queryClient'
 
@@ -100,7 +101,8 @@ export default function UserLayout() {
     { to: '/tiket/kereta',  label: t('nav.tiketKAI'),     icon: TrainFront },
     { to: '/tiket/pelni',   label: t('nav.tiketPelni'),   icon: Ship },
     { to: '/topup-tagihan', label: t('nav.topUpTagihan'), icon: Receipt },
-    { to: '/promo',         label: t('nav.promo'),        icon: Tag, sparkle: true },
+    // CTA marketplace (situs terpisah) — dibuka di tab baru
+    { href: 'https://market.arahinn.com/', label: 'Marketplace', icon: ShoppingBag, sparkle: true, external: true },
   ]
   const akomodasiActive = akomodasiChildren.some(c => location.pathname === c.to)
 
@@ -165,14 +167,19 @@ export default function UserLayout() {
                 }
                 // Promo — efek shimmer "kelap-kelip" elegan
                 if (item.sparkle) {
-                  return (
-                    <Link key={item.to} to={item.to}
-                      className="relative ml-1 px-4 py-2 rounded-lg text-sm font-semibold text-amber-950 overflow-hidden shadow-sm ring-1 ring-amber-300/60 bg-[linear-gradient(110deg,#fbbf24,35%,#fff7cd,50%,#fbbf24,65%,#f59e0b)] bg-[length:200%_100%] animate-shimmer">
-                      <span className="relative z-10 flex items-center gap-1.5">
-                        <Sparkles className="w-4 h-4 animate-pulse" />
-                        {item.label}
-                      </span>
-                    </Link>
+                  const sparkleCls = "relative ml-1 px-4 py-2 rounded-lg text-sm font-semibold text-amber-950 overflow-hidden shadow-sm ring-1 ring-amber-300/60 bg-[linear-gradient(110deg,#fbbf24,35%,#fff7cd,50%,#fbbf24,65%,#f59e0b)] bg-[length:200%_100%] animate-shimmer"
+                  const sparkleInner = (
+                    <span className="relative z-10 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 animate-pulse" />
+                      {item.label}
+                    </span>
+                  )
+                  return item.external ? (
+                    <a key={item.href} href={item.href} target="_blank" rel="noopener noreferrer" className={sparkleCls}>
+                      {sparkleInner}
+                    </a>
+                  ) : (
+                    <Link key={item.to} to={item.to} className={sparkleCls}>{sparkleInner}</Link>
                   )
                 }
                 // Link biasa
@@ -317,19 +324,29 @@ export default function UserLayout() {
                   )
                 }
                 // Link biasa (Promo diberi gradien + sparkle)
-                return (
-                  <Link key={item.to} to={item.to} onClick={() => setMenuOpen(false)}
-                    className={cn(
-                      'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors',
-                      item.sparkle
-                        ? 'bg-gradient-to-r from-amber-300 to-amber-500 text-amber-950 font-semibold shadow-sm'
-                        : location.pathname === item.to
-                        ? 'bg-brand/10 text-brand-700'
-                        : 'text-foreground hover:bg-muted'
-                    )}>
+                const mobileCls = cn(
+                  'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors',
+                  item.sparkle
+                    ? 'bg-gradient-to-r from-amber-300 to-amber-500 text-amber-950 font-semibold shadow-sm'
+                    : location.pathname === item.to
+                    ? 'bg-brand/10 text-brand-700'
+                    : 'text-foreground hover:bg-muted'
+                )
+                const mobileInner = (
+                  <>
                     <Icon className="w-4 h-4 shrink-0" />
                     {item.label}
                     {item.sparkle && <Sparkles className="w-4 h-4 ml-auto animate-pulse" />}
+                  </>
+                )
+                return item.external ? (
+                  <a key={item.href} href={item.href} target="_blank" rel="noopener noreferrer"
+                    onClick={() => setMenuOpen(false)} className={mobileCls}>
+                    {mobileInner}
+                  </a>
+                ) : (
+                  <Link key={item.to} to={item.to} onClick={() => setMenuOpen(false)} className={mobileCls}>
+                    {mobileInner}
                   </Link>
                 )
               })}
@@ -696,6 +713,7 @@ export default function UserLayout() {
 
       {/* Live Chat Widget — customer ke CS Arahinn */}
       <SupportChatWidget />
+      <MarketplacePopup />
 
       {/* Dropdown backdrop */}
       {dropOpen && <div className="fixed inset-0 z-40" onClick={() => setDropOpen(false)} />}
