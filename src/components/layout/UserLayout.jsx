@@ -8,9 +8,9 @@ import { authApi, campaignApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import {
   Hotel, Search, List, User, LogOut, Menu, X,
-  ChevronDown, Globe, Settings, LayoutDashboard,
+  ChevronDown, ChevronRight, Globe, Settings, LayoutDashboard,
   Phone, Mail, Smartphone, Building2, Sofa, Receipt, Star,
-  Megaphone, CalendarDays, Plane, Ship, TrainFront, Sparkles, ShoppingBag,
+  Megaphone, CalendarDays, Plane, Ship, TrainFront, Sparkles, ShoppingCart,
 } from 'lucide-react'
 import CampaignDetailModal from '@/components/CampaignDetailModal'
 import { cn, getImageUrl } from '@/utils'
@@ -102,7 +102,7 @@ export default function UserLayout() {
     { to: '/tiket/pelni',   label: t('nav.tiketPelni'),   icon: Ship },
     { to: '/topup-tagihan', label: t('nav.topUpTagihan'), icon: Receipt },
     // CTA marketplace (situs terpisah) — dibuka di tab baru
-    { href: 'https://market.arahinn.com/', label: 'Marketplace', icon: ShoppingBag, sparkle: true, external: true },
+    { href: 'https://market.arahinn.com/', label: 'Marketplace', icon: ShoppingCart, sparkle: true, external: true },
   ]
   const akomodasiActive = akomodasiChildren.some(c => location.pathname === c.to)
 
@@ -168,9 +168,10 @@ export default function UserLayout() {
                 // Promo — efek shimmer "kelap-kelip" elegan
                 if (item.sparkle) {
                   const sparkleCls = "relative ml-1 px-4 py-2 rounded-lg text-sm font-semibold text-amber-950 overflow-hidden shadow-sm ring-1 ring-amber-300/60 bg-[linear-gradient(110deg,#fbbf24,35%,#fff7cd,50%,#fbbf24,65%,#f59e0b)] bg-[length:200%_100%] animate-shimmer"
+                  const SparkIcon = item.icon || Sparkles
                   const sparkleInner = (
                     <span className="relative z-10 flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4 animate-pulse" />
+                      <SparkIcon className="w-[17px] h-[17px]" strokeWidth={2.5} />
                       {item.label}
                     </span>
                   )
@@ -336,7 +337,7 @@ export default function UserLayout() {
                   <>
                     <Icon className="w-4 h-4 shrink-0" />
                     {item.label}
-                    {item.sparkle && <Sparkles className="w-4 h-4 ml-auto animate-pulse" />}
+                    {item.sparkle && <ChevronRight className="w-4 h-4 ml-auto" strokeWidth={3} />}
                   </>
                 )
                 return item.external ? (

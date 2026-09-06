@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Sparkles } from 'lucide-react'
+import { ShoppingCart, ChevronRight } from 'lucide-react'
 
 /**
  * Popup Market ArahInn — tampil sekali per hari saat pengguna membuka web.
@@ -86,11 +86,12 @@ export default function MarketplacePopup() {
         <div className="px-5 pb-5 pt-1 bg-gradient-to-b from-[#002144] to-[#00132e] rounded-b-3xl">
           <button
             type="button" onClick={goMarket}
-            className="relative w-full overflow-hidden rounded-2xl py-3.5 text-[15px] font-bold text-amber-950 shadow-lg shadow-amber-500/25 ring-1 ring-amber-300/60 bg-[linear-gradient(110deg,#fbbf24,35%,#fff7cd,50%,#fbbf24,65%,#f59e0b)] bg-[length:200%_100%] animate-shimmer transition-transform active:scale-[0.98]"
+            className="group relative w-full overflow-hidden rounded-2xl py-4 text-base font-extrabold tracking-tight text-amber-950 ring-1 ring-amber-200/70 shadow-[0_10px_28px_-8px_rgba(245,158,11,0.65)] bg-[linear-gradient(110deg,#fbbf24,35%,#fff7cd,50%,#fbbf24,65%,#f59e0b)] bg-[length:200%_100%] animate-shimmer transition-all hover:brightness-105 active:scale-[0.98]"
           >
-            <span className="relative z-10 flex items-center justify-center gap-2">
-              <Sparkles className="w-4 h-4 animate-pulse" />
-              Jelajahi Market ArahInn
+            <span className="relative z-10 flex items-center justify-center gap-2.5">
+              <ShoppingCart className="w-[22px] h-[22px] shrink-0 drop-shadow-sm" strokeWidth={2.5} />
+              <span>Jelajahi Market ArahInn</span>
+              <ChevronRight className="w-[18px] h-[18px] shrink-0 transition-transform duration-300 group-hover:translate-x-1" strokeWidth={3} />
             </span>
           </button>
 
