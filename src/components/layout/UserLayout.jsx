@@ -649,7 +649,7 @@ export default function UserLayout() {
                 ))}
               </div>
               <p className="text-[11px] text-slate-400 text-center mt-4">
-                {t('footer.paymentSecure')} <span className="font-semibold text-slate-500">DOKU Payment Gateway</span>
+                {t('footer.paymentSecure')} <span className="font-semibold text-slate-500">DOKU &amp; Midtrans Payment Gateway</span>
               </p>
             </div>
           </div>

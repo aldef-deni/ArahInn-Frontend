@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast'
 import {
   Settings as SettingsIcon, Landmark, CreditCard, Save, RefreshCw,
   Building2, User, Hash, Clock, CheckCircle2, AlertTriangle, Info,
-  ToggleLeft, ToggleRight, Wrench, Power, Receipt, Percent,
+  ToggleLeft, ToggleRight, Wrench, Power, Receipt, Percent, QrCode, ShieldCheck,
 } from 'lucide-react'
 
 const BANK_OPTIONS = [
@@ -152,9 +152,16 @@ export default function AdminSettings() {
   /* ── Mutations ───────────────────────────────────────────────────── */
   const modeMutation = useMutation({
     mutationFn: (mode) => adminApi.setPaymentMode({ mode }),
-    onSuccess : () => {
+    onSuccess : (r) => {
       qc.invalidateQueries({ queryKey: ['admin-payment-mode'] })
-      toast({ title: 'Mode pembayaran berhasil diperbarui.' })
+      const selectedMode = r.data?.data?.mode
+      const selectedLabel = selectedMode === 'midtrans'
+        ? 'Midtrans'
+        : selectedMode === 'doku' ? 'DOKU Gateway' : 'Manual Transfer'
+      toast({
+        title: `${selectedLabel} berhasil diaktifkan`,
+        description: 'Pilihan ini langsung berlaku untuk transaksi baru.',
+      })
     },
     onError: (e) => toast({
       title: 'Gagal mengubah mode',
@@ -182,6 +189,8 @@ export default function AdminSettings() {
   }
 
   const currentMode = modeData?.mode || 'doku'
+  const midtransReady = modeData?.midtrans?.configured !== false
+  const midtransProduction = !!modeData?.midtrans?.isProduction
 
   return (
     <div className="space-y-5 sm:space-y-6">
@@ -532,7 +541,7 @@ export default function AdminSettings() {
         {modeLoading ? (
           <div className="skeleton h-20 rounded-xl" />
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <button
               onClick={() => modeMutation.mutate('manual')}
               disabled={modeMutation.isPending || currentMode === 'manual'}
@@ -570,6 +579,47 @@ export default function AdminSettings() {
               <p className="font-bold text-sm text-slate-900">DOKU Gateway</p>
               <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">Virtual Account otomatis (BCA, BRI, BSI, Mandiri)</p>
             </button>
+
+            <button
+              onClick={() => modeMutation.mutate('midtrans')}
+              disabled={modeMutation.isPending || currentMode === 'midtrans' || !midtransReady}
+              title={midtransReady ? 'Aktifkan Midtrans Snap' : 'Kredensial Midtrans belum dikonfigurasi di backend'}
+              className={`group relative overflow-hidden p-4 rounded-xl border-2 text-left transition-all ${
+                currentMode === 'midtrans'
+                  ? 'border-sky-500 bg-gradient-to-br from-sky-50 to-blue-50 ring-2 ring-sky-200 shadow-sm'
+                  : midtransReady
+                    ? 'border-slate-200 hover:border-sky-300 hover:shadow-sm bg-white'
+                    : 'border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed'
+              }`}
+            >
+              {currentMode === 'midtrans' && (
+                <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500" />
+              )}
+              <div className="flex items-center justify-between mb-2">
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                  currentMode === 'midtrans' ? 'bg-sky-600 text-white' : 'bg-sky-50 text-sky-600'
+                }`}>
+                  <QrCode className="w-4 h-4" />
+                </div>
+                {currentMode === 'midtrans' ? (
+                  <CheckCircle2 className="w-4 h-4 text-sky-600" />
+                ) : midtransProduction && midtransReady ? (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[9px] font-bold uppercase tracking-wide">
+                    Production
+                  </span>
+                ) : null}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <p className="font-bold text-sm text-slate-900">Midtrans</p>
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              </div>
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+                Snap: QRIS, e-wallet, Virtual Account &amp; kartu
+              </p>
+              {!midtransReady && (
+                <p className="text-[10px] font-semibold text-amber-700 mt-2">Konfigurasi backend belum lengkap</p>
+              )}
+            </button>
           </div>
         )}
 
@@ -578,6 +628,22 @@ export default function AdminSettings() {
             <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800 leading-relaxed">
               Mode <strong>Manual Transfer</strong> aktif. User akan diarahkan ke instruksi transfer bank di bawah. Pastikan rekening tujuan sudah benar.
+            </p>
+          </div>
+        )}
+        {currentMode === 'doku' && (
+          <div className="mt-4 flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <CreditCard className="w-4 h-4 text-blue-700 shrink-0 mt-0.5" />
+            <p className="text-xs text-blue-800 leading-relaxed">
+              <strong>DOKU Gateway</strong> aktif. Virtual Account otomatis tetap berjalan seperti konfigurasi sebelumnya.
+            </p>
+          </div>
+        )}
+        {currentMode === 'midtrans' && (
+          <div className="mt-4 flex items-start gap-2 p-3 bg-gradient-to-r from-sky-50 to-blue-50 border border-sky-200 rounded-lg">
+            <ShieldCheck className="w-4 h-4 text-sky-700 shrink-0 mt-0.5" />
+            <p className="text-xs text-sky-900 leading-relaxed">
+              <strong>Midtrans Snap {midtransProduction ? 'Production' : ''}</strong> aktif. Customer akan melihat metode pembayaran yang tersedia sesuai jenis produk, lalu status transaksi diperbarui otomatis melalui notifikasi Midtrans.
             </p>
           </div>
         )}

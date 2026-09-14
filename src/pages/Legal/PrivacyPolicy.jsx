@@ -128,7 +128,7 @@ export default function PrivacyPolicy() {
               <ul>
                 <li><strong>Data Akun:</strong> nama lengkap, alamat email, nomor telepon, kata sandi (terenkripsi), foto profil.</li>
                 <li><strong>Data Pemesanan:</strong> nama tamu, email, nomor telepon, alamat, catatan khusus, jumlah tamu, tanggal check-in/check-out.</li>
-                <li><strong>Data Pembayaran:</strong> kami <strong>tidak menyimpan</strong> detail kartu kredit atau rekening Anda. Pembayaran diproses oleh penyedia pihak ketiga (DOKU) yang memiliki sertifikasi keamanan PCI-DSS.</li>
+                <li><strong>Data Pembayaran:</strong> kami <strong>tidak menyimpan</strong> detail kartu kredit atau rekening Anda. Pembayaran diproses oleh penyedia payment gateway pihak ketiga (DOKU atau Midtrans).</li>
                 <li><strong>Konten Komunikasi:</strong> pesan yang Anda kirim melalui fitur live chat, customer support, dan ulasan/rating.</li>
               </ul>
 
@@ -162,7 +162,7 @@ export default function PrivacyPolicy() {
               <p>Kami <strong>tidak menjual</strong> data pribadi Anda. Kami hanya membagikan data dengan:</p>
               <ul>
                 <li><strong>Mitra Penginapan:</strong> nama tamu, email, nomor telepon, dan detail pemesanan dibagikan ke hotel/villa yang Anda pesan.</li>
-                <li><strong>Penyedia Pembayaran:</strong> DOKU sebagai payment gateway untuk memproses transaksi.</li>
+                <li><strong>Penyedia Pembayaran:</strong> DOKU dan Midtrans sebagai payment gateway untuk memproses transaksi.</li>
                 <li><strong>Penyedia Notifikasi:</strong> Firebase (Google) dan Apple Push Notification service untuk mengirim notifikasi push.</li>
                 <li><strong>Penyedia Email:</strong> untuk mengirim email konfirmasi booking, voucher, dan pemberitahuan lainnya.</li>
                 <li><strong>Otoritas Hukum:</strong> jika diwajibkan oleh hukum atau perintah pengadilan yang sah.</li>
