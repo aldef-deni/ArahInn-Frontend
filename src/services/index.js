@@ -82,6 +82,7 @@ export const paymentApi = {
   mode        : ()       => api.get('/payments/mode'),
   initiate    : (d)      => api.post('/payments/initiate', d),
   status      : (bId)    => api.get(`/payments/${bId}/status`),
+  checkMidtrans: (bId)   => api.post(`/payments/${bId}/check-midtrans`),
   uploadProof : (bId, fd)=> api.post(`/payments/${bId}/upload-proof`, fd, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { bookingApi, paymentApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
-import { Clock, Copy, Check, CheckCircle, XCircle, Building2, X, ArrowLeft, ListOrdered, Info, ChevronDown, Wallet, QrCode, CreditCard, ShieldCheck, Loader2 } from 'lucide-react'
+import { Clock, Copy, Check, CheckCircle, XCircle, Building2, X, ArrowLeft, ListOrdered, Info, ChevronDown, Wallet, QrCode, CreditCard, ShieldCheck, Loader2, RefreshCw } from 'lucide-react'
 
 const BANKS = [
   { id: 'bca',     label: 'BCA',     logo: '/banks/bca.png' },
@@ -65,10 +65,10 @@ function resetSnap() {
 }
 
 const MIDTRANS_METHODS = [
-  { id: 'virtual_account', label: 'Virtual Account', caption: 'BCA, BNI, BRI, Mandiri & lainnya', icon: Building2 },
-  { id: 'qris', label: 'QRIS', caption: 'Scan dari aplikasi pembayaran', icon: QrCode },
-  { id: 'ewallet', label: 'E-Wallet', caption: 'GoPay, OVO, DANA & ShopeePay', icon: Wallet },
-  { id: 'credit_card', label: 'Kartu Kredit', caption: 'Visa, Mastercard & JCB', icon: CreditCard },
+  { id: 'virtual_account', availabilityKey: 'virtualAccount', label: 'Virtual Account', caption: 'Bank yang aktif di Midtrans', icon: Building2 },
+  { id: 'qris', availabilityKey: 'qris', label: 'QRIS', caption: 'Scan melalui GoPay QRIS', icon: QrCode },
+  { id: 'ewallet', availabilityKey: 'ewallet', label: 'E-Wallet', caption: 'Dompet digital yang tersedia', icon: Wallet },
+  { id: 'credit_card', availabilityKey: 'creditCard', label: 'Kartu Kredit', caption: 'Visa, Mastercard & JCB', icon: CreditCard },
 ]
 
 export default function Payment() {
@@ -99,8 +99,11 @@ export default function Payment() {
   })
   const paymentMode = modeData?.mode ?? 'doku'
   const manualBank  = modeData?.bank
+  const midtransAvailability = modeData?.midtrans?.availableChannels
+  const selectedMidtransMethod = MIDTRANS_METHODS.find(method => method.id === midtransChannel)
+  const selectedMidtransAvailable = midtransAvailability?.[selectedMidtransMethod?.availabilityKey] !== false
 
-  const { data: booking, isLoading } = useQuery({
+  const { data: booking, isLoading, refetch: refetchBooking } = useQuery({
     queryKey: ['booking-payment', bookingId],
     queryFn : () => bookingApi.getById(bookingId).then(r => r.data.data),
     // Poll status booking selama pembayaran aktif → tangkap saat superadmin
@@ -126,7 +129,7 @@ export default function Payment() {
 
   const hasActivePayment = !!(vaInfo || manualInfo || snapPending)
 
-  const { data: paymentData } = useQuery({
+  const { data: paymentData, refetch: refetchPayment } = useQuery({
     queryKey: ['payment-status', realId],
     queryFn : () => paymentApi.status(realId).then(r => r.data.data),
     enabled : !!realId,
@@ -194,6 +197,35 @@ export default function Payment() {
   const reopenSnap = () => {
     if (window.snap && snapToken) openSnapPopup(window.snap, snapToken)
     else midtransMutation.mutate()
+  }
+
+  const checkMidtransMutation = useMutation({
+    mutationFn: () => paymentApi.checkMidtrans(realId),
+    onSuccess: async (r) => {
+      const status = r.data?.data
+      await Promise.all([refetchPayment(), refetchBooking()])
+      if (status?.paid) {
+        toast({ title: 'Pembayaran berhasil', description: 'Pembayaran telah diterima dan pesanan sedang diproses.' })
+      } else {
+        toast({
+          title: 'Pembayaran belum diterima',
+          description: 'Jika baru saja membayar, tunggu beberapa saat lalu cek kembali.',
+        })
+      }
+    },
+    onError: (e) => toast({
+      title: 'Gagal mengecek status',
+      description: e?.response?.data?.message || 'Silakan coba kembali.',
+      variant: 'destructive',
+    }),
+  })
+
+  const changeMidtransMethod = () => {
+    resetSnap()
+    setSnapPending(false)
+    setSnapToken(null)
+    setPaymentDeadline(null)
+    toast({ title: 'Silakan pilih metode pembayaran baru' })
   }
 
   const copyText = (text, fieldKey = 'va') => {
@@ -535,14 +567,20 @@ export default function Payment() {
               </p>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-                {MIDTRANS_METHODS.map(({ id, icon: Icon, label, caption }) => (
+                {MIDTRANS_METHODS.map(({ id, availabilityKey, icon: Icon, label, caption }) => {
+                  const available = midtransAvailability?.[availabilityKey] !== false
+                  return (
                   <button
                     key={id}
                     type="button"
                     onClick={() => setMidtransChannel(id)}
+                    disabled={!available}
                     aria-pressed={midtransChannel === id}
+                    title={available ? `Pilih ${label}` : `${label} belum aktif di akun Midtrans`}
                     className={`group relative min-h-[92px] flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-xl border-2 text-center transition-all active:scale-[0.97] ${
-                      midtransChannel === id
+                      !available
+                        ? 'border-slate-200 bg-slate-50 opacity-50 cursor-not-allowed'
+                        : midtransChannel === id
                         ? 'border-brand bg-brand/5 shadow-sm ring-2 ring-brand/10'
                         : 'border-slate-200 bg-white hover:border-brand/40 hover:bg-slate-50'
                     }`}
@@ -558,23 +596,26 @@ export default function Payment() {
                       <Icon className="w-5 h-5" />
                     </span>
                     <span className="text-[11px] sm:text-xs font-semibold text-slate-700 leading-tight">{label}</span>
-                    <span className="hidden sm:block text-[9px] text-slate-400 leading-tight line-clamp-2">{caption}</span>
+                    <span className="hidden sm:block text-[9px] text-slate-400 leading-tight line-clamp-2">
+                      {available ? caption : 'Belum aktif di Midtrans'}
+                    </span>
                   </button>
-                ))}
+                  )
+                })}
               </div>
 
               <p className="mt-4 text-[10px] sm:text-[11px] text-brand flex items-center gap-1.5 leading-relaxed font-medium">
                 <CheckCircle className="w-3.5 h-3.5 shrink-0" />
-                {MIDTRANS_METHODS.find(method => method.id === midtransChannel)?.caption}
+                {selectedMidtransMethod?.caption}
               </p>
             </div>
           </div>
 
-          <button onClick={() => midtransMutation.mutate()} disabled={midtransMutation.isPending}
+          <button onClick={() => midtransMutation.mutate()} disabled={midtransMutation.isPending || !selectedMidtransAvailable}
             className="w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base text-white bg-gradient-to-r from-brand to-brand-700 hover:brightness-110 active:scale-[0.98] disabled:opacity-60 transition-all shadow-lg shadow-brand/25 flex items-center justify-center gap-2">
             {midtransMutation.isPending
               ? (<><Loader2 className="w-5 h-5 animate-spin" /> Menyiapkan pembayaran…</>)
-              : (<>Lanjutkan dengan {MIDTRANS_METHODS.find(method => method.id === midtransChannel)?.label} — {formatRupiah(booking?.totalPrice)}</>)}
+              : (<>Lanjutkan dengan {selectedMidtransMethod?.label} — {formatRupiah(booking?.totalPrice)}</>)}
           </button>
 
           <p className="text-[11px] text-muted-foreground text-center mt-3 flex items-center justify-center gap-1.5">
@@ -592,12 +633,28 @@ export default function Payment() {
           <p className="text-xs sm:text-sm text-muted-foreground mb-5 sm:mb-6 leading-relaxed max-w-sm mx-auto">
             Selesaikan pembayaran pada jendela yang terbuka. Halaman ini akan diperbarui otomatis begitu pembayaran diterima.
           </p>
-          <button onClick={reopenSnap}
-            className="w-full sm:w-auto sm:px-8 py-3 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 active:scale-95 transition-all text-sm sm:text-base inline-flex items-center justify-center gap-2">
-            <CreditCard className="w-4 h-4" /> Buka kembali jendela pembayaran
-          </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-w-xl mx-auto">
+            <button onClick={reopenSnap}
+              className="w-full px-5 py-3 bg-brand text-white rounded-xl font-semibold hover:bg-brand-700 active:scale-95 transition-all text-sm inline-flex items-center justify-center gap-2">
+              <CreditCard className="w-4 h-4" /> Buka pembayaran
+            </button>
+            <button
+              onClick={() => checkMidtransMutation.mutate()}
+              disabled={checkMidtransMutation.isPending}
+              className="w-full px-5 py-3 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 active:scale-95 disabled:opacity-60 transition-all text-sm inline-flex items-center justify-center gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${checkMidtransMutation.isPending ? 'animate-spin' : ''}`} />
+              {checkMidtransMutation.isPending ? 'Mengecek…' : 'Cek Status Pembayaran'}
+            </button>
+            <button
+              onClick={changeMidtransMethod}
+              className="sm:col-span-2 w-full px-5 py-3 bg-white text-slate-700 border-2 border-slate-200 rounded-xl font-semibold hover:border-brand/40 hover:text-brand active:scale-[0.98] transition-all text-sm inline-flex items-center justify-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" /> Ganti Metode Pembayaran
+            </button>
+          </div>
           <p className="text-[11px] text-muted-foreground mt-4">
-            Sudah bayar? Tunggu sebentar, status diperbarui otomatis.
+            Setelah transfer berhasil, tutup jendela Midtrans lalu tekan “Cek Status Pembayaran”.
           </p>
         </div>
       )}
