@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { bookingApi, paymentApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
-import { Clock, Copy, CheckCircle, XCircle, Building2, X, ArrowLeft, ListOrdered, Info, ChevronDown, Wallet, QrCode, CreditCard, ShieldCheck, Loader2 } from 'lucide-react'
+import { Clock, Copy, Check, CheckCircle, XCircle, Building2, X, ArrowLeft, ListOrdered, Info, ChevronDown, Wallet, QrCode, CreditCard, ShieldCheck, Loader2 } from 'lucide-react'
 
 const BANKS = [
   { id: 'bca',     label: 'BCA',     logo: '/banks/bca.png' },
@@ -64,6 +64,13 @@ function resetSnap() {
   } catch { /* noop */ }
 }
 
+const MIDTRANS_METHODS = [
+  { id: 'virtual_account', label: 'Virtual Account', caption: 'BCA, BNI, BRI, Mandiri & lainnya', icon: Building2 },
+  { id: 'qris', label: 'QRIS', caption: 'Scan dari aplikasi pembayaran', icon: QrCode },
+  { id: 'ewallet', label: 'E-Wallet', caption: 'GoPay, OVO, DANA & ShopeePay', icon: Wallet },
+  { id: 'credit_card', label: 'Kartu Kredit', caption: 'Visa, Mastercard & JCB', icon: CreditCard },
+]
+
 export default function Payment() {
   const { t } = useTranslation()
   const { bookingId } = useParams()
@@ -82,6 +89,7 @@ export default function Payment() {
   const [paymentDeadline, setPaymentDeadline] = useState(null)
   const [snapPending, setSnapPending] = useState(false) // Midtrans: popup Snap sudah dibuka
   const [snapToken, setSnapToken]     = useState(null)  // simpan token utk buka ulang popup
+  const [midtransChannel, setMidtransChannel] = useState('qris')
 
   // Cek mode pembayaran (doku/manual) — backend yang nentuin
   const { data: modeData } = useQuery({
@@ -165,7 +173,7 @@ export default function Payment() {
   }
 
   const midtransMutation = useMutation({
-    mutationFn: () => paymentApi.initiate({ bookingId: realId }),
+    mutationFn: () => paymentApi.initiate({ bookingId: realId, midtransChannel }),
     onSuccess : async (r) => {
       const data = r.data.data
       const secsLeft = Number(data?.expiresInSeconds)
@@ -523,27 +531,41 @@ export default function Payment() {
               </div>
 
               <p className="text-xs sm:text-sm text-muted-foreground mb-4">
-                Pilih metode favoritmu di langkah berikutnya — semuanya dalam satu jendela.
+                Pilih metode pembayaran, lalu lanjutkan dengan aman melalui Midtrans.
               </p>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-                {[
-                  { icon: Building2,  label: 'Virtual Account' },
-                  { icon: QrCode,     label: 'QRIS' },
-                  { icon: Wallet,     label: 'E-Wallet' },
-                  { icon: CreditCard, label: 'Kartu Kredit' },
-                ].map(({ icon: Icon, label }) => (
-                  <div key={label}
-                    className="flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-xl border border-slate-200 bg-slate-50/60 text-center">
-                    <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-brand" />
-                    <span className="text-[10px] sm:text-[11px] font-medium text-slate-600 leading-tight">{label}</span>
-                  </div>
+                {MIDTRANS_METHODS.map(({ id, icon: Icon, label, caption }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setMidtransChannel(id)}
+                    aria-pressed={midtransChannel === id}
+                    className={`group relative min-h-[92px] flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-xl border-2 text-center transition-all active:scale-[0.97] ${
+                      midtransChannel === id
+                        ? 'border-brand bg-brand/5 shadow-sm ring-2 ring-brand/10'
+                        : 'border-slate-200 bg-white hover:border-brand/40 hover:bg-slate-50'
+                    }`}
+                  >
+                    {midtransChannel === id && (
+                      <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-brand text-white flex items-center justify-center">
+                        <Check className="w-2.5 h-2.5" />
+                      </span>
+                    )}
+                    <span className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                      midtransChannel === id ? 'bg-brand text-white' : 'bg-slate-100 text-brand group-hover:bg-brand/10'
+                    }`}>
+                      <Icon className="w-5 h-5" />
+                    </span>
+                    <span className="text-[11px] sm:text-xs font-semibold text-slate-700 leading-tight">{label}</span>
+                    <span className="hidden sm:block text-[9px] text-slate-400 leading-tight line-clamp-2">{caption}</span>
+                  </button>
                 ))}
               </div>
 
-              <p className="mt-4 text-[10px] sm:text-[11px] text-slate-400 flex items-center gap-1.5 leading-relaxed">
-                <Wallet className="w-3.5 h-3.5 shrink-0" />
-                GoPay · OVO · DANA · ShopeePay · BCA · Mandiri · BRI · dan lainnya
+              <p className="mt-4 text-[10px] sm:text-[11px] text-brand flex items-center gap-1.5 leading-relaxed font-medium">
+                <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                {MIDTRANS_METHODS.find(method => method.id === midtransChannel)?.caption}
               </p>
             </div>
           </div>
@@ -552,7 +574,7 @@ export default function Payment() {
             className="w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base text-white bg-gradient-to-r from-brand to-brand-700 hover:brightness-110 active:scale-[0.98] disabled:opacity-60 transition-all shadow-lg shadow-brand/25 flex items-center justify-center gap-2">
             {midtransMutation.isPending
               ? (<><Loader2 className="w-5 h-5 animate-spin" /> Menyiapkan pembayaran…</>)
-              : (<>Bayar Sekarang — {formatRupiah(booking?.totalPrice)}</>)}
+              : (<>Lanjutkan dengan {MIDTRANS_METHODS.find(method => method.id === midtransChannel)?.label} — {formatRupiah(booking?.totalPrice)}</>)}
           </button>
 
           <p className="text-[11px] text-muted-foreground text-center mt-3 flex items-center justify-center gap-1.5">
