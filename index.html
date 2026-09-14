@@ -2,7 +2,24 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Favicon. Satu build melayani 3 domain (arahinn / my / kelola),
+         jadi ikonnya ditukar sesuai hostname oleh skrip di bawah. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icon-arahinn-32.png" id="fav-32" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-arahinn-192.png" id="fav-192" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" id="fav-apple" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <script>
+      (function () {
+        var h = location.hostname, key = null;
+        if (h.indexOf('kelola.') === 0) key = 'kelola';
+        else if (h.indexOf('my.') === 0 || h.indexOf('extranet.') === 0) key = 'my';
+        if (!key) return;                       // arahinn.com pakai bawaan
+        var set = function (id, href) { var el = document.getElementById(id); if (el) el.href = href; };
+        set('fav-32',  '/icon-' + key + '-32.png');
+        set('fav-192', '/icon-' + key + '-192.png');
+        if (key === 'my') set('fav-apple', '/apple-touch-icon-my.png');
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Pesan hotel, villa, dan properti pilihan di seluruh Indonesia dengan harga terbaik. Pembayaran aman, layanan 24 jam, dan ribuan akomodasi terkurasi." />
     <meta name="keywords" content="hotel, villa, properti, booking, penginapan, travel, wisata, akomodasi, ArahInn" />
