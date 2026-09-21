@@ -7,6 +7,7 @@ import { Search, MapPin, RotateCcw, ChevronDown, SlidersHorizontal, X, ChevronLe
 import { format, addDays } from 'date-fns'
 import { useTranslation } from 'react-i18next'
 import HotelCardRow from '@/components/hotel/HotelCardRow'
+import SupplierHotelCard from '@/components/hotel/SupplierHotelCard'
 import DestinationSearch from '@/components/ui/DestinationSearch'
 import SEO from '@/components/SEO'
 import LoaderArahInn from '@/components/LoaderArahInn'
@@ -156,6 +157,9 @@ export default function SearchPage() {
   const resetFilters = () => { setSelectedStars([]); setSelectedFacilities([]) }
 
   const totalResults = data?.pagination?.total || 0
+  // Hotel mitra datang di field terpisah agar kontrak `data` yang lama
+  // tidak berubah sama sekali untuk klien yang sudah ada.
+  const supplierHotels = data?.supplierHotels ?? []
 
   const Sidebar = () => (
     <div className="space-y-4 w-full">
@@ -378,6 +382,30 @@ export default function SearchPage() {
                 </div>
               )}
             </div>
+
+            {/* Hotel mitra (supplier eksternal). Kegagalan supplier tidak
+                mengganggu hasil ArahInn di atas — bagian ini sekadar tidak muncul. */}
+            {supplierHotels.length > 0 && (
+              <div className="mt-6">
+                <div className="flex items-baseline justify-between gap-2 mb-3">
+                  <h2 className="font-bold text-sm sm:text-base text-slate-700">
+                    Properti mitra lainnya
+                  </h2>
+                  <span className="text-[11px] text-slate-400">{supplierHotels.length} properti</span>
+                </div>
+                <div className="space-y-3 sm:space-y-4">
+                  {supplierHotels.map(hotel => (
+                    <SupplierHotelCard
+                      key={hotel.id}
+                      hotel={hotel}
+                      checkIn={form.checkIn}
+                      checkOut={form.checkOut}
+                      guests={form.guests}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Pagination — smart compact on mobile */}
             {data?.pagination?.totalPages > 1 && (

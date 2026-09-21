@@ -18,6 +18,34 @@ export const bookingApi = {
 }
 
 // Public maintenance status — buat App.jsx check runtime
+// ── RateHawk / hotel mitra ────────────────────────────────────────────
+// Frontend HANYA berbicara dengan backend ArahInn. Hostname & kredensial
+// RateHawk tidak pernah sampai ke browser.
+export const supplierHotelApi = {
+  search      : (p)            => api.get('/ratehawk/search', { params: p }),
+  detail      : (hid, p)       => api.get(`/ratehawk/hotels/${hid}`, { params: p }),
+
+  // Prebook: validasi harga & ketersediaan sebelum memesan.
+  // Hasil PRICE_CHANGED WAJIB dikonfirmasi customer dulu.
+  prebook     : (d)            => api.post('/ratehawk/prebook', d),
+
+  createBooking: (d)           => api.post('/ratehawk/bookings', d),
+  startBooking : (id, d)       => api.post(`/ratehawk/bookings/${id}/start`, d),
+  // Polling status ke BACKEND ArahInn, bukan ke RateHawk.
+  status       : (id)          => api.get(`/ratehawk/bookings/${id}/status`),
+  retrieve     : (id)          => api.get(`/ratehawk/bookings/${id}`),
+  cancellation : (id)          => api.get(`/ratehawk/bookings/${id}/cancellation`),
+  cancel       : (id)          => api.post(`/ratehawk/bookings/${id}/cancel`),
+}
+
+// Panel superadmin: status integrasi supplier (TIDAK pernah memuat token).
+export const supplierAdminApi = {
+  status   : ()   => api.get('/admin/ratehawk/status'),
+  overview : ()   => api.post('/admin/ratehawk/overview'),
+  apiLogs  : (p)  => api.get('/admin/ratehawk/api-logs', { params: p }),
+  syncLogs : (p)  => api.get('/admin/ratehawk/sync-logs', { params: p }),
+}
+
 export const maintenanceApi = {
   status: () => api.get('/maintenance/status'),
 }

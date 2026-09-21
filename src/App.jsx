@@ -104,6 +104,8 @@ import AdminUsers from '@/pages/admin/Users'
 import AdminPromos from '@/pages/admin/Promos'
 import AdminCampaigns from '@/pages/admin/Campaigns'
 import AdminPopups from '@/pages/admin/Popups'
+import AdminRateHawk from '@/pages/admin/RateHawk'
+import SupplierHotel from '@/pages/SupplierHotel'
 import AdminPropertyApproval from '@/pages/admin/PropertyApproval'
 import AdminReviews from '@/pages/admin/Reviews'
 
@@ -306,6 +308,8 @@ export default function App() {
           <Route element={<UserLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/search" element={<Search />} />
+            {/* Hotel mitra (supplier eksternal) — branding tetap ArahInn */}
+            <Route path="/mitra/hotel/:hid" element={<SupplierHotel />} />
             <Route path="/hotel/:id" element={<HotelDetail />} />
             <Route path="/properti" element={<PropertyMarket />} />
             <Route path="/properti/:id" element={<PropertyDetail />} />
@@ -397,6 +401,7 @@ export default function App() {
           <Route path="promos" element={<BlockRoles roles={['design_interior']}><AdminPromos /></BlockRoles>} />
           <Route path="campaigns" element={<BlockRoles roles={['design_interior']}><AdminCampaigns /></BlockRoles>} />
           <Route path="popups" element={<AdminPopups />} />
+            <Route path="ratehawk" element={<AdminRateHawk />} />
           <Route path="finance/invoices" element={<BlockRoles roles={['design_interior']}><FinanceInvoices /></BlockRoles>} />
           <Route path="finance/profit" element={<BlockRoles roles={['design_interior', 'admin']}><FinanceProfit /></BlockRoles>} />
           <Route path="owners" element={<BlockRoles roles={['design_interior']}><AdminOwners /></BlockRoles>} />
