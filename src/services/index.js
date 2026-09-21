@@ -252,6 +252,23 @@ export const campaignApi = {
   remove   : (id)    => api.delete(`/admin/campaigns/${id}`),
 }
 
+// Popup situs — dikelola superadmin, dipakai web & aplikasi mobile
+export const popupApi = {
+  getAll : ()      => api.get('/admin/popups'),
+  active : (p)     => api.get('/popups/active', { params: p }),
+  create : (d)     => d instanceof FormData
+    ? api.post('/admin/popups', d, { headers: { 'Content-Type': 'multipart/form-data' } })
+    : api.post('/admin/popups', d),
+  update : (id, d) => {
+    if (d instanceof FormData) {
+      d.append('_method', 'PUT')
+      return api.post(`/admin/popups/${id}`, d, { headers: { 'Content-Type': 'multipart/form-data' } })
+    }
+    return api.put(`/admin/popups/${id}`, d)
+  },
+  remove : (id)    => api.delete(`/admin/popups/${id}`),
+}
+
 export const ownerApi = {
   dashboard: (p) => api.get('/owner/dashboard', { params: p }),
 }

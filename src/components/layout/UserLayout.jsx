@@ -21,7 +21,7 @@ import {
   isOwnerRole,
 } from '@/utils/isExtranet'
 import SupportChatWidget from '@/components/chat/SupportChatWidget'
-import MarketplacePopup from '@/components/MarketplacePopup'
+import SitePopup from '@/components/SitePopup'
 import NotificationBell from '@/components/ui/NotificationBell'
 import queryClient from '@/lib/queryClient'
 
@@ -714,7 +714,7 @@ export default function UserLayout() {
 
       {/* Live Chat Widget — customer ke CS Arahinn */}
       <SupportChatWidget />
-      <MarketplacePopup />
+      <SitePopup />
 
       {/* Dropdown backdrop */}
       {dropOpen && <div className="fixed inset-0 z-40" onClick={() => setDropOpen(false)} />}

@@ -9,6 +9,7 @@ import {
   Users, UserCog, Tag, LogOut, Menu, X, User,
   FileText, CreditCard, Building2, Megaphone, ChevronDown, MessageSquare,
   CalendarDays, Sofa, Headphones, Shield, Receipt, Settings, Ticket, TrendingUp, Star, Heart, Coins,
+  MonitorSmartphone,
 } from 'lucide-react'
 import { cn, roleLabel, getImageUrl } from '@/utils'
 import NotificationBell from '@/components/ui/NotificationBell'
@@ -43,6 +44,7 @@ const NAV_ADMIN = [
     children: [
       { to: '/admin/promos',    label: 'Promo',    icon: Tag },
       { to: '/admin/campaigns', label: 'Campaign', icon: Megaphone },
+      { to: '/admin/popups',    label: 'Popup',    icon: MonitorSmartphone },
     ],
   },
   { type: 'section', label: 'User Management' },

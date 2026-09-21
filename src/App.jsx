@@ -103,6 +103,7 @@ import AdminWishlist from '@/pages/admin/Wishlist'
 import AdminUsers from '@/pages/admin/Users'
 import AdminPromos from '@/pages/admin/Promos'
 import AdminCampaigns from '@/pages/admin/Campaigns'
+import AdminPopups from '@/pages/admin/Popups'
 import AdminPropertyApproval from '@/pages/admin/PropertyApproval'
 import AdminReviews from '@/pages/admin/Reviews'
 
@@ -395,6 +396,7 @@ export default function App() {
           <Route path="users" element={<BlockRoles roles={['design_interior']}><AdminUsers /></BlockRoles>} />
           <Route path="promos" element={<BlockRoles roles={['design_interior']}><AdminPromos /></BlockRoles>} />
           <Route path="campaigns" element={<BlockRoles roles={['design_interior']}><AdminCampaigns /></BlockRoles>} />
+          <Route path="popups" element={<AdminPopups />} />
           <Route path="finance/invoices" element={<BlockRoles roles={['design_interior']}><FinanceInvoices /></BlockRoles>} />
           <Route path="finance/profit" element={<BlockRoles roles={['design_interior', 'admin']}><FinanceProfit /></BlockRoles>} />
           <Route path="owners" element={<BlockRoles roles={['design_interior']}><AdminOwners /></BlockRoles>} />
