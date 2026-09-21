@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '@/store/authStore'
 import { authApi, chatApi } from '@/services/index'
@@ -97,9 +97,25 @@ const NAV_DESIGN_INTERIOR = [
 
 export default function AdminLayout() {
   const { user, logout } = useAuthStore()
+  const expiresAt        = useAuthStore(s => s.expiresAt)
   const navigate         = useNavigate()
   const location         = useLocation()
   const { toast }        = useToast()
+
+  // Sesi panel pengelola dibatasi (default 1 jam, diatur backend).
+  // Begitu lewat → logout otomatis dan diarahkan ke halaman login.
+  useEffect(() => {
+    if (!expiresAt) return
+    const endSession = () => {
+      logout()
+      window.location.href = '/login?expired=1'
+    }
+    const ms = new Date(expiresAt).getTime() - Date.now()
+    if (Number.isNaN(ms)) return
+    if (ms <= 0) { endSession(); return }
+    const timer = setTimeout(endSession, ms)
+    return () => clearTimeout(timer)
+  }, [expiresAt, logout])
   // Di layar sempit (HP asli) mulai collapsed agar konten tetap lega.
   // Mode "Desktop site" di HP (~980px) & laptop tetap ter-expand.
   const [collapsed, setCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)

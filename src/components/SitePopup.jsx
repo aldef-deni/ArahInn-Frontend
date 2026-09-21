@@ -8,16 +8,9 @@ import { getImageUrl } from '@/utils/index'
 /**
  * Popup situs dinamis — isinya dikelola superadmin di kelola.arahinn.com
  * (menu Popup). Endpoint yang sama juga dipakai aplikasi ArahInn mobile.
- * Tampil sekali per hari per popup, dan dilewati saat alur pembayaran.
+ * Tampil setiap kali halaman dimuat, dan dilewati saat alur pembayaran.
  */
-const SEEN_PREFIX = 'arahinn_popup_seen_'
-const SKIP_PATHS  = ['/payment', '/checkout', '/tiket/bayar']
-
-const today = () => new Date().toISOString().slice(0, 10)
-
-const seenToday = (id) => {
-  try { return localStorage.getItem(SEEN_PREFIX + id) === today() } catch { return false }
-}
+const SKIP_PATHS = ['/payment', '/checkout', '/tiket/bayar']
 
 export default function SitePopup() {
   const { pathname } = useLocation()
@@ -32,9 +25,10 @@ export default function SitePopup() {
     retry    : false,
   })
 
-  // Popup pertama (urutan dari server) yang belum ditutup hari ini
+  // Popup pertama sesuai urutan dari server. Sengaja TIDAK disimpan ke
+  // localStorage: popup harus muncul lagi setiap halaman dimuat ulang.
   const candidate = useMemo(
-    () => (skip ? null : popups.find(p => !seenToday(p.id)) ?? null),
+    () => (skip ? null : popups[0] ?? null),
     [popups, skip],
   )
 
@@ -48,12 +42,9 @@ export default function SitePopup() {
     return () => clearTimeout(t)
   }, [candidate])
 
-  const dismiss = useCallback(() => {
-    setOpen(false)
-    if (active?.id != null) {
-      try { localStorage.setItem(SEEN_PREFIX + active.id, today()) } catch { /* mode privat */ }
-    }
-  }, [active])
+  // Menutup popup hanya berlaku untuk tampilan saat ini — saat halaman
+  // dimuat ulang, popup akan muncul kembali.
+  const dismiss = useCallback(() => setOpen(false), [])
 
   const goTo = useCallback(() => {
     const url = active?.url

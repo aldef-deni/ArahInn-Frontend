@@ -55,6 +55,15 @@ api.interceptors.request.use(config => {
   return config
 })
 
+// Keluar dari sesi. Bila batas waktu sesi pengelola memang sudah lewat,
+// halaman login diberi tanda supaya bisa menjelaskan alasannya ke user.
+const endSession = () => {
+  const { expiresAt } = useAuthStore.getState()
+  const expired = expiresAt ? new Date(expiresAt).getTime() <= Date.now() : false
+  useAuthStore.getState().logout()
+  window.location.href = expired ? '/login?expired=1' : '/login'
+}
+
 // ── Response interceptor: handle 401 / refresh ────────
 api.interceptors.response.use(
   res => {
@@ -79,12 +88,10 @@ api.interceptors.response.use(
           original.headers.Authorization = `Bearer ${accessToken}`
           return api(original)
         } catch {
-          useAuthStore.getState().logout()
-          window.location.href = '/login'
+          endSession()
         }
       } else {
-        useAuthStore.getState().logout()
-        window.location.href = '/login'
+        endSession()
       }
     }
     return Promise.reject(err)

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
@@ -28,8 +28,19 @@ export default function LoginExtranet() {
   const managementMode = isManagementPortal()
   const ownerMode = isOwnerPortal()
 
+  // Datang dari sesi yang habis (?expired=1) → jelaskan kenapa harus login lagi.
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).has('expired')) return
+    toast({
+      title: 'Sesi berakhir',
+      description: 'Demi keamanan, sesi dibatasi 1 jam. Silakan login kembali.',
+      variant: 'destructive',
+    })
+    window.history.replaceState(null, '', window.location.pathname)
+  }, [toast])
+
   // Selesaikan login (role check + set auth + navigate). Dipakai login normal & setelah 2FA.
-  const finishLogin = ({ user, accessToken, refreshToken }) => {
+  const finishLogin = ({ user, accessToken, refreshToken, expiresAt }) => {
     const rolesPayload = user.roles || user.role
     const isMgmt   = isManagementRole(rolesPayload)
     const isOwner  = isOwnerRole(rolesPayload)
@@ -51,7 +62,7 @@ export default function LoginExtranet() {
       setTimeout(() => { window.location.href = getCustomerPortalUrl() }, 1200); return
     }
     const effectiveUser = { ...user, role: ownerMode ? 'owner' : (isMgmt ? (user.role || 'admin') : user.role) }
-    setAuth(effectiveUser, accessToken, refreshToken)
+    setAuth(effectiveUser, accessToken, refreshToken, expiresAt ?? null)
     toast({ title: `Selamat datang, ${user.name}!` })
     navigate(ownerMode ? '/owner' : '/admin')
   }

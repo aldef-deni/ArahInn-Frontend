@@ -7,15 +7,18 @@ export const useAuthStore = create(
       user        : null,
       token       : null,
       refreshToken: null,
+      // Batas waktu sesi (ISO string). Diisi hanya untuk akun pengelola
+      // kelola.arahinn.com — setelah lewat, wajib login ulang.
+      expiresAt   : null,
 
-      setAuth: (user, token, refreshToken) =>
-        set({ user, token, refreshToken }),
+      setAuth: (user, token, refreshToken, expiresAt = null) =>
+        set({ user, token, refreshToken, expiresAt }),
 
       updateUser: (user) =>
         set({ user: { ...get().user, ...user } }),
 
       logout: () =>
-        set({ user: null, token: null, refreshToken: null }),
+        set({ user: null, token: null, refreshToken: null, expiresAt: null }),
 
       isAdmin: () => {
         const adminRoles = ['superadmin','admin','admin_property','finance','design_interior','owner']
