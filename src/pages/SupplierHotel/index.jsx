@@ -261,10 +261,12 @@ function RateRow({ rate, busy, disabled, onSelect }) {
             )}
           </div>
 
-          {/* Pajak yang dibayar di properti — TIDAK ditambahkan ke harga di atas */}
+          {/* Pajak yang dibayar di properti — TIDAK ditambahkan ke harga di atas.
+              Ditampilkan dalam mata uang ASLI properti; nilai Rupiah hanya
+              perkiraan, karena pembayarannya dilakukan di tempat. */}
           {taxesAtHotel.length > 0 && (
             <p className="mt-2 text-[11px] text-slate-500">
-              Ditambah {taxesAtHotel.map(t => `${t.name} ${formatRupiah(t.amount)}`).join(', ')}
+              Ditambah {taxesAtHotel.map(t => formatTax(t)).join(', ')}
               {' '}dibayar langsung di properti.
             </p>
           )}
@@ -362,6 +364,23 @@ function SkeletonPage() {
 }
 
 /* ── Pembantu ──────────────────────────────────────────────────── */
+
+/**
+ * Pajak dari supplier memakai mata uang properti (mis. 17,70 USD).
+ * Menampilkannya sebagai Rupiah tanpa konversi membuat "17,70 USD" terbaca
+ * "Rp 18" — jadi mata uang aslinya selalu ditampilkan, dengan perkiraan Rupiah
+ * sebagai keterangan tambahan.
+ */
+function formatTax(t) {
+  const label = String(t.name ?? '').replace(/_/g, ' ')
+  const asli  = `${t.currency ?? ''} ${Number(t.amount ?? 0).toLocaleString('id-ID', {
+    minimumFractionDigits: 2, maximumFractionDigits: 2,
+  })}`.trim()
+
+  return t.amountIdr
+    ? `${label} ${asli} (±${formatRupiah(t.amountIdr)})`
+    : `${label} ${asli}`
+}
 
 function formatDeadline(iso) {
   if (!iso) return '-'

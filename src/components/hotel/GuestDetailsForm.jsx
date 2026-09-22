@@ -103,7 +103,16 @@ export default function GuestDetailsForm({ rate, rooms = 1, adults = 2, submitti
       <div className="mt-5 rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-2">
         <Line label="Harga kamar (sudah termasuk pajak)" value={formatRupiah(rate?.sellingAmount)} strong />
         {taxesAtHotel.map((t, i) => (
-          <Line key={i} label={`${t.name} — dibayar di properti`} value={formatRupiah(t.amount)} muted />
+          <Line
+            key={i}
+            label={`${String(t.name ?? '').replace(/_/g, ' ')} — dibayar di properti`}
+            // Pajak memakai mata uang properti (mis. USD). Menampilkannya
+            // sebagai Rupiah tanpa konversi membuat "17,70 USD" terbaca "Rp 18".
+            value={`${t.currency ?? ''} ${Number(t.amount ?? 0).toLocaleString('id-ID', {
+              minimumFractionDigits: 2, maximumFractionDigits: 2,
+            })}`.trim() + (t.amountIdr ? ` (±${formatRupiah(t.amountIdr)})` : '')}
+            muted
+          />
         ))}
         <p className="pt-1 text-[11px] text-slate-500 flex items-start gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 shrink-0 mt-px text-emerald-600" />
