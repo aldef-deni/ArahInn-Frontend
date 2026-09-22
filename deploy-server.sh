@@ -3,8 +3,8 @@
 # Build & deploy frontend ArahInn langsung dari server cPanel.
 #
 # Dijalankan DI SERVER, dari folder sumber frontend (mis. ~/ota-frontend).
-# Hasil build disalin ke DUA document root — arahinn.com dan kelola.arahinn.com.
-# Melewatkan salah satunya membuat panel admin tidak ikut ter-update.
+# Hasil build disalin ke TIGA document root: arahinn.com, kelola.arahinn.com,
+# dan my.arahinn.com. Melewatkan salah satunya membuat domain itu tertinggal versi.
 #
 #   ./deploy-server.sh                 # build + deploy ke kedua folder
 #   ./deploy-server.sh --build-only    # build saja, tidak menyentuh docroot
@@ -14,14 +14,18 @@ set -euo pipefail
 
 # ── Tata letak di server (dikonfirmasi 2026-09-23) ────────────────────
 #   ~/ota-frontend       sumber FE (repo ArahInn-Frontend)  ← folder ini
-#   ~/public_html        hasil build untuk arahinn.com
-#   ~/pengelola-arahinn  hasil build untuk kelola.arahinn.com
-#   ~/extranet-owner     my.arahinn.com — repo LAIN (My-ArahInn), JANGAN disentuh
+#   ~/public_html        hasil build → arahinn.com        (customer)
+#   ~/pengelola-arahinn  hasil build → kelola.arahinn.com (superadmin)
+#   ~/extranet-owner     hasil build → my.arahinn.com     (owner properti)
 #
-# Satu hasil build melayani arahinn.com dan kelola.arahinn.com; keduanya
-# dibedakan saat berjalan lewat hostname (src/utils/isExtranet.js).
+# SATU hasil build melayani KETIGANYA. Aplikasinya membedakan diri saat
+# berjalan lewat hostname (src/utils/isExtranet.js), bukan lewat build
+# terpisah. Melewatkan salah satu folder membuat domain itu tertinggal versi.
 DOCROOT_PUBLIC="${DOCROOT_PUBLIC:-$HOME/public_html}"
 DOCROOT_KELOLA="${DOCROOT_KELOLA:-$HOME/pengelola-arahinn}"
+DOCROOT_OWNER="${DOCROOT_OWNER:-$HOME/extranet-owner}"
+
+DOCROOTS=("$DOCROOT_PUBLIC" "$DOCROOT_KELOLA" "$DOCROOT_OWNER")
 
 BUILD_ONLY=false
 ASSUME_YES=false
@@ -74,16 +78,8 @@ fi
 
 # ── 4. Konfirmasi ─────────────────────────────────────────────────────
 say "4) Tujuan penyalinan"
-for d in "$DOCROOT_PUBLIC" "$DOCROOT_KELOLA"; do
-  [ -d "$d" ] || fail "Folder tidak ada: $d  (sesuaikan DOCROOT_PUBLIC / DOCROOT_KELOLA)"
-
-  # my.arahinn.com dibangun dari repo LAIN (My-ArahInn). Menyalin hasil build
-  # ini ke sana akan menimpa aplikasi owner dengan aplikasi yang keliru.
-  case "$d" in
-    *extranet-owner*|*my.arahinn*)
-      fail "MENOLAK menyalin ke $d — itu milik repo My-ArahInn, bukan repo ini." ;;
-  esac
-
+for d in "${DOCROOTS[@]}"; do
+  [ -d "$d" ] || fail "Folder tidak ada: $d  (sesuaikan DOCROOT_PUBLIC / DOCROOT_KELOLA / DOCROOT_OWNER)"
   echo "   $d"
 done
 
@@ -96,7 +92,7 @@ fi
 say "5) Menyalin"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 
-for d in "$DOCROOT_PUBLIC" "$DOCROOT_KELOLA"; do
+for d in "${DOCROOTS[@]}"; do
   # Simpan index.html lama — inilah satu-satunya berkas yang, bila salah,
   # langsung membuat situs blank.
   [ -f "$d/index.html" ] && cp "$d/index.html" "$d/index.html.bak-$STAMP"
@@ -110,8 +106,8 @@ for d in "$DOCROOT_PUBLIC" "$DOCROOT_KELOLA"; do
 done
 
 say "Selesai."
-echo "Buka arahinn.com dan kelola.arahinn.com, lalu hard refresh (Ctrl+Shift+R)."
-echo "index.html sering ter-cache browser."
+echo "Buka arahinn.com, kelola.arahinn.com, dan my.arahinn.com,"
+echo "lalu hard refresh (Ctrl+Shift+R) — index.html sering ter-cache browser."
 echo
 echo "Bila ada yang rusak, kembalikan index.html:"
 echo "  cp \"$DOCROOT_PUBLIC/index.html.bak-$STAMP\" \"$DOCROOT_PUBLIC/index.html\""
