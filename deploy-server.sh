@@ -78,8 +78,22 @@ fi
 
 # ── 4. Konfirmasi ─────────────────────────────────────────────────────
 say "4) Tujuan penyalinan"
+SRC="$(pwd -P)"
 for d in "${DOCROOTS[@]}"; do
   [ -d "$d" ] || fail "Folder tidak ada: $d  (sesuaikan DOCROOT_PUBLIC / DOCROOT_KELOLA / DOCROOT_OWNER)"
+
+  # Menyalin ke folder sumber akan menumpuk hasil build ke dalam kode sumber,
+  # dan `dist/` di dalam `dist/` sulit dibereskan. Tolak sejak awal.
+  DST="$(cd "$d" && pwd -P)"
+  [ "$DST" != "$SRC" ] || fail "Tujuan sama dengan folder sumber ($SRC) — dibatalkan."
+
+  # Salah ketik pada variabel bisa membuat dua tujuan menunjuk folder yang sama;
+  # penyalinan jadi dobel dan satu domain diam-diam tidak ter-update.
+  case " ${SEEN:-} " in
+    *" $DST "*) fail "Tujuan ganda: $DST muncul dua kali — periksa DOCROOT_*." ;;
+  esac
+  SEEN="${SEEN:-} $DST"
+
   echo "   $d"
 done
 
