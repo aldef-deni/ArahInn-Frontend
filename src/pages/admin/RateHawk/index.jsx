@@ -203,13 +203,52 @@ export default function AdminRateHawk() {
         )}
       </Card>
 
-      {/* Endpoint yang diizinkan */}
+      {/* Endpoint yang dipakai alur ArahInn — lebih penting daripada daftar mentah */}
+      {data?.requiredEndpoints?.length > 0 && (
+        <Card title="Endpoint yang dibutuhkan ArahInn" icon={ShieldCheck}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px]">
+              <thead className="text-slate-400">
+                <tr className="text-left">
+                  <th className="py-1.5 pr-3 font-semibold">Tahap</th>
+                  <th className="py-1.5 pr-3 font-semibold">Endpoint</th>
+                  <th className="py-1.5 pr-3 font-semibold">Status</th>
+                  <th className="py-1.5 font-semibold">Limit</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {data.requiredEndpoints.map((ep) => (
+                  <tr key={ep.endpoint}>
+                    <td className="py-1.5 pr-3 font-semibold text-slate-700">{ep.label}</td>
+                    <td className="py-1.5 pr-3 font-mono text-slate-500 truncate max-w-[260px]">{ep.endpoint}</td>
+                    <td className="py-1.5 pr-3">
+                      <span className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                        ep.allowed ? 'text-emerald-700 bg-emerald-50' : 'text-red-700 bg-red-50'
+                      }`}>
+                        {ep.allowed ? 'OK' : (ep.listed ? 'NONAKTIF' : 'TIDAK ADA')}
+                      </span>
+                    </td>
+                    <td className="py-1.5 text-slate-500">{ep.limit ?? '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {data.requiredEndpoints.some(ep => !ep.allowed) && (
+            <p className="mt-2 text-[11px] text-red-600">
+              Ada endpoint yang belum tersedia untuk API key ini — hubungi account manager ETG.
+            </p>
+          )}
+        </Card>
+      )}
+
+      {/* Seluruh endpoint yang diizinkan */}
       {data?.allowedEndpoints?.length > 0 && (
-        <Card title="Endpoint yang diizinkan untuk API key ini" icon={ShieldCheck}>
+        <Card title={`Seluruh endpoint yang diizinkan (${data.allowedEndpoints.length})`} icon={Globe}>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
             {data.allowedEndpoints.map((ep, i) => (
               <li key={i} className="text-[11px] font-mono text-slate-600 truncate">
-                {typeof ep === 'string' ? ep : (ep.endpoint ?? ep.uri ?? JSON.stringify(ep))}
+                {typeof ep === 'string' ? ep : (ep.endpoint ?? ep.uri ?? '?')}
               </li>
             ))}
           </ul>
