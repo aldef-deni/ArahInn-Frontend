@@ -12,9 +12,16 @@
 #
 set -euo pipefail
 
-# ── Sesuaikan bila path di cPanel berbeda ─────────────────────────────
+# ── Tata letak di server (dikonfirmasi 2026-09-23) ────────────────────
+#   ~/ota-frontend       sumber FE (repo ArahInn-Frontend)  ← folder ini
+#   ~/public_html        hasil build untuk arahinn.com
+#   ~/pengelola-arahinn  hasil build untuk kelola.arahinn.com
+#   ~/extranet-owner     my.arahinn.com — repo LAIN (My-ArahInn), JANGAN disentuh
+#
+# Satu hasil build melayani arahinn.com dan kelola.arahinn.com; keduanya
+# dibedakan saat berjalan lewat hostname (src/utils/isExtranet.js).
 DOCROOT_PUBLIC="${DOCROOT_PUBLIC:-$HOME/public_html}"
-DOCROOT_KELOLA="${DOCROOT_KELOLA:-$HOME/kelola.arahinn.com}"
+DOCROOT_KELOLA="${DOCROOT_KELOLA:-$HOME/pengelola-arahinn}"
 
 BUILD_ONLY=false
 ASSUME_YES=false
@@ -69,6 +76,14 @@ fi
 say "4) Tujuan penyalinan"
 for d in "$DOCROOT_PUBLIC" "$DOCROOT_KELOLA"; do
   [ -d "$d" ] || fail "Folder tidak ada: $d  (sesuaikan DOCROOT_PUBLIC / DOCROOT_KELOLA)"
+
+  # my.arahinn.com dibangun dari repo LAIN (My-ArahInn). Menyalin hasil build
+  # ini ke sana akan menimpa aplikasi owner dengan aplikasi yang keliru.
+  case "$d" in
+    *extranet-owner*|*my.arahinn*)
+      fail "MENOLAK menyalin ke $d — itu milik repo My-ArahInn, bukan repo ini." ;;
+  esac
+
   echo "   $d"
 done
 
