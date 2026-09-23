@@ -47,11 +47,45 @@ REMOTE="$(git rev-parse origin/main)"
 # jadi sengaja tidak menulis apa pun ke log supaya log tetap terbaca.
 [ "$LOKAL" = "$REMOTE" ] && exit 0
 
+# ── Node yang dipakai cron belum tentu ada sama sekali ────────────────
+# PATH yang diwarisi cron jauh lebih pendek daripada PATH terminal. Di
+# cPanel/CloudLinux, Node tinggal di /opt/alt/alt-nodejsNN atau di dalam
+# nodevenv milik aplikasi — dua-duanya di luar PATH cron. Pemeriksaan ini
+# WAJIB sebelum merge: pernah terjadi commit tertarik lalu build gagal,
+# sehingga kode sumber di server maju sementara situs tetap versi lama dan
+# tidak ada tanda apa pun bahwa deploy tidak jadi.
+cari_node() {
+  if command -v node >/dev/null 2>&1; then dirname "$(command -v node)"; return 0; fi
+  for d in "$HOME"/nodevenv/*/*/bin /opt/alt/alt-nodejs2*/root/usr/bin \
+           /opt/alt/alt-nodejs1*/root/usr/bin /opt/cpanel/ea-nodejs*/bin \
+           /usr/local/bin; do
+    [ -x "$d/node" ] || continue
+    "$d/node" -e 'process.exit(parseInt(process.versions.node) >= 18 ? 0 : 1)' 2>/dev/null \
+      && { echo "$d"; return 0; }
+  done
+  return 1
+}
+
+NODE_DIR="${NODE_DIR:-$(cari_node || true)}"
+if [ -z "$NODE_DIR" ]; then
+  {
+    echo
+    echo "════ $(date '+%Y-%m-%d %H:%M:%S')"
+    echo "BATAL: node tidak ada di PATH cron maupun di lokasi cPanel yang biasa."
+    echo "       Cari di terminal:  command -v node"
+    echo "       Lalu di crontab:   NODE_DIR=/path/ke/bin $0"
+    echo "       Tidak ada yang ditarik — kode sumber tetap seperti semula."
+  } >> "$LOG"
+  exit 1
+fi
+export PATH="$NODE_DIR:$PATH"
+
 {
   echo
   echo "════ $(date '+%Y-%m-%d %H:%M:%S')"
   echo "commit: ${LOKAL:0:7} → ${REMOTE:0:7}"
   git --no-pager log --oneline "${LOKAL}..${REMOTE}" | sed 's/^/  /'
+  echo "node: $(node -v 2>/dev/null) ($NODE_DIR)"
   echo
 
   # --ff-only: menolak bila riwayat menyimpang, alih-alih membuat commit merge
