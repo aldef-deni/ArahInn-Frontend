@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import NoHotelImage from '@/components/hotel/NoHotelImage'
 import { Link } from 'react-router-dom'
 import { Star, MapPin, Wifi, Car, Waves } from 'lucide-react'
 import { formatRupiah, getImageUrl, hotelDetailUrl } from '@/utils'
@@ -25,9 +26,7 @@ export default function HotelCard({ hotel }) {
             onError={() => setImgError(true)}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand/20 to-brand/5">
-            <span className="text-5xl">🏨</span>
-          </div>
+          <NoHotelImage />
         )}
         {/* Star badge */}
         <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-xs font-semibold shadow-sm">

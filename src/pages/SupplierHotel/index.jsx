@@ -10,6 +10,7 @@ import { formatRupiah } from '@/services/api'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import PriceChangeDialog from '@/components/hotel/PriceChangeDialog'
+import NoHotelImage from '@/components/hotel/NoHotelImage'
 import ResidencySelect from '@/components/hotel/ResidencySelect'
 import { useResidencyStore } from '@/store/residencyStore'
 import SupplierBookingStatus from '@/components/hotel/SupplierBookingStatus'
@@ -172,10 +173,7 @@ export default function SupplierHotel() {
           {utama && !heroError
             ? <img src={utama} alt={hotel.name} onError={() => setHeroError(true)}
                    className="w-full h-full object-cover" />
-            : <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-brand/20 to-brand/5">
-                <span className="text-5xl">🏨</span>
-                <span className="text-xs font-medium text-brand-700/60">Foto belum tersedia dari mitra</span>
-              </div>}
+            : <NoHotelImage />}
         </div>
         {sampingan.length > 0 && (
           <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">

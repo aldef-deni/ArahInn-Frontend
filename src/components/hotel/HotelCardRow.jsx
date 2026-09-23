@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import NoHotelImage from '@/components/hotel/NoHotelImage'
 import { Link } from 'react-router-dom'
 import { Star, MapPin, ThumbsUp, ChevronRight } from 'lucide-react'
 import { formatRupiah, getImageUrl, hotelDetailUrl } from '@/utils'
@@ -38,8 +39,8 @@ export default function HotelCardRow({ hotel, checkIn, checkOut, guests }) {
             className="w-full h-44 sm:h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
-          <div className="w-full h-44 sm:h-full sm:min-h-[160px] flex items-center justify-center bg-gradient-to-br from-brand/20 to-brand/5">
-            <span className="text-5xl">🏨</span>
+          <div className="w-full h-44 sm:h-full sm:min-h-[160px]">
+            <NoHotelImage />
           </div>
         )}
         <div className="absolute bottom-0 inset-x-0 bg-black/50 text-white text-[11px] sm:text-xs font-semibold text-center py-1 sm:py-1.5 flex items-center justify-center gap-1">

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import NoHotelImage from '@/components/hotel/NoHotelImage'
 import { Link } from 'react-router-dom'
 import { Star, MapPin, Utensils, ShieldCheck, Ban } from 'lucide-react'
 import { formatRupiah } from '@/services/api'
@@ -38,10 +39,7 @@ export default function SupplierHotelCard({ hotel, checkIn, checkOut, guests }) 
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-brand/20 to-brand/5">
-            <span className="text-3xl sm:text-4xl">🏨</span>
-            <span className="text-[10px] font-medium text-brand-700/60">Foto belum tersedia</span>
-          </div>
+          <NoHotelImage />
         )}
       </div>
 
