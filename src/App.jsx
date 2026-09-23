@@ -401,7 +401,9 @@ export default function App() {
           <Route path="promos" element={<BlockRoles roles={['design_interior']}><AdminPromos /></BlockRoles>} />
           <Route path="campaigns" element={<BlockRoles roles={['design_interior']}><AdminCampaigns /></BlockRoles>} />
           <Route path="popups" element={<AdminPopups />} />
-            <Route path="ratehawk" element={<AdminRateHawk />} />
+            {/* Menampilkan URL webhook, IP keluar server, status kredensial, dan
+                log error API — setara halaman settings, jadi dijaga sama. */}
+            <Route path="ratehawk" element={<AdminRoute roles={['superadmin']}><AdminRateHawk /></AdminRoute>} />
           <Route path="finance/invoices" element={<BlockRoles roles={['design_interior']}><FinanceInvoices /></BlockRoles>} />
           <Route path="finance/profit" element={<BlockRoles roles={['design_interior', 'admin']}><FinanceProfit /></BlockRoles>} />
           <Route path="owners" element={<BlockRoles roles={['design_interior']}><AdminOwners /></BlockRoles>} />

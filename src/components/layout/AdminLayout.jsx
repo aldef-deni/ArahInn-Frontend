@@ -29,6 +29,9 @@ const NAV_ADMIN = [
 
   { type: 'section', label: 'Properti' },
   { to: '/admin/hotels',            label: 'Akomodasi',             icon: Hotel },
+  // RateHawk adalah pemasok kamar hotel, bukan urusan promo. Sempat tersimpan
+  // di grup "Promo & Campaign" sehingga praktis tidak bisa ditemukan.
+  { to: '/admin/ratehawk',          label: 'Hotel Mitra (RateHawk)', icon: Plug },
   { to: '/admin/orders',            label: 'Pesanan',               icon: ShoppingBag },
   { to: '/admin/property-approval', label: 'Jual - Beli Properti',  icon: Building2 },
   { to: '/admin/interior',          label: 'Design Interior',       icon: Sofa },
@@ -45,7 +48,6 @@ const NAV_ADMIN = [
       { to: '/admin/promos',    label: 'Promo',    icon: Tag },
       { to: '/admin/campaigns', label: 'Campaign', icon: Megaphone },
       { to: '/admin/popups',    label: 'Popup',    icon: MonitorSmartphone },
-      { to: '/admin/ratehawk',  label: 'RateHawk', icon: Plug },
     ],
   },
   { type: 'section', label: 'User Management' },
