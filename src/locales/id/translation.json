@@ -1,12 +1,26 @@
 {
   "nav": {
-    "home": "Beranda", "search": "Cari Hotel", "orders": "Pesanan",
-    "profile": "Profil", "login": "Masuk", "register": "Daftar", "logout": "Keluar", "admin": "Panel Admin",
-    "logoutSuccess": "Berhasil keluar.", "logoutBye": "Sampai jumpa!",
-    "properti": "Properti", "interior": "Design Interior",
-    "akomodasi": "Akomodasi", "cariPenginapan": "Cari Penginapan", "propertiJualBeli": "Properti Jual Beli", "jasaDesign": "Jasa Design Interior",
-    "tiketPesawat": "Tiket Pesawat", "tiketKAI": "Tiket KAI", "tiketPelni": "Tiket PELNI",
-    "topUpTagihan": "Top Up & Tagihan", "promo": "Promo"
+    "home": "Beranda",
+    "search": "Cari Hotel",
+    "orders": "Pesanan",
+    "profile": "Profil",
+    "login": "Masuk",
+    "register": "Daftar",
+    "logout": "Keluar",
+    "admin": "Panel Admin",
+    "logoutSuccess": "Berhasil keluar.",
+    "logoutBye": "Sampai jumpa!",
+    "properti": "Properti",
+    "interior": "Design Interior",
+    "akomodasi": "Akomodasi",
+    "cariPenginapan": "Cari Penginapan",
+    "propertiJualBeli": "Properti Jual Beli",
+    "jasaDesign": "Jasa Design Interior",
+    "tiketPesawat": "Tiket Pesawat",
+    "tiketKAI": "Tiket KAI",
+    "tiketPelni": "Tiket PELNI",
+    "topUpTagihan": "Top Up & Tagihan",
+    "promo": "Promo"
   },
   "services": {
     "sectionTitle": "Pilih Layanan",
@@ -249,9 +263,16 @@
     "continuePayment": "Lanjut Bayar"
   },
   "search": {
-    "destination": "Kota / Tujuan", "checkin": "Check-in", "checkout": "Check-out",
-    "guests": "Tamu", "guestUnit": "Tamu", "search": "Cari", "results": "Hasil Pencarian",
-    "noResults": "Tidak ada hotel ditemukan.", "filter": "Filter", "sortBy": "Urutkan",
+    "destination": "Kota / Tujuan",
+    "checkin": "Check-in",
+    "checkout": "Check-out",
+    "guests": "Tamu",
+    "guestUnit": "Tamu",
+    "search": "Cari",
+    "results": "Hasil Pencarian",
+    "noResults": "Tidak ada hotel ditemukan.",
+    "filter": "Filter",
+    "sortBy": "Urutkan",
     "sortByLabel": "Urutkan Berdasarkan",
     "sortPopular": "Popularitas Tertinggi",
     "sortPriceAsc": "Harga Terendah",
@@ -285,9 +306,16 @@
     }
   },
   "hotel": {
-    "perNight": "/ malam", "available": "Tersedia", "unavailable": "Tidak Tersedia",
-    "facilities": "Fasilitas", "rooms": "Kamar", "reviews": "Ulasan", "book": "Pesan Sekarang",
-    "stars": "bintang", "checkAvail": "Cek Ketersediaan", "contactUs": "Hubungi kami",
+    "perNight": "/ malam",
+    "available": "Tersedia",
+    "unavailable": "Tidak Tersedia",
+    "facilities": "Fasilitas",
+    "rooms": "Kamar",
+    "reviews": "Ulasan",
+    "book": "Pesan Sekarang",
+    "stars": "bintang",
+    "checkAvail": "Cek Ketersediaan",
+    "contactUs": "Hubungi kami",
     "bestPriceClass": "Harga terbaik di kelasnya",
     "viewMore": "Lihat Lainnya",
     "moreItems": "+{{count}} lainnya",
@@ -297,19 +325,38 @@
     "viewDetail": "Lihat →"
   },
   "booking": {
-    "summary": "Ringkasan Booking", "guestInfo": "Data Tamu", "promo": "Kode Promo",
-    "apply": "Gunakan", "total": "Total", "book": "Lanjutkan Pembayaran",
-    "nights": "malam", "basePrice": "Harga Dasar", "tax": "Pajak (11%)",
-    "discount": "Diskon", "markup": "Biaya Layanan", "loyalty": "Poin Loyalitas"
+    "summary": "Ringkasan Booking",
+    "guestInfo": "Data Tamu",
+    "promo": "Kode Promo",
+    "apply": "Gunakan",
+    "total": "Total",
+    "book": "Lanjutkan Pembayaran",
+    "nights": "malam",
+    "basePrice": "Harga Dasar",
+    "tax": "Pajak (11%)",
+    "discount": "Diskon",
+    "markup": "Biaya Layanan",
+    "loyalty": "Poin Loyalitas"
   },
   "order": {
-    "history": "Riwayat Pesanan", "detail": "Detail Pesanan", "cancel": "Batalkan",
-    "reschedule": "Jadwal Ulang", "all": "Semua", "status": "Status"
+    "history": "Riwayat Pesanan",
+    "detail": "Detail Pesanan",
+    "cancel": "Batalkan",
+    "reschedule": "Jadwal Ulang",
+    "all": "Semua",
+    "status": "Status"
   },
   "auth": {
-    "login": "Masuk", "register": "Daftar", "email": "Email", "password": "Password",
-    "name": "Nama Lengkap", "phone": "Nomor Telepon", "forgot": "Lupa Password?",
-    "orWith": "atau masuk dengan", "haveAccount": "Sudah punya akun?", "noAccount": "Belum punya akun?",
+    "login": "Masuk",
+    "register": "Daftar",
+    "email": "Email",
+    "password": "Password",
+    "name": "Nama Lengkap",
+    "phone": "Nomor Telepon",
+    "forgot": "Lupa Password?",
+    "orWith": "atau masuk dengan",
+    "haveAccount": "Sudah punya akun?",
+    "noAccount": "Belum punya akun?",
     "welcome": "Selamat datang, {{name}}! 👋"
   },
   "wishlistBtn": {
@@ -321,13 +368,22 @@
     "loginNeeded": "Login dulu untuk menyimpan ke wishlist"
   },
   "footer": {
-    "services": "Layanan", "help": "Bantuan", "followUs": "Ikuti Kami",
-    "contactUs": "Hubungi Kami", "copyright": "Semua hak dilindungi.",
-    "searchHotel": "Cari Hotel", "flashSale": "Flash Sale", "campaign": "Campaign",
-    "specialPromo": "Promo Spesial", "loyaltyProgram": "Loyalty Program",
-    "campaignNone": "Belum ada campaign aktif saat ini.", "campaignTitle": "Campaign Aktif",
-    "helpCenter": "Pusat Bantuan", "terms": "Syarat & Ketentuan",
-    "privacy": "Kebijakan Privasi", "contactLink": "Hubungi Kami",
+    "services": "Layanan",
+    "help": "Bantuan",
+    "followUs": "Ikuti Kami",
+    "contactUs": "Hubungi Kami",
+    "copyright": "Semua hak dilindungi.",
+    "searchHotel": "Cari Hotel",
+    "flashSale": "Flash Sale",
+    "campaign": "Campaign",
+    "specialPromo": "Promo Spesial",
+    "loyaltyProgram": "Loyalty Program",
+    "campaignNone": "Belum ada campaign aktif saat ini.",
+    "campaignTitle": "Campaign Aktif",
+    "helpCenter": "Pusat Bantuan",
+    "terms": "Syarat & Ketentuan",
+    "privacy": "Kebijakan Privasi",
+    "contactLink": "Hubungi Kami",
     "description": "ArahInn hadir sebagai platform terpadu yang memudahkan Anda dalam merencanakan perjalanan sekaligus memenuhi berbagai kebutuhan harian. Mulai dari pemesanan akomodasi, tiket transportasi, hingga layanan penunjang lainnya, semua dirancang untuk memberikan pengalaman yang praktis, aman, dan terpercaya. Dengan harga kompetitif dan pilihan yang telah dikurasi, ArahInn menjadi partner terpercaya dalam setiap perjalanan Anda.",
     "flightDescription": "ArahInn adalah penyedia layanan pemesanan tiket pesawat yang menghubungkan Anda dengan beragam maskapai domestik maupun internasional. Nikmati harga kompetitif, pilihan jadwal yang fleksibel, serta proses pemesanan yang cepat, aman, dan terpercaya. Setiap transaksi dilengkapi e-tiket resmi dan dukungan layanan pelanggan, sehingga perjalanan udara Anda menjadi lebih mudah dan nyaman dari pencarian hingga keberangkatan.",
     "flightRequirements": "Persyaratan Penerbangan",
@@ -1141,21 +1197,47 @@
     "rightsReserved": "Semua hak dilindungi."
   },
   "countdown": {
-    "days": "hari", "hours": "jam", "minutes": "min", "seconds": "dtk"
+    "days": "hari",
+    "hours": "jam",
+    "minutes": "min",
+    "seconds": "dtk"
   },
   "facilities": {
-    "ac": "AC", "wifi": "WiFi", "parking": "Parkir", "pool": "Kolam Renang",
-    "gym": "Gym", "spa": "Spa", "restaurant": "Restoran", "bathtub": "Bathtub",
-    "no_smoking": "Bebas Asap Rokok", "playground": "Taman Bermain Anak",
-    "hot_water": "Air Panas", "minibar": "Minibar", "balcony": "Balkon",
-    "kitchen": "Dapur", "living_room": "Ruang Tamu", "extra_bed": "Kasur Tambahan",
-    "jacuzzi": "Jacuzzi", "tv": "TV"
+    "ac": "AC",
+    "wifi": "WiFi",
+    "parking": "Parkir",
+    "pool": "Kolam Renang",
+    "gym": "Gym",
+    "spa": "Spa",
+    "restaurant": "Restoran",
+    "bathtub": "Bathtub",
+    "no_smoking": "Bebas Asap Rokok",
+    "playground": "Taman Bermain Anak",
+    "hot_water": "Air Panas",
+    "minibar": "Minibar",
+    "balcony": "Balkon",
+    "kitchen": "Dapur",
+    "living_room": "Ruang Tamu",
+    "extra_bed": "Kasur Tambahan",
+    "jacuzzi": "Jacuzzi",
+    "tv": "TV"
   },
   "common": {
-    "loading": "Memuat...", "error": "Terjadi kesalahan", "retry": "Coba lagi",
-    "cancel": "Batal", "confirm": "Konfirmasi", "save": "Simpan", "delete": "Hapus",
-    "edit": "Edit", "close": "Tutup", "back": "Kembali", "next": "Lanjut",
-    "noData": "Tidak ada data", "id": "ID", "en": "EN", "optional": "opsional"
+    "loading": "Memuat...",
+    "error": "Terjadi kesalahan",
+    "retry": "Coba lagi",
+    "cancel": "Batal",
+    "confirm": "Konfirmasi",
+    "save": "Simpan",
+    "delete": "Hapus",
+    "edit": "Edit",
+    "close": "Tutup",
+    "back": "Kembali",
+    "next": "Lanjut",
+    "noData": "Tidak ada data",
+    "id": "ID",
+    "en": "EN",
+    "optional": "opsional"
   },
   "checkout": {
     "title": "Lengkapi Data Pemesanan",
@@ -1327,5 +1409,11 @@
     "voucher": "Voucher",
     "flashSale": "Flash Sale",
     "loyalty": "Loyalty"
+  },
+  "residency": {
+    "label": "Warga",
+    "hint": "Sebagian tarif hotel mitra hanya berlaku untuk penduduk negara tertentu. Pilih sesuai kewarganegaraan atau negara domisili Anda agar harga yang tampil benar-benar bisa dipesan.",
+    "search": "Cari negara...",
+    "empty": "Negara tidak ditemukan"
   }
 }

@@ -10,6 +10,8 @@ import { formatRupiah } from '@/services/api'
 import { useAuthStore } from '@/store/authStore'
 import { useToast } from '@/hooks/use-toast'
 import PriceChangeDialog from '@/components/hotel/PriceChangeDialog'
+import ResidencySelect from '@/components/hotel/ResidencySelect'
+import { useResidencyStore } from '@/store/residencyStore'
 import SupplierBookingStatus from '@/components/hotel/SupplierBookingStatus'
 import GuestDetailsForm from '@/components/hotel/GuestDetailsForm'
 
@@ -30,12 +32,18 @@ export default function SupplierHotel() {
   const { toast }     = useToast()
   const token         = useAuthStore(s => s.token)
 
+  // Dibaca dari store yang sama dengan halaman pencarian. Kalau berbeda, tarif
+  // yang dipilih customer di daftar hasil bisa lenyap saat prebook karena
+  // supplier menganggapnya konteks pencarian lain.
+  const residency = useResidencyStore((st) => st.residency)
+
   const criteria = useMemo(() => ({
     check_in : params.get('checkIn')  || '',
     check_out: params.get('checkOut') || '',
     rooms    : Number(params.get('rooms')  || 1),
     adults   : Number(params.get('adults') || 2),
-  }), [params])
+    residency,
+  }), [params, residency])
 
   const [selectedRate, setSelectedRate] = useState(null)
   const [priceChange, setPriceChange]   = useState(null)   // { previousAmount, newAmount, ... }
@@ -206,7 +214,13 @@ export default function SupplierHotel() {
       <ImportantInfo info={hotel.importantInfo} checkInOut={hotel.checkInOut} />
 
       {/* Daftar kamar & rate */}
-      <h2 className="mt-8 mb-3 text-lg font-extrabold text-slate-900">Pilihan Kamar</h2>
+      {/* Pemilih kewarganegaraan diletakkan tepat di atas daftar kamar karena
+          di sinilah pengaruhnya terlihat: mengganti negara mengubah tarif yang
+          boleh ditampilkan, bukan sekadar menyaring hasil. */}
+      <div className="mt-8 mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <h2 className="text-lg font-extrabold text-slate-900">Pilihan Kamar</h2>
+        <ResidencySelect />
+      </div>
 
       {confirmedRate ? (
         <GuestDetailsForm

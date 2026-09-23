@@ -1,12 +1,26 @@
 {
   "nav": {
-    "home": "Home", "search": "Search Hotels", "orders": "My Orders",
-    "profile": "Profile", "login": "Sign In", "register": "Register", "logout": "Sign Out", "admin": "Admin Panel",
-    "logoutSuccess": "Signed out successfully.", "logoutBye": "See you soon!",
-    "properti": "Properties", "interior": "Interior Design",
-    "akomodasi": "Accommodation", "cariPenginapan": "Find Stays", "propertiJualBeli": "Property for Sale", "jasaDesign": "Interior Design",
-    "tiketPesawat": "Flight Tickets", "tiketKAI": "KAI Tickets", "tiketPelni": "PELNI Tickets",
-    "topUpTagihan": "Top Up & Bills", "promo": "Promo"
+    "home": "Home",
+    "search": "Search Hotels",
+    "orders": "My Orders",
+    "profile": "Profile",
+    "login": "Sign In",
+    "register": "Register",
+    "logout": "Sign Out",
+    "admin": "Admin Panel",
+    "logoutSuccess": "Signed out successfully.",
+    "logoutBye": "See you soon!",
+    "properti": "Properties",
+    "interior": "Interior Design",
+    "akomodasi": "Accommodation",
+    "cariPenginapan": "Find Stays",
+    "propertiJualBeli": "Property for Sale",
+    "jasaDesign": "Interior Design",
+    "tiketPesawat": "Flight Tickets",
+    "tiketKAI": "KAI Tickets",
+    "tiketPelni": "PELNI Tickets",
+    "topUpTagihan": "Top Up & Bills",
+    "promo": "Promo"
   },
   "services": {
     "sectionTitle": "Choose a Service",
@@ -249,9 +263,16 @@
     "catVilla": "Villa, Resort\n& Glamping"
   },
   "search": {
-    "destination": "City / Destination", "checkin": "Check-in", "checkout": "Check-out",
-    "guests": "Guests", "guestUnit": "Guest", "search": "Search", "results": "Search Results",
-    "noResults": "No hotels found.", "filter": "Filter", "sortBy": "Sort By",
+    "destination": "City / Destination",
+    "checkin": "Check-in",
+    "checkout": "Check-out",
+    "guests": "Guests",
+    "guestUnit": "Guest",
+    "search": "Search",
+    "results": "Search Results",
+    "noResults": "No hotels found.",
+    "filter": "Filter",
+    "sortBy": "Sort By",
     "sortByLabel": "Sort By",
     "sortPopular": "Most Popular",
     "sortPriceAsc": "Lowest Price",
@@ -285,9 +306,16 @@
     }
   },
   "hotel": {
-    "perNight": "/ night", "available": "Available", "unavailable": "Unavailable",
-    "facilities": "Facilities", "rooms": "Rooms", "reviews": "Reviews", "book": "Book Now",
-    "stars": "stars", "checkAvail": "Check Availability", "contactUs": "Contact us",
+    "perNight": "/ night",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "facilities": "Facilities",
+    "rooms": "Rooms",
+    "reviews": "Reviews",
+    "book": "Book Now",
+    "stars": "stars",
+    "checkAvail": "Check Availability",
+    "contactUs": "Contact us",
     "bestPriceClass": "Best price in its class",
     "viewMore": "View More",
     "moreItems": "+{{count}} more",
@@ -297,19 +325,38 @@
     "viewDetail": "View →"
   },
   "booking": {
-    "summary": "Booking Summary", "guestInfo": "Guest Information", "promo": "Promo Code",
-    "apply": "Apply", "total": "Total", "book": "Proceed to Payment",
-    "nights": "nights", "basePrice": "Base Price", "tax": "Tax (11%)",
-    "discount": "Discount", "markup": "Service Fee", "loyalty": "Loyalty Points"
+    "summary": "Booking Summary",
+    "guestInfo": "Guest Information",
+    "promo": "Promo Code",
+    "apply": "Apply",
+    "total": "Total",
+    "book": "Proceed to Payment",
+    "nights": "nights",
+    "basePrice": "Base Price",
+    "tax": "Tax (11%)",
+    "discount": "Discount",
+    "markup": "Service Fee",
+    "loyalty": "Loyalty Points"
   },
   "order": {
-    "history": "Order History", "detail": "Order Detail", "cancel": "Cancel",
-    "reschedule": "Reschedule", "all": "All", "status": "Status"
+    "history": "Order History",
+    "detail": "Order Detail",
+    "cancel": "Cancel",
+    "reschedule": "Reschedule",
+    "all": "All",
+    "status": "Status"
   },
   "auth": {
-    "login": "Sign In", "register": "Register", "email": "Email", "password": "Password",
-    "name": "Full Name", "phone": "Phone Number", "forgot": "Forgot Password?",
-    "orWith": "or sign in with", "haveAccount": "Already have an account?", "noAccount": "Don't have an account?",
+    "login": "Sign In",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "name": "Full Name",
+    "phone": "Phone Number",
+    "forgot": "Forgot Password?",
+    "orWith": "or sign in with",
+    "haveAccount": "Already have an account?",
+    "noAccount": "Don't have an account?",
     "welcome": "Welcome, {{name}}! 👋"
   },
   "wishlistBtn": {
@@ -321,13 +368,22 @@
     "loginNeeded": "Please log in to save to wishlist"
   },
   "footer": {
-    "services": "Services", "help": "Help", "followUs": "Follow Us",
-    "contactUs": "Contact Us", "copyright": "All rights reserved.",
-    "searchHotel": "Search Hotels", "flashSale": "Flash Sale", "campaign": "Campaign",
-    "specialPromo": "Special Promos", "loyaltyProgram": "Loyalty Program",
-    "campaignNone": "No active campaigns at the moment.", "campaignTitle": "Active Campaigns",
-    "helpCenter": "Help Center", "terms": "Terms & Conditions",
-    "privacy": "Privacy Policy", "contactLink": "Contact Us",
+    "services": "Services",
+    "help": "Help",
+    "followUs": "Follow Us",
+    "contactUs": "Contact Us",
+    "copyright": "All rights reserved.",
+    "searchHotel": "Search Hotels",
+    "flashSale": "Flash Sale",
+    "campaign": "Campaign",
+    "specialPromo": "Special Promos",
+    "loyaltyProgram": "Loyalty Program",
+    "campaignNone": "No active campaigns at the moment.",
+    "campaignTitle": "Active Campaigns",
+    "helpCenter": "Help Center",
+    "terms": "Terms & Conditions",
+    "privacy": "Privacy Policy",
+    "contactLink": "Contact Us",
     "description": "ArahInn is an integrated platform that makes it easy to plan your trip and meet your daily needs. From accommodation bookings and transportation tickets to other supporting services — all designed to deliver a practical, safe, and trusted experience. With competitive prices and curated options, ArahInn is your reliable partner every step of the way.",
     "flightDescription": "ArahInn is a flight booking service that connects you with a wide range of domestic and international airlines. Enjoy competitive fares, flexible schedules, and a fast, secure, and trusted booking process. Every transaction comes with an official e-ticket and dedicated customer support, making your air travel easier and more comfortable from search to departure.",
     "flightRequirements": "Flight Requirements",
@@ -1141,21 +1197,47 @@
     "rightsReserved": "All rights reserved."
   },
   "countdown": {
-    "days": "days", "hours": "hrs", "minutes": "min", "seconds": "sec"
+    "days": "days",
+    "hours": "hrs",
+    "minutes": "min",
+    "seconds": "sec"
   },
   "facilities": {
-    "ac": "Air Conditioning", "wifi": "WiFi", "parking": "Parking", "pool": "Swimming Pool",
-    "gym": "Gym", "spa": "Spa", "restaurant": "Restaurant", "bathtub": "Bathtub",
-    "no_smoking": "Non-Smoking", "playground": "Children's Playground",
-    "hot_water": "Hot Water", "minibar": "Minibar", "balcony": "Balcony",
-    "kitchen": "Kitchen", "living_room": "Living Room", "extra_bed": "Extra Bed",
-    "jacuzzi": "Jacuzzi", "tv": "TV"
+    "ac": "Air Conditioning",
+    "wifi": "WiFi",
+    "parking": "Parking",
+    "pool": "Swimming Pool",
+    "gym": "Gym",
+    "spa": "Spa",
+    "restaurant": "Restaurant",
+    "bathtub": "Bathtub",
+    "no_smoking": "Non-Smoking",
+    "playground": "Children's Playground",
+    "hot_water": "Hot Water",
+    "minibar": "Minibar",
+    "balcony": "Balcony",
+    "kitchen": "Kitchen",
+    "living_room": "Living Room",
+    "extra_bed": "Extra Bed",
+    "jacuzzi": "Jacuzzi",
+    "tv": "TV"
   },
   "common": {
-    "loading": "Loading...", "error": "Something went wrong", "retry": "Try again",
-    "cancel": "Cancel", "confirm": "Confirm", "save": "Save", "delete": "Delete",
-    "edit": "Edit", "close": "Close", "back": "Back", "next": "Next",
-    "noData": "No data available", "id": "ID", "en": "EN", "optional": "optional"
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "noData": "No data available",
+    "id": "ID",
+    "en": "EN",
+    "optional": "optional"
   },
   "checkout": {
     "title": "Complete Your Booking",
@@ -1327,5 +1409,11 @@
     "voucher": "Voucher",
     "flashSale": "Flash Sale",
     "loyalty": "Loyalty"
+  },
+  "residency": {
+    "label": "Resident of",
+    "hint": "Some partner hotel rates are only available to residents of certain countries. Pick your citizenship or country of residence so the prices shown are ones you can actually book.",
+    "search": "Search country...",
+    "empty": "No country found"
   }
 }
