@@ -108,6 +108,34 @@ for d in "${DOCROOTS[@]}"; do
   echo "   $d"
 done
 
+
+# ── Berkas server yang akan TERTIMPA ──────────────────────────────────
+# Aset di assets/ selalu bernama hash baru tiap build, jadi tidak pernah
+# bertabrakan. Yang berbahaya adalah berkas bernama TETAP dari public/
+# (video hero, logo, favicon): kalau di server ada versi yang diunggah manual
+# dan berbeda isinya, penyalinan akan menimpanya tanpa jejak.
+say "4b) Memeriksa berkas yang akan tertimpa"
+BENTROK=""
+while IFS= read -r rel; do
+  case "$rel" in assets/*) continue ;; esac      # ber-hash, aman
+  for d in "${DOCROOTS[@]}"; do
+    [ -f "$d/$rel" ] || continue
+    if ! cmp -s "dist/$rel" "$d/$rel"; then
+      BENTROK="$BENTROK$rel  ($d)
+"
+    fi
+  done
+done < <(cd dist && find . -type f | sed 's|^\./||')
+
+if [ -n "$BENTROK" ]; then
+  printf '[33m   Berkas berikut BERBEDA isinya dan akan tertimpa:[0m
+'
+  printf "   %b" "$BENTROK"
+  echo "   Versi lamanya disalin ke folder cadangan sebelum ditimpa."
+else
+  echo "   Tidak ada berkas bernama tetap yang berbeda."
+fi
+
 if [ "$ASSUME_YES" != true ]; then
   read -r -p "   Lanjutkan menimpa situs live? [y/N] " jawab
   [ "$jawab" = "y" ] || [ "$jawab" = "Y" ] || { echo "Dibatalkan."; exit 0; }
@@ -118,9 +146,17 @@ say "5) Menyalin (memakai $COPY_TOOL)"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 
 for d in "${DOCROOTS[@]}"; do
-  # Simpan index.html lama — inilah satu-satunya berkas yang, bila salah,
-  # langsung membuat situs blank.
-  [ -f "$d/index.html" ] && cp "$d/index.html" "$d/index.html.bak-$STAMP"
+  # Cadangkan SEMUA berkas bernama tetap yang berbeda isinya — bukan hanya
+  # index.html. Video hero dan logo yang diunggah manual ke server pernah
+  # hilang tertimpa karena hanya index.html yang dicadangkan.
+  BAK="$d/.deploy-backup-$STAMP"
+  while IFS= read -r rel; do
+    case "$rel" in assets/*) continue ;; esac
+    [ -f "$d/$rel" ] || continue
+    cmp -s "dist/$rel" "$d/$rel" && continue
+    mkdir -p "$BAK/$(dirname "$rel")"
+    cp -a "$d/$rel" "$BAK/$rel"
+  done < <(cd dist && find . -type f | sed 's|^\./||')
 
   # SENGAJA TANPA --delete. Document root berisi berkas milik pihak lain
   # (.htaccess kustom, unggahan, folder backend); menghapusnya bisa
