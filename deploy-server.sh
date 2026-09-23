@@ -184,6 +184,16 @@ for d in "${DOCROOTS[@]}"; do
   # mematikan situs. Aset lama bernama hash — menumpuk sedikit, tidak apa-apa.
   salin dist "$d"
 
+  # Tiap deploy membuat satu folder cadangan (index.html selalu berbeda karena
+  # nama aset ber-hash). Dengan deploy otomatis, folder ini menumpuk tanpa henti
+  # dan tidak ada yang membereskannya. Simpan 10 terbaru saja — sudah lebih dari
+  # cukup untuk mundur, dan stempel waktunya urut secara leksikal.
+  HAPUS="$(ls -d "$d"/.deploy-backup-* 2>/dev/null | sort | head -n -10 || true)"
+  if [ -n "$HAPUS" ]; then
+    echo "$HAPUS" | while IFS= read -r usang; do rm -rf "$usang"; done
+    echo "   $(echo "$HAPUS" | wc -l) cadangan lama dibuang dari $d"
+  fi
+
   if [ -d "$BAK" ]; then
     echo "   selesai: $d  (cadangan: .deploy-backup-$STAMP/)"
   else
