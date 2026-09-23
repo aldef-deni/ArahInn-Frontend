@@ -288,11 +288,17 @@ export default function Home() {
     <div>
       <SEO url="/" />
       {/* ── Hero ─────────────────────────────────────────── */}
-      <section className="hero-gradient relative overflow-hidden">
+      <section className="hero-gradient relative overflow-hidden lg:min-h-[50vw]">
         {/* Background video (loop) */}
+        {/* object-contain, bukan object-cover: seluruh frame video harus terlihat.
+            object-cover memenuhi kotak dengan cara MEMOTONG sisi yang berlebih,
+            sehingga bagian atas/bawah video hilang. Sisa ruang di kiri-kanan
+            diisi hero-gradient, jadi tidak ada bidang hitam kosong.
+            min-h di layar besar mendekatkan rasio kotak ke 16:9 milik video
+            supaya sisa ruangnya tipis. */}
         <video
           autoPlay loop muted playsInline preload="auto"
-          className="absolute inset-0 w-full h-full object-cover object-top pointer-events-none"
+          className="absolute inset-0 w-full h-full object-contain object-top pointer-events-none"
           aria-hidden="true"
         >
           <source src="/banner-arahinn.mp4" type="video/mp4" />
