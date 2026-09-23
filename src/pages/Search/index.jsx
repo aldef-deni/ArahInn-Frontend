@@ -156,10 +156,14 @@ export default function SearchPage() {
   const resetPrice = () => setPriceRange([0, MAX_PRICE])
   const resetFilters = () => { setSelectedStars([]); setSelectedFacilities([]) }
 
-  const totalResults = data?.pagination?.total || 0
+  // Jumlah di judul WAJIB mencakup properti mitra. Kalau hanya menghitung
+  // hotel ArahInn, judulnya bisa berbunyi "0 Hotel" padahal di bawahnya
+  // terpampang ratusan properti mitra.
+  const totalArahInn = data?.pagination?.total || 0
   // Hotel mitra datang di field terpisah agar kontrak `data` yang lama
   // tidak berubah sama sekali untuk klien yang sudah ada.
   const supplierHotels = data?.supplierHotels ?? []
+  const totalResults   = totalArahInn + supplierHotels.length
 
   const Sidebar = () => (
     <div className="space-y-4 w-full">
@@ -374,13 +378,17 @@ export default function SearchPage() {
                     guests={form.guests}
                   />
                 ))
-              ) : (
+              ) : supplierHotels.length === 0 ? (
+                /* Hanya tampil bila KEDUA sumber kosong. Sebelumnya muncul juga
+                   saat hotel ArahInn nihil padahal properti mitra ada, sehingga
+                   halaman menyatakan "tidak ada hotel" tepat di atas daftar
+                   ratusan hotel. */
                 <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 py-14 sm:py-20 text-center px-4">
                   <p className="text-4xl mb-3 sm:mb-4">🔍</p>
                   <p className="font-semibold text-base sm:text-lg text-slate-700">{t('search.noResults')}</p>
                   <p className="text-slate-400 text-xs sm:text-sm mt-1">{t('search.noResultsHint')}</p>
                 </div>
-              )}
+              ) : null}
             </div>
 
             {/* Hotel mitra (supplier eksternal). Kegagalan supplier tidak
@@ -389,7 +397,7 @@ export default function SearchPage() {
               <div className="mt-6">
                 <div className="flex items-baseline justify-between gap-2 mb-3">
                   <h2 className="font-bold text-sm sm:text-base text-slate-700">
-                    Properti mitra lainnya
+                    {totalArahInn === 0 ? 'Properti mitra' : 'Properti mitra lainnya'}
                   </h2>
                   <span className="text-[11px] text-slate-400">{supplierHotels.length} properti</span>
                 </div>
