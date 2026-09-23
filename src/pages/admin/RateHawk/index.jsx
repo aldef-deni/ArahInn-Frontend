@@ -302,13 +302,19 @@ function Row({ label, children }) {
   )
 }
 
+// Sinkron penuh bisa lewat dump atau Content API. Menyebut jalurnya mencegah
+// kebingungan saat salah satu jalur gagal sementara yang lain berhasil.
+const JALUR_SINKRON = { hotels: 'dump', content_api: 'Content API' }
+
 function SyncCell({ sync }) {
   if (!sync) return <span className="text-slate-400">Belum pernah</span>
+  const jalur = JALUR_SINKRON[sync.type]
   return (
     <span className="inline-flex items-center gap-2">
       <StatusPill status={sync.status} />
       <span className="text-slate-400 font-normal">
         {(sync.processed ?? 0).toLocaleString('id-ID')} baris · {fmt(sync.finishedAt)}
+        {jalur && ` · lewat ${jalur}`}
       </span>
     </span>
   )
