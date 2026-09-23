@@ -288,17 +288,23 @@ export default function Home() {
     <div>
       <SEO url="/" />
       {/* ── Hero ─────────────────────────────────────────── */}
-      <section className="hero-gradient relative overflow-hidden lg:min-h-[50vw]">
-        {/* Background video (loop) */}
-        {/* object-contain, bukan object-cover: seluruh frame video harus terlihat.
-            object-cover memenuhi kotak dengan cara MEMOTONG sisi yang berlebih,
-            sehingga bagian atas/bawah video hilang. Sisa ruang di kiri-kanan
-            diisi hero-gradient, jadi tidak ada bidang hitam kosong.
-            min-h di layar besar mendekatkan rasio kotak ke 16:9 milik video
-            supaya sisa ruangnya tipis. */}
+      <section className="hero-gradient relative overflow-hidden lg:min-h-[56.25vw] lg:flex lg:flex-col lg:justify-center">
+        {/* Video 1280×720 (16:9). Kuncinya menyamakan rasio KOTAK dengan rasio
+            VIDEO, bukan mengakali object-fit:
+              • lg+ : tinggi section dikunci 56.25vw — persis 9/16 dari lebar
+                      layar — sehingga object-cover memenuhi lebar penuh TANPA
+                      memotong apa pun dan tanpa bilah kosong. Konten hero
+                      diapungkan di atasnya, ditengahkan vertikal.
+              • <lg : 56.25vw hanya ±220px, jauh lebih pendek daripada judul +
+                      kartu kategori + kotak pencarian. Jadi video mengalir biasa
+                      di paling atas (lebar penuh, utuh) dan konten turun di
+                      bawahnya, bukan menindih.
+            object-contain sempat dipakai dan hasilnya justru bilah kosong besar
+            di bawah video — jangan diulang. */}
         <video
           autoPlay loop muted playsInline preload="auto"
-          className="absolute inset-0 w-full h-full object-contain object-top pointer-events-none"
+          className="block w-full h-auto pointer-events-none
+                     lg:absolute lg:inset-0 lg:h-full lg:object-cover"
           aria-hidden="true"
         >
           <source src="/banner-arahinn.mp4" type="video/mp4" />
