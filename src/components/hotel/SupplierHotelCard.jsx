@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Star, MapPin, Utensils, ShieldCheck, Ban } from 'lucide-react'
 import { formatRupiah } from '@/services/api'
@@ -16,6 +17,11 @@ export default function SupplierHotelCard({ hotel, checkIn, checkOut, guests }) 
     ...(guests   ? { guests }   : {}),
   }).toString()
 
+  // Sebagian besar hotel mitra tidak punya foto sama sekali (dari 742 hotel
+  // yang tersinkron, 424 dikirim tanpa gambar oleh supplier), dan yang punya
+  // pun sering hanya satu. Jadi kondisi "tanpa gambar" di sini bukan kasus
+  // langka — tampilannya harus terlihat disengaja, bukan seperti gagal muat.
+  const [imgError, setImgError] = useState(false)
   const image = hotel.images?.[0]
   const meal  = hotel.meal
 
@@ -24,14 +30,18 @@ export default function SupplierHotelCard({ hotel, checkIn, checkOut, guests }) 
       to={`/mitra/hotel/${hotel.providerHotelId}${qs ? `?${qs}` : ''}`}
       className="group flex flex-col sm:flex-row bg-white rounded-xl sm:rounded-2xl border border-slate-200 overflow-hidden hover:border-brand/40 hover:shadow-lg transition-all"
     >
-      <div className="relative w-full h-40 sm:w-44 sm:h-auto shrink-0 bg-slate-100">
-        {image ? (
+      <div className="relative w-full h-40 sm:w-44 sm:h-auto shrink-0 bg-muted">
+        {image && !imgError ? (
           <img
             src={image} alt={hotel.name} loading="lazy"
+            onError={() => setImgError(true)}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-slate-300 text-3xl">🏨</div>
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-brand/20 to-brand/5">
+            <span className="text-3xl sm:text-4xl">🏨</span>
+            <span className="text-[10px] font-medium text-brand-700/60">Foto belum tersedia</span>
+          </div>
         )}
       </div>
 

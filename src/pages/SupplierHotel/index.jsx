@@ -42,6 +42,7 @@ export default function SupplierHotel() {
   const [prebookToken, setPrebookToken] = useState(null)
   const [confirmedRate, setConfirmedRate] = useState(null)
   const [partnerOrderId, setPartnerOrderId] = useState(null)
+  const [heroError, setHeroError] = useState(false)
 
   const { data: hotel, isLoading, error } = useQuery({
     queryKey: ['supplier-hotel', hid, criteria],
@@ -148,22 +149,36 @@ export default function SupplierHotel() {
     )
   }
 
+  const foto      = hotel.images ?? []
+  const utama     = foto[0]
+  const sampingan = foto.slice(1, 3)
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 sm:py-8">
-      {/* Galeri + identitas */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 rounded-2xl overflow-hidden bg-slate-100 aspect-[16/10]">
-          {hotel.images?.[0]
-            ? <img src={hotel.images[0]} alt={hotel.name} className="w-full h-full object-cover" />
-            : <div className="w-full h-full flex items-center justify-center text-5xl text-slate-300">🏨</div>}
+      {/* Galeri + identitas.
+          Hotel mitra sering dikirim tanpa foto, atau hanya satu. Kalau tidak
+          ada foto pendamping, galeri melebar penuh — grid tiga kolom dengan
+          kolom kanan kosong membuat halaman terlihat gagal memuat. */}
+      <div className={`grid grid-cols-1 gap-4 ${sampingan.length ? 'lg:grid-cols-3' : ''}`}>
+        <div className={`rounded-2xl overflow-hidden bg-muted aspect-[16/10] ${sampingan.length ? 'lg:col-span-2' : ''}`}>
+          {utama && !heroError
+            ? <img src={utama} alt={hotel.name} onError={() => setHeroError(true)}
+                   className="w-full h-full object-cover" />
+            : <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-brand/20 to-brand/5">
+                <span className="text-5xl">🏨</span>
+                <span className="text-xs font-medium text-brand-700/60">Foto belum tersedia dari mitra</span>
+              </div>}
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
-          {hotel.images?.slice(1, 3).map((src, i) => (
-            <div key={i} className="rounded-2xl overflow-hidden bg-slate-100 aspect-[16/10]">
-              <img src={src} alt="" className="w-full h-full object-cover" />
-            </div>
-          ))}
-        </div>
+        {sampingan.length > 0 && (
+          <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
+            {sampingan.map((src, i) => (
+              <div key={i} className="rounded-2xl overflow-hidden bg-muted aspect-[16/10]">
+                <img src={src} alt="" className="w-full h-full object-cover"
+                     onError={(e) => { e.currentTarget.parentElement.style.display = 'none' }} />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="mt-5 flex items-start gap-3 flex-wrap">
