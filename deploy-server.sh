@@ -8,6 +8,7 @@
 #
 #   ./deploy-server.sh                 # build + deploy ke kedua folder
 #   ./deploy-server.sh --build-only    # build saja, tidak menyentuh docroot
+#   ./deploy-server.sh --skip-build    # pakai dist yang sudah ada, tanpa build ulang
 #   ./deploy-server.sh --yes           # lewati pertanyaan konfirmasi
 #
 set -euo pipefail
@@ -28,10 +29,12 @@ DOCROOT_OWNER="${DOCROOT_OWNER:-$HOME/extranet-owner}"
 DOCROOTS=("$DOCROOT_PUBLIC" "$DOCROOT_KELOLA" "$DOCROOT_OWNER")
 
 BUILD_ONLY=false
+SKIP_BUILD=false
 ASSUME_YES=false
 for arg in "$@"; do
   case "$arg" in
     --build-only) BUILD_ONLY=true ;;
+    --skip-build) SKIP_BUILD=true ;;
     --yes|-y)     ASSUME_YES=true ;;
     *) echo "Opsi tidak dikenal: $arg"; exit 1 ;;
   esac
@@ -62,6 +65,10 @@ echo "   node $(node -v), npm $(npm -v)"
 
 [ -f package.json ] || fail "package.json tidak ada. Jalankan dari folder sumber frontend."
 
+if [ "$SKIP_BUILD" = true ]; then
+  say "2-3) Dilewati (--skip-build) — memakai dist yang sudah ada"
+else
+
 # ── 2. Dependensi ─────────────────────────────────────────────────────
 say "2) Menyiapkan dependensi"
 if [ -d node_modules ] && [ package-lock.json -ot node_modules ]; then
@@ -86,6 +93,12 @@ if [ "$BUILD_ONLY" = true ]; then
   say "Selesai (--build-only). Tidak ada berkas situs yang diubah."
   exit 0
 fi
+
+fi   # akhir blok build
+
+# Apa pun jalurnya, dist harus ada dan masuk akal sebelum menyentuh situs live.
+[ -s dist/index.html ] || fail "dist/index.html tidak ada. Jalankan tanpa --skip-build."
+
 
 # ── 4. Konfirmasi ─────────────────────────────────────────────────────
 say "4) Tujuan penyalinan"
@@ -115,17 +128,25 @@ done
 # (video hero, logo, favicon): kalau di server ada versi yang diunggah manual
 # dan berbeda isinya, penyalinan akan menimpanya tanpa jejak.
 say "4b) Memeriksa berkas yang akan tertimpa"
+
+# Daftar isi dist disimpan ke berkas sementara, BUKAN process substitution
+# `< <(...)`: shell di sebagian hosting cPanel tidak menyediakan /dev/fd,
+# sehingga bentuk itu gagal dengan "No such file or directory".
+DAFTAR="$(mktemp)"
+trap 'rm -f "$DAFTAR"' EXIT
+(cd dist && find . -type f | sed "s|^\./||") > "$DAFTAR"
+
 BENTROK=""
 while IFS= read -r rel; do
   case "$rel" in assets/*) continue ;; esac      # ber-hash, aman
   for d in "${DOCROOTS[@]}"; do
     [ -f "$d/$rel" ] || continue
     if ! cmp -s "dist/$rel" "$d/$rel"; then
-      BENTROK="$BENTROK$rel  ($d)
+      BENTROK="$BENTROK   $rel  ($d)
 "
     fi
   done
-done < <(cd dist && find . -type f | sed 's|^\./||')
+done < "$DAFTAR"
 
 if [ -n "$BENTROK" ]; then
   printf '[33m   Berkas berikut BERBEDA isinya dan akan tertimpa:[0m
@@ -156,7 +177,7 @@ for d in "${DOCROOTS[@]}"; do
     cmp -s "dist/$rel" "$d/$rel" && continue
     mkdir -p "$BAK/$(dirname "$rel")"
     cp -a "$d/$rel" "$BAK/$rel"
-  done < <(cd dist && find . -type f | sed 's|^\./||')
+  done < "$DAFTAR"
 
   # SENGAJA TANPA --delete. Document root berisi berkas milik pihak lain
   # (.htaccess kustom, unggahan, folder backend); menghapusnya bisa
