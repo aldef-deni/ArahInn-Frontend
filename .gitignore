@@ -1,5 +1,10 @@
 node_modules/
 dist/
+
+# Zip hasil build JANGAN ikut ter-commit. Dulu sempat masuk dan menumpuk jadi
+# 359 berkas / ~2,6 GB di riwayat repo, sehingga `git clone` menarik ratusan MB
+# untuk data yang bisa dibuat ulang kapan saja.
+*.zip
 .env
 .env.local
 *.log
