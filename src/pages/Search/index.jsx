@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { hotelApi } from '@/services/hotelApi'
 import { formatRupiah } from '@/utils'
 import { Search, MapPin, RotateCcw, ChevronDown, SlidersHorizontal, X, ChevronLeft, ChevronRight, Navigation } from 'lucide-react'
@@ -119,7 +119,12 @@ export default function SearchPage() {
   const residency = useResidencyStore((st) => st.residency)
 
   const query = {
-    q         : form.q || undefined,
+    // Dibaca dari URL, yaitu nilai yang sudah DIKIRIM lewat tombol "Cari" —
+    // bukan `form.q` yang berubah tiap ketukan tombol. Sebelumnya tiap huruf
+    // yang diketik mengubah queryKey, sehingga satu kata pencarian bisa
+    // melepaskan belasan permintaan ke backend, dan tiap permintaan itu
+    // memanggil supplier hotel mitra yang kuotanya terbatas.
+    q         : params.get('q') || undefined,
     // Filter ketersediaan (allotment) HANYA jalan setelah klik "Cari" — yang menaruh
     // checkIn/checkOut di URL. Tanpa itu (buka dari menu) → tampilkan semua akomodasi.
     checkIn   : params.get('checkIn') || undefined,
@@ -139,14 +144,29 @@ export default function SearchPage() {
     limit    : 10,
   }
 
-  const { data, isLoading } = useQuery({
+  // `keepPreviousData: true` sudah DIHAPUS di react-query v5 dan diam-diam
+  // diabaikan. Akibatnya tiap perubahan queryKey dianggap query baru dengan
+  // isLoading = true, dan layar penuh loader ikut muncul. Bentuk v5-nya adalah
+  // placeholderData.
+  const { data, isLoading, isFetching } = useQuery({
     queryKey: ['hotels-search', query],
     queryFn : () => hotelApi.search(query).then(r => r.data),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   })
+
+  // Loader layar penuh hanya untuk dua hal: pemuatan pertama, dan pencarian
+  // yang benar-benar diminta lewat tombol "Cari". Menyaring bintang, mengubah
+  // urutan, atau berpindah halaman tetap menampilkan hasil lama sampai yang
+  // baru siap — jauh lebih tenang daripada layar yang berkedip tiap interaksi.
+  const [cariDitekan, setCariDitekan] = useState(false)
+  useEffect(() => {
+    if (!isFetching) setCariDitekan(false)
+  }, [isFetching])
+  const tampilkanLoader = isLoading || (cariDitekan && isFetching)
 
   const handleSearch = (e) => {
     e.preventDefault()
+    setCariDitekan(true)
     setPage(1)
     window.scrollTo({ top: 0, behavior: 'smooth' })
     const p = { checkIn: form.checkIn, checkOut: form.checkOut, guests: form.guests }
@@ -220,7 +240,7 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {isLoading && <LoaderArahInn />}
+      {tampilkanLoader && <LoaderArahInn />}
       <SEO
         title={t('search.seoTitle')}
         description={t('search.seoDescription')}
@@ -327,7 +347,7 @@ export default function SearchPage() {
             <div className="flex items-center justify-between gap-3 mb-3 sm:mb-4">
               <div className="min-w-0">
                 <p className="font-bold text-sm sm:text-base text-slate-900 truncate">
-                  {isLoading ? t('search.searching') : (
+                  {tampilkanLoader ? t('search.searching') : (
                     <>{(form.q || form.category) && (
                       <span className="text-slate-500">
                         {[form.q, form.category].filter(Boolean).join(' · ')}{' '}
@@ -365,7 +385,7 @@ export default function SearchPage() {
 
             {/* Hotel list */}
             <div className="space-y-3 sm:space-y-4">
-              {isLoading ? (
+              {tampilkanLoader ? (
                 Array(4).fill(0).map((_, i) => (
                   <div key={i} className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 overflow-hidden flex flex-col sm:flex-row h-auto sm:h-40">
                     <div className="skeleton w-full h-40 sm:w-44 sm:h-auto shrink-0" />
