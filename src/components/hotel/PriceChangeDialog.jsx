@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { AlertTriangle, ArrowRight, X } from 'lucide-react'
 import { formatRupiah } from '@/services/api'
 
@@ -8,6 +9,7 @@ import { formatRupiah } from '@/services/api'
  * Pemesanan TIDAK boleh lanjut tanpa customer menekan tombol setuju.
  */
 export default function PriceChangeDialog({ change, onAccept, onReject }) {
+  const { t } = useTranslation()
   const previous = Number(change?.previousAmount ?? 0)
   const next     = Number(change?.newAmount ?? 0)
   const diff     = Number(change?.difference ?? next - previous)
@@ -15,12 +17,12 @@ export default function PriceChangeDialog({ change, onAccept, onReject }) {
 
   return (
     <div
-      role="dialog" aria-modal="true" aria-label="Harga berubah"
+      role="dialog" aria-modal="true" aria-label={t(naik ? 'supplier.priceUpTitle' : 'supplier.priceDownTitle')}
       className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in"
     >
       <div className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden">
         <button
-          type="button" onClick={onReject} aria-label="Tutup"
+          type="button" onClick={onReject} aria-label={t('supplier.close')}
           className="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200 transition-colors"
         >
           <X className="w-4 h-4" />
@@ -32,18 +34,17 @@ export default function PriceChangeDialog({ change, onAccept, onReject }) {
           </div>
 
           <h2 className="mt-4 text-lg font-extrabold text-slate-900">
-            Harga kamar {naik ? 'naik' : 'turun'}
+            {t(naik ? 'supplier.priceUpTitle' : 'supplier.priceDownTitle')}
           </h2>
           <p className="mt-1.5 text-sm text-slate-500 leading-relaxed">
-            Harga kamar ini berubah sejak Anda memilihnya. Pemesanan hanya dilanjutkan
-            setelah Anda menyetujui harga terbaru.
+            {t('supplier.priceChangeBody')}
           </p>
 
           <div className="mt-5 rounded-xl border border-slate-200 divide-y divide-slate-100">
-            <Row label="Harga sebelumnya" value={formatRupiah(previous)} muted strike />
-            <Row label="Harga baru" value={formatRupiah(next)} strong />
+            <Row label={t('supplier.previousPrice')} value={formatRupiah(previous)} muted strike />
+            <Row label={t('supplier.newPrice')} value={formatRupiah(next)} strong />
             <Row
-              label={naik ? 'Selisih kenaikan' : 'Selisih penurunan'}
+              label={t(naik ? 'supplier.diffUp' : 'supplier.diffDown')}
               value={`${naik ? '+' : '-'} ${formatRupiah(Math.abs(diff))}`}
               tone={naik ? 'amber' : 'emerald'}
             />
@@ -54,13 +55,13 @@ export default function PriceChangeDialog({ change, onAccept, onReject }) {
               type="button" onClick={onReject}
               className="flex-1 py-3 rounded-xl border border-slate-200 font-bold text-sm text-slate-600 hover:bg-slate-50 transition-colors"
             >
-              Batal, pilih kamar lain
+              {t('supplier.rejectNewPrice')}
             </button>
             <button
               type="button" onClick={onAccept}
               className="flex-1 inline-flex items-center justify-center gap-1.5 py-3 rounded-xl bg-brand text-white font-bold text-sm hover:brightness-110 active:scale-[0.98] transition-all"
             >
-              Setuju harga baru <ArrowRight className="w-4 h-4" />
+              {t('supplier.acceptNewPrice')} <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>

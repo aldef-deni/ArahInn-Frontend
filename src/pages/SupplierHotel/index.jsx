@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import {
   Star, MapPin, Utensils, ShieldCheck, Ban, Info, Loader2, ChevronRight,
   AlertTriangle, CheckCircle2, XCircle, Users,
@@ -27,6 +28,7 @@ import GuestDetailsForm from '@/components/hotel/GuestDetailsForm'
  * RateHawk secara langsung.
  */
 export default function SupplierHotel() {
+  const { t }         = useTranslation()
   const { hid }       = useParams()
   const [params]      = useSearchParams()
   const navigate      = useNavigate()
@@ -83,8 +85,8 @@ export default function SupplierHotel() {
     },
 
     onError: (err) => toast({
-      title      : 'Kamar tidak dapat dipesan',
-      description: err?.response?.data?.message ?? 'Silakan pilih kamar lain.',
+      title      : t('supplier.toastRoomUnavailableTitle'),
+      description: err?.response?.data?.message ?? t('supplier.toastRoomUnavailableBody'),
       variant    : 'destructive',
     }),
   })
@@ -113,15 +115,15 @@ export default function SupplierHotel() {
     onSuccess: (created) => setPartnerOrderId(created.partnerOrderId),
 
     onError: (err) => toast({
-      title      : 'Pemesanan gagal',
-      description: err?.response?.data?.message ?? 'Silakan coba lagi.',
+      title      : t('supplier.toastBookingFailedTitle'),
+      description: err?.response?.data?.message ?? t('supplier.toastBookingFailedBody'),
       variant    : 'destructive',
     }),
   })
 
   const handleSelectRate = (rate) => {
     if (!token) {
-      toast({ title: 'Masuk dulu', description: 'Silakan masuk untuk melanjutkan pemesanan.' })
+      toast({ title: t('supplier.toastLoginTitle'), description: t('supplier.toastLoginBody') })
       navigate('/login')
       return
     }
@@ -132,15 +134,15 @@ export default function SupplierHotel() {
   /* ── Render ───────────────────────────────────────────────────── */
 
   if (!criteria.check_in || !criteria.check_out) {
-    return <Notice icon={Info} title="Pilih tanggal menginap"
-      body="Properti mitra memerlukan tanggal check-in dan check-out untuk menampilkan harga." />
+    return <Notice icon={Info} title={t('supplier.pickDatesTitle')}
+      body={t('supplier.pickDatesBody')} />
   }
 
   if (isLoading) return <SkeletonPage />
 
   if (error || !hotel) {
-    return <Notice icon={XCircle} title="Properti tidak tersedia"
-      body={error?.response?.data?.message ?? 'Properti ini sedang tidak tersedia untuk tanggal tersebut.'} />
+    return <Notice icon={XCircle} title={t('supplier.unavailableTitle')}
+      body={error?.response?.data?.message ?? t('supplier.unavailableBody')} />
   }
 
   // Booking sudah berjalan → tampilkan layar status.
@@ -216,7 +218,7 @@ export default function SupplierHotel() {
           di sinilah pengaruhnya terlihat: mengganti negara mengubah tarif yang
           boleh ditampilkan, bukan sekadar menyaring hasil. */}
       <div className="mt-8 mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <h2 className="text-lg font-extrabold text-slate-900">Pilihan Kamar</h2>
+        <h2 className="text-lg font-extrabold text-slate-900">{t('supplier.roomChoices')}</h2>
         <ResidencySelect />
       </div>
 
@@ -240,8 +242,8 @@ export default function SupplierHotel() {
               onSelect={() => handleSelectRate(rate)}
             />
           )) : (
-            <Notice icon={Info} title="Tidak ada kamar tersedia"
-              body="Coba ubah tanggal atau jumlah tamu." />
+            <Notice icon={Info} title={t('supplier.noRoomsTitle')}
+              body={t('supplier.noRoomsBody')} />
           )}
         </div>
       )}
@@ -261,6 +263,10 @@ export default function SupplierHotel() {
 /* ── Sub-komponen ──────────────────────────────────────────────── */
 
 function RateRow({ rate, busy, disabled, onSelect }) {
+  // Sub-komponen yang memakai t() WAJIB memanggil useTranslation sendiri;
+  // mengandalkan `t` dari komponen induk hanya jalan di dev dan memunculkan
+  // layar putih di produksi.
+  const { t } = useTranslation()
   const cancel = rate.cancellation ?? {}
   const taxesAtHotel = rate.taxesAtHotel ?? []
 
@@ -272,19 +278,19 @@ function RateRow({ rate, busy, disabled, onSelect }) {
 
           <div className="mt-2 flex flex-wrap gap-1.5">
             <Badge tone={rate.meal?.hasBreakfast ? 'green' : 'slate'} icon={Utensils}>
-              {rate.meal?.label ?? 'Tanpa makan'}
+              {rate.meal?.label ?? t('supplier.noMeal')}
             </Badge>
 
             {cancel.refundable ? (
               <Badge tone="green" icon={ShieldCheck}>
-                Gratis dibatalkan s/d {formatDeadline(cancel.freeCancellationBefore)}
+                {t('supplier.freeCancelUntil', { deadline: formatDeadline(cancel.freeCancellationBefore) })}
               </Badge>
             ) : (
-              <Badge tone="slate" icon={Ban}>Tidak dapat dibatalkan</Badge>
+              <Badge tone="slate" icon={Ban}>{t('supplier.nonRefundable')}</Badge>
             )}
 
             {rate.roomsAvailable > 0 && rate.roomsAvailable <= 3 && (
-              <Badge tone="amber" icon={Users}>Tersisa {rate.roomsAvailable} kamar</Badge>
+              <Badge tone="amber" icon={Users}>{t('supplier.roomsLeft', { count: rate.roomsAvailable })}</Badge>
             )}
           </div>
 
@@ -293,8 +299,7 @@ function RateRow({ rate, busy, disabled, onSelect }) {
               perkiraan, karena pembayarannya dilakukan di tempat. */}
           {taxesAtHotel.length > 0 && (
             <p className="mt-2 text-[11px] text-slate-500">
-              Ditambah {taxesAtHotel.map(t => formatTax(t)).join(', ')}
-              {' '}dibayar langsung di properti.
+              {t('supplier.plusTaxes', { list: taxesAtHotel.map(pajak => formatTax(pajak)).join(', ') })}
             </p>
           )}
         </div>
@@ -304,13 +309,15 @@ function RateRow({ rate, busy, disabled, onSelect }) {
             {formatRupiah(rate.sellingAmount)}
           </p>
           <p className="text-[11px] text-slate-400 mt-1">
-            Sudah termasuk pajak &amp; biaya
+            {t('supplier.taxIncluded')}
           </p>
           <button
             type="button" onClick={onSelect} disabled={disabled}
             className="mt-3 w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-brand text-white font-bold text-sm hover:brightness-110 active:scale-[0.98] disabled:opacity-60 transition-all"
           >
-            {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Memeriksa…</> : <>Pilih <ChevronRight className="w-4 h-4" /></>}
+            {busy
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('supplier.checking')}</>
+              : <>{t('supplier.select')} <ChevronRight className="w-4 h-4" /></>}
           </button>
         </div>
       </div>
@@ -319,6 +326,7 @@ function RateRow({ rate, busy, disabled, onSelect }) {
 }
 
 function ImportantInfo({ info, checkInOut }) {
+  const { t } = useTranslation()
   const struct = info?.struct
   const extra  = info?.extraInfo
 
@@ -327,12 +335,12 @@ function ImportantInfo({ info, checkInOut }) {
   return (
     <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
       <h3 className="flex items-center gap-2 font-bold text-amber-900 text-sm">
-        <AlertTriangle className="w-4 h-4" /> Informasi Penting
+        <AlertTriangle className="w-4 h-4" /> {t('supplier.importantInfo')}
       </h3>
 
       {checkInOut && (checkInOut.checkInTime || checkInOut.checkOutTime) && (
         <p className="mt-2 text-xs text-amber-900/80">
-          Check-in {checkInOut.checkInTime ?? '-'} · Check-out {checkInOut.checkOutTime ?? '-'}
+          {t('supplier.checkInOut', { in: checkInOut.checkInTime ?? '-', out: checkInOut.checkOutTime ?? '-' })}
         </p>
       )}
 

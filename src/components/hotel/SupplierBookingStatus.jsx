@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react'
 import { supplierHotelApi } from '@/services/index'
 
@@ -12,6 +13,7 @@ import { supplierHotelApi } from '@/services/index'
  * RateHawk.
  */
 export default function SupplierBookingStatus({ partnerOrderId, hotelName, onDone }) {
+  const { t } = useTranslation()
   const [stopped, setStopped] = useState(false)
 
   const { data } = useQuery({
@@ -40,8 +42,8 @@ export default function SupplierBookingStatus({ partnerOrderId, hotelName, onDon
     return (
       <Panel
         tone="green" icon={CheckCircle2}
-        title="Pemesanan dikonfirmasi"
-        body={`Kamar Anda di ${hotelName} sudah dikonfirmasi. Detail pesanan dikirim ke email Anda.`}
+        title={t('supplier.statusConfirmedTitle')}
+        body={t('supplier.statusConfirmedBody', { hotel: hotelName })}
       />
     )
   }
@@ -50,9 +52,9 @@ export default function SupplierBookingStatus({ partnerOrderId, hotelName, onDon
     return (
       <Panel
         tone="red" icon={XCircle}
-        title="Pemesanan tidak dapat diselesaikan"
+        title={t('supplier.statusFailedTitle')}
         // Pesan dari backend sudah ramah-customer; tidak ada detail teknis supplier.
-        body={data?.message || 'Silakan pilih kamar lain atau hubungi bantuan ArahInn.'}
+        body={data?.message || t('supplier.statusFailedBody')}
       />
     )
   }
@@ -60,12 +62,12 @@ export default function SupplierBookingStatus({ partnerOrderId, hotelName, onDon
   return (
     <Panel
       tone="blue" icon={Loader2} spin
-      title="Pemesanan sedang diproses"
-      body={`Kami sedang mengonfirmasi kamar Anda di ${hotelName}. Mohon jangan tutup halaman ini — status akan diperbarui otomatis.`}
+      title={t('supplier.statusProcessingTitle')}
+      body={t('supplier.statusProcessingBody', { hotel: hotelName })}
       footer={
         <p className="mt-4 inline-flex items-center gap-1.5 text-[11px] text-slate-400">
           <Clock className="w-3.5 h-3.5" />
-          Proses ini biasanya memakan waktu kurang dari satu menit.
+          {t('supplier.statusProcessingHint')}
         </p>
       }
     />

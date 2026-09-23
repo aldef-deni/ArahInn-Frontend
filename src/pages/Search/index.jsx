@@ -426,9 +426,11 @@ export default function SearchPage() {
                 <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mb-3">
                   <div className="flex items-baseline gap-2 min-w-0">
                     <h2 className="font-bold text-sm sm:text-base text-slate-700">
-                      {totalArahInn === 0 ? 'Properti mitra' : 'Properti mitra lainnya'}
+                      {t(totalArahInn === 0 ? 'supplier.partnerProperties' : 'supplier.partnerPropertiesMore')}
                     </h2>
-                    <span className="text-[11px] text-slate-400">{supplierHotels.length} properti</span>
+                    <span className="text-[11px] text-slate-400">
+                      {t('supplier.propertiesCount', { count: supplierHotels.length })}
+                    </span>
                   </div>
                   {/* Sengaja diletakkan di sini, bukan di form pencarian utama:
                       kewarganegaraan hanya memengaruhi tarif properti mitra, dan

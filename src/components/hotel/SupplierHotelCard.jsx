@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import NoHotelImage from '@/components/hotel/NoHotelImage'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { Star, MapPin, Utensils, ShieldCheck, Ban } from 'lucide-react'
 import { formatRupiah } from '@/services/api'
@@ -12,6 +13,7 @@ import { formatRupiah } from '@/services/api'
  * supplier tidak ditampilkan ke customer.
  */
 export default function SupplierHotelCard({ hotel, checkIn, checkOut, guests }) {
+  const { t } = useTranslation()
   const qs = new URLSearchParams({
     ...(checkIn  ? { checkIn }  : {}),
     ...(checkOut ? { checkOut } : {}),
@@ -71,24 +73,26 @@ export default function SupplierHotelCard({ hotel, checkIn, checkOut, guests }) 
           )}
           {hotel.freeCancellation ? (
             <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md">
-              <ShieldCheck className="w-3 h-3" /> Bisa dibatalkan gratis
+              <ShieldCheck className="w-3 h-3" /> {t('supplier.freeCancellation')}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
-              <Ban className="w-3 h-3" /> Tidak dapat dibatalkan
+              <Ban className="w-3 h-3" /> {t('supplier.nonRefundable')}
             </span>
           )}
         </div>
 
         <div className="mt-auto pt-3 flex items-end justify-between gap-2">
           <p className="text-[10px] text-slate-400">
-            {hotel.ratesCount > 1 ? `${hotel.ratesCount} pilihan kamar` : 'Mulai dari'}
+            {hotel.ratesCount > 1
+              ? t('supplier.roomOptions', { count: hotel.ratesCount })
+              : t('supplier.fromPrice')}
           </p>
           <div className="text-right">
             <p className="text-base sm:text-lg font-extrabold text-brand leading-none">
               {formatRupiah(hotel.minPrice)}
             </p>
-            <p className="text-[10px] text-slate-400 mt-0.5">per kamar / malam</p>
+            <p className="text-[10px] text-slate-400 mt-0.5">{t('supplier.perRoomNight')}</p>
           </div>
         </div>
       </div>
