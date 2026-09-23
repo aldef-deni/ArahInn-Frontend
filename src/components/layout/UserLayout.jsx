@@ -61,6 +61,16 @@ export default function UserLayout() {
     queryFn: () => campaignApi.active().then(r => r.data?.data || []),
     staleTime: 5 * 60_000,
   })
+  // Teks deskripsi berbeda per bagian situs. Dihitung sekali supaya susunan
+  // ponsel dan desktop tidak bisa berbeda isinya.
+  const deskripsiFooter = t(
+    interiorFooter ? 'footer.interiorDescription'
+    : pelniFooter  ? 'footer.pelniDescription'
+    : flightFooter ? 'footer.flightDescription'
+    : keretaFooter ? 'footer.keretaDescription'
+    : 'footer.description'
+  )
+
   const openCampaign = () => {
     if (campaigns.length === 1) setSelectedCampaign(campaigns[0])
     else setCampaignListOpen(true)
@@ -485,228 +495,108 @@ export default function UserLayout() {
 
       {/* ── Footer ───────────────────────────────────────── */}
       {!isPengelola && <footer className="bg-white border-t border-slate-200">
-        {/* Main grid */}
-        <div className="container py-12 flex flex-col md:flex-row gap-10">
-          <div className="md:w-[520px] shrink-0">
-            <div className="flex items-center gap-2 mb-4">
-              <img src="/logo-arahin.png" alt="Arahinn" className="h-10 w-auto" />
-            </div>
-            <p className="text-slate-500 text-sm leading-relaxed text-justify whitespace-pre-line">
-              {t(interiorFooter ? 'footer.interiorDescription' : pelniFooter ? 'footer.pelniDescription' : flightFooter ? 'footer.flightDescription' : keretaFooter ? 'footer.keretaDescription' : 'footer.description')}
+
+        {/* ── Susunan PONSEL ──────────────────────────────────────────
+            Di layar sempit, tiga kolom tautan yang ditumpuk membuat footer
+            memanjang berlebihan dan terbaca seperti daftar tanpa akhir.
+            Susunannya dirapatkan jadi pasangan dua kolom, dan Our Partners
+            naik ke atas supaya langsung menyambung deskripsi ArahInn.
+            Isinya sama persis dengan versi desktop — yang berbeda hanya
+            urutan dan pembagian kolomnya, sehingga tidak ada teks yang
+            perlu dirawat dua kali. */}
+        <div className="md:hidden container py-9 space-y-8">
+          <FooterBrand deskripsi={deskripsiFooter} />
+
+          <FooterSection judul={t('footer.ourPartners')}>
+            <FooterPartners flightFooter={flightFooter} pelniFooter={pelniFooter} keretaFooter={keretaFooter} />
+          </FooterSection>
+
+          <div className="grid grid-cols-2 gap-x-5 gap-y-8">
+            <FooterKolom judul={t('footer.services')}>
+              <FooterServices
+                interiorFooter={interiorFooter} pelniFooter={pelniFooter}
+                flightFooter={flightFooter} keretaFooter={keretaFooter}
+                openCampaign={openCampaign}
+              />
+            </FooterKolom>
+            <FooterKolom judul={t('footer.help')}>
+              <FooterHelp keretaFooter={keretaFooter} />
+            </FooterKolom>
+
+            <FooterKolom judul={t('footer.followUs')}>
+              <FooterSocial ringkas />
+            </FooterKolom>
+            <FooterKolom judul={t('footer.contactUs')}>
+              <FooterContact ringkas />
+            </FooterKolom>
+          </div>
+
+          <FooterSection judul={t('footer.paymentTransaction')} tone="amber">
+            <FooterPayment />
+            <p className="text-[11px] text-slate-400 text-center mt-4">
+              {t('footer.paymentSecure')} <span className="font-semibold text-slate-500">DOKU &amp; Midtrans Payment Gateway</span>
             </p>
-          </div>
-          <div className="md:ml-auto flex flex-col sm:flex-row gap-12 lg:gap-16">
-          <div>
-            <h4 className="font-display font-bold text-xl text-brand-800 mb-4">{t('footer.services')}</h4>
-            {interiorFooter ? (
-            <ul className="space-y-2.5 text-sm text-slate-500">
-              <li><Link to="/interior/layanan-kemitraan" className="hover:text-brand transition-colors">{t('footer.interiorPartnership')}</Link></li>
-              <li><Link to="/interior/keunggulan-biaya" className="hover:text-brand transition-colors">{t('footer.interiorAdvantage')}</Link></li>
-              <li><Link to="/interior/pemesanan-teknis" className="hover:text-brand transition-colors">{t('footer.interiorProcess')}</Link></li>
-            </ul>
-            ) : pelniFooter ? (
-            <ul className="space-y-2.5 text-sm text-slate-500">
-              <li><Link to="/kapal-laut/faq" className="hover:text-brand transition-colors">{t('footer.pelniFaq')}</Link></li>
-              <li><Link to="/kapal-laut/seawifi" className="hover:text-brand transition-colors">{t('footer.seawifiFaq')}</Link></li>
-              <li><Link to="/kapal-laut/faq#pembatalan" className="hover:text-brand transition-colors">{t('footer.pelniCancel')}</Link></li>
-              <li><Link to="/kapal-laut/faq#bagasi" className="hover:text-brand transition-colors">{t('footer.pelniBaggage')}</Link></li>
-            </ul>
-            ) : flightFooter ? (
-            <ul className="space-y-2.5 text-sm text-slate-500">
-              <li><Link to="/penerbangan/persyaratan" className="hover:text-brand transition-colors">{t('footer.flightRequirements')}</Link></li>
-              <li><Link to="/penerbangan/kebijakan" className="hover:text-brand transition-colors">{t('footer.flightPolicy')}</Link></li>
-              <li><Link to="/penerbangan/refund" className="hover:text-brand transition-colors">{t('footer.refundPolicy')}</Link></li>
-            </ul>
-            ) : keretaFooter ? (
-            <ul className="space-y-2.5 text-sm text-slate-500">
-              <li><Link to="/tiket/kereta/syarat-ketentuan" className="hover:text-brand transition-colors">{t('footer.terms')}</Link></li>
-            </ul>
-            ) : (
-            <ul className="space-y-2.5 text-sm text-slate-500">
-              <li><Link to="/search" className="hover:text-brand transition-colors">{t('footer.searchHotel')}</Link></li>
-              <li>
-                <button type="button" onClick={openCampaign} className="hover:text-brand transition-colors text-left">
-                  {t('footer.campaign')}
-                </button>
-              </li>
-              <li><Link to="/promo" className="hover:text-brand transition-colors">{t('footer.specialPromo')}</Link></li>
-              <li><Link to="/poin" className="hover:text-brand transition-colors">{t('footer.loyaltyProgram')}</Link></li>
-            </ul>
-            )}
-          </div>
-          <div>
-            <h4 className="font-display font-bold text-xl text-brand-800 mb-4">{t('footer.help')}</h4>
-            <ul className="space-y-2.5 text-sm text-slate-500">
-              <li><Link to="/pusat-bantuan" className="hover:text-brand transition-colors">{t('footer.helpCenter')}</Link></li>
-              {!keretaFooter && <li><Link to="/syarat-ketentuan" className="hover:text-brand transition-colors">{t('footer.terms')}</Link></li>}
-              <li><Link to="/privacy-policy" className="hover:text-brand transition-colors">{t('footer.privacy')}</Link></li>
-              <li><Link to="/hubungi-kami" className="hover:text-brand transition-colors">{t('footer.contactLink')}</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-display font-bold text-xl text-brand-800 mb-4">{t('footer.followUs')}</h4>
-            <ul className="space-y-3">
-              <li>
-                <a href="https://www.facebook.com/profile.php?id=61566216437107&mibextid=ZbWKwL"
-                  target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-sm text-slate-500 hover:text-brand transition-colors group">
-                  <span className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-brand/10 flex items-center justify-center shrink-0 transition-colors">
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                    </svg>
-                  </span>
-                  Facebook
-                </a>
-              </li>
-              <li>
-                <a href="https://www.instagram.com/arah_inn?igsh=MXJ1OGRnMzJuNDJibg=="
-                  target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-sm text-slate-500 hover:text-brand transition-colors group">
-                  <span className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-brand/10 flex items-center justify-center shrink-0 transition-colors">
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                    </svg>
-                  </span>
-                  Instagram
-                </a>
-              </li>
-              <li>
-                <a href="https://www.tiktok.com/@arahinn.com?_r=1&_t=ZS-95yFxJBKchW"
-                  target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-sm text-slate-500 hover:text-brand transition-colors group">
-                  <span className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-brand/10 flex items-center justify-center shrink-0 transition-colors">
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.17 8.17 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/>
-                    </svg>
-                  </span>
-                  TikTok
-                </a>
-              </li>
-            </ul>
-          </div>
+          </FooterSection>
+
+          <div className="flex justify-center">
+            <FooterAppBadges />
           </div>
         </div>
 
-        {/* Partners & Payment Methods */}
-        <div className="border-t border-slate-100 bg-gradient-to-b from-slate-50/50 to-white">
-          <div className="container py-10 grid md:grid-cols-2 gap-10">
-            {/* Our Partners */}
-            <div>
-              <div className="flex items-center gap-2 mb-5">
-                <span className="h-px flex-1 bg-gradient-to-r from-brand/30 to-transparent" />
-                <h4 className="text-xs font-bold text-brand-800 uppercase tracking-[0.18em]">{t('footer.ourPartners')}</h4>
-                <span className="h-px flex-1 bg-gradient-to-l from-brand/30 to-transparent" />
+        {/* ── Susunan DESKTOP (tidak diubah) ──────────────────────── */}
+        <div className="hidden md:block">
+          <div className="container py-12 flex flex-col md:flex-row gap-10">
+            <div className="md:w-[520px] shrink-0">
+              <FooterBrand deskripsi={deskripsiFooter} />
+            </div>
+            <div className="md:ml-auto flex flex-col sm:flex-row gap-12 lg:gap-16">
+              <div>
+                <h4 className="font-display font-bold text-xl text-brand-800 mb-4">{t('footer.services')}</h4>
+                <FooterServices
+                  interiorFooter={interiorFooter} pelniFooter={pelniFooter}
+                  flightFooter={flightFooter} keretaFooter={keretaFooter}
+                  openCampaign={openCampaign}
+                />
               </div>
-              <div className={flightFooter ? 'grid grid-cols-4 gap-2 sm:gap-3 max-w-lg mx-auto' : 'flex flex-wrap items-center justify-center gap-5 sm:gap-6'}>
-                {/* Footer pesawat: 8 maskapai → 4 per baris. Kapal laut: PELNI. Kereta: KAI. Lainnya: mitra default. */}
-                {(flightFooter
-                  ? ['garuda.png','lion.png','batik.png','wings.png','nam.png','citilink.png','sriwijaya.png','airasia.png']
-                  : pelniFooter
-                  ? ['pelni.png']
-                  : keretaFooter
-                  ? ['kai.png']
-                  : ['akr.png','bawono.png','scp.png','dekorasi.png','ruangsinggah.png']).map(f => (
-                  <div
-                    key={f}
-                    className={`relative flex items-center justify-center rounded-xl bg-white border border-slate-200/70 ${flightFooter ? 'w-full h-14 sm:h-20 px-1.5 sm:px-2.5 py-1.5 sm:py-2' : (pelniFooter || keretaFooter) ? 'h-20 px-8 py-2 max-w-[240px]' : 'h-16 w-16 p-1'}`}
-                  >
-                    <img
-                      src={`/our-partners/${f}`}
-                      alt={f.replace(/\.[^.]+$/, '')}
-                      loading="lazy"
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  </div>
-                ))}
+              <div>
+                <h4 className="font-display font-bold text-xl text-brand-800 mb-4">{t('footer.help')}</h4>
+                <FooterHelp keretaFooter={keretaFooter} />
+              </div>
+              <div>
+                <h4 className="font-display font-bold text-xl text-brand-800 mb-4">{t('footer.followUs')}</h4>
+                <FooterSocial />
               </div>
             </div>
+          </div>
 
-            {/* Transaksi Pembayaran */}
-            <div>
-              <div className="flex items-center gap-2 mb-5">
-                <span className="h-px flex-1 bg-gradient-to-r from-amber-400/40 to-transparent" />
-                <h4 className="text-xs font-bold text-brand-800 uppercase tracking-[0.18em]">{t('footer.paymentTransaction')}</h4>
-                <span className="h-px flex-1 bg-gradient-to-l from-amber-400/40 to-transparent" />
+          <div className="border-t border-slate-100 bg-gradient-to-b from-slate-50/50 to-white">
+            <div className="container py-10 grid md:grid-cols-2 gap-10">
+              <FooterSection judul={t('footer.ourPartners')}>
+                <FooterPartners flightFooter={flightFooter} pelniFooter={pelniFooter} keretaFooter={keretaFooter} />
+              </FooterSection>
+              <FooterSection judul={t('footer.paymentTransaction')} tone="amber">
+                <FooterPayment />
+                <p className="text-[11px] text-slate-400 text-center mt-4">
+                  {t('footer.paymentSecure')} <span className="font-semibold text-slate-500">DOKU &amp; Midtrans Payment Gateway</span>
+                </p>
+              </FooterSection>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-100">
+            <div className="container py-5 flex items-center justify-between gap-5">
+              <div className="flex flex-wrap items-center gap-5">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('footer.contactUs')}</p>
+                <FooterContact />
               </div>
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                {[
-                  { src: '/banks/bca.png',     alt: 'BCA' },
-                  { src: '/banks/mandiri.png', alt: 'Mandiri' },
-                  { src: '/banks/bri.svg',     alt: 'BRI' },
-                  { src: '/banks/bank_bsi.png',alt: 'BSI' },
-                ].map(b => (
-                  <div
-                    key={b.alt}
-                    className="group relative h-16 w-24 flex items-center justify-center rounded-xl bg-white border border-slate-200/70 px-3 transition-all duration-300 ease-out hover:border-amber-400/50 hover:shadow-lg hover:shadow-amber-400/10 hover:-translate-y-0.5"
-                  >
-                    <img
-                      src={b.src}
-                      alt={b.alt}
-                      loading="lazy"
-                      className="max-h-9 max-w-full object-contain transition-transform duration-300 ease-out group-hover:scale-110"
-                    />
-                  </div>
-                ))}
-              </div>
-              <p className="text-[11px] text-slate-400 text-center mt-4">
-                {t('footer.paymentSecure')} <span className="font-semibold text-slate-500">DOKU &amp; Midtrans Payment Gateway</span>
-              </p>
+              <FooterAppBadges />
             </div>
           </div>
         </div>
 
-        {/* Contact & App Store bar */}
-        <div className="border-t border-slate-100">
-          <div className="container py-5 flex flex-col sm:flex-row items-center justify-between gap-5">
-
-            {/* Kontak CS */}
-            <div className="flex flex-wrap items-center gap-5">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('footer.contactUs')}</p>
-              <a href="tel:+6285188136009"
-                className="flex items-center gap-2 text-sm text-slate-600 hover:text-brand transition-colors">
-                <span className="w-7 h-7 rounded-lg bg-brand/10 flex items-center justify-center shrink-0">
-                  <Phone className="w-3.5 h-3.5 text-brand" />
-                </span>
-                +62851-8813-6009
-              </a>
-              <a href="mailto:help@arahinn.com"
-                className="flex items-center gap-2 text-sm text-slate-600 hover:text-brand transition-colors">
-                <span className="w-7 h-7 rounded-lg bg-brand/10 flex items-center justify-center shrink-0">
-                  <Mail className="w-3.5 h-3.5 text-brand" />
-                </span>
-                help@arahinn.com
-              </a>
-            </div>
-
-            {/* App Store Badges */}
-            <div className="flex items-center gap-3">
-              <a href="https://apps.apple.com/us/app/arahinn/id6773062198" target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-2.5 px-4 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors shadow-sm">
-                <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.42c1.42.07 2.41.74 3.24.8 1.23-.24 2.41-.94 3.72-.84 1.58.13 2.77.71 3.56 1.86-3.25 1.94-2.49 5.89.48 7.03-.57 1.44-1.31 2.88-3 3.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-                </svg>
-                <div className="text-left leading-tight">
-                  <p className="text-[9px] text-slate-300">Download on the</p>
-                  <p className="text-xs font-semibold">App Store</p>
-                </div>
-              </a>
-              <a href="https://play.google.com/store/apps/details?id=com.arahinn.mobile&hl=id" target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-2.5 px-4 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors shadow-sm">
-                <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3.18 23.76c.3.17.64.24.99.2l11.94-11.95L12.38 9.3 3.18 23.76zm16.49-10.69L16.8 11.4l-3.28 3.28 3.28 3.28 2.89-1.69c.82-.48.82-1.72-.02-2.2zM3.03.25C2.7.62 2.5 1.16 2.5 1.85v20.29c0 .69.2 1.23.53 1.6l.07.07L14.05 12.8v-.27L3.1.18l-.07.07zm9.35 9.05l2.72 2.71-2.72 2.72L9.66 12.3l2.72-2.99z"/>
-                </svg>
-                <div className="text-left leading-tight">
-                  <p className="text-[9px] text-slate-300">Get it on</p>
-                  <p className="text-xs font-semibold">Google Play</p>
-                </div>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* Copyright */}
+        {/* ── Copyright — sama untuk keduanya, selalu di tengah ──── */}
         <div className="border-t border-slate-200">
-          <div className="container py-4 flex justify-center items-center text-xs text-slate-400">
+          <div className="container py-4 text-center text-xs text-slate-400">
             <p>© 2026 PT. Sukses Arahinn Hospitality. {t('footer.copyright')}</p>
           </div>
         </div>
@@ -765,5 +655,253 @@ export default function UserLayout() {
       {selectedCampaign && <CampaignDetailModal campaign={selectedCampaign} onClose={() => setSelectedCampaign(null)} />}
     </div>
     </TravelFooterContext.Provider>
+  )
+}
+
+/* ── Bagian-bagian footer ────────────────────────────────────────────
+   Isinya didefinisikan SEKALI di sini lalu disusun dua kali di footer:
+   satu susunan untuk ponsel, satu untuk desktop. Cara ini dipilih supaya
+   memindahkan blok antar-bagian di ponsel — Our Partners naik ke atas,
+   Follow Us berpasangan dengan Kontak — tidak memaksa teks yang sama
+   dirawat di dua tempat.
+
+   Tiap bagian yang memakai t() memanggil useTranslation sendiri; meminjam
+   `t` dari komponen induk lolos di dev lalu memunculkan layar putih di
+   produksi. */
+
+function FooterBrand({ deskripsi }) {
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-4">
+        <img src="/logo-arahin.png" alt="Arahinn" className="h-10 w-auto" />
+      </div>
+      <p className="text-slate-500 text-sm leading-relaxed text-justify whitespace-pre-line">
+        {deskripsi}
+      </p>
+    </div>
+  )
+}
+
+/** Judul bergaris di kiri-kanan, untuk blok selebar penuh (mitra, pembayaran). */
+function FooterSection({ judul, tone, children }) {
+  const garis = tone === 'amber'
+    ? ['from-amber-400/40', 'from-amber-400/40']
+    : ['from-brand/30', 'from-brand/30']
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-5">
+        <span className={`h-px flex-1 bg-gradient-to-r ${garis[0]} to-transparent`} />
+        <h4 className="text-xs font-bold text-brand-800 uppercase tracking-[0.18em] text-center">{judul}</h4>
+        <span className={`h-px flex-1 bg-gradient-to-l ${garis[1]} to-transparent`} />
+      </div>
+      {children}
+    </div>
+  )
+}
+
+/** Judul kolom untuk susunan dua kolom di ponsel. */
+function FooterKolom({ judul, children }) {
+  return (
+    <div className="min-w-0">
+      <h4 className="font-display font-bold text-base text-brand-800 mb-3">{judul}</h4>
+      {children}
+    </div>
+  )
+}
+
+function FooterServices({ interiorFooter, pelniFooter, flightFooter, keretaFooter, openCampaign }) {
+  const { t } = useTranslation()
+  const kelas = 'hover:text-brand transition-colors'
+
+  if (interiorFooter) return (
+    <ul className="space-y-2.5 text-sm text-slate-500">
+      <li><Link to="/interior/layanan-kemitraan" className={kelas}>{t('footer.interiorPartnership')}</Link></li>
+      <li><Link to="/interior/keunggulan-biaya" className={kelas}>{t('footer.interiorAdvantage')}</Link></li>
+      <li><Link to="/interior/pemesanan-teknis" className={kelas}>{t('footer.interiorProcess')}</Link></li>
+    </ul>
+  )
+
+  if (pelniFooter) return (
+    <ul className="space-y-2.5 text-sm text-slate-500">
+      <li><Link to="/kapal-laut/faq" className={kelas}>{t('footer.pelniFaq')}</Link></li>
+      <li><Link to="/kapal-laut/seawifi" className={kelas}>{t('footer.seawifiFaq')}</Link></li>
+      <li><Link to="/kapal-laut/faq#pembatalan" className={kelas}>{t('footer.pelniCancel')}</Link></li>
+      <li><Link to="/kapal-laut/faq#bagasi" className={kelas}>{t('footer.pelniBaggage')}</Link></li>
+    </ul>
+  )
+
+  if (flightFooter) return (
+    <ul className="space-y-2.5 text-sm text-slate-500">
+      <li><Link to="/penerbangan/persyaratan" className={kelas}>{t('footer.flightRequirements')}</Link></li>
+      <li><Link to="/penerbangan/kebijakan" className={kelas}>{t('footer.flightPolicy')}</Link></li>
+      <li><Link to="/penerbangan/refund" className={kelas}>{t('footer.refundPolicy')}</Link></li>
+    </ul>
+  )
+
+  if (keretaFooter) return (
+    <ul className="space-y-2.5 text-sm text-slate-500">
+      <li><Link to="/tiket/kereta/syarat-ketentuan" className={kelas}>{t('footer.terms')}</Link></li>
+    </ul>
+  )
+
+  return (
+    <ul className="space-y-2.5 text-sm text-slate-500">
+      <li><Link to="/search" className={kelas}>{t('footer.searchHotel')}</Link></li>
+      <li>
+        <button type="button" onClick={openCampaign} className={`${kelas} text-left`}>
+          {t('footer.campaign')}
+        </button>
+      </li>
+      <li><Link to="/promo" className={kelas}>{t('footer.specialPromo')}</Link></li>
+      <li><Link to="/poin" className={kelas}>{t('footer.loyaltyProgram')}</Link></li>
+    </ul>
+  )
+}
+
+function FooterHelp({ keretaFooter }) {
+  const { t } = useTranslation()
+  const kelas = 'hover:text-brand transition-colors'
+  return (
+    <ul className="space-y-2.5 text-sm text-slate-500">
+      <li><Link to="/pusat-bantuan" className={kelas}>{t('footer.helpCenter')}</Link></li>
+      {!keretaFooter && <li><Link to="/syarat-ketentuan" className={kelas}>{t('footer.terms')}</Link></li>}
+      <li><Link to="/privacy-policy" className={kelas}>{t('footer.privacy')}</Link></li>
+      <li><Link to="/hubungi-kami" className={kelas}>{t('footer.contactLink')}</Link></li>
+    </ul>
+  )
+}
+
+const SOSMED = [
+  {
+    nama: 'Facebook',
+    url : 'https://www.facebook.com/profile.php?id=61566216437107&mibextid=ZbWKwL',
+    path: 'M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z',
+  },
+  {
+    nama: 'Instagram',
+    url : 'https://www.instagram.com/arah_inn?igsh=MXJ1OGRnMzJuNDJibg==',
+    path: 'M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z',
+  },
+  {
+    nama: 'TikTok',
+    url : 'https://www.tiktok.com/@arahinn.com?_r=1&_t=ZS-95yFxJBKchW',
+    path: 'M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.17 8.17 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z',
+  },
+]
+
+/** `ringkas` memperkecil kotak ikon agar muat di kolom sempit ponsel. */
+function FooterSocial({ ringkas }) {
+  const kotak = ringkas ? 'w-7 h-7' : 'w-8 h-8'
+  return (
+    <ul className={ringkas ? 'space-y-2.5' : 'space-y-3'}>
+      {SOSMED.map(s => (
+        <li key={s.nama}>
+          <a href={s.url} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2.5 text-sm text-slate-500 hover:text-brand transition-colors group">
+            <span className={`${kotak} rounded-lg bg-slate-100 group-hover:bg-brand/10 flex items-center justify-center shrink-0 transition-colors`}>
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d={s.path} /></svg>
+            </span>
+            {s.nama}
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/** `ringkas` menumpuk telepon & email agar tidak terpotong di kolom ponsel. */
+function FooterContact({ ringkas }) {
+  const isi = [
+    { href: 'tel:+6285188136009',    Icon: Phone, teks: '+62851-8813-6009' },
+    { href: 'mailto:help@arahinn.com', Icon: Mail,  teks: 'help@arahinn.com' },
+  ]
+  return (
+    <div className={ringkas ? 'space-y-2.5' : 'flex flex-wrap items-center gap-5'}>
+      {isi.map(({ href, Icon, teks }) => (
+        <a key={href} href={href}
+          className="flex items-center gap-2.5 text-sm text-slate-600 hover:text-brand transition-colors min-w-0">
+          <span className={`${ringkas ? 'w-7 h-7' : 'w-7 h-7'} rounded-lg bg-brand/10 flex items-center justify-center shrink-0`}>
+            <Icon className="w-3.5 h-3.5 text-brand" />
+          </span>
+          <span className="truncate">{teks}</span>
+        </a>
+      ))}
+    </div>
+  )
+}
+
+function FooterPartners({ flightFooter, pelniFooter, keretaFooter }) {
+  const berkas = flightFooter
+    ? ['garuda.png','lion.png','batik.png','wings.png','nam.png','citilink.png','sriwijaya.png','airasia.png']
+    : pelniFooter  ? ['pelni.png']
+    : keretaFooter ? ['kai.png']
+    : ['akr.png','bawono.png','scp.png','dekorasi.png','ruangsinggah.png']
+
+  const wadah = flightFooter
+    ? 'grid grid-cols-4 gap-2 sm:gap-3 max-w-lg mx-auto'
+    : 'flex flex-wrap items-center justify-center gap-4 sm:gap-6'
+
+  const kotak = flightFooter
+    ? 'w-full h-14 sm:h-20 px-1.5 sm:px-2.5 py-1.5 sm:py-2'
+    : (pelniFooter || keretaFooter) ? 'h-20 px-8 py-2 max-w-[240px]' : 'h-16 w-16 p-1'
+
+  return (
+    <div className={wadah}>
+      {berkas.map(f => (
+        <div key={f} className={`relative flex items-center justify-center rounded-xl bg-white border border-slate-200/70 ${kotak}`}>
+          <img src={`/our-partners/${f}`} alt={f.replace(/\.[^.]+$/, '')} loading="lazy"
+            className="max-h-full max-w-full object-contain" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function FooterPayment() {
+  const bank = [
+    { src: '/banks/bca.png',      alt: 'BCA' },
+    { src: '/banks/mandiri.png',  alt: 'Mandiri' },
+    { src: '/banks/bri.svg',      alt: 'BRI' },
+    { src: '/banks/bank_bsi.png', alt: 'BSI' },
+  ]
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-3">
+      {bank.map(b => (
+        <div key={b.alt}
+          className="group relative h-14 w-20 sm:h-16 sm:w-24 flex items-center justify-center rounded-xl bg-white border border-slate-200/70 px-3 transition-all duration-300 ease-out hover:border-amber-400/50 hover:shadow-lg hover:shadow-amber-400/10 hover:-translate-y-0.5">
+          <img src={b.src} alt={b.alt} loading="lazy"
+            className="max-h-8 sm:max-h-9 max-w-full object-contain transition-transform duration-300 ease-out group-hover:scale-110" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function FooterAppBadges() {
+  const toko = [
+    {
+      url  : 'https://apps.apple.com/us/app/arahinn/id6773062198',
+      atas : 'Download on the', bawah: 'App Store',
+      path : 'M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.42c1.42.07 2.41.74 3.24.8 1.23-.24 2.41-.94 3.72-.84 1.58.13 2.77.71 3.56 1.86-3.25 1.94-2.49 5.89.48 7.03-.57 1.44-1.31 2.88-3 3.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z',
+    },
+    {
+      url  : 'https://play.google.com/store/apps/details?id=com.arahinn.mobile&hl=id',
+      atas : 'Get it on', bawah: 'Google Play',
+      path : 'M3.18 23.76c.3.17.64.24.99.2l11.94-11.95L12.38 9.3 3.18 23.76zm16.49-10.69L16.8 11.4l-3.28 3.28 3.28 3.28 2.89-1.69c.82-.48.82-1.72-.02-2.2zM3.03.25C2.7.62 2.5 1.16 2.5 1.85v20.29c0 .69.2 1.23.53 1.6l.07.07L14.05 12.8v-.27L3.1.18l-.07.07zm9.35 9.05l2.72 2.71-2.72 2.72L9.66 12.3l2.72-2.99z',
+    },
+  ]
+  return (
+    <div className="flex items-center gap-3">
+      {toko.map(s => (
+        <a key={s.bawah} href={s.url} target="_blank" rel="noopener noreferrer"
+          className="flex items-center gap-2.5 px-4 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors shadow-sm">
+          <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d={s.path} /></svg>
+          <div className="text-left leading-tight">
+            <p className="text-[9px] text-slate-300">{s.atas}</p>
+            <p className="text-xs font-semibold">{s.bawah}</p>
+          </div>
+        </a>
+      ))}
+    </div>
   )
 }
