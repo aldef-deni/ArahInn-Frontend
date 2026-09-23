@@ -184,12 +184,21 @@ for d in "${DOCROOTS[@]}"; do
   # mematikan situs. Aset lama bernama hash — menumpuk sedikit, tidak apa-apa.
   salin dist "$d"
 
-  echo "   selesai: $d  (cadangan: index.html.bak-$STAMP)"
+  if [ -d "$BAK" ]; then
+    echo "   selesai: $d  (cadangan: .deploy-backup-$STAMP/)"
+  else
+    echo "   selesai: $d  (tidak ada yang perlu dicadangkan)"
+  fi
 done
 
 say "Selesai."
 echo "Buka arahinn.com, kelola.arahinn.com, dan my.arahinn.com,"
 echo "lalu hard refresh (Ctrl+Shift+R) — index.html sering ter-cache browser."
 echo
-echo "Bila ada yang rusak, kembalikan index.html:"
-echo "  cp \"$DOCROOT_PUBLIC/index.html.bak-$STAMP\" \"$DOCROOT_PUBLIC/index.html\""
+if [ -d "$DOCROOT_PUBLIC/.deploy-backup-$STAMP" ]; then
+  echo "Bila ada yang rusak, kembalikan berkas yang tertimpa:"
+  echo "  cp -a \"$DOCROOT_PUBLIC/.deploy-backup-$STAMP/.\" \"$DOCROOT_PUBLIC/\""
+else
+  echo "Tidak ada berkas lama yang tertimpa, jadi tidak ada yang perlu dikembalikan."
+  echo "Untuk mundur ke versi sebelumnya: git checkout <commit> lalu ./deploy-server.sh"
+fi
