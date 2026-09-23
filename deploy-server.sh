@@ -40,6 +40,17 @@ done
 say()  { printf '\n\033[1m%s\033[0m\n' "$*"; }
 fail() { printf '\033[31m%s\033[0m\n' "$*" >&2; exit 1; }
 
+# rsync tidak selalu ada di hosting cPanel. `cp -a dist/. tujuan/` menyalin isi
+# folder termasuk berkas berawalan titik (.htaccess), menimpa yang sudah ada,
+# dan TIDAK menghapus apa pun - persis perilaku rsync tanpa --delete.
+if command -v rsync >/dev/null 2>&1; then
+  COPY_TOOL="rsync"
+  salin() { rsync -a "$1/" "$2/"; }
+else
+  COPY_TOOL="cp"
+  salin() { cp -a "$1/." "$2/"; }
+fi
+
 # ── 1. Periksa lingkungan ─────────────────────────────────────────────
 say "1) Memeriksa lingkungan"
 command -v node >/dev/null || fail "node tidak ditemukan. Aktifkan Node di cPanel (Setup Node.js App)."
@@ -103,7 +114,7 @@ if [ "$ASSUME_YES" != true ]; then
 fi
 
 # ── 5. Salin ──────────────────────────────────────────────────────────
-say "5) Menyalin"
+say "5) Menyalin (memakai $COPY_TOOL)"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 
 for d in "${DOCROOTS[@]}"; do
@@ -114,7 +125,7 @@ for d in "${DOCROOTS[@]}"; do
   # SENGAJA TANPA --delete. Document root berisi berkas milik pihak lain
   # (.htaccess kustom, unggahan, folder backend); menghapusnya bisa
   # mematikan situs. Aset lama bernama hash — menumpuk sedikit, tidak apa-apa.
-  rsync -a dist/ "$d/"
+  salin dist "$d"
 
   echo "   selesai: $d  (cadangan: index.html.bak-$STAMP)"
 done
