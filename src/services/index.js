@@ -297,6 +297,12 @@ export const popupApi = {
   remove : (id)    => api.delete(`/admin/popups/${id}`),
 }
 
+// Log kunjungan detail properti jual-beli (menu Jual-Beli Properti → View)
+export const propertyViewApi = {
+  list       : (p) => api.get('/admin/property-views', { params: p }),
+  properties : ()  => api.get('/admin/property-views/properties'),
+}
+
 export const ownerApi = {
   dashboard: (p) => api.get('/owner/dashboard', { params: p }),
 }

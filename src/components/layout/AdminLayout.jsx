@@ -9,7 +9,7 @@ import {
   Users, UserCog, Tag, LogOut, Menu, X, User,
   FileText, CreditCard, Building2, Megaphone, ChevronDown, MessageSquare,
   CalendarDays, Sofa, Headphones, Shield, Receipt, Settings, Ticket, TrendingUp, Star, Heart, Coins,
-  MonitorSmartphone, Plug,
+  MonitorSmartphone, Plug, Eye,
 } from 'lucide-react'
 import { cn, roleLabel, getImageUrl } from '@/utils'
 import NotificationBell from '@/components/ui/NotificationBell'
@@ -33,7 +33,16 @@ const NAV_ADMIN = [
   // di grup "Promo & Campaign" sehingga praktis tidak bisa ditemukan.
   { to: '/admin/ratehawk',          label: 'Hotel Mitra (RateHawk)', icon: Plug },
   { to: '/admin/orders',            label: 'Pesanan',               icon: ShoppingBag },
-  { to: '/admin/property-approval', label: 'Jual - Beli Properti',  icon: Building2 },
+  {
+    type: 'group',
+    key: 'properti',
+    label: 'Jual - Beli Properti',
+    icon: Building2,
+    children: [
+      { to: '/admin/property-approval', label: 'Daftar Properti', icon: Building2 },
+      { to: '/admin/property-views',    label: 'View',            icon: Eye },
+    ],
+  },
   { to: '/admin/interior',          label: 'Design Interior',       icon: Sofa },
   { to: '/admin/harga',             label: 'Harga & Ketersediaan',  icon: CalendarDays },
   { to: '/admin/ppob',              label: 'PPOB Monitoring',       icon: Receipt },
@@ -82,7 +91,16 @@ const NAV_MARKET_MANAGER = [
       { to: '/admin/campaigns', label: 'Campaign', icon: Megaphone },
     ],
   },
-  { to: '/admin/property-approval', label: 'Jual - Beli Properti', icon: Building2 },
+  {
+    type: 'group',
+    key: 'properti',
+    label: 'Jual - Beli Properti',
+    icon: Building2,
+    children: [
+      { to: '/admin/property-approval', label: 'Daftar Properti', icon: Building2 },
+      { to: '/admin/property-views',    label: 'View',            icon: Eye },
+    ],
+  },
 ]
 
 const NAV_FINANCE = [
@@ -135,6 +153,7 @@ export default function AdminLayout() {
   // Open state untuk masing-masing group dropdown (key-based)
   const groupRoutes = {
     promo: ['/admin/promos', '/admin/campaigns'],
+    properti: ['/admin/property-approval', '/admin/property-views'],
   }
   const [openGroups, setOpenGroups] = useState(() => {
     const init = {}

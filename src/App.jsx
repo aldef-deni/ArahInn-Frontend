@@ -107,6 +107,7 @@ import AdminPopups from '@/pages/admin/Popups'
 import AdminRateHawk from '@/pages/admin/RateHawk'
 import SupplierHotel from '@/pages/SupplierHotel'
 import AdminPropertyApproval from '@/pages/admin/PropertyApproval'
+import AdminPropertyViews from '@/pages/admin/PropertyViews'
 import AdminReviews from '@/pages/admin/Reviews'
 
 // Admin Pricing
@@ -409,6 +410,7 @@ export default function App() {
           <Route path="owners" element={<BlockRoles roles={['design_interior']}><AdminOwners /></BlockRoles>} />
           <Route path="mm-handler" element={<BlockRoles roles={['design_interior']}><AdminMMHandler /></BlockRoles>} />
           <Route path="property-approval" element={<BlockRoles roles={['design_interior']}><AdminPropertyApproval /></BlockRoles>} />
+          <Route path="property-views" element={<BlockRoles roles={['design_interior', 'finance']}><AdminPropertyViews /></BlockRoles>} />
           <Route path="reviews" element={<BlockRoles roles={['design_interior']}><AdminReviews /></BlockRoles>} />
           <Route path="interior" element={<AdminInterior />} />
           <Route path="ppob" element={<AdminPpob />} />
