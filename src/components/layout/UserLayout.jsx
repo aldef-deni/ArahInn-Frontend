@@ -35,7 +35,11 @@ export default function UserLayout() {
   const { toast } = useToast()
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropOpen, setDropOpen] = useState(false)
-  const [akomodasiOpen, setAkomodasiOpen] = useState(false) // accordion "Akomodasi" di drawer mobile
+  // Accordion di drawer mobile, dikunci per menu. Dulu satu boolean khusus
+  // "Akomodasi"; begitu ada menu bertingkat kedua, keduanya akan membuka dan
+  // menutup bersamaan.
+  const [accordionOpen, setAccordionOpen] = useState({})
+  const toggleAccordion = (key) => setAccordionOpen(o => ({ ...o, [key]: !o[key] }))
   // Moda transaksi travel aktif (di-set halaman pembayaran) → footer khusus pesawat
   const [travelModa, setTravelModa] = useState(null)
   // Footer khusus penerbangan: halaman pesawat (search/pesan), pembayaran tiket pesawat,
@@ -104,17 +108,26 @@ export default function UserLayout() {
     { to: '/properti', label: t('nav.propertiJualBeli'), icon: Building2 },
     { to: '/interior', label: t('nav.jasaDesign'),       icon: Sofa },
   ]
-  const navLinks = [
-    { to: '/', label: t('nav.home'), icon: Hotel },
-    { label: t('nav.akomodasi'), icon: Building2, children: akomodasiChildren },
+  // Tiga moda tiket dikelompokkan jadi satu menu supaya bar navigasi tidak
+  // penuh dan masih muat saat moda baru ditambahkan.
+  const travelChildren = [
     { to: '/tiket/pesawat', label: t('nav.tiketPesawat'), icon: Plane },
     { to: '/tiket/kereta',  label: t('nav.tiketKAI'),     icon: TrainFront },
     { to: '/tiket/pelni',   label: t('nav.tiketPelni'),   icon: Ship },
+  ]
+  const navLinks = [
+    { to: '/', label: t('nav.home'), icon: Hotel },
+    { key: 'akomodasi', label: t('nav.akomodasi'),   icon: Building2, children: akomodasiChildren },
+    { key: 'travel',    label: t('nav.tiketTravel'), icon: Plane,     children: travelChildren },
     { to: '/topup-tagihan', label: t('nav.topUpTagihan'), icon: Receipt },
     // CTA marketplace (situs terpisah) — dibuka di tab baru
     { href: 'https://market.arahinn.com/', label: 'Marketplace', icon: ShoppingCart, sparkle: true, external: true },
   ]
-  const akomodasiActive = akomodasiChildren.some(c => location.pathname === c.to)
+  // Sub-menu tiket punya halaman turunan (mis. /tiket/kereta/pesan), jadi
+  // pencocokan harus berbasis awalan — kalau persis, menu induk tampak tidak
+  // aktif justru saat pengguna sedang berada di dalamnya.
+  const menuAktif = (item) =>
+    (item.children ?? []).some(c => location.pathname === c.to || location.pathname.startsWith(c.to + '/'))
 
   return (
     <TravelFooterContext.Provider value={setTravelModa}>
@@ -148,7 +161,7 @@ export default function UserLayout() {
                     <div key={item.label} className="relative group">
                       <button className={cn(
                         'px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1',
-                        akomodasiActive
+                        menuAktif(item)
                           ? 'bg-brand/10 text-brand-700'
                           : 'text-muted-foreground group-hover:text-foreground group-hover:bg-muted'
                       )}>
@@ -310,15 +323,15 @@ export default function UserLayout() {
                 if (item.children) {
                   return (
                     <div key={item.label}>
-                      <button onClick={() => setAkomodasiOpen(o => !o)}
+                      <button onClick={() => toggleAccordion(item.key)}
                         className={cn(
                           'w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors',
-                          akomodasiActive ? 'bg-brand/10 text-brand-700' : 'text-foreground hover:bg-muted'
+                          menuAktif(item) ? 'bg-brand/10 text-brand-700' : 'text-foreground hover:bg-muted'
                         )}>
                         <span className="flex items-center gap-3"><Icon className="w-4 h-4 shrink-0" />{item.label}</span>
-                        <ChevronDown className={cn('w-4 h-4 transition-transform', akomodasiOpen && 'rotate-180')} />
+                        <ChevronDown className={cn('w-4 h-4 transition-transform', accordionOpen[item.key] && 'rotate-180')} />
                       </button>
-                      {akomodasiOpen && (
+                      {accordionOpen[item.key] && (
                         <div className="ml-5 pl-3 border-l border-muted space-y-0.5 mt-0.5">
                           {item.children.map(({ to, label, icon: CIcon }) => (
                             <Link key={to} to={to} onClick={() => setMenuOpen(false)}

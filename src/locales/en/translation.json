@@ -20,7 +20,8 @@
     "tiketKAI": "KAI Tickets",
     "tiketPelni": "PELNI Tickets",
     "topUpTagihan": "Top Up & Bills",
-    "promo": "Promo"
+    "promo": "Promo",
+    "tiketTravel": "Travel Tickets"
   },
   "services": {
     "sectionTitle": "Choose a Service",
