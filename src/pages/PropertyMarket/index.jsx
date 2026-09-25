@@ -413,7 +413,7 @@ export default function PropertyMarket() {
       />
 
       {/* Header banner Properti Jual-Beli */}
-      <img src={bannerProperti} alt="Properti Jual-Beli ArahInn" width="1774" height="887"
+      <img src={bannerProperti} alt="Properti Jual-Beli ArahInn" width="1600" height="881"
         className="block w-full h-auto" loading="eager" fetchpriority="high" />
 
       {/* ── Search bar top ── */}
