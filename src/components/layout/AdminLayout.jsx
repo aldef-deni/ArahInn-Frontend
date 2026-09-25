@@ -9,7 +9,7 @@ import {
   Users, UserCog, Tag, LogOut, Menu, X, User,
   FileText, CreditCard, Building2, Megaphone, ChevronDown, MessageSquare,
   CalendarDays, Sofa, Headphones, Shield, Receipt, Settings, Ticket, TrendingUp, Star, Heart, Coins,
-  MonitorSmartphone, Plug, Eye,
+  MonitorSmartphone, Plug, Eye, Handshake,
 } from 'lucide-react'
 import { cn, roleLabel, getImageUrl } from '@/utils'
 import NotificationBell from '@/components/ui/NotificationBell'
@@ -41,6 +41,7 @@ const NAV_ADMIN = [
     children: [
       { to: '/admin/property-approval', label: 'Daftar Properti', icon: Building2 },
       { to: '/admin/property-views',    label: 'View',            icon: Eye },
+      { to: '/admin/property-purchases', label: 'Pembelian',      icon: Handshake },
     ],
   },
   { to: '/admin/interior',          label: 'Design Interior',       icon: Sofa },
@@ -99,6 +100,7 @@ const NAV_MARKET_MANAGER = [
     children: [
       { to: '/admin/property-approval', label: 'Daftar Properti', icon: Building2 },
       { to: '/admin/property-views',    label: 'View',            icon: Eye },
+      { to: '/admin/property-purchases', label: 'Pembelian',      icon: Handshake },
     ],
   },
 ]
@@ -153,7 +155,7 @@ export default function AdminLayout() {
   // Open state untuk masing-masing group dropdown (key-based)
   const groupRoutes = {
     promo: ['/admin/promos', '/admin/campaigns'],
-    properti: ['/admin/property-approval', '/admin/property-views'],
+    properti: ['/admin/property-approval', '/admin/property-views', '/admin/property-purchases'],
   }
   const [openGroups, setOpenGroups] = useState(() => {
     const init = {}

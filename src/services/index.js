@@ -303,6 +303,13 @@ export const propertyViewApi = {
   properties : ()  => api.get('/admin/property-views/properties'),
 }
 
+/** Pencatatan pembelian properti jual-beli (superadmin) + poin loyalitas 1%. */
+export const propertyPurchaseApi = {
+  list       : (p) => api.get('/admin/property-purchases', { params: p }),
+  properties : ()  => api.get('/admin/property-purchases/properties'),
+  create     : (d) => api.post('/admin/property-purchases', d),
+}
+
 export const ownerApi = {
   dashboard: (p) => api.get('/owner/dashboard', { params: p }),
 }

@@ -23,6 +23,13 @@ const FIELDS = [
   { key: 'multSilver',       label: 'Multiplier Silver',       hint: 'Pengali poin (×)' },
   { key: 'multGold',         label: 'Multiplier Gold',         hint: 'Pengali poin (×)' },
   { key: 'multPlatinum',     label: 'Multiplier Platinum',     hint: 'Pengali poin (×)' },
+
+  // Pembelian properti jual-beli. Pengali tier TIDAK berlaku di sini: poin
+  // bernilai Rp1, jadi properti Rp700 juta sudah berarti 7 juta poin.
+  { key: 'propertyPercent',   label: 'Poin pembelian properti (%)', min: 0, step: 0.1,
+    hint: 'Persen RATA dari nilai transaksi, tanpa pengali tier. 0 = tidak memberi poin' },
+  { key: 'propertyMaxPoints', label: 'Batas poin per properti',     min: 0,
+    hint: 'Plafon poin untuk satu transaksi. 0 = tanpa batas' },
 ]
 
 export default function AdminLoyalty() {
@@ -100,10 +107,10 @@ export default function AdminLoyalty() {
         {form && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {FIELDS.map(({ key, label, hint }) => (
+              {FIELDS.map(({ key, label, hint, min = 1, step }) => (
                 <div key={key}>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">{label}</label>
-                  <input type="number" value={form[key] ?? ''} min={1}
+                  <input type="number" value={form[key] ?? ''} min={min} step={step}
                     onChange={e => setForm(f => ({ ...f, [key]: e.target.value === '' ? '' : Number(e.target.value) }))}
                     className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
                   <p className="text-[11px] text-slate-400 mt-1">{hint}</p>
