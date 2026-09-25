@@ -3,6 +3,7 @@ import { Play, Pause, Loader2, Radio, Volume2, VolumeX, AlertTriangle, Signal } 
 import { RADIO_CHANNELS, findChannel } from '@/data/radioChannels'
 import { useRadioStore } from '@/store/radioStore'
 import SEO from '@/components/SEO'
+import bannerRri from '@/assets/banners/streaming-rri.webp'
 
 /**
  * Halaman streaming radio RRI.
@@ -32,6 +33,18 @@ export default function Streaming() {
   return (
     <div className="min-h-screen bg-slate-950">
       <SEO url="/streaming" />
+
+      {/* Banner halaman. width/height WAJIB sesuai dimensi aslinya (1800×600):
+          browser memakainya untuk memesan ruang sebelum gambar selesai dimuat,
+          dan ini elemen pertama halaman — rasio yang salah membuat panggung di
+          bawahnya melompat tepat saat pengguna mulai membaca. */}
+      <img
+        src={bannerRri}
+        alt="Streaming RRI di ArahInn"
+        width="1800" height="600"
+        loading="eager" fetchpriority="high"
+        className="block w-full h-auto"
+      />
 
       {/* ── Panggung utama ───────────────────────────────────────────
           Latar mengambil warna kanal yang sedang diputar; saat diam,
