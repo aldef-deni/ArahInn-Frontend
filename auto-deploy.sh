@@ -17,6 +17,11 @@ set -euo pipefail
 REPO="$HOME/ota-frontend"
 LOG="$HOME/ota-frontend-autodeploy.log"
 LOCK="$HOME/.ota-frontend-autodeploy.lock"
+# Commit yang BENAR-BENAR sudah ter-build dan tersalin ke document root.
+# Berbeda dari HEAD: menarik commit itu murah, membangunnya bisa gagal.
+TERPASANG="$HOME/.ota-frontend-terpasang"
+GAGAL="$HOME/.ota-frontend-gagal"
+MAKS_GAGAL=5
 
 cd "$REPO"
 
@@ -43,9 +48,30 @@ git fetch --quiet origin main || exit 0
 LOKAL="$(git rev-parse HEAD)"
 REMOTE="$(git rev-parse origin/main)"
 
-# Tidak ada commit baru → keluar senyap. Ini jalur yang paling sering diambil,
-# jadi sengaja tidak menulis apa pun ke log supaya log tetap terbaca.
-[ "$LOKAL" = "$REMOTE" ] && exit 0
+SUDAH="$(cat "$TERPASANG" 2>/dev/null || echo '')"
+
+# Dua alasan berbeda untuk men-deploy:
+#   1. ada commit baru di origin, atau
+#   2. commit yang ada BELUM pernah berhasil sampai ke document root.
+#
+# Alasan kedua ada karena build bisa gagal setelah merge berhasil — pernah
+# terjadi: esbuild mati kehabisan memori di hosting. Dulu keadaan itu membeku
+# selamanya: HEAD sudah sama dengan origin sehingga cron berikutnya keluar
+# senyap, situs tetap versi lama, dan tidak ada tanda apa pun.
+if [ "$LOKAL" = "$REMOTE" ] && [ "$SUDAH" = "$REMOTE" ]; then
+  exit 0
+fi
+
+# Percobaan ulang dibatasi supaya build yang rusak permanen tidak mengulang
+# tiap 5 menit tanpa henti. Hitungannya per-commit: commit baru mulai dari nol.
+HITUNG=0
+if [ -f "$GAGAL" ]; then
+  GAGAL_PADA="$(cut -d' ' -f1 "$GAGAL" 2>/dev/null || echo '')"
+  [ "$GAGAL_PADA" = "$REMOTE" ] && HITUNG="$(cut -d' ' -f2 "$GAGAL" 2>/dev/null || echo 0)"
+fi
+if [ "$HITUNG" -ge "$MAKS_GAGAL" ]; then
+  exit 0
+fi
 
 # ── Node yang dipakai cron belum tentu ada sama sekali ────────────────
 # PATH yang diwarisi cron jauh lebih pendek daripada PATH terminal. Di
@@ -98,9 +124,21 @@ export PATH="$NODE_DIR:$PATH"
 
   # deploy-server.sh sudah memverifikasi hasil build sebelum menyentuh
   # document root, jadi build yang gagal tidak akan merusak situs live.
-  ./deploy-server.sh --yes
-
-  echo "selesai $(date '+%H:%M:%S')"
+  if ./deploy-server.sh --yes; then
+    echo "$REMOTE" > "$TERPASANG"
+    rm -f "$GAGAL"
+    echo "selesai $(date '+%H:%M:%S')"
+  else
+    BARU=$((HITUNG + 1))
+    echo "$REMOTE $BARU" > "$GAGAL"
+    echo "GAGAL membangun/menyalin (percobaan $BARU dari $MAKS_GAGAL)."
+    if [ "$BARU" -ge "$MAKS_GAGAL" ]; then
+      echo "Percobaan dihentikan untuk commit ini. Situs masih memakai versi lama."
+      echo "Jalankan manual: cd ~/ota-frontend && ./deploy-server.sh"
+      echo "Setelah diperbaiki, hapus $GAGAL supaya otomatis jalan lagi."
+    fi
+    exit 1
+  fi
 } >> "$LOG" 2>&1
 
 # Jaga agar log tidak tumbuh tanpa batas.
