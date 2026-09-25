@@ -27,9 +27,19 @@ berjalan lewat hostname (`src/utils/isExtranet.js`), bukan lewat build terpisah.
 | `~/public_html` | arahinn.com |
 | `~/pengelola-arahinn` | kelola.arahinn.com |
 | `~/extranet-owner` | my.arahinn.com |
+| `~/staging` | staging.arahinn.com — **opsional**, dilewati bila folder belum ada |
 
 Cron di server menjalankan `auto-deploy.sh` tiap 5 menit: menarik `origin/main`,
 build, lalu menyalin ke ketiganya. **Tidak perlu mengirim zip ke user.**
+
+### Fitur yang masih diuji
+
+Dipagari lewat **hostname**, bukan build terpisah: `isStaging()` di
+`src/utils/isExtranet.js` (staging.arahinn.com + localhost). Menu DAN rutenya
+sama-sama dipagari — menyembunyikan tautan saja tidak menghentikan siapa pun
+mengetik path-nya langsung di bilah alamat produksi.
+
+Saat ini dipagari: **Streaming radio RRI** (`/streaming`).
 
 Deploy manual (mis. setelah `git pull` manual, yang membuat cron menganggap
 tidak ada yang baru): `./deploy-server.sh --yes`

@@ -18,6 +18,24 @@ export const isOwnerPortal = () => {
 
 export const isExtranet = () => isManagementPortal() || isOwnerPortal()
 
+/**
+ * Lingkungan uji coba: staging.arahinn.com.
+ *
+ * Satu hasil build melayani SEMUA domain — pembedanya hostname saat berjalan,
+ * bukan build terpisah. Fitur yang masih diuji dipagari di sini supaya tidak
+ * perlu ada cabang kode atau proses build kedua yang gampang tertinggal versi.
+ *
+ * localhost ikut dihitung staging agar fitur yang dipagari tetap bisa
+ * dikerjakan saat pengembangan.
+ */
+export const isStaging = () => {
+  const host = window.location.hostname
+  return (
+    host === 'staging.arahinn.com' || host.startsWith('staging.') ||
+    host === 'localhost' || host === '127.0.0.1'
+  )
+}
+
 // Terima single role string ATAU array of roles (user bisa punya multi-role)
 const _asArray = (input) => Array.isArray(input) ? input : (input ? [input] : [])
 

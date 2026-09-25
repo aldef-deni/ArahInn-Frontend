@@ -19,6 +19,7 @@ import {
   getOwnerPortalUrl,
   isManagementRole,
   isOwnerRole,
+  isStaging,
 } from '@/utils/isExtranet'
 import SupportChatWidget from '@/components/chat/SupportChatWidget'
 import RadioMiniPlayer from '@/components/radio/RadioMiniPlayer'
@@ -121,7 +122,10 @@ export default function UserLayout() {
     { key: 'akomodasi', label: t('nav.akomodasi'),   icon: Building2, children: akomodasiChildren },
     { key: 'travel',    label: t('nav.tiketTravel'), icon: Plane,     children: travelChildren },
     { to: '/topup-tagihan', label: t('nav.topUpTagihan'), icon: Receipt },
-    { to: '/streaming',     label: t('nav.streaming'),    icon: Radio },
+    // Streaming RRI masih diuji — hanya muncul di staging.arahinn.com.
+    // Disaring, bukan dihapus, supaya satu hasil build tetap melayani semua
+    // domain seperti bagian lain aplikasi ini.
+    ...(isStaging() ? [{ to: '/streaming', label: t('nav.streaming'), icon: Radio }] : []),
     // CTA marketplace (situs terpisah) — dibuka di tab baru
     { href: 'https://market.arahinn.com/', label: 'Marketplace', icon: ShoppingCart, sparkle: true, external: true },
   ]
@@ -618,7 +622,7 @@ export default function UserLayout() {
       </footer>}
 
       {/* Live Chat Widget — customer ke CS Arahinn */}
-      <RadioMiniPlayer />
+      {isStaging() && <RadioMiniPlayer />}
       <SupportChatWidget />
       <SitePopup />
 

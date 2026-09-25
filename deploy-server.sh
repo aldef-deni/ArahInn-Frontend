@@ -26,7 +26,15 @@ DOCROOT_PUBLIC="${DOCROOT_PUBLIC:-$HOME/public_html}"
 DOCROOT_KELOLA="${DOCROOT_KELOLA:-$HOME/pengelola-arahinn}"
 DOCROOT_OWNER="${DOCROOT_OWNER:-$HOME/extranet-owner}"
 
+#   ~/staging  hasil build → staging.arahinn.com  (uji coba fitur baru)
+# Berbeda dari tiga docroot di atas, yang ini OPSIONAL: kalau foldernya belum
+# dibuat, deploy tetap berjalan dan staging sekadar dilewati. Fitur yang masih
+# diuji (mis. Streaming RRI) dipagari di dalam aplikasi lewat hostname, bukan
+# lewat build terpisah — jadi berkas yang disalin ke sini sama persis.
+DOCROOT_STAGING="${DOCROOT_STAGING:-$HOME/staging}"
+
 DOCROOTS=("$DOCROOT_PUBLIC" "$DOCROOT_KELOLA" "$DOCROOT_OWNER")
+[ -d "$DOCROOT_STAGING" ] && DOCROOTS+=("$DOCROOT_STAGING")
 
 BUILD_ONLY=false
 SKIP_BUILD=false
@@ -201,8 +209,11 @@ for d in "${DOCROOTS[@]}"; do
   fi
 done
 
+STAGING_TEKS=""
+[ -d "$DOCROOT_STAGING" ] && STAGING_TEKS=", dan staging.arahinn.com"
+
 say "Selesai."
-echo "Buka arahinn.com, kelola.arahinn.com, dan my.arahinn.com,"
+echo "Buka arahinn.com, kelola.arahinn.com, my.arahinn.com${STAGING_TEKS},"
 echo "lalu hard refresh (Ctrl+Shift+R) — index.html sering ter-cache browser."
 echo
 if [ -d "$DOCROOT_PUBLIC/.deploy-backup-$STAMP" ]; then

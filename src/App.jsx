@@ -86,6 +86,7 @@ import {
   isManagementPortal,
   isOwnerPortal,
   isOwnerRole,
+  isStaging,
 } from '@/utils/isExtranet'
 
 const extranetMode = isExtranet()
@@ -316,8 +317,11 @@ export default function App() {
             <Route path="/hotel/:id" element={<HotelDetail />} />
             <Route path="/properti" element={<PropertyMarket />} />
             <Route path="/properti/:id" element={<PropertyDetail />} />
-            {/* Streaming radio RRI — disiarkan ulang atas izin RRI */}
-            <Route path="/streaming" element={<Streaming />} />
+            {/* Streaming radio RRI — masih diuji, hanya aktif di staging.
+                Rutenya ikut dipagari, bukan hanya menunya: menyembunyikan
+                tautan tidak menghentikan siapa pun mengetik /streaming
+                langsung di bilah alamat produksi. */}
+            {isStaging() && <Route path="/streaming" element={<Streaming />} />}
             <Route path="/interior" element={<InteriorPage />} />
             <Route path="/interior/layanan-kemitraan" element={<InteriorFaq topic="layanan-kemitraan" />} />
             <Route path="/interior/keunggulan-biaya" element={<InteriorFaq topic="keunggulan-biaya" />} />
