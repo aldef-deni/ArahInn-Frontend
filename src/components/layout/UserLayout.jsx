@@ -10,7 +10,7 @@ import {
   Hotel, Search, List, User, LogOut, Menu, X,
   ChevronDown, ChevronRight, Globe, Settings, LayoutDashboard,
   Phone, Mail, Smartphone, Building2, Sofa, Receipt, Star,
-  Megaphone, CalendarDays, Plane, Ship, TrainFront, Sparkles, ShoppingCart,
+  Megaphone, CalendarDays, Plane, Ship, TrainFront, Sparkles, ShoppingCart, Radio,
 } from 'lucide-react'
 import CampaignDetailModal from '@/components/CampaignDetailModal'
 import { cn, getImageUrl } from '@/utils'
@@ -21,6 +21,7 @@ import {
   isOwnerRole,
 } from '@/utils/isExtranet'
 import SupportChatWidget from '@/components/chat/SupportChatWidget'
+import RadioMiniPlayer from '@/components/radio/RadioMiniPlayer'
 import SitePopup from '@/components/SitePopup'
 import NotificationBell from '@/components/ui/NotificationBell'
 import queryClient from '@/lib/queryClient'
@@ -120,6 +121,7 @@ export default function UserLayout() {
     { key: 'akomodasi', label: t('nav.akomodasi'),   icon: Building2, children: akomodasiChildren },
     { key: 'travel',    label: t('nav.tiketTravel'), icon: Plane,     children: travelChildren },
     { to: '/topup-tagihan', label: t('nav.topUpTagihan'), icon: Receipt },
+    { to: '/streaming',     label: t('nav.streaming'),    icon: Radio },
     // CTA marketplace (situs terpisah) — dibuka di tab baru
     { href: 'https://market.arahinn.com/', label: 'Marketplace', icon: ShoppingCart, sparkle: true, external: true },
   ]
@@ -616,6 +618,7 @@ export default function UserLayout() {
       </footer>}
 
       {/* Live Chat Widget — customer ke CS Arahinn */}
+      <RadioMiniPlayer />
       <SupportChatWidget />
       <SitePopup />
 

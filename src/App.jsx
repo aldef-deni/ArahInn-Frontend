@@ -33,6 +33,7 @@ import OrderDetail from '@/pages/OrderDetail'
 import Profile from '@/pages/Profile'
 import Loyalty from '@/pages/Loyalty'
 import PropertyMarket from '@/pages/PropertyMarket'
+import Streaming from '@/pages/Streaming'
 import PropertyDetail from '@/pages/PropertyDetail'
 import InteriorPage from '@/pages/Interior'
 import InteriorFaq from '@/pages/Interior/InteriorFaq'
@@ -315,6 +316,8 @@ export default function App() {
             <Route path="/hotel/:id" element={<HotelDetail />} />
             <Route path="/properti" element={<PropertyMarket />} />
             <Route path="/properti/:id" element={<PropertyDetail />} />
+            {/* Streaming radio RRI — disiarkan ulang atas izin RRI */}
+            <Route path="/streaming" element={<Streaming />} />
             <Route path="/interior" element={<InteriorPage />} />
             <Route path="/interior/layanan-kemitraan" element={<InteriorFaq topic="layanan-kemitraan" />} />
             <Route path="/interior/keunggulan-biaya" element={<InteriorFaq topic="keunggulan-biaya" />} />

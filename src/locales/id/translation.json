@@ -21,7 +21,8 @@
     "tiketPelni": "Tiket PELNI",
     "topUpTagihan": "Top Up & Tagihan",
     "promo": "Promo",
-    "tiketTravel": "Tiket Travel"
+    "tiketTravel": "Tiket Travel",
+    "streaming": "Streaming"
   },
   "services": {
     "sectionTitle": "Pilih Layanan",
@@ -1525,5 +1526,25 @@
     "waLinkLabel": "Tautan",
     "waFooter": "Dikirim otomatis dari arahinn.com",
     "cta": "Minat"
+  },
+  "radio": {
+    "eyebrow": "Streaming Langsung",
+    "title": "Radio RRI",
+    "subtitle": "Dengarkan siaran langsung Radio Republik Indonesia. Pilih kanal untuk mulai memutar.",
+    "channels": "Pilih Kanal",
+    "channelsHint": "Siaran langsung, mengikuti Anda ke halaman lain selama tab ini terbuka.",
+    "play": "Putar",
+    "pause": "Jeda",
+    "stop": "Hentikan",
+    "connecting": "Menyambungkan…",
+    "live": "LANGSUNG",
+    "volume": "Volume",
+    "mute": "Bisukan",
+    "unmute": "Bunyikan",
+    "errorBody": "Siaran tidak dapat dimuat. Periksa koneksi Anda, lalu coba putar kembali. Bila berulang, kemungkinan server RRI sedang bermasalah.",
+    "credit": "Siaran milik Radio Republik Indonesia (RRI), disiarkan ulang oleh ArahInn atas izin RRI. Saat ini tersedia Pro 1, Pro 2, dan Pro 4 Jakarta; Pro 3 menyusul.",
+    "pro1Tagline": "Kanal Informasi & Inspirasi",
+    "pro2Tagline": "Pusat Kreativitas Anak Muda",
+    "pro4Tagline": "Ensiklopedia Budaya Keindonesiaan"
   }
 }

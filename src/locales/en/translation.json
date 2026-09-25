@@ -21,7 +21,8 @@
     "tiketPelni": "PELNI Tickets",
     "topUpTagihan": "Top Up & Bills",
     "promo": "Promo",
-    "tiketTravel": "Travel Tickets"
+    "tiketTravel": "Travel Tickets",
+    "streaming": "Streaming"
   },
   "services": {
     "sectionTitle": "Choose a Service",
@@ -1525,5 +1526,25 @@
     "waLinkLabel": "Link",
     "waFooter": "Sent automatically from arahinn.com",
     "cta": "I am Interested"
+  },
+  "radio": {
+    "eyebrow": "Live Streaming",
+    "title": "RRI Radio",
+    "subtitle": "Listen to Radio Republik Indonesia live. Pick a channel to start playing.",
+    "channels": "Choose a Channel",
+    "channelsHint": "Live broadcast — keeps playing as you browse, for as long as this tab stays open.",
+    "play": "Play",
+    "pause": "Pause",
+    "stop": "Stop",
+    "connecting": "Connecting…",
+    "live": "LIVE",
+    "volume": "Volume",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "errorBody": "The broadcast could not be loaded. Check your connection and try again. If it keeps happening, the RRI server may be down.",
+    "credit": "Broadcasts belong to Radio Republik Indonesia (RRI), rebroadcast by ArahInn with RRI's permission. Pro 1, Pro 2 and Pro 4 Jakarta are available; Pro 3 to follow.",
+    "pro1Tagline": "Information & Inspiration",
+    "pro2Tagline": "Creativity for Young People",
+    "pro4Tagline": "Encyclopedia of Indonesian Culture"
   }
 }
