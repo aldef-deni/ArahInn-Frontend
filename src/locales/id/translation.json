@@ -1481,5 +1481,48 @@
     "agreeTerms": "Saya telah membaca dan menyetujui aturan properti serta kebijakan pembatalan di atas.",
     "processingBooking": "Memproses pemesanan…",
     "bookNow": "Pesan sekarang"
+  },
+  "interest": {
+    "title": "Ajukan Minat",
+    "subtitle": "Isi data Anda, lalu pesan otomatis dikirim ke penjual lewat WhatsApp.",
+    "close": "Tutup",
+    "propertyLabel": "Properti yang diminati",
+    "fieldName": "Nama lengkap",
+    "fieldPhone": "Nomor HP",
+    "fieldEmail": "Email",
+    "fieldTime": "Ingin dihubungi jam berapa",
+    "fieldPlan": "Rencana beli",
+    "phName": "Nama sesuai identitas",
+    "phPhone": "Contoh: 0812 3456 7890",
+    "phEmail": "nama@contoh.com (opsional)",
+    "phPlan": "Pilih rencana pembelian",
+    "errName": "Nama minimal 2 huruf.",
+    "errPhone": "Nomor HP tidak valid.",
+    "errEmail": "Format email belum benar.",
+    "errPlan": "Pilih salah satu rencana pembelian.",
+    "submit": "Kirim & Lanjut ke WhatsApp",
+    "note": "Data ini hanya dikirim ke penjual properti, tidak disimpan ArahInn.",
+    "time": {
+      "anytime": "Kapan saja",
+      "morning": "Pagi (08.00 – 12.00)",
+      "noon": "Siang (12.00 – 15.00)",
+      "afternoon": "Sore (15.00 – 18.00)",
+      "evening": "Malam (18.00 – 21.00)"
+    },
+    "plan": {
+      "lelang": "Lelang",
+      "cessie": "Cessie",
+      "penjualan_bersama": "Penjualan Bersama"
+    },
+    "waTitle": "MINAT PROPERTI — ArahInn",
+    "waProperty": "Data Properti",
+    "waBuyer": "Data Peminat",
+    "waId": "ID",
+    "waName": "Nama properti",
+    "waPrice": "Harga",
+    "waCity": "Kota",
+    "waLinkLabel": "Tautan",
+    "waFooter": "Dikirim otomatis dari arahinn.com",
+    "cta": "Minat"
   }
 }

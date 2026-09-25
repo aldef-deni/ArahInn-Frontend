@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { propertyApi } from '@/services/propertyApi'
+import InterestModal from '@/components/property/InterestModal'
 import { formatRupiah, getImageUrl } from '@/utils'
 import {
   ArrowLeft,
@@ -60,13 +61,10 @@ export default function PropertyDetail() {
 
   const resolvedId = data?.id   // dipakai WishlistButton
 
-  // Nomor telepon → link WhatsApp (normalisasi 0.. → 62..).
-  const waLink = (phone) => {
-    let d = String(phone || '').replace(/\D/g, '')
-    if (d.startsWith('0')) d = '62' + d.slice(1)
-    else if (!d.startsWith('62')) d = '62' + d
-    return `https://wa.me/${d}`
-  }
+  // Tombol WhatsApp tidak lagi membuka chat kosong. Chat kosong membuat
+  // penjual harus menanyakan ulang properti mana, siapa peminatnya, dan kapan
+  // bisa dihubungi — sekarang semua itu sudah ada di pesan pertama.
+  const [minatTerbuka, setMinatTerbuka] = useState(false)
 
   // Mobile: naikkan tombol Live Chat (FAB) di atas CTA bar agar tak saling menutupi.
   useEffect(() => {
@@ -248,15 +246,14 @@ export default function PropertyDetail() {
 
                 <div className="space-y-2.5 sm:space-y-3">
                   {data.contactPhone ? (
-                    <a
-                      href={waLink(data.contactPhone)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex w-full items-center gap-2.5 sm:gap-3 rounded-xl sm:rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-emerald-600 active:scale-[0.98]"
+                    <button
+                      type="button"
+                      onClick={() => setMinatTerbuka(true)}
+                      className="flex w-full items-center justify-center gap-2.5 sm:gap-3 rounded-xl sm:rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-emerald-600 active:scale-[0.98]"
                     >
                       <MessageCircle className="h-4 w-4 shrink-0" />
-                      <span className="truncate">WhatsApp · {data.contactPhone}</span>
-                    </a>
+                      <span className="truncate">{t('interest.cta')}</span>
+                    </button>
                   ) : null}
                   {data.contactEmail ? (
                     <a
@@ -425,11 +422,12 @@ export default function PropertyDetail() {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {data.contactPhone && (
-                <a href={waLink(data.contactPhone)} target="_blank" rel="noopener noreferrer"
-                  className="h-11 w-11 rounded-xl bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 active:scale-95 transition-all shadow-md"
-                  aria-label={t('propertyDetail.phoneAria')}>
+                <button type="button" onClick={() => setMinatTerbuka(true)}
+                  className="h-11 px-4 rounded-xl bg-emerald-500 text-white flex items-center gap-1.5 font-bold text-sm hover:bg-emerald-600 active:scale-95 transition-all shadow-md"
+                  aria-label={t('interest.cta')}>
                   <MessageCircle className="h-4 w-4" />
-                </a>
+                  {t('interest.cta')}
+                </button>
               )}
               {data.contactEmail && (
                 <a href={`mailto:${data.contactEmail}`}
@@ -442,6 +440,11 @@ export default function PropertyDetail() {
           </div>
         </div>
       )}
+
+      {/* Formulir minat — hanya berguna bila ada nomor WhatsApp tujuan. */}
+      {minatTerbuka && data?.contactPhone ? (
+        <InterestModal property={data} onClose={() => setMinatTerbuka(false)} />
+      ) : null}
     </div>
   )
 }

@@ -1481,5 +1481,48 @@
     "agreeTerms": "I have read and accept the property rules and the cancellation policy above.",
     "processingBooking": "Processing your booking…",
     "bookNow": "Book now"
+  },
+  "interest": {
+    "title": "Register Interest",
+    "subtitle": "Fill in your details and a message will be sent to the seller on WhatsApp.",
+    "close": "Close",
+    "propertyLabel": "Property of interest",
+    "fieldName": "Full name",
+    "fieldPhone": "Phone number",
+    "fieldEmail": "Email",
+    "fieldTime": "Best time to reach you",
+    "fieldPlan": "Purchase plan",
+    "phName": "Name as on your ID",
+    "phPhone": "e.g. 0812 3456 7890",
+    "phEmail": "name@example.com (optional)",
+    "phPlan": "Choose a purchase plan",
+    "errName": "Name must be at least 2 characters.",
+    "errPhone": "That phone number is not valid.",
+    "errEmail": "That email address is not valid.",
+    "errPlan": "Please choose a purchase plan.",
+    "submit": "Send & Continue on WhatsApp",
+    "note": "These details go only to the property seller; ArahInn does not store them.",
+    "time": {
+      "anytime": "Any time",
+      "morning": "Morning (08:00 – 12:00)",
+      "noon": "Midday (12:00 – 15:00)",
+      "afternoon": "Afternoon (15:00 – 18:00)",
+      "evening": "Evening (18:00 – 21:00)"
+    },
+    "plan": {
+      "lelang": "Auction",
+      "cessie": "Cessie",
+      "penjualan_bersama": "Joint Sale"
+    },
+    "waTitle": "PROPERTY INTEREST — ArahInn",
+    "waProperty": "Property Details",
+    "waBuyer": "Enquirer Details",
+    "waId": "ID",
+    "waName": "Property name",
+    "waPrice": "Price",
+    "waCity": "City",
+    "waLinkLabel": "Link",
+    "waFooter": "Sent automatically from arahinn.com",
+    "cta": "I am Interested"
   }
 }
