@@ -17,13 +17,20 @@ import { findChannel } from '@/data/radioChannels'
 
 const KUNCI_VOLUME = 'arahinn-radio-volume'
 
+const VOLUME_AWAL = 0.8
+
 const bacaVolume = () => {
   try {
-    const v = Number(localStorage.getItem(KUNCI_VOLUME))
-    return Number.isFinite(v) && v >= 0 && v <= 1 ? v : 0.8
+    const mentah = localStorage.getItem(KUNCI_VOLUME)
+    // Nilai yang belum pernah disimpan harus dibedakan dari nilai 0 yang memang
+    // disimpan. `Number(null)` bernilai 0 dan LOLOS pemeriksaan rentang, sehingga
+    // setiap pengunjung pertama mendapat volume nol — radio menyala tapi bisu.
+    if (mentah === null || mentah === '') return VOLUME_AWAL
+    const v = Number(mentah)
+    return Number.isFinite(v) && v >= 0 && v <= 1 ? v : VOLUME_AWAL
   } catch {
     // Mode penyamaran / penyimpanan diblokir — jangan sampai menjatuhkan halaman.
-    return 0.8
+    return VOLUME_AWAL
   }
 }
 
@@ -35,7 +42,15 @@ function ambilAudio() {
   if (audio) return audio
   audio = new Audio()
   audio.preload = 'none'
-  audio.crossOrigin = 'anonymous'
+  // crossOrigin SENGAJA TIDAK diset. Server RRI mengirim header
+  // `Access-Control-Allow-Origin: *` DUA KALI; menurut spesifikasi header itu
+  // hanya boleh muncul sekali, dan browser menolak responsnya begitu diminta
+  // dalam mode CORS — yang persis terjadi bila crossOrigin diisi. Akibatnya
+  // seluruh kanal gagal diputar.
+  //
+  // Mode no-cors (bawaan) mengabaikan header ganda itu dan memutar normal.
+  // Kita memang tidak butuh CORS: audionya hanya diputar, tidak dianalisis
+  // Web Audio API.
   audio.volume = bacaVolume()
 
   const set = () => useRadioStore.setState
