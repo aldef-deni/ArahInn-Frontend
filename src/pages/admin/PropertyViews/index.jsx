@@ -15,10 +15,26 @@ const fmtTime = new Intl.DateTimeFormat('id-ID', { timeZone: TZ, hour: '2-digit'
 const fmtYmd  = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' })
 
 const ymd = (d) => fmtYmd.format(d)
+
+/**
+ * Pembungkus aman untuk Intl.DateTimeFormat.
+ *
+ * `format()` MELEMPAR RangeError bila tanggalnya tidak valid, bukan
+ * mengembalikan teks kosong. Karena halaman ini dirender tanpa error boundary,
+ * satu baris dengan tanggal rusak cukup untuk memutihkan seluruh panel admin —
+ * dan itulah yang terjadi ketika kolom `viewed_at` dibaca dengan nama snake_case
+ * sehingga bernilai undefined.
+ */
+const amanFormat = (fmt, nilai) => {
+  const d = new Date(nilai)
+  return Number.isNaN(d.getTime()) ? '—' : fmt.format(d)
+}
 const daysAgo = (n) => ymd(new Date(Date.now() - n * 86400000))
 
 function relative(iso, now) {
-  const s = Math.max(0, Math.floor((now - new Date(iso).getTime()) / 1000))
+  const t = new Date(iso).getTime()
+  if (Number.isNaN(t)) return ''
+  const s = Math.max(0, Math.floor((now - t) / 1000))
   if (s < 10) return 'baru saja'
   if (s < 60) return `${s} dtk lalu`
   if (s < 3600) return `${Math.floor(s / 60)} mnt lalu`
@@ -159,7 +175,7 @@ export default function AdminPropertyViews() {
           <Stat icon={Users}     label="Member unik"       value={stats.members} />
           <Stat icon={UserX}     label="Tamu unik (IP)"    value={stats.guests} />
           <Stat icon={Building2} label="Properti dilihat"  value={stats.properties} />
-          <Stat icon={Activity}  label="1 jam terakhir"    value={stats.last_hour} accent />
+          <Stat icon={Activity}  label="1 jam terakhir"    value={stats.lastHour} accent />
         </div>
       </div>
 
@@ -262,14 +278,14 @@ export default function AdminPropertyViews() {
                 {rows.map(r => (
                   <tr key={r.id} className={`transition-colors duration-1000 ${freshIds.has(r.id) ? 'bg-emerald-50' : 'hover:bg-slate-50/70'}`}>
                     <td className="px-5 py-3.5"><PropertyCell p={r.property} /></td>
-                    <td className="px-5 py-3.5"><UserCell u={r.user} ip={r.ip_address} /></td>
-                    <td className="px-5 py-3.5 text-slate-700 whitespace-nowrap">{fmtDate.format(new Date(r.viewed_at))}</td>
+                    <td className="px-5 py-3.5"><UserCell u={r.user} ip={r.ipAddress} /></td>
+                    <td className="px-5 py-3.5 text-slate-700 whitespace-nowrap">{amanFormat(fmtDate, r.viewedAt)}</td>
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[13px] font-semibold text-slate-900 tabular-nums">{fmtTime.format(new Date(r.viewed_at))}</span>
+                        <span className="font-mono text-[13px] font-semibold text-slate-900 tabular-nums">{amanFormat(fmtTime, r.viewedAt)}</span>
                         {freshIds.has(r.id) && <span className="px-1.5 py-0.5 rounded bg-emerald-500 text-white text-[9px] font-bold tracking-wide">BARU</span>}
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5">{relative(r.viewed_at, now)}</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">{relative(r.viewedAt, now)}</p>
                     </td>
                   </tr>
                 ))}
@@ -282,10 +298,10 @@ export default function AdminPropertyViews() {
                 <li key={r.id} className={`p-4 space-y-3 transition-colors duration-1000 ${freshIds.has(r.id) ? 'bg-emerald-50' : ''}`}>
                   <PropertyCell p={r.property} />
                   <div className="flex items-end justify-between gap-3">
-                    <UserCell u={r.user} ip={r.ip_address} />
+                    <UserCell u={r.user} ip={r.ipAddress} />
                     <div className="text-right shrink-0">
-                      <p className="font-mono text-xs font-semibold text-slate-900 tabular-nums">{fmtTime.format(new Date(r.viewed_at))}</p>
-                      <p className="text-[11px] text-slate-400">{fmtDate.format(new Date(r.viewed_at))}</p>
+                      <p className="font-mono text-xs font-semibold text-slate-900 tabular-nums">{amanFormat(fmtTime, r.viewedAt)}</p>
+                      <p className="text-[11px] text-slate-400">{amanFormat(fmtDate, r.viewedAt)}</p>
                     </div>
                   </div>
                 </li>
@@ -294,13 +310,13 @@ export default function AdminPropertyViews() {
           </>
         )}
 
-        {pagination.total_pages > 1 && (
+        {pagination.totalPages > 1 && (
           <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-slate-50/50">
-            <p className="text-xs text-slate-500">Halaman <b className="text-slate-800">{pagination.page}</b> dari {pagination.total_pages}</p>
+            <p className="text-xs text-slate-500">Halaman <b className="text-slate-800">{pagination.page}</b> dari {pagination.totalPages}</p>
             <div className="flex gap-1.5">
               <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
                 className="w-8 h-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-40"><ChevronLeft className="w-4 h-4" /></button>
-              <button onClick={() => setPage(p => Math.min(pagination.total_pages, p + 1))} disabled={page >= pagination.total_pages}
+              <button onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))} disabled={page >= pagination.totalPages}
                 className="w-8 h-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-40"><ChevronRight className="w-4 h-4" /></button>
             </div>
           </div>
@@ -350,9 +366,9 @@ function PropertyCell({ p }) {
         <div className="flex items-center gap-1.5 mt-0.5 text-xs text-slate-500">
           {p.city && <span className="inline-flex items-center gap-0.5"><MapPin className="w-3 h-3" />{p.city}</span>}
           {p.category && <span className="px-1.5 py-px rounded-md bg-slate-100 text-slate-600 text-[10px] font-semibold">{p.category}</span>}
-          {p.listing_type && (
-            <span className={`px-1.5 py-px rounded-md text-[10px] font-semibold ${p.listing_type === 'rent' ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>
-              {p.listing_type === 'rent' ? 'Sewa' : 'Jual'}
+          {p.listingType && (
+            <span className={`px-1.5 py-px rounded-md text-[10px] font-semibold ${p.listingType === 'rent' ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>
+              {p.listingType === 'rent' ? 'Sewa' : 'Jual'}
             </span>
           )}
         </div>
