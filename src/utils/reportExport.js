@@ -13,15 +13,26 @@ import { formatRupiah } from '@/utils'
 
 const LOGO_URL = '/logo-arahin.png'
 
+// Nama badan hukum dipakai di kop kedua format. Laporan ini dicetak dan
+// dilampirkan ke pihak luar, jadi yang harus muncul adalah nama PT-nya, bukan
+// sekadar nama domain.
+const PERUSAHAAN = 'PT. Sukses ArahInn Hospitality'
+const SITUS      = 'ArahInn.com · Accommodation · Transportation · Activities'
+
 /* ── Excel ─────────────────────────────────────────────────────────────── */
 export async function exportExcel({ filename = 'laporan', title, period, meta = [], summary = [], columns, rows }) {
   const XLSX = await import('xlsx')
   const aoa = []
 
+  // Kop: nama PT lebih dulu, baru judul laporan. SheetJS edisi komunitas tidak
+  // bisa menyisipkan gambar ke dalam .xlsx, jadi logonya hadir sebagai teks.
+  aoa.push([PERUSAHAAN])
+  aoa.push([SITUS])
+  aoa.push([])
   if (title)  aoa.push([title])
   if (period) aoa.push([period])
   meta.forEach(m => aoa.push([m]))
-  if (title || period || meta.length) aoa.push([])
+  aoa.push([])
 
   summary.forEach(s => aoa.push([s.label, s.value]))
   if (summary.length) aoa.push([])
@@ -70,8 +81,10 @@ export async function exportPdf({
 
   // Info perusahaan (kanan atas)
   doc.setFontSize(9); doc.setTextColor(100, 116, 139); doc.setFont('helvetica', 'normal')
-  doc.text('ArahInn.com', pageW - margin, y + 10, { align: 'right' })
-  doc.text('Accommodation · Transportation · Activities', pageW - margin, y + 22, { align: 'right' })
+  doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42); doc.setFontSize(10)
+  doc.text(PERUSAHAAN, pageW - margin, y + 10, { align: 'right' })
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139); doc.setFontSize(8.5)
+  doc.text(SITUS, pageW - margin, y + 22, { align: 'right' })
   y += 50
 
   // Judul
@@ -118,7 +131,7 @@ export async function exportPdf({
     margin: { left: margin, right: margin },
     didDrawPage: () => {
       doc.setFontSize(8); doc.setTextColor(150, 160, 175); doc.setFont('helvetica', 'normal')
-      doc.text('ArahInn — Laporan Platform', margin, pageH - 18)
+      doc.text(PERUSAHAAN, margin, pageH - 18)
       doc.text(`Halaman ${doc.internal.getNumberOfPages()}`, pageW - margin, pageH - 18, { align: 'right' })
     },
   })

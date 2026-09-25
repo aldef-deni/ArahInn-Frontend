@@ -3,9 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Eye, Users, UserX, Building2, Activity, Search, CalendarRange, RotateCcw,
   RefreshCw, Pause, Play, ChevronLeft, ChevronRight, MapPin, Clock, ExternalLink, Loader2, Inbox,
+  MessageCircle, FileSpreadsheet, FileText,
 } from 'lucide-react'
 import { propertyViewApi } from '@/services/index'
 import { getImageUrl } from '@/utils'
+import { exportExcel, exportPdf } from '@/utils/reportExport'
 
 const TZ = 'Asia/Jakarta'
 const LIVE_INTERVAL = 5000
@@ -15,6 +17,14 @@ const fmtTime = new Intl.DateTimeFormat('id-ID', { timeZone: TZ, hour: '2-digit'
 const fmtYmd  = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' })
 
 const ymd = (d) => fmtYmd.format(d)
+
+/** Nomor telepon → tautan WhatsApp (0812… dan +62812… sama-sama jadi 62812…). */
+const waLink = (phone) => {
+  let d = String(phone || '').replace(/\D/g, '')
+  if (d.startsWith('0')) d = '62' + d.slice(1)
+  else if (!d.startsWith('62')) d = '62' + d
+  return `https://wa.me/${d}`
+}
 
 /**
  * Pembungkus aman untuk Intl.DateTimeFormat.
@@ -125,6 +135,92 @@ export default function AdminPropertyViews() {
     }
     seenRef.current = new Set(ids)
   }, [dataUpdatedAt]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── Ekspor ────────────────────────────────────────────────────────
+     Yang diekspor adalah SELURUH hasil filter, bukan 25 baris di layar.
+     Endpointnya membatasi 100 baris per permintaan, jadi halamannya diambil
+     berurutan sampai habis — dengan plafon supaya satu klik tidak pernah
+     menarik puluhan ribu baris sekaligus. */
+  const [mengekspor, setMengekspor] = useState('')
+  const MAKS_EKSPOR = 5000
+
+  const ambilSemua = async () => {
+    const semua = []
+    for (let hal = 1; semua.length < MAKS_EKSPOR; hal++) {
+      const res = await propertyViewApi.list({ ...params, page: hal, limit: 100 })
+      const batch = res.data?.data ?? []
+      semua.push(...batch)
+      const totalHal = res.data?.pagination?.totalPages ?? 1
+      if (hal >= totalHal || batch.length === 0) break
+    }
+    return semua.slice(0, MAKS_EKSPOR)
+  }
+
+  const KOLOM_EKSPOR = [
+    { key: 'tanggal',  header: 'Tanggal',     width: 16 },
+    { key: 'jam',      header: 'Jam (WIB)',   width: 11 },
+    { key: 'properti', header: 'Properti',    width: 38 },
+    { key: 'kota',     header: 'Kota',        width: 16 },
+    { key: 'tipe',     header: 'Tipe',        width: 10 },
+    { key: 'nama',     header: 'Pengunjung',  width: 22 },
+    { key: 'whatsapp', header: 'WhatsApp',    width: 18 },
+    { key: 'email',    header: 'Email',       width: 26 },
+    { key: 'ip',       header: 'IP',          width: 16 },
+  ]
+
+  const keBaris = (r) => ({
+    tanggal : amanFormat(fmtDate, r.viewedAt),
+    jam     : amanFormat(fmtTime, r.viewedAt),
+    properti: r.property?.title ?? '–',
+    kota    : r.property?.city ?? '–',
+    tipe    : r.property?.listingType === 'rent' ? 'Sewa' : 'Jual',
+    nama    : r.user?.name ?? 'Tamu',
+    // Tanpa tanda kutip, Excel memperlakukan 08123… sebagai angka dan nol di
+    // depannya hilang — nomornya jadi tidak bisa dihubungi.
+    whatsapp: r.user?.phone ? `'${r.user.phone}` : '–',
+    email   : r.user?.email ?? '–',
+    ip      : r.ipAddress ?? '–',
+  })
+
+  const infoFilter = () => {
+    const bagian = []
+    const prop = propertyOptions.find(o => String(o.id) === String(propertyId))
+    if (prop)      bagian.push(`Properti: ${prop.title}`)
+    if (userTerm)  bagian.push(`Pencarian user: ${userTerm}`)
+    if (visitor !== 'all') bagian.push(`Pengunjung: ${visitor === 'member' ? 'Member' : 'Tamu'}`)
+    return bagian.length ? [bagian.join(' · ')] : ['Filter: semua data']
+  }
+
+  const jalankanEkspor = async (jenis) => {
+    setMengekspor(jenis)
+    try {
+      const semua = await ambilSemua()
+      const opsi = {
+        filename: `aktivitas-view-properti-${ymd(new Date())}`,
+        title   : 'Laporan Aktivitas View Properti Jual-Beli',
+        subtitle: 'Siapa yang melihat listing, dan kapan',
+        period  : dateFrom || dateTo
+          ? `Periode: ${dateFrom || 'awal'} s/d ${dateTo || 'sekarang'}`
+          : 'Periode: seluruh data',
+        meta   : infoFilter(),
+        summary: [
+          { label: 'Total view',      value: String(stats.total ?? 0) },
+          { label: 'Member unik',     value: String(stats.members ?? 0) },
+          { label: 'Tamu unik (IP)',  value: String(stats.guests ?? 0) },
+          { label: 'Properti dilihat', value: String(stats.properties ?? 0) },
+        ],
+        columns: KOLOM_EKSPOR,
+        rows   : semua.map(keBaris),
+      }
+      if (jenis === 'pdf') await exportPdf(opsi)
+      else                 await exportExcel(opsi)
+    } catch (e) {
+      // Kegagalan ekspor tidak boleh menjatuhkan halaman; cukup beri tahu.
+      alert('Ekspor gagal: ' + (e?.message ?? 'coba lagi beberapa saat lagi.'))
+    } finally {
+      setMengekspor('')
+    }
+  }
 
   const activePreset = useMemo(
     () => PRESETS.find(p => { const [f, t] = p.range(); return f === dateFrom && t === dateTo })?.key,
@@ -249,7 +345,19 @@ export default function AdminPropertyViews() {
             Riwayat view
             <span className="ml-2 text-xs font-medium text-slate-400">{(pagination.total ?? 0).toLocaleString('id-ID')} catatan</span>
           </p>
-          <p className="text-[11px] text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3" /> Waktu dalam WIB</p>
+          <div className="flex items-center gap-2">
+            <p className="text-[11px] text-slate-400 hidden sm:flex items-center gap-1 mr-1"><Clock className="w-3 h-3" /> Waktu dalam WIB</p>
+            <button onClick={() => jalankanEkspor('xlsx')} disabled={!!mengekspor || rows.length === 0}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 disabled:opacity-50 transition-colors">
+              {mengekspor === 'xlsx' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileSpreadsheet className="w-3.5 h-3.5" />}
+              Excel
+            </button>
+            <button onClick={() => jalankanEkspor('pdf')} disabled={!!mengekspor || rows.length === 0}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-700 text-xs font-bold hover:bg-red-100 disabled:opacity-50 transition-colors">
+              {mengekspor === 'pdf' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+              PDF
+            </button>
+          </div>
         </div>
 
         {isLoading ? (
@@ -399,7 +507,18 @@ function UserCell({ u, ip }) {
       </div>
       <div className="min-w-0">
         <p className="font-semibold text-slate-900 truncate max-w-[220px]">{u.name}</p>
-        <p className="text-xs text-slate-500 truncate max-w-[220px]">{u.email || u.phone}</p>
+        {u.email && <p className="text-xs text-slate-500 truncate max-w-[220px]">{u.email}</p>}
+        {/* Nomor ditampilkan TERPISAH dari email, bukan sebagai cadangan:
+            menghubungi peminat lewat WhatsApp adalah tindak lanjut utama dari
+            halaman ini, jadi nomornya tidak boleh tersembunyi hanya karena
+            user punya email. */}
+        {u.phone
+          ? <a href={waLink(u.phone)} target="_blank" rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-700">
+              <MessageCircle className="w-3 h-3" />{u.phone}
+            </a>
+          : <p className="text-xs text-slate-400">Nomor belum diisi</p>}
       </div>
     </div>
   )
