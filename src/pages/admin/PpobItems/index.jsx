@@ -48,16 +48,15 @@ const GAYA_VENDOR = {
 /**
  * Daftar item PPOB dari kedua pemasok dalam satu tabel.
  *
- * Harga yang dibandingkan adalah harga MODAL, karena itu satu-satunya angka
- * yang tersedia di kedua sisi. Harga jual hanya ada di Rajabiller — Digiflazz
- * belum melayani penjualan, dan menampilkan nol di sana akan terbaca seolah
- * produknya gratis.
+ * Angka yang dibandingkan adalah harga MODAL — itu yang menentukan pemasok
+ * mana yang lebih murah untuk produk yang sama, dan membandingkannya justru
+ * alasan halaman ini dibuat. Harga jual keduanya sama dengan harga modal:
+ * laba PPOB datang dari "Biaya Admin" per kategori, bukan dari markup katalog.
  */
 export default function AdminPpobItems() {
-  // Menunya bernama RajaBiller, jadi itu yang tampil lebih dulu. Pilihan
-  // vendor tetap ada supaya perbandingan dengan Digiflazz tidak hilang —
-  // membandingkan harga modal antar pemasok justru alasan halaman ini dibuat.
-  const [vendor, setVendor]     = useState('rajabiller')
+  // Bawaannya kedua pemasok, sesuai nama menunya "Item PPOB". Penyaring vendor
+  // tetap ada untuk menyempitkan ke salah satu saat membandingkan.
+  const [vendor, setVendor]     = useState('all')
   const [status, setStatus]     = useState('all')
   const [kategori, setKategori] = useState('')
   const [q, setQ]               = useState('')
@@ -99,7 +98,7 @@ export default function AdminPpobItems() {
 
   const judulVendor = vendor === 'rajabiller' ? 'Item RajaBiller'
                     : vendor === 'digiflazz'  ? 'Item Digiflazz'
-                    : 'Item PPOB'
+                    : 'Item PPOB'   // kedua pemasok — bawaan halaman ini
   const ketVendor = vendor === 'all'
     ? 'Produk dari kedua pemasok, dalam satu daftar.'
     : 'Ganti pilihan vendor untuk membandingkan dengan pemasok lain.'
@@ -171,7 +170,10 @@ export default function AdminPpobItems() {
                 <th className="px-5 py-3 font-semibold">Kode</th>
                 <th className="px-5 py-3 font-semibold text-right">Modal</th>
                 <th className="px-5 py-3 font-semibold text-right">Jual</th>
-                <th className="px-5 py-3 font-semibold text-center">Vendor</th>
+                {/* Ketersediaan DI SISI PEMASOK — bukan nama pemasoknya, yang
+                    sudah ada di kolom kedua. Dua kolom berjudul "Vendor"
+                    membuat keduanya sama-sama tak terbaca. */}
+                <th className="px-5 py-3 font-semibold text-center">Status vendor</th>
                 <th className="px-5 py-3 font-semibold text-center">Tampil ke pelanggan</th>
               </tr>
             </thead>
