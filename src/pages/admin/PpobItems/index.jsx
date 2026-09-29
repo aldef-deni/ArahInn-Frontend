@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   PackageSearch, Search, Loader2, Inbox, ChevronLeft, ChevronRight, Layers,
+  Eye, EyeOff,
 } from 'lucide-react'
 import { ppobItemApi } from '@/services/index'
+import { useToast } from '@/hooks/use-toast'
 
 const rupiah = (n) => (n == null ? '—' : 'Rp ' + Number(n).toLocaleString('id-ID'))
 const angka  = (n) => Number(n || 0).toLocaleString('id-ID')
@@ -27,9 +29,15 @@ const VENDOR = [
 ]
 
 const STATUS = [
-  { key: 'all',         label: 'Semua status' },
-  { key: 'available',   label: 'Siap dijual' },
-  { key: 'unavailable', label: 'Tidak aktif' },
+  { key: 'all',         label: 'Semua status vendor' },
+  { key: 'available',   label: 'Aktif di vendor' },
+  { key: 'unavailable', label: 'Nonaktif di vendor' },
+]
+
+const SAKLAR = [
+  { key: 'all', label: 'Semua' },
+  { key: 'on',  label: 'Ditampilkan' },
+  { key: 'off', label: 'Disembunyikan' },
 ]
 
 const GAYA_VENDOR = {
@@ -53,12 +61,15 @@ export default function AdminPpobItems() {
   const [status, setStatus]     = useState('all')
   const [kategori, setKategori] = useState('')
   const [q, setQ]               = useState('')
+  const [enabled, setEnabled]   = useState('all')
   const [page, setPage]         = useState(1)
+  const { toast } = useToast()
+  const qc = useQueryClient()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-ppob-items', vendor, status, kategori, q, page],
+    queryKey: ['admin-ppob-items', vendor, status, kategori, q, enabled, page],
     queryFn : () => ppobItemApi.list({
-      vendor, status,
+      vendor, status, enabled,
       category: kategori || undefined,
       q: q || undefined,
       page, limit: 25,
@@ -72,6 +83,19 @@ export default function AdminPpobItems() {
   const pagination = data?.pagination ?? { page: 1, totalPages: 1, total: 0 }
 
   const saring = (setter) => (nilai) => { setter(nilai); setPage(1) }
+
+  const ubahSaklar = useMutation({
+    mutationFn: ({ vendor: v, id, enabled: e }) => ppobItemApi.toggle(v, id, e).then(r => r.data),
+    onSuccess : (res) => {
+      toast({ title: res?.message })
+      qc.invalidateQueries({ queryKey: ['admin-ppob-items'] })
+    },
+    onError: (err) => toast({
+      title      : 'Gagal mengubah',
+      description: err?.response?.data?.message ?? 'Coba lagi.',
+      variant    : 'destructive',
+    }),
+  })
 
   const judulVendor = vendor === 'rajabiller' ? 'Item RajaBiller'
                     : vendor === 'digiflazz'  ? 'Item Digiflazz'
@@ -113,6 +137,7 @@ export default function AdminPpobItems() {
 
           <Pilih nilai={vendor}   onUbah={saring(setVendor)} opsi={VENDOR} />
           <Pilih nilai={status}   onUbah={saring(setStatus)} opsi={STATUS} />
+          <Pilih nilai={enabled}  onUbah={saring(setEnabled)} opsi={SAKLAR} />
           <select
             value={kategori} onChange={e => saring(setKategori)(e.target.value)}
             className="px-3 py-2 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
@@ -146,7 +171,8 @@ export default function AdminPpobItems() {
                 <th className="px-5 py-3 font-semibold">Kode</th>
                 <th className="px-5 py-3 font-semibold text-right">Modal</th>
                 <th className="px-5 py-3 font-semibold text-right">Jual</th>
-                <th className="px-5 py-3 font-semibold text-center">Status</th>
+                <th className="px-5 py-3 font-semibold text-center">Vendor</th>
+                <th className="px-5 py-3 font-semibold text-center">Tampil ke pelanggan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -172,8 +198,18 @@ export default function AdminPpobItems() {
                     <span className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold ${
                       p.available ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
                     }`}>
-                      {p.available ? 'Siap' : 'Tidak aktif'}
+                      {p.available ? 'Aktif' : 'Nonaktif'}
                     </span>
+                  </td>
+                  <td className="px-5 py-3 text-center">
+                    <Saklar
+                      aktif={!!p.isEnabled}
+                      // Vendor menonaktifkan produk = tidak bisa dijual siapa pun.
+                      // Saklar kita dibiarkan bisa disetel supaya keputusan tetap
+                      // tersimpan saat produknya kembali aktif di vendor.
+                      sibuk={ubahSaklar.isPending}
+                      onUbah={(nilai) => ubahSaklar.mutate({ vendor: p.vendor, id: p.id, enabled: nilai })}
+                    />
                   </td>
                 </tr>
               ))}
@@ -201,6 +237,31 @@ export default function AdminPpobItems() {
   )
 }
 
+/**
+ * Saklar tampil/sembunyi satu produk.
+ *
+ * Dipisahkan dari status vendor di kolom sebelahnya karena keduanya menjawab
+ * pertanyaan berbeda: vendor menentukan produknya BISA dijual, saklar ini
+ * menentukan kita MAU menjualnya.
+ */
+function Saklar({ aktif, sibuk, onUbah }) {
+  return (
+    <button
+      type="button" disabled={sibuk}
+      onClick={() => onUbah(!aktif)}
+      title={aktif ? 'Sembunyikan dari pelanggan' : 'Tampilkan ke pelanggan'}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors disabled:opacity-50 ${
+        aktif
+          ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+          : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+      }`}
+    >
+      {aktif ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+      {aktif ? 'Tampil' : 'Sembunyi'}
+    </button>
+  )
+}
+
 function Pilih({ nilai, onUbah, opsi }) {
   return (
     <select
@@ -222,8 +283,9 @@ function KartuVendor({ nama, data, tone }) {
         <Layers className="w-3.5 h-3.5" /> {nama}
       </div>
       <p className="mt-1 text-lg font-extrabold text-white">
-        {angka(data?.available)} <span className="text-sm font-medium text-slate-300">/ {angka(data?.total)} siap</span>
+        {angka(data?.enabled)} <span className="text-sm font-medium text-slate-300">ditampilkan</span>
       </p>
+      <p className="text-[11px] text-slate-400">{angka(data?.available)} aktif di vendor · {angka(data?.total)} total</p>
       <p className="mt-0.5 text-[11px] text-slate-400">Sinkron terakhir: {amanWaktu(data?.lastSync)}</p>
     </div>
   )

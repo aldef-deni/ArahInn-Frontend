@@ -312,7 +312,10 @@ export const propertyPurchaseApi = {
 
 /** Item PPOB gabungan dari kedua pemasok (Rajabiller + Digiflazz). */
 export const ppobItemApi = {
-  list: (p) => api.get('/admin/ppob-items', { params: p }),
+  list  : (p) => api.get('/admin/ppob-items', { params: p }),
+  // vendor ikut di URL: id yang sama ada di kedua tabel dan menunjuk produk berbeda.
+  toggle: (vendor, id, enabled) =>
+    api.patch(`/admin/ppob-items/${vendor}/${id}/toggle`, { enabled }),
 }
 
 /** Digiflazz — pemasok PPOB kedua. Kunci API TIDAK pernah lewat sini. */
