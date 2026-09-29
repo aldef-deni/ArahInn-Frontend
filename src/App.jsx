@@ -193,7 +193,11 @@ function AdminRoute({ children, roles = [] }) {
     if (user?.role === 'user') return <ExternalRedirect to={getCustomerPortalUrl()} />
     return <Navigate to="/login" replace />
   }
-  if (!managementMode) {
+  // Staging melayani SEMUA portal dalam satu domain: halaman pelanggan dan
+  // dasbor pengelola. Tanpa pengecualian ini, fitur admin yang sedang diuji
+  // mustahil dibuka — di staging pengunjung dilempar ke kelola.arahinn.com,
+  // sementara di kelola fiturnya memang belum diaktifkan.
+  if (!managementMode && !isStaging()) {
     return <ExternalRedirect to={getManagementPortalUrl('/admin')} />
   }
   if (roles.length && !roles.includes(user?.role)) return <Navigate to="/admin" replace />
