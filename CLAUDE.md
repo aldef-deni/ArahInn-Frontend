@@ -41,6 +41,17 @@ mengetik path-nya langsung di bilah alamat produksi.
 
 Saat ini dipagari: **Streaming radio RRI** (`/streaming`).
 
+⚠️ Pemagaran staging **hanya untuk halaman PELANGGAN**. Halaman `/admin/*`
+tinggal di `~/pengelola-arahinn` (kelola.arahinn.com) dan `AdminRoute` melempar
+keluar akses `/admin` dari host lain. Memagari halaman admin ke staging berarti
+halaman itu tidak bisa dibuka di mana pun — pernah terjadi dengan halaman
+Digiflazz, dan "perbaikannya" saat itu membuka jalan masuk baru ke dasbor
+pengelola lewat domain staging. Jangan diulang.
+
+⚠️ Staging dan produksi memakai **backend dan database yang SAMA**
+(`ota-backend.arahinn.com`). Yang terpisah hanya berkas frontend. Untuk fitur
+yang menulis data, staging tidak mengisolasi apa pun.
+
 Deploy manual (mis. setelah `git pull` manual, yang membuat cron menganggap
 tidak ada yang baru): `./deploy-server.sh --yes`
 

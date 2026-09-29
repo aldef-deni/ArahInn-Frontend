@@ -193,11 +193,7 @@ function AdminRoute({ children, roles = [] }) {
     if (user?.role === 'user') return <ExternalRedirect to={getCustomerPortalUrl()} />
     return <Navigate to="/login" replace />
   }
-  // Staging melayani SEMUA portal dalam satu domain: halaman pelanggan dan
-  // dasbor pengelola. Tanpa pengecualian ini, fitur admin yang sedang diuji
-  // mustahil dibuka — di staging pengunjung dilempar ke kelola.arahinn.com,
-  // sementara di kelola fiturnya memang belum diaktifkan.
-  if (!managementMode && !isStaging()) {
+  if (!managementMode) {
     return <ExternalRedirect to={getManagementPortalUrl('/admin')} />
   }
   if (roles.length && !roles.includes(user?.role)) return <Navigate to="/admin" replace />
@@ -426,11 +422,8 @@ export default function App() {
           <Route path="property-views" element={<BlockRoles roles={['design_interior', 'finance']}><AdminPropertyViews /></BlockRoles>} />
           {/* Poin bernilai rupiah dan ditanggung ArahInn — hanya superadmin. */}
           <Route path="property-purchases" element={<AdminRoute roles={['superadmin']}><AdminPropertyPurchases /></AdminRoute>} />
-          {/* Digiflazz masih diuji — hanya aktif di staging. Halamannya
-              menampilkan saldo deposit dan URL webhook, jadi superadmin saja. */}
-          {isStaging() && (
-            <Route path="digiflazz" element={<AdminRoute roles={['superadmin']}><AdminDigiflazz /></AdminRoute>} />
-          )}
+          {/* Menampilkan saldo deposit dan URL webhook — superadmin saja. */}
+          <Route path="digiflazz" element={<AdminRoute roles={['superadmin']}><AdminDigiflazz /></AdminRoute>} />
           <Route path="reviews" element={<BlockRoles roles={['design_interior']}><AdminReviews /></BlockRoles>} />
           <Route path="interior" element={<AdminInterior />} />
           <Route path="ppob" element={<AdminPpob />} />
