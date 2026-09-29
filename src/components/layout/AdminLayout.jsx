@@ -55,9 +55,10 @@ const NAV_ADMIN = [
       { to: '/admin/ppob',           label: 'PPOB Monitoring', icon: Receipt },
       { to: '/admin/ppob-items',     label: 'PPOB Items',      icon: PackageSearch },
       { to: '/admin/ppob-admin-fee', label: 'Admin PPOB',      icon: Coins },
+      // Konfigurasi pemasok PPOB — tempatnya bersama menu PPOB lain.
+      { to: '/admin/digiflazz',      label: 'Digiflazz',       icon: Plug2 },
     ],
   },
-  { to: '/admin/digiflazz',         label: 'Digiflazz',             icon: Plug2 },
   { to: '/admin/travel',            label: 'Tiket Travel',          icon: Ticket },
   {
     type: 'group',
@@ -166,7 +167,7 @@ export default function AdminLayout() {
   const groupRoutes = {
     promo: ['/admin/promos', '/admin/campaigns'],
     properti: ['/admin/property-approval', '/admin/property-views', '/admin/property-purchases'],
-    ppob: ['/admin/ppob', '/admin/ppob-items', '/admin/ppob-admin-fee'],
+    ppob: ['/admin/ppob', '/admin/ppob-items', '/admin/ppob-admin-fee', '/admin/digiflazz'],
   }
   const [openGroups, setOpenGroups] = useState(() => {
     const init = {}
