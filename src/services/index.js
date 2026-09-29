@@ -310,6 +310,14 @@ export const propertyPurchaseApi = {
   create     : (d) => api.post('/admin/property-purchases', d),
 }
 
+/** Digiflazz — pemasok PPOB kedua. Kunci API TIDAK pernah lewat sini. */
+export const digiflazzApi = {
+  status  : ()  => api.get('/admin/digiflazz/status'),
+  test    : ()  => api.post('/admin/digiflazz/test'),
+  sync    : (d) => api.post('/admin/digiflazz/sync', d),
+  products: (p) => api.get('/admin/digiflazz/products', { params: p }),
+}
+
 export const ownerApi = {
   dashboard: (p) => api.get('/owner/dashboard', { params: p }),
 }

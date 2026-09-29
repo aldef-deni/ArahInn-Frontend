@@ -111,6 +111,7 @@ import SupplierHotel from '@/pages/SupplierHotel'
 import AdminPropertyApproval from '@/pages/admin/PropertyApproval'
 import AdminPropertyViews from '@/pages/admin/PropertyViews'
 import AdminPropertyPurchases from '@/pages/admin/PropertyPurchases'
+import AdminDigiflazz from '@/pages/admin/Digiflazz'
 import AdminReviews from '@/pages/admin/Reviews'
 
 // Admin Pricing
@@ -421,6 +422,11 @@ export default function App() {
           <Route path="property-views" element={<BlockRoles roles={['design_interior', 'finance']}><AdminPropertyViews /></BlockRoles>} />
           {/* Poin bernilai rupiah dan ditanggung ArahInn — hanya superadmin. */}
           <Route path="property-purchases" element={<AdminRoute roles={['superadmin']}><AdminPropertyPurchases /></AdminRoute>} />
+          {/* Digiflazz masih diuji — hanya aktif di staging. Halamannya
+              menampilkan saldo deposit dan URL webhook, jadi superadmin saja. */}
+          {isStaging() && (
+            <Route path="digiflazz" element={<AdminRoute roles={['superadmin']}><AdminDigiflazz /></AdminRoute>} />
+          )}
           <Route path="reviews" element={<BlockRoles roles={['design_interior']}><AdminReviews /></BlockRoles>} />
           <Route path="interior" element={<AdminInterior />} />
           <Route path="ppob" element={<AdminPpob />} />

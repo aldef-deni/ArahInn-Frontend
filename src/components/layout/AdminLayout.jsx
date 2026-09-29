@@ -2,6 +2,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '@/store/authStore'
+import { isStaging } from '@/utils/isExtranet'
 import { authApi, chatApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -9,7 +10,7 @@ import {
   Users, UserCog, Tag, LogOut, Menu, X, User,
   FileText, CreditCard, Building2, Megaphone, ChevronDown, MessageSquare,
   CalendarDays, Sofa, Headphones, Shield, Receipt, Settings, Ticket, TrendingUp, Star, Heart, Coins,
-  MonitorSmartphone, Plug, Eye, Handshake,
+  MonitorSmartphone, Plug, Plug2, Eye, Handshake,
 } from 'lucide-react'
 import { cn, roleLabel, getImageUrl } from '@/utils'
 import NotificationBell from '@/components/ui/NotificationBell'
@@ -48,6 +49,8 @@ const NAV_ADMIN = [
   { to: '/admin/harga',             label: 'Harga & Ketersediaan',  icon: CalendarDays },
   { to: '/admin/ppob',              label: 'PPOB Monitoring',       icon: Receipt },
   { to: '/admin/ppob-admin-fee',    label: 'Admin PPOB',            icon: Coins },
+  // Masih diuji — hanya muncul di staging.arahinn.com (lihat isStaging()).
+  ...(isStaging() ? [{ to: '/admin/digiflazz', label: 'Digiflazz', icon: Plug2 }] : []),
   { to: '/admin/travel',            label: 'Tiket Travel',          icon: Ticket },
   {
     type: 'group',
