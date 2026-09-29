@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   PackageSearch, Search, Loader2, Inbox, ChevronLeft, ChevronRight, Layers,
-  Eye, EyeOff,
 } from 'lucide-react'
 import { ppobItemApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
+import Saklar from '@/components/admin/SaklarTampil'
 
 const rupiah = (n) => (n == null ? '—' : 'Rp ' + Number(n).toLocaleString('id-ID'))
 const angka  = (n) => Number(n || 0).toLocaleString('id-ID')
@@ -234,31 +234,6 @@ export default function AdminPpobItems() {
         )}
       </div>
     </div>
-  )
-}
-
-/**
- * Saklar tampil/sembunyi satu produk.
- *
- * Dipisahkan dari status vendor di kolom sebelahnya karena keduanya menjawab
- * pertanyaan berbeda: vendor menentukan produknya BISA dijual, saklar ini
- * menentukan kita MAU menjualnya.
- */
-function Saklar({ aktif, sibuk, onUbah }) {
-  return (
-    <button
-      type="button" disabled={sibuk}
-      onClick={() => onUbah(!aktif)}
-      title={aktif ? 'Sembunyikan dari pelanggan' : 'Tampilkan ke pelanggan'}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors disabled:opacity-50 ${
-        aktif
-          ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-          : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
-      }`}
-    >
-      {aktif ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-      {aktif ? 'Tampil' : 'Sembunyi'}
-    </button>
   )
 }
 

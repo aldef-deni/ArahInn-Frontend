@@ -5,8 +5,9 @@ import {
   CheckCircle2, XCircle, AlertTriangle, Webhook, Search, Inbox,
   ChevronLeft, ChevronRight, ShieldCheck,
 } from 'lucide-react'
-import { digiflazzApi } from '@/services/index'
+import { digiflazzApi, ppobItemApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
+import Saklar from '@/components/admin/SaklarTampil'
 
 const rupiah = (n) => 'Rp ' + Number(n || 0).toLocaleString('id-ID')
 const angka  = (n) => Number(n || 0).toLocaleString('id-ID')
@@ -125,11 +126,6 @@ export default function AdminDigiflazz() {
 
       {/* ── Kredensial ─────────────────────────────────────── */}
       <Panel judul="Kredensial" Icon={ShieldCheck}>
-        <p className="text-xs text-slate-500 leading-relaxed mb-4">
-          Kunci API hanya dibaca dari <code className="px-1 py-0.5 rounded bg-slate-100 text-slate-700">.env</code> server
-          dan <b>tidak pernah dikirim ke browser</b> — halaman ini hanya menampilkan ada atau tidaknya.
-          Mengubahnya dilakukan di server, lalu jalankan <code className="px-1 py-0.5 rounded bg-slate-100 text-slate-700">php artisan config:clear</code>.
-        </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <Penanda label="DIGIFLAZZ_USERNAME"       ada={status?.hasUsername} />
           <Penanda label="DIGIFLAZZ_DEV_KEY"        ada={status?.hasDevKey} />
@@ -147,11 +143,6 @@ export default function AdminDigiflazz() {
 
       {/* ── Webhook ────────────────────────────────────────── */}
       <Panel judul="Webhook" Icon={Webhook}>
-        <p className="text-xs text-slate-500 leading-relaxed mb-3">
-          Daftarkan URL ini di dasbor Digiflazz. Keasliannya diverifikasi lewat header
-          <code className="mx-1 px-1 py-0.5 rounded bg-slate-100 text-slate-700">X-Hub-Signature</code>
-          (HMAC-SHA1 atas body mentah) — tanpa itu siapa pun yang menebak URL bisa menandai transaksi sebagai sukses.
-        </p>
         <SalinBaris nilai={status?.webhookUrl} />
       </Panel>
 
@@ -180,11 +171,6 @@ export default function AdminDigiflazz() {
           <Statistik label="Kategori"       nilai={angka(katalog.categories)} />
           <Statistik label="Sinkron terakhir" nilai={amanWaktu(katalog.lastSync)} kecil />
         </div>
-        <p className="mt-3 text-[11px] text-slate-400 leading-relaxed">
-          &quot;Siap dijual&quot; = tersedia di katalog kami <i>dan</i> aktif di sisi pembeli maupun penjual Digiflazz.
-          Produk yang hilang dari respons ditandai tidak tersedia, bukan dihapus — menghapusnya akan memutus
-          riwayat transaksi yang menunjuk kode produk itu.
-        </p>
       </Panel>
 
       <DaftarProduk />
@@ -274,6 +260,8 @@ function DaftarProduk() {
   const [q, setQ] = useState('')
   const [kategori, setKategori] = useState('')
   const [page, setPage] = useState(1)
+  const qc = useQueryClient()
+  const { toast } = useToast()
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-digiflazz-products', q, kategori, page],
@@ -281,6 +269,21 @@ function DaftarProduk() {
       q: q || undefined, category: kategori || undefined, page, limit: 25,
     }).then(r => r.data),
     placeholderData: (prev) => prev,
+  })
+
+  // Memakai endpoint yang sama dengan halaman RajaBiller/Digiflazz gabungan,
+  // jadi menyalakan produk di sini dan di sana berarti hal yang persis sama.
+  const ubahSaklar = useMutation({
+    mutationFn: ({ id, enabled }) => ppobItemApi.toggle('digiflazz', id, enabled).then(r => r.data),
+    onSuccess : (res) => {
+      toast({ title: res?.message })
+      qc.invalidateQueries({ queryKey: ['admin-digiflazz-products'] })
+      qc.invalidateQueries({ queryKey: ['admin-ppob-items'] })
+    },
+    onError: (e) => toast({
+      title: e?.response?.data?.message || 'Gagal mengubah status produk.',
+      variant: 'destructive',
+    }),
   })
 
   const rows       = data?.data ?? []
@@ -327,6 +330,7 @@ function DaftarProduk() {
               <th className="px-5 py-3 font-semibold">SKU</th>
               <th className="px-5 py-3 font-semibold text-right">Harga modal</th>
               <th className="px-5 py-3 font-semibold text-center">Status</th>
+              <th className="px-5 py-3 font-semibold text-center">Tampil ke pelanggan</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -347,6 +351,16 @@ function DaftarProduk() {
                     }`}>
                       {siap ? 'Siap' : 'Tidak aktif'}
                     </span>
+                  </td>
+                  <td className="px-5 py-3 text-center">
+                    {/* Sengaja tetap bisa disetel walau vendor menandai produknya
+                        tidak siap: keputusan kita jangan ikut tersapu saat produk
+                        pulih dari gangguan. */}
+                    <Saklar
+                      aktif={!!p.isEnabled}
+                      sibuk={ubahSaklar.isPending}
+                      onUbah={(nilai) => ubahSaklar.mutate({ id: p.id, enabled: nilai })}
+                    />
                   </td>
                 </tr>
               )
