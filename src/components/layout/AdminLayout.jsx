@@ -53,7 +53,7 @@ const NAV_ADMIN = [
     icon: Receipt,
     children: [
       { to: '/admin/ppob',           label: 'PPOB Monitoring', icon: Receipt },
-      { to: '/admin/ppob-items',     label: 'PPOB Items',      icon: PackageSearch },
+      { to: '/admin/ppob-items',     label: 'RajaBiller',      icon: PackageSearch },
       { to: '/admin/ppob-admin-fee', label: 'Admin PPOB',      icon: Coins },
       // Konfigurasi pemasok PPOB — tempatnya bersama menu PPOB lain.
       { to: '/admin/digiflazz',      label: 'Digiflazz',       icon: Plug2 },

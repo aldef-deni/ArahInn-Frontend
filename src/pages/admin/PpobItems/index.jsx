@@ -46,7 +46,10 @@ const GAYA_VENDOR = {
  * produknya gratis.
  */
 export default function AdminPpobItems() {
-  const [vendor, setVendor]     = useState('all')
+  // Menunya bernama RajaBiller, jadi itu yang tampil lebih dulu. Pilihan
+  // vendor tetap ada supaya perbandingan dengan Digiflazz tidak hilang —
+  // membandingkan harga modal antar pemasok justru alasan halaman ini dibuat.
+  const [vendor, setVendor]     = useState('rajabiller')
   const [status, setStatus]     = useState('all')
   const [kategori, setKategori] = useState('')
   const [q, setQ]               = useState('')
@@ -70,6 +73,13 @@ export default function AdminPpobItems() {
 
   const saring = (setter) => (nilai) => { setter(nilai); setPage(1) }
 
+  const judulVendor = vendor === 'rajabiller' ? 'Item RajaBiller'
+                    : vendor === 'digiflazz'  ? 'Item Digiflazz'
+                    : 'Item PPOB'
+  const ketVendor = vendor === 'all'
+    ? 'Produk dari kedua pemasok, dalam satu daftar.'
+    : 'Ganti pilihan vendor untuk membandingkan dengan pemasok lain.'
+
   return (
     <div className="max-w-7xl mx-auto space-y-5">
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 p-6 sm:p-7 text-white shadow-xl">
@@ -79,8 +89,8 @@ export default function AdminPpobItems() {
             <PackageSearch className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="font-display text-xl sm:text-2xl font-bold tracking-tight">PPOB Items</h1>
-            <p className="text-sm text-slate-300 mt-0.5">Produk dari kedua pemasok, dalam satu daftar.</p>
+            <h1 className="font-display text-xl sm:text-2xl font-bold tracking-tight">{judulVendor}</h1>
+            <p className="text-sm text-slate-300 mt-0.5">{ketVendor}</p>
           </div>
         </div>
 
