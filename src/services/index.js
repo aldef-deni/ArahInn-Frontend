@@ -310,6 +310,11 @@ export const propertyPurchaseApi = {
   create     : (d) => api.post('/admin/property-purchases', d),
 }
 
+/** Item PPOB gabungan dari kedua pemasok (Rajabiller + Digiflazz). */
+export const ppobItemApi = {
+  list: (p) => api.get('/admin/ppob-items', { params: p }),
+}
+
 /** Digiflazz — pemasok PPOB kedua. Kunci API TIDAK pernah lewat sini. */
 export const digiflazzApi = {
   status  : ()  => api.get('/admin/digiflazz/status'),

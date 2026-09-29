@@ -9,7 +9,7 @@ import {
   Users, UserCog, Tag, LogOut, Menu, X, User,
   FileText, CreditCard, Building2, Megaphone, ChevronDown, MessageSquare,
   CalendarDays, Sofa, Headphones, Shield, Receipt, Settings, Ticket, TrendingUp, Star, Heart, Coins,
-  MonitorSmartphone, Plug, Plug2, Eye, Handshake,
+  MonitorSmartphone, Plug, Plug2, Eye, Handshake, PackageSearch,
 } from 'lucide-react'
 import { cn, roleLabel, getImageUrl } from '@/utils'
 import NotificationBell from '@/components/ui/NotificationBell'
@@ -46,8 +46,17 @@ const NAV_ADMIN = [
   },
   { to: '/admin/interior',          label: 'Design Interior',       icon: Sofa },
   { to: '/admin/harga',             label: 'Harga & Ketersediaan',  icon: CalendarDays },
-  { to: '/admin/ppob',              label: 'PPOB Monitoring',       icon: Receipt },
-  { to: '/admin/ppob-admin-fee',    label: 'Admin PPOB',            icon: Coins },
+  {
+    type: 'group',
+    key: 'ppob',
+    label: 'PPOB',
+    icon: Receipt,
+    children: [
+      { to: '/admin/ppob',           label: 'PPOB Monitoring', icon: Receipt },
+      { to: '/admin/ppob-items',     label: 'PPOB Items',      icon: PackageSearch },
+      { to: '/admin/ppob-admin-fee', label: 'Admin PPOB',      icon: Coins },
+    ],
+  },
   { to: '/admin/digiflazz',         label: 'Digiflazz',             icon: Plug2 },
   { to: '/admin/travel',            label: 'Tiket Travel',          icon: Ticket },
   {
@@ -157,11 +166,12 @@ export default function AdminLayout() {
   const groupRoutes = {
     promo: ['/admin/promos', '/admin/campaigns'],
     properti: ['/admin/property-approval', '/admin/property-views', '/admin/property-purchases'],
+    ppob: ['/admin/ppob', '/admin/ppob-items', '/admin/ppob-admin-fee'],
   }
   const [openGroups, setOpenGroups] = useState(() => {
     const init = {}
     Object.entries(groupRoutes).forEach(([key, routes]) => {
-      init[key] = routes.some(p => location.pathname.startsWith(p))
+      init[key] = routes.some(p => location.pathname === p || location.pathname.startsWith(p + '/'))
     })
     return init
   })
@@ -191,10 +201,13 @@ export default function AdminLayout() {
     if (qs) {
       const param = new URLSearchParams(qs)
       const cur   = new URLSearchParams(location.search)
-      return location.pathname.startsWith(path) &&
+      return (location.pathname === path || location.pathname.startsWith(path + '/')) &&
         [...param.entries()].every(([k,v]) => cur.get(k) === v)
     }
-    if (location.pathname.startsWith(path)) {
+    // Pencocokan WAJIB menghormati batas segmen. `startsWith` polos membuat
+    // '/admin/ppob' ikut menyala saat membuka '/admin/ppob-admin-fee', karena
+    // teksnya memang berawalan sama — dua menu tersorot sekaligus.
+    if (location.pathname === path || location.pathname.startsWith(path + '/')) {
       if (path === '/admin/users' && location.search.includes('section=')) return false
       return true
     }
