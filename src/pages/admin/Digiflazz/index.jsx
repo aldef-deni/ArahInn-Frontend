@@ -329,7 +329,11 @@ function DaftarProduk() {
               <th className="px-5 py-3 font-semibold">Kategori</th>
               <th className="px-5 py-3 font-semibold">SKU</th>
               <th className="px-5 py-3 font-semibold text-right">Harga modal</th>
-              <th className="px-5 py-3 font-semibold text-center">Status</th>
+              {/* Judul dan nilainya disamakan dengan halaman Item PPOB: keduanya
+                  menghitung hal yang sama persis (is_available DAN buyer_status
+                  DAN seller_status), jadi menuliskannya berbeda hanya membuat
+                  orang ragu apakah kedua halaman itu sinkron. */}
+              <th className="px-5 py-3 font-semibold text-center">Status vendor</th>
               <th className="px-5 py-3 font-semibold text-center">Tampil ke pelanggan</th>
             </tr>
           </thead>
@@ -349,7 +353,7 @@ function DaftarProduk() {
                     <span className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold ${
                       siap ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
                     }`}>
-                      {siap ? 'Siap' : 'Tidak aktif'}
+                      {siap ? 'Aktif' : 'Nonaktif'}
                     </span>
                   </td>
                   <td className="px-5 py-3 text-center">

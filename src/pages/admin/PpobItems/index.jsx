@@ -88,6 +88,10 @@ export default function AdminPpobItems() {
     onSuccess : (res) => {
       toast({ title: res?.message })
       qc.invalidateQueries({ queryKey: ['admin-ppob-items'] })
+      // Halaman Digiflazz menampilkan kolom is_enabled yang SAMA. Tanpa ini,
+      // menyalakan produk di sini lalu berpindah ke sana menampilkan keadaan
+      // lama dari cache — dua halaman tampak tidak sinkron padahal datanya satu.
+      qc.invalidateQueries({ queryKey: ['admin-digiflazz-products'] })
     },
     onError: (err) => toast({
       title      : 'Gagal mengubah',
