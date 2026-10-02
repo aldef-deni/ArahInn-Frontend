@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { bookingApi, paymentApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah } from '@/utils'
-import { Clock, Copy, Check, CheckCircle, XCircle, Building2, X, ArrowLeft, ListOrdered, Info, ChevronDown, Wallet, QrCode, CreditCard, ShieldCheck, Loader2, RefreshCw } from 'lucide-react'
+import { Clock, Copy, Check, CheckCircle, XCircle, Building2, X, ArrowLeft, ListOrdered, Info, ChevronDown, Wallet, QrCode, CreditCard, ShieldCheck, Loader2, RefreshCw, Store, CalendarClock } from 'lucide-react'
 
 const BANKS = [
   { id: 'bca',     label: 'BCA',     logo: '/banks/bca.png' },
@@ -69,6 +69,10 @@ const MIDTRANS_METHODS = [
   { id: 'qris', availabilityKey: 'qris', label: 'QRIS', caption: 'Scan melalui GoPay QRIS', icon: QrCode },
   { id: 'ewallet', availabilityKey: 'ewallet', label: 'E-Wallet', caption: 'Dompet digital yang tersedia', icon: Wallet },
   { id: 'credit_card', availabilityKey: 'creditCard', label: 'Kartu Kredit', caption: 'Visa, Mastercard & JCB', icon: CreditCard },
+  // Dua di bawah ini hanya muncul kalau Midtrans benar-benar mengaktifkannya —
+  // `availabilityKey` dibaca dari merchant-preferences, bukan dari daftar ini.
+  { id: 'cardless_credit', availabilityKey: 'cardlessCredit', label: 'Bayar Bertempo', caption: 'Akulaku', icon: CalendarClock },
+  { id: 'convenience_store', availabilityKey: 'convenienceStore', label: 'Toko Retail', caption: 'Alfamart, Alfamidi, Dan+Dan & Indomaret', icon: Store },
 ]
 
 export default function Payment() {
@@ -100,8 +104,29 @@ export default function Payment() {
   const paymentMode = modeData?.mode ?? 'doku'
   const manualBank  = modeData?.bank
   const midtransAvailability = modeData?.midtrans?.availableChannels
+
+  /**
+   * Apakah daftar ketersediaan benar-benar terbaca dari Midtrans.
+   *
+   * Penting dibedakan dari "terbaca tapi metodenya mati". Kalau backend gagal
+   * membaca ke Midtrans, ia mengembalikan objek KOSONG — dan pemeriksaan
+   * `!== false` dulu menganggap setiap kunci yang tidak ada sebagai TERSEDIA.
+   * Akibatnya seluruh metode tetap ditawarkan lalu ditolak saat pelanggan
+   * menekan bayar.
+   */
+  const availabilityTerbaca = !!midtransAvailability
+    && Object.keys(midtransAvailability).length > 0
+
+  /** Metode dianggap tersedia hanya bila daftarnya menyatakannya begitu. */
+  const metodeTersedia = (key) => availabilityTerbaca
+    ? midtransAvailability[key] === true
+    // Daftarnya belum/gagal terbaca: jangan kunci pelanggan di luar checkout
+    // hanya karena satu pembacaan gagal — biarkan mencoba, backend yang menolak
+    // dengan pesan jelas bila metodenya memang mati.
+    : true
+
   const selectedMidtransMethod = MIDTRANS_METHODS.find(method => method.id === midtransChannel)
-  const selectedMidtransAvailable = midtransAvailability?.[selectedMidtransMethod?.availabilityKey] !== false
+  const selectedMidtransAvailable = metodeTersedia(selectedMidtransMethod?.availabilityKey)
 
   const { data: booking, isLoading, refetch: refetchBooking } = useQuery({
     queryKey: ['booking-payment', bookingId],
@@ -568,7 +593,7 @@ export default function Payment() {
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
                 {MIDTRANS_METHODS.map(({ id, availabilityKey, icon: Icon, label, caption }) => {
-                  const available = midtransAvailability?.[availabilityKey] !== false
+                  const available = metodeTersedia(availabilityKey)
                   return (
                   <button
                     key={id}
