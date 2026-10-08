@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Loader2, CheckCircle2, XCircle, Clock } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Loader2, CheckCircle2, XCircle, Clock, Ban } from 'lucide-react'
 import { supplierHotelApi } from '@/services/index'
+import { formatRupiah } from '@/services/api'
 
 /**
  * Layar status pemesanan hotel mitra.
@@ -11,10 +13,20 @@ import { supplierHotelApi } from '@/services/index'
  * Status final hanya datang dari backend ArahInn (yang memanggil Check Booking
  * Process / menerima webhook). Browser polling ke BACKEND, tidak pernah ke
  * RateHawk.
+ *
+ * Pembatalan ADA DI SINI, bukan di Riwayat Pesanan. Alasannya: pemesanan hotel
+ * mitra tidak membuat baris `bookings` ArahInn sama sekali — hanya
+ * `provider_bookings` — sehingga tidak pernah muncul di halaman itu. Sampai
+ * pemesanan mitra ikut terdaftar di sana, layar inilah satu-satunya tempat
+ * tamu bisa membatalkan, dan mengarahkannya ke /orders justru membuatnya
+ * terlihat seperti pemesanan yang hilang.
  */
 export default function SupplierBookingStatus({ partnerOrderId, hotelName, onDone }) {
   const { t } = useTranslation()
   const [stopped, setStopped] = useState(false)
+  const [mintaBatal, setMintaBatal] = useState(false)
+  const [dibatalkan, setDibatalkan] = useState(false)
+  const [galatBatal, setGalatBatal] = useState(null)
 
   const { data } = useQuery({
     queryKey: ['supplier-booking-status', partnerOrderId],
@@ -38,12 +50,97 @@ export default function SupplierBookingStatus({ partnerOrderId, hotelName, onDon
     }
   }, [data?.final, status, onDone])
 
+  // Pratinjau denda diambil HANYA saat tamu menekan "Batalkan", bukan saat
+  // layar dibuka: ini panggilan ke supplier, dan tidak semua orang yang
+  // melihat konfirmasi berniat membatalkan.
+  const pratinjau = useQuery({
+    queryKey: ['supplier-cancellation', partnerOrderId],
+    queryFn : () => supplierHotelApi.cancellation(partnerOrderId).then(r => r.data?.data),
+    enabled : mintaBatal && !dibatalkan,
+    retry   : false,
+  })
+
+  const batalkan = useMutation({
+    mutationFn: () => supplierHotelApi.cancel(partnerOrderId).then(r => r.data?.data),
+    onSuccess : (hasil) => {
+      // CANCEL_PENDING bukan "sudah batal". Mengatakannya batal di sini
+      // berarti menebak jawaban yang belum diberikan supplier.
+      if (hasil?.status === 'CANCEL_PENDING' || hasil?.state === 'CANCEL_PENDING') {
+        setGalatBatal(t('supplier.cancelPending'))
+        return
+      }
+      setDibatalkan(true)
+    },
+    onError: (err) => setGalatBatal(
+      err?.response?.data?.message ?? t('supplier.cancelFailed'),
+    ),
+  })
+
+  if (dibatalkan || status === 'CANCELLED') {
+    return (
+      <Panel
+        tone="slate" icon={Ban}
+        title={t('supplier.cancelledTitle')}
+        body={t('supplier.cancelledBody', { hotel: hotelName })}
+        footer={<TautanPesanan t={t} />}
+      />
+    )
+  }
+
   if (status === 'CONFIRMED') {
+    const denda = Number(pratinjau.data?.penaltyAmount ?? 0)
+
     return (
       <Panel
         tone="green" icon={CheckCircle2}
         title={t('supplier.statusConfirmedTitle')}
         body={t('supplier.statusConfirmedBody', { hotel: hotelName })}
+        footer={
+          <div className="mt-6">
+            {galatBatal && (
+              <p className="mb-3 text-[12px] text-red-500">{galatBatal}</p>
+            )}
+
+            {!mintaBatal ? (
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  onClick={() => { setGalatBatal(null); setMintaBatal(true) }}
+                  className="text-[12px] font-semibold text-red-500 hover:text-red-600 underline underline-offset-2"
+                >
+                  {t('supplier.cancelBookingCta')}
+                </button>
+                <TautanPesanan t={t} />
+              </div>
+            ) : pratinjau.isLoading ? (
+              <p className="text-[12px] text-slate-400">{t('supplier.cancelChecking')}</p>
+            ) : (
+              <div className="max-w-sm mx-auto">
+                <p className="text-[12px] text-slate-600">
+                  {denda > 0
+                    ? t('supplier.cancelPenaltyNote', { amount: formatRupiah(denda) })
+                    : t('supplier.cancelFreeNote')}
+                </p>
+                <div className="mt-3 flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => batalkan.mutate()}
+                    disabled={batalkan.isPending}
+                    className="px-4 py-2 rounded-xl bg-red-500 text-white text-[12px] font-bold disabled:opacity-50"
+                  >
+                    {batalkan.isPending
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : t('supplier.cancelConfirm')}
+                  </button>
+                  <button
+                    onClick={() => setMintaBatal(false)}
+                    className="px-4 py-2 rounded-xl border border-slate-200 text-[12px] font-semibold text-slate-600"
+                  >
+                    {t('supplier.cancelBack')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        }
       />
     )
   }
@@ -74,11 +171,20 @@ export default function SupplierBookingStatus({ partnerOrderId, hotelName, onDon
   )
 }
 
+function TautanPesanan({ t }) {
+  return (
+    <Link to="/orders" className="text-[11px] text-slate-400 hover:text-slate-600 underline underline-offset-2">
+      {t('supplier.viewOrders')}
+    </Link>
+  )
+}
+
 function Panel({ tone, icon: Icon, spin, title, body, footer }) {
   const tones = {
     green: 'bg-emerald-50 text-emerald-600',
     red  : 'bg-red-50 text-red-600',
     blue : 'bg-blue-50 text-blue-600',
+    slate: 'bg-slate-100 text-slate-500',
   }
 
   return (

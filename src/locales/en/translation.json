@@ -1482,7 +1482,18 @@
     "nonRefundableNote": "This booking cannot be cancelled or refunded.",
     "agreeTerms": "I have read and accept the property rules and the cancellation policy above.",
     "processingBooking": "Processing your booking…",
-    "bookNow": "Book now"
+    "bookNow": "Book now",
+    "cancelBookingCta": "Cancel booking",
+    "cancelChecking": "Checking cancellation terms…",
+    "cancelFreeNote": "This cancellation is free of charge.",
+    "cancelPenaltyNote": "A penalty of {{amount}} applies.",
+    "cancelConfirm": "Yes, cancel it",
+    "cancelBack": "Keep booking",
+    "cancelPending": "The supplier is still processing the cancellation. The status will update automatically.",
+    "cancelledTitle": "Booking cancelled",
+    "cancelledBody": "Your booking at {{hotel}} has been cancelled with the supplier.",
+    "cancelFailed": "Cancellation failed",
+    "viewOrders": "View order history"
   },
   "interest": {
     "title": "Register Interest",

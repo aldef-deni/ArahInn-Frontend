@@ -1482,7 +1482,18 @@
     "nonRefundableNote": "Pemesanan ini tidak dapat dibatalkan atau diuangkan kembali.",
     "agreeTerms": "Saya telah membaca dan menyetujui aturan properti serta kebijakan pembatalan di atas.",
     "processingBooking": "Memproses pemesanan…",
-    "bookNow": "Pesan sekarang"
+    "bookNow": "Pesan sekarang",
+    "cancelBookingCta": "Batalkan pemesanan",
+    "cancelChecking": "Memeriksa ketentuan pembatalan…",
+    "cancelFreeNote": "Pembatalan ini tidak dikenakan denda.",
+    "cancelPenaltyNote": "Pembatalan dikenakan denda {{amount}}.",
+    "cancelConfirm": "Ya, batalkan",
+    "cancelBack": "Tidak jadi",
+    "cancelPending": "Pembatalan sedang diproses pemasok. Statusnya akan diperbarui otomatis.",
+    "cancelledTitle": "Pemesanan dibatalkan",
+    "cancelledBody": "Pemesanan Anda di {{hotel}} sudah dibatalkan pada pemasok.",
+    "cancelFailed": "Pembatalan gagal",
+    "viewOrders": "Lihat Riwayat Pesanan"
   },
   "interest": {
     "title": "Ajukan Minat",

@@ -152,9 +152,15 @@ export default function SupplierHotel() {
         <SupplierBookingStatus
           partnerOrderId={partnerOrderId}
           hotelName={hotel.name}
-          onDone={(status) => {
-            if (status === 'CONFIRMED') navigate('/orders')
-          }}
+          // SENGAJA tidak mengalihkan ke /orders saat CONFIRMED.
+          //
+          // Pemesanan hotel mitra tidak membuat baris `bookings` ArahInn —
+          // hanya `provider_bookings` — sehingga TIDAK pernah muncul di
+          // Riwayat Pesanan. Pengalihan lama membuang tamu ke halaman yang
+          // tidak memuat pemesanannya, dan dari sisi mereka terlihat seperti
+          // pemesanan yang gagal atau hilang padahal sudah terkonfirmasi.
+          // Layar status ini juga satu-satunya tempat pembatalan tersedia.
+          onDone={() => {}}
         />
       </div>
     )
