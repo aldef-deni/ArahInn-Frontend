@@ -8,6 +8,8 @@ import { format, addDays } from 'date-fns'
 import { useTranslation } from 'react-i18next'
 import HotelCardRow from '@/components/hotel/HotelCardRow'
 import SupplierHotelCard from '@/components/hotel/SupplierHotelCard'
+import GuestPicker from '@/components/hotel/GuestPicker'
+import { decodeOccupancy, encodeOccupancy, occupancyKeApi, totalTamu } from '@/utils/occupancy'
 import ResidencySelect from '@/components/hotel/ResidencySelect'
 import { useResidencyStore } from '@/store/residencyStore'
 import DestinationSearch from '@/components/ui/DestinationSearch'
@@ -101,6 +103,11 @@ export default function SearchPage() {
     guests  : params.get('guests')  || 2,
   })
 
+  // Komposisi tamu per kamar, dibaca dari URL. Susunannya HARUS sama persis di
+  // seluruh tahap (pencarian → halaman hotel → prebook), kalau tidak ETG
+  // menganggapnya konteks lain dan tarif yang dipilih tamu lenyap saat prebook.
+  const [occupancy, setOccupancy] = useState(() => decodeOccupancy(params.get('occ')))
+
   const [priceRange,   setPriceRange]   = useState([0, MAX_PRICE])
   const [selectedStars, setSelectedStars] = useState([])
   const [selectedFacilities, setSelectedFacilities] = useState([])
@@ -129,7 +136,10 @@ export default function SearchPage() {
     // checkIn/checkOut di URL. Tanpa itu (buka dari menu) → tampilkan semua akomodasi.
     checkIn   : params.get('checkIn') || undefined,
     checkOut  : params.get('checkOut') || undefined,
-    guests    : form.guests,
+    guests    : totalTamu(occupancy),
+    // Bentuk per-kamar untuk supplier mitra: umur anak menentukan harga, dan
+    // satu angka `guests` tidak bisa menyatakannya.
+    guests_rooms: occupancyKeApi(occupancy),
     categories: params.get('categories') || undefined,
     category  : !params.get('categories') ? (form.category || params.get('category') || undefined) : undefined,
     min_price: priceRange[0] > 0 ? priceRange[0] : undefined,
@@ -169,7 +179,12 @@ export default function SearchPage() {
     setCariDitekan(true)
     setPage(1)
     window.scrollTo({ top: 0, behavior: 'smooth' })
-    const p = { checkIn: form.checkIn, checkOut: form.checkOut, guests: form.guests }
+    const p = {
+      checkIn : form.checkIn,
+      checkOut: form.checkOut,
+      guests  : totalTamu(occupancy),
+      occ     : encodeOccupancy(occupancy),
+    }
     if (form.q)        p.q        = form.q
     if (form.category) p.category = form.category
     setParams(p)
@@ -295,11 +310,11 @@ export default function SearchPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('search.guests')}</label>
-                <select value={form.guests} onChange={e => setForm({...form, guests: e.target.value})}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand/30">
-                  {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} {t('search.guestUnit')}</option>)}
-                </select>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t('occupancy.guestPickerTitle')}</label>
+                {/* Menggantikan dropdown "jumlah tamu": satu angka tidak bisa
+                    menyatakan anak, padahal umur anak MENENTUKAN HARGA di sisi
+                    supplier — bukan sekadar keterangan. */}
+                <GuestPicker value={occupancy} onChange={setOccupancy} />
               </div>
               <DateField
                 label={t('search.checkin')}
@@ -403,7 +418,9 @@ export default function SearchPage() {
                     hotel={hotel}
                     checkIn={form.checkIn}
                     checkOut={form.checkOut}
-                    guests={form.guests}
+                    // Dari pemilih tamu yang sama, bukan dari `form.guests`
+                    // yang sudah tidak diperbarui sejak dropdown lama diganti.
+                    guests={totalTamu(occupancy)}
                   />
                 ))
               ) : supplierHotels.length === 0 ? (
@@ -445,7 +462,8 @@ export default function SearchPage() {
                       hotel={hotel}
                       checkIn={form.checkIn}
                       checkOut={form.checkOut}
-                      guests={form.guests}
+                      guests={totalTamu(occupancy)}
+                      occ={encodeOccupancy(occupancy)}
                     />
                   ))}
                 </div>

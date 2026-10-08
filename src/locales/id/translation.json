@@ -1568,5 +1568,22 @@
     "pro1Tagline": "Kanal Informasi & Inspirasi",
     "pro2Tagline": "Pusat Kreativitas Anak Muda",
     "pro4Tagline": "Ensiklopedia Budaya Keindonesiaan"
+  },
+  "occupancy": {
+    "guestPickerTitle": "Kamar & Tamu",
+    "room": "Kamar {{n}}",
+    "adults": "Dewasa",
+    "children": "Anak",
+    "childAge": "Umur anak {{n}}",
+    "childAgeUnder1": "<1 th",
+    "childAgeYears": "{{n}} th",
+    "addRoom": "Tambah kamar",
+    "removeRoom": "Hapus",
+    "summaryRooms": "{{rooms}} kamar",
+    "summaryGuests": "{{adults}} dewasa",
+    "summaryChildren": ", {{children}} anak",
+    "childAgeNote": "Umur anak menentukan harga — isi sesuai umur saat menginap.",
+    "done": "Selesai",
+    "guestChild": "Anak {{n}} (umur {{age}})"
   }
 }

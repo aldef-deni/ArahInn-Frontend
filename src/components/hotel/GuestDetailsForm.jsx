@@ -11,14 +11,29 @@ import { formatRupiah } from '@/services/api'
  * "Guest One" / "Test Test", dan ETG mensyaratkan data tamu yang asli.
  * Jumlah tamu di sini mengikuti persis komposisi yang dipakai saat pencarian.
  */
-export default function GuestDetailsForm({ rate, rooms = 1, adults = 2, submitting, onSubmit, onCancel }) {
+/**
+ * @param occupancy [{adults, children:[umur]}] — komposisi PER KAMAR.
+ *        Bentuk lama (`rooms` + `adults`) masih diterima sebagai cadangan,
+ *        tetapi tidak bisa menyatakan anak sama sekali.
+ */
+export default function GuestDetailsForm({ rate, rooms = 1, adults = 2, occupancy, submitting, onSubmit, onCancel }) {
   const { t } = useTranslation()
   const [agreed, setAgreed] = useState(false)
 
+  // Susunan kamar mengikuti komposisi yang dipakai saat mencari. Jumlah DAN
+  // umur anak harus sama persis dengan yang dikirim ke supplier — tarifnya
+  // dihitung dari situ, dan selisih satu anak membuat ETG menolak pemesanan.
+  const susunan = (Array.isArray(occupancy) && occupancy.length)
+    ? occupancy
+    : Array.from({ length: rooms }, () => ({ adults, children: [] }))
+
   const { register, handleSubmit, control, formState: { errors } } = useForm({
     defaultValues: {
-      rooms: Array.from({ length: rooms }, () => ({
-        guests: Array.from({ length: adults }, () => ({ firstName: '', lastName: '' })),
+      rooms: susunan.map((kamar) => ({
+        guests: [
+          ...Array.from({ length: kamar.adults }, () => ({ firstName: '', lastName: '', isChild: false, age: null })),
+          ...(kamar.children ?? []).map((umur) => ({ firstName: '', lastName: '', isChild: true, age: umur })),
+        ],
       })),
       contact: { phone: '', comment: '' },
     },
@@ -28,11 +43,18 @@ export default function GuestDetailsForm({ rate, rooms = 1, adults = 2, submitti
 
   const submit = (values) => {
     onSubmit({
-      rooms: values.rooms.map(room => ({
-        guests: room.guests.map(g => ({
-          firstName: g.firstName.trim(),
-          lastName : g.lastName.trim(),
-        })),
+      rooms: values.rooms.map((room, i) => ({
+        guests: room.guests.map((g, j) => {
+          // isChild/age diambil dari SUSUNAN, bukan dari nilai form: kolomnya
+          // tidak disunting pengguna, dan membacanya dari form membuat angka
+          // itu bisa hilang kalau input tersembunyi tidak ikut terdaftar.
+          const anak = anakKe(susunan[i], j)
+          return {
+            firstName: g.firstName.trim(),
+            lastName : g.lastName.trim(),
+            ...(anak !== null ? { isChild: true, age: anak } : {}),
+          }
+        }),
       })),
       contact: {
         phone  : values.contact.phone?.trim() || undefined,
@@ -66,10 +88,17 @@ export default function GuestDetailsForm({ rate, rooms = 1, adults = 2, submitti
             </h4>
 
             <div className="mt-3 space-y-3">
-              {Array.from({ length: adults }).map((_, guestIdx) => (
+              {Array.from({ length: jumlahTamu(susunan[roomIdx]) }).map((_, guestIdx) => {
+                const umurAnak = anakKe(susunan[roomIdx], guestIdx)
+                return (
                 <div key={guestIdx} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field
-                    label={t('supplier.guestFirstName', { n: guestIdx + 1 })}
+                    // Anak diberi label beserta umurnya. Tanpa itu, kolomnya
+                    // terlihat sama persis dengan tamu dewasa dan nama anak
+                    // mudah tertukar dengan nama orang tuanya.
+                    label={umurAnak !== null
+                      ? t('occupancy.guestChild', { n: guestIdx - susunan[roomIdx].adults + 1, age: umurAnak })
+                      : t('supplier.guestFirstName', { n: guestIdx + 1 })}
                     error={errors?.rooms?.[roomIdx]?.guests?.[guestIdx]?.firstName}
                     {...register(`rooms.${roomIdx}.guests.${guestIdx}.firstName`, {
                       required: t('supplier.firstNameRequired'),
@@ -85,7 +114,8 @@ export default function GuestDetailsForm({ rate, rooms = 1, adults = 2, submitti
                     })}
                   />
                 </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         ))}
@@ -176,6 +206,22 @@ const Field = forwardRef(function Field({ label, error, ...props }, ref) {
     </label>
   )
 })
+
+/**
+ * Umur anak pada posisi tamu ke-`j` di sebuah kamar, atau null bila dewasa.
+ * Dewasa selalu didahulukan, jadi indeks di atas jumlah dewasa adalah anak.
+ */
+function jumlahTamu(kamar) {
+  if (!kamar) return 0
+  return (kamar.adults ?? 0) + (kamar.children?.length ?? 0)
+}
+
+function anakKe(kamar, j) {
+  if (!kamar) return null
+  const anak = kamar.children ?? []
+  const idx = j - kamar.adults
+  return idx >= 0 && idx < anak.length ? anak[idx] : null
+}
 
 function Line({ label, value, strong, muted }) {
   return (

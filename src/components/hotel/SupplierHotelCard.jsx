@@ -12,12 +12,15 @@ import { formatRupiah } from '@/services/api'
  * (dan tidak perlu tahu) skema RateHawk. Branding tetap ArahInn — nama
  * supplier tidak ditampilkan ke customer.
  */
-export default function SupplierHotelCard({ hotel, checkIn, checkOut, guests }) {
+export default function SupplierHotelCard({ hotel, checkIn, checkOut, guests, occ }) {
   const { t } = useTranslation()
   const qs = new URLSearchParams({
     ...(checkIn  ? { checkIn }  : {}),
     ...(checkOut ? { checkOut } : {}),
     ...(guests   ? { guests }   : {}),
+    // Komposisi tamu per kamar ikut dibawa. Tanpa ini halaman detail
+    // selalu jatuh ke 2 dewasa dan anak yang dicari tamu hilang.
+    ...(occ      ? { occ }      : {}),
   }).toString()
 
   // Sebagian besar hotel mitra tidak punya foto sama sekali (dari 742 hotel

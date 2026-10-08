@@ -16,6 +16,7 @@ import ResidencySelect from '@/components/hotel/ResidencySelect'
 import { useResidencyStore } from '@/store/residencyStore'
 import SupplierBookingStatus from '@/components/hotel/SupplierBookingStatus'
 import GuestDetailsForm from '@/components/hotel/GuestDetailsForm'
+import { decodeOccupancy, occupancyKeApi } from '@/utils/occupancy'
 
 /**
  * Halaman hotel mitra (RateHawk) — branding tetap ArahInn.
@@ -40,13 +41,22 @@ export default function SupplierHotel() {
   // supplier menganggapnya konteks pencarian lain.
   const residency = useResidencyStore((st) => st.residency)
 
+  // Komposisi tamu per kamar, dibaca dari URL yang dibawa kartu hasil
+  // pencarian. Bentuknya HARUS sama persis dengan yang dipakai saat mencari —
+  // kalau berbeda, ETG menganggapnya konteks lain dan tarif yang dipilih tamu
+  // lenyap saat prebook.
+  const occupancy = useMemo(() => decodeOccupancy(params.get('occ')), [params])
+
   const criteria = useMemo(() => ({
     check_in : params.get('checkIn')  || '',
     check_out: params.get('checkOut') || '',
-    rooms    : Number(params.get('rooms')  || 1),
-    adults   : Number(params.get('adults') || 2),
+    rooms    : occupancy.length,
+    adults   : occupancy[0]?.adults ?? 2,
+    // Dikirim sebagai `guests` — itu nama yang divalidasi backend dan yang
+    // diteruskan ke ETG apa adanya.
+    guests   : occupancyKeApi(occupancy),
     residency,
-  }), [params, residency])
+  }), [params, residency, occupancy])
 
   const [selectedRate, setSelectedRate] = useState(null)
   const [priceChange, setPriceChange]   = useState(null)   // { previousAmount, newAmount, ... }
@@ -238,6 +248,7 @@ export default function SupplierHotel() {
           rate={confirmedRate}
           rooms={criteria.rooms}
           adults={criteria.adults}
+          occupancy={occupancy}
           submitting={createBooking.isPending}
           onCancel={() => { setConfirmedRate(null); setPrebookToken(null); setSelectedRate(null) }}
           onSubmit={(payload) => createBooking.mutate(payload)}

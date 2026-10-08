@@ -1568,5 +1568,22 @@
     "pro1Tagline": "Information & Inspiration",
     "pro2Tagline": "Creativity for Young People",
     "pro4Tagline": "Encyclopedia of Indonesian Culture"
+  },
+  "occupancy": {
+    "guestPickerTitle": "Rooms & Guests",
+    "room": "Room {{n}}",
+    "adults": "Adults",
+    "children": "Children",
+    "childAge": "Age of child {{n}}",
+    "childAgeUnder1": "<1 yr",
+    "childAgeYears": "{{n}} yrs",
+    "addRoom": "Add room",
+    "removeRoom": "Remove",
+    "summaryRooms": "{{rooms}} rooms",
+    "summaryGuests": "{{adults}} adults",
+    "summaryChildren": ", {{children}} children",
+    "childAgeNote": "Children's ages affect the price — enter the age at check-in.",
+    "done": "Done",
+    "guestChild": "Child {{n}} (age {{age}})"
   }
 }
