@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { bookingApi } from '@/services/index'
+import SupplierOrderList from '@/components/hotel/SupplierOrderList'
 import { useToast } from '@/hooks/use-toast'
 import { formatRupiah, formatDateShort, statusBadgeClass, statusLabel, getImageUrl } from '@/utils'
 import { ShoppingBag, Calendar, ChevronRight, XCircle, ChevronLeft, Hotel, Receipt, Ticket } from 'lucide-react'
@@ -108,6 +109,11 @@ export default function OrderHistory() {
 
       {/* ── Akomodasi tab (existing content) ─────────────── */}
       {activeMain === 'akomodasi' && (<>
+      {/* Hotel mitra — sumbernya tabel terpisah (provider_bookings), bukan
+          `bookings`, jadi tidak ikut terbawa endpoint riwayat di bawah.
+          Menyembunyikan diri sendiri bila tamu tidak punya pesanan mitra. */}
+      <SupplierOrderList />
+
       {/* Tabs — horizontal scroll on mobile */}
       <div className="-mx-4 px-4 sm:mx-0 sm:px-0 flex gap-2 mb-4 sm:mb-6 overflow-x-auto pb-1 scrollbar-thin">
         {TABS.map(tab => (

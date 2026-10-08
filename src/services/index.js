@@ -36,6 +36,10 @@ export const supplierHotelApi = {
   retrieve     : (id)          => api.get(`/ratehawk/bookings/${id}`),
   cancellation : (id)          => api.get(`/ratehawk/bookings/${id}/cancellation`),
   cancel       : (id)          => api.post(`/ratehawk/bookings/${id}/cancel`),
+
+  // Pesanan mitra milik tamu. Dibutuhkan karena pemesanan mitra tidak membuat
+  // baris `bookings` ArahInn, jadi tidak ikut terbawa endpoint riwayat biasa.
+  myBookings   : ()            => api.get('/ratehawk/my-bookings'),
 }
 
 // Panel superadmin: status integrasi supplier (TIDAK pernah memuat token).

@@ -70,6 +70,11 @@ export default function SupplierHotel() {
     mutationFn: (rate) => supplierHotelApi.prebook({
       bookHash      : rate.bookHash,
       expectedAmount: rate.sellingAmount,
+      // Tanggal menginap ikut dikirim dan disimpan bersama pesanan. Respons
+      // prebook ETG tidak memuatnya, dan tanpa ini pesanan mitra muncul di
+      // Riwayat Pesanan tanpa tanggal — tidak berarti apa-apa bagi tamu.
+      checkIn       : criteria.check_in,
+      checkOut      : criteria.check_out,
     }).then(r => r.data?.data),
 
     onSuccess: (data, rate) => {

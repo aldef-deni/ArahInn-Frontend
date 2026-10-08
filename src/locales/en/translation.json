@@ -1494,7 +1494,17 @@
     "cancelledBody": "Your booking at {{hotel}} has been cancelled with the supplier.",
     "cancelFailed": "Cancellation failed",
     "viewOrders": "View order history",
-    "statusSlowHint": "This is taking longer than usual. The supplier has not given a final answer yet — we keep checking, and the booking is not lost. You can safely close this page; the status will be resolved automatically."
+    "statusSlowHint": "This is taking longer than usual. The supplier has not given a final answer yet — we keep checking, and the booking is not lost. You can safely close this page; the status will be resolved automatically.",
+    "ordersTitle": "Partner hotels",
+    "ordersEmpty": "No partner hotel bookings yet.",
+    "ordersNights": "{{count}} nights",
+    "stCONFIRMED": "Confirmed",
+    "stPROCESSING": "Processing",
+    "stFAILED": "Failed",
+    "stCANCELLED": "Cancelled",
+    "stCANCEL_PENDING": "Cancelling",
+    "stCANCEL_FAILED": "Cancellation failed",
+    "stPRICE_CHANGED": "Price changed"
   },
   "interest": {
     "title": "Register Interest",

@@ -1494,7 +1494,17 @@
     "cancelledBody": "Pemesanan Anda di {{hotel}} sudah dibatalkan pada pemasok.",
     "cancelFailed": "Pembatalan gagal",
     "viewOrders": "Lihat Riwayat Pesanan",
-    "statusSlowHint": "Ini lebih lama dari biasanya. Pemasok belum memberi jawaban akhir — kami terus memeriksa, dan pemesanan Anda tidak hilang. Halaman ini boleh ditutup; statusnya akan dituntaskan otomatis."
+    "statusSlowHint": "Ini lebih lama dari biasanya. Pemasok belum memberi jawaban akhir — kami terus memeriksa, dan pemesanan Anda tidak hilang. Halaman ini boleh ditutup; statusnya akan dituntaskan otomatis.",
+    "ordersTitle": "Hotel mitra",
+    "ordersEmpty": "Belum ada pemesanan hotel mitra.",
+    "ordersNights": "{{count}} malam",
+    "stCONFIRMED": "Terkonfirmasi",
+    "stPROCESSING": "Diproses",
+    "stFAILED": "Gagal",
+    "stCANCELLED": "Dibatalkan",
+    "stCANCEL_PENDING": "Pembatalan diproses",
+    "stCANCEL_FAILED": "Pembatalan gagal",
+    "stPRICE_CHANGED": "Harga berubah"
   },
   "interest": {
     "title": "Ajukan Minat",
