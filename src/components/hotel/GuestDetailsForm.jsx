@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { forwardRef, useState } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Loader2, ShieldCheck, Users, ArrowLeft } from 'lucide-react'
@@ -145,11 +145,28 @@ export default function GuestDetailsForm({ rate, rooms = 1, adults = 2, submitti
   )
 }
 
-function Field({ label, error, ...props }) {
+/**
+ * ⚠️ WAJIB `forwardRef`. Jangan diubah jadi komponen fungsi biasa.
+ *
+ * `register()` milik react-hook-form mengembalikan `{ name, onChange, onBlur,
+ * ref }`, dan `ref` itu disebarkan ke sini bersama prop lain. Komponen fungsi
+ * biasa TIDAK bisa menerima `ref` sebagai prop — React menelannya diam-diam,
+ * sehingga ref tidak pernah sampai ke <input> dan react-hook-form tidak pernah
+ * terhubung ke kolom aslinya.
+ *
+ * Gejalanya menipu dan mahal: pengguna mengetik, DOM menampilkan teksnya, tapi
+ * RHF tetap menganggap kolomnya kosong — jadi aturan `required` gagal dan
+ * `handleSubmit` TIDAK PERNAH mengirim apa pun. Dari sisi server terlihat
+ * seperti tidak ada yang terjadi sama sekali: tanpa permintaan, tanpa galat,
+ * tanpa jejak. Ini sempat membuat pencarian sebab berjam-jam ke arah cache,
+ * rate limit, dan validasi backend — padahal datanya tak pernah berangkat.
+ */
+const Field = forwardRef(function Field({ label, error, ...props }, ref) {
   return (
     <label className="block">
       <span className="block text-[11px] font-semibold text-slate-600 mb-1">{label}</span>
       <input
+        ref={ref}
         {...props}
         className={`w-full px-3 py-2.5 rounded-xl border text-sm outline-none transition-colors ${
           error ? 'border-red-300 focus:border-red-400' : 'border-slate-200 focus:border-brand'
@@ -158,7 +175,7 @@ function Field({ label, error, ...props }) {
       {error && <span className="mt-1 block text-[11px] text-red-500">{error.message}</span>}
     </label>
   )
-}
+})
 
 function Line({ label, value, strong, muted }) {
   return (
