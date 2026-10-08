@@ -1465,7 +1465,7 @@
     "statusFailedBody": "Silakan pilih kamar lain atau hubungi bantuan ArahInn.",
     "statusProcessingTitle": "Pemesanan sedang diproses",
     "statusProcessingBody": "Kami sedang mengonfirmasi kamar Anda di {{hotel}}. Mohon jangan tutup halaman ini — status akan diperbarui otomatis.",
-    "statusProcessingHint": "Proses ini biasanya memakan waktu kurang dari satu menit.",
+    "statusProcessingHint": "Konfirmasi biasanya kurang dari satu menit, tetapi bisa sampai tiga menit. Mohon biarkan halaman ini terbuka.",
     "pickAnotherRoom": "Pilih kamar lain",
     "roomNumber": "Kamar {{n}}",
     "guestFirstName": "Nama depan tamu {{n}}",
@@ -1493,7 +1493,8 @@
     "cancelledTitle": "Pemesanan dibatalkan",
     "cancelledBody": "Pemesanan Anda di {{hotel}} sudah dibatalkan pada pemasok.",
     "cancelFailed": "Pembatalan gagal",
-    "viewOrders": "Lihat Riwayat Pesanan"
+    "viewOrders": "Lihat Riwayat Pesanan",
+    "statusSlowHint": "Ini lebih lama dari biasanya. Pemasok belum memberi jawaban akhir — kami terus memeriksa, dan pemesanan Anda tidak hilang. Halaman ini boleh ditutup; statusnya akan dituntaskan otomatis."
   },
   "interest": {
     "title": "Ajukan Minat",

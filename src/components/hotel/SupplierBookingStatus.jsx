@@ -162,9 +162,17 @@ export default function SupplierBookingStatus({ partnerOrderId, hotelName, onDon
       title={t('supplier.statusProcessingTitle')}
       body={t('supplier.statusProcessingBody', { hotel: hotelName })}
       footer={
-        <p className="mt-4 inline-flex items-center gap-1.5 text-[11px] text-slate-400">
-          <Clock className="w-3.5 h-3.5" />
-          {t('supplier.statusProcessingHint')}
+        // Setelah batas 180 detik terlewat, pesannya BERUBAH. Pemintal yang
+        // sama persis di detik ke-10 dan ke-400 membuat tamu menyimpulkan
+        // sendiri bahwa pemesanannya gagal — padahal tidak, dan menutup
+        // halaman pun tidak menggugurkannya.
+        <p className="mt-4 inline-flex items-start gap-1.5 text-[11px] text-slate-400 max-w-sm mx-auto text-left">
+          <Clock className="w-3.5 h-3.5 shrink-0 mt-px" />
+          <span>
+            {data?.beyondDeadline
+              ? t('supplier.statusSlowHint')
+              : t('supplier.statusProcessingHint')}
+          </span>
         </p>
       }
     />

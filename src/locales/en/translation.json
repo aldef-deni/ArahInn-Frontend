@@ -1465,7 +1465,7 @@
     "statusFailedBody": "Please choose another room or contact ArahInn support.",
     "statusProcessingTitle": "Booking in progress",
     "statusProcessingBody": "We are confirming your room at {{hotel}}. Please keep this page open — the status updates automatically.",
-    "statusProcessingHint": "This usually takes less than a minute.",
+    "statusProcessingHint": "Confirmation usually takes under a minute, but can take up to three. Please keep this page open.",
     "pickAnotherRoom": "Pick another room",
     "roomNumber": "Room {{n}}",
     "guestFirstName": "First name of guest {{n}}",
@@ -1493,7 +1493,8 @@
     "cancelledTitle": "Booking cancelled",
     "cancelledBody": "Your booking at {{hotel}} has been cancelled with the supplier.",
     "cancelFailed": "Cancellation failed",
-    "viewOrders": "View order history"
+    "viewOrders": "View order history",
+    "statusSlowHint": "This is taking longer than usual. The supplier has not given a final answer yet — we keep checking, and the booking is not lost. You can safely close this page; the status will be resolved automatically."
   },
   "interest": {
     "title": "Register Interest",
