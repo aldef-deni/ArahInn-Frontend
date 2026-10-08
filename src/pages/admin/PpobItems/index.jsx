@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  PackageSearch, Search, Loader2, Inbox, ChevronLeft, ChevronRight, Layers,
+  PackageSearch, Search, Loader2, Inbox, ChevronLeft, ChevronRight, Layers, Pencil, Check, X,
 } from 'lucide-react'
 import { ppobItemApi } from '@/services/index'
 import { useToast } from '@/hooks/use-toast'
@@ -82,6 +82,27 @@ export default function AdminPpobItems() {
   const pagination = data?.pagination ?? { page: 1, totalPages: 1, total: 0 }
 
   const saring = (setter) => (nilai) => { setter(nilai); setPage(1) }
+
+  const [editHarga, setEditHarga] = useState(null) // { vendor, id }
+  const [nilaiHarga, setNilaiHarga] = useState('')
+
+  const ubahHarga = useMutation({
+    mutationFn: ({ vendor: v, id, priceSell }) =>
+      ppobItemApi.updatePrice(v, id, priceSell).then(r => r.data),
+    onSuccess: (r) => {
+      setEditHarga(null)
+      toast({ title: r?.message ?? 'Harga jual diperbarui.' })
+      qc.invalidateQueries({ queryKey: ['admin-ppob-items'] })
+      qc.invalidateQueries({ queryKey: ['admin-digiflazz-products'] })
+    },
+    // Penolakan "di bawah harga modal" datang dari server dan WAJIB terbaca
+    // apa adanya: itu satu-satunya kalimat yang menyebut angka modalnya.
+    onError: (e) => toast({
+      title      : 'Gagal mengubah harga',
+      description: e?.response?.data?.message ?? 'Coba lagi.',
+      variant    : 'destructive',
+    }),
+  })
 
   const ubahSaklar = useMutation({
     mutationFn: ({ vendor: v, id, enabled: e }) => ppobItemApi.toggle(v, id, e).then(r => r.data),
@@ -197,8 +218,45 @@ export default function AdminPpobItems() {
                   <td className="px-5 py-3 font-mono text-xs text-slate-500">{p.code}</td>
                   <td className="px-5 py-3 text-right font-bold text-slate-900">{rupiah(p.priceBuy)}</td>
                   <td className="px-5 py-3 text-right text-slate-600">
-                    {p.priceSell != null ? rupiah(p.priceSell)
-                      : <span className="text-[11px] text-slate-400">belum dijual</span>}
+                    {editHarga && editHarga.vendor === p.vendor && editHarga.id === p.id ? (
+                      <div className="flex items-center justify-end gap-1">
+                        <input
+                          type="number" autoFocus value={nilaiHarga}
+                          onChange={(e) => setNilaiHarga(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') ubahHarga.mutate({ vendor: p.vendor, id: p.id, priceSell: Number(nilaiHarga) })
+                            if (e.key === 'Escape') setEditHarga(null)
+                          }}
+                          className="w-28 px-2 py-1 border rounded-lg text-right text-sm"
+                        />
+                        <button
+                          onClick={() => ubahHarga.mutate({ vendor: p.vendor, id: p.id, priceSell: Number(nilaiHarga) })}
+                          disabled={ubahHarga.isPending}
+                          className="p-1 rounded-md bg-emerald-500 text-white disabled:opacity-50"
+                          title="Simpan"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => setEditHarga(null)} className="p-1 rounded-md border" title="Batal">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => { setEditHarga({ vendor: p.vendor, id: p.id }); setNilaiHarga(String(p.priceSell ?? p.priceBuy)) }}
+                        className="inline-flex items-center gap-1.5 hover:text-brand group"
+                        title="Ubah harga jual"
+                      >
+                        {p.priceSell != null ? rupiah(p.priceSell)
+                          : <span className="text-[11px] text-slate-400">belum dijual</span>}
+                        <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        {p.priceSell != null && p.priceSell > p.priceBuy && (
+                          <span className="ml-1 text-[10px] font-bold text-emerald-600">
+                            +{rupiah(p.priceSell - p.priceBuy)}
+                          </span>
+                        )}
+                      </button>
+                    )}
                   </td>
                   <td className="px-5 py-3 text-center">
                     <span className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold ${

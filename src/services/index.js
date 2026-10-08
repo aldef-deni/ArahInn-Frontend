@@ -320,6 +320,10 @@ export const ppobItemApi = {
   // vendor ikut di URL: id yang sama ada di kedua tabel dan menunjuk produk berbeda.
   toggle: (vendor, id, enabled) =>
     api.patch(`/admin/ppob-items/${vendor}/${id}/toggle`, { enabled }),
+
+  // priceSell null = kembalikan mengikuti harga modal.
+  updatePrice: (vendor, id, priceSell) =>
+    api.patch(`/admin/ppob-items/${vendor}/${id}/price`, { priceSell }),
 }
 
 /** Digiflazz — pemasok PPOB kedua. Kunci API TIDAK pernah lewat sini. */
