@@ -699,11 +699,16 @@ function FooterBrand({ deskripsi }) {
           lain; `items-center` pada wadahnyalah yang meratakannya. */}
       <div className="flex items-center gap-3 sm:gap-4 mb-4">
         <img src="/logo-arahin.png" alt="Arahinn" className="h-10 w-auto" />
-        <span className="h-8 w-px bg-slate-200 shrink-0" aria-hidden="true" />
+        <span className="h-9 w-px bg-slate-200 shrink-0" aria-hidden="true" />
+        {/* SENGAJA lebih tinggi daripada logo ArahInn (h-16 vs h-10). Berkas
+            Wonderful Indonesia punya bidang kosong jauh lebih banyak di dalam
+            kanvasnya, sehingga pada tinggi yang sama lambangnya tampak setengah
+            ukuran. Yang disamakan di sini bobot VISUALNYA, bukan angka
+            tingginya. */}
         <img
           src="/wonderful-indonesia.png"
           alt="Wonderful Indonesia"
-          className="h-10 w-auto object-contain"
+          className="h-16 w-auto object-contain"
           loading="lazy"
         />
       </div>
