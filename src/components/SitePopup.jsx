@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronRight, X } from 'lucide-react'
+import { ChevronRight, X, Volume2, VolumeX } from 'lucide-react'
 import { popupApi } from '@/services/index'
 import { getImageUrl } from '@/utils/index'
 
@@ -67,6 +67,25 @@ export default function SitePopup() {
     }
   }, [open, dismiss])
 
+  // Suara video.
+  //
+  // Dimulai BISU dengan sengaja: browser memblokir autoplay bersuara, sehingga
+  // video yang langsung bersuara tidak akan diputar sama sekali — bukan
+  // "diputar tanpa suara", melainkan diam total dengan bingkai beku. Sentuhan
+  // pengguna pada tombol suara sekaligus menjadi izin yang dituntut browser.
+  const [bisu, setBisu] = useState(true)
+  const videoRef = useRef(null)
+
+  const nyalakanSuara = useCallback(() => {
+    const el = videoRef.current
+    setBisu((v) => !v)
+    if (!el) return
+    // Melepas bisu kadang membuat browser menjeda pemutaran. Dimainkan ulang
+    // di sini supaya tombolnya tidak terasa seperti menghentikan videonya.
+    el.muted = !el.muted
+    if (!el.muted) el.play?.().catch(() => {})
+  }, [])
+
   if (!open || !active) return null
 
   const image = getImageUrl(active.image)
@@ -100,10 +119,32 @@ export default function SitePopup() {
             onClick={active.url ? goTo : undefined}
           >
             {video ? (
-              <video
-                src={video} className="w-full h-auto block rounded-t-3xl bg-slate-900"
-                autoPlay muted loop playsInline controls
-              />
+              <div className="relative">
+                <video
+                  ref={videoRef}
+                  src={video} className="w-full h-auto block rounded-t-3xl bg-slate-900"
+                  autoPlay muted={bisu} loop playsInline controls
+                />
+
+                {/* Tombol suara.
+                    Video TETAP dimulai dalam keadaan bisu, dan itu bukan
+                    pilihan gaya: browser memblokir autoplay bersuara, jadi
+                    video yang langsung bersuara tidak akan diputar sama
+                    sekali — bukan "diputar tanpa suara", melainkan diam total.
+                    Suara dinyalakan setelah ada sentuhan pengguna, yang juga
+                    menjadi izin yang dituntut browser.
+                    `loop` membuat audio ikut berulang bersama gambarnya; tidak
+                    ada yang perlu disamakan terpisah. */}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); nyalakanSuara() }}
+                  aria-label={bisu ? 'Nyalakan suara' : 'Matikan suara'}
+                  title={bisu ? 'Nyalakan suara' : 'Matikan suara'}
+                  className="absolute top-3 left-3 w-9 h-9 rounded-full bg-black/55 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur transition-colors"
+                >
+                  {bisu ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                </button>
+              </div>
             ) : (
               <img
                 src={image} alt={active.title || 'Popup'}
