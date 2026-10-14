@@ -65,14 +65,24 @@ function resetSnap() {
 }
 
 const MIDTRANS_METHODS = [
-  { id: 'virtual_account', availabilityKey: 'virtualAccount', label: 'Virtual Account', caption: 'Bank yang aktif di Midtrans', icon: Building2 },
-  { id: 'qris', availabilityKey: 'qris', label: 'QRIS', caption: 'Scan melalui GoPay QRIS', icon: QrCode },
-  { id: 'ewallet', availabilityKey: 'ewallet', label: 'E-Wallet', caption: 'Dompet digital yang tersedia', icon: Wallet },
-  { id: 'credit_card', availabilityKey: 'creditCard', label: 'Kartu Kredit', caption: 'Visa, Mastercard & JCB', icon: CreditCard },
+  // `logos` = berkas di /public/payments. Merek nyata jauh lebih cepat dikenali
+  // daripada ikon generik — pembayar mencari lambang banknya, bukan kata
+  // "Virtual Account". Ikon tetap dipertahankan sebagai cadangan bila berkas
+  // logonya gagal dimuat.
+  { id: 'virtual_account', availabilityKey: 'virtualAccount', label: 'Virtual Account', caption: 'Bank yang aktif di Midtrans', icon: Building2,
+    logos: ['bni', 'permata', 'cimb_niaga', 'danamon', 'seabank'] },
+  { id: 'qris', availabilityKey: 'qris', label: 'QRIS', caption: 'Scan melalui GoPay QRIS', icon: QrCode,
+    logos: ['gpn', 'gojek'] },
+  { id: 'ewallet', availabilityKey: 'ewallet', label: 'E-Wallet', caption: 'Dompet digital yang tersedia', icon: Wallet,
+    logos: ['dana', 'ovo', 'gojek'] },
+  { id: 'credit_card', availabilityKey: 'creditCard', label: 'Kartu Kredit', caption: 'Visa, Mastercard & JCB', icon: CreditCard,
+    logos: ['visa', 'mastercard', 'amex'] },
   // Dua di bawah ini hanya muncul kalau Midtrans benar-benar mengaktifkannya —
   // `availabilityKey` dibaca dari merchant-preferences, bukan dari daftar ini.
-  { id: 'cardless_credit', availabilityKey: 'cardlessCredit', label: 'Bayar Bertempo', caption: 'Akulaku', icon: CalendarClock },
-  { id: 'convenience_store', availabilityKey: 'convenienceStore', label: 'Toko Retail', caption: 'Alfamart, Alfamidi, Dan+Dan & Indomaret', icon: Store },
+  { id: 'cardless_credit', availabilityKey: 'cardlessCredit', label: 'Bayar Bertempo', caption: 'Akulaku', icon: CalendarClock,
+    logos: ['akulaku', 'kredivo'] },
+  { id: 'convenience_store', availabilityKey: 'convenienceStore', label: 'Toko Retail', caption: 'Alfamart, Alfamidi, Dan+Dan & Indomaret', icon: Store,
+    logos: ['alfamart', 'indomaret'] },
 ]
 
 export default function Payment() {
@@ -592,7 +602,7 @@ export default function Payment() {
               </p>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-                {MIDTRANS_METHODS.map(({ id, availabilityKey, icon: Icon, label, caption }) => {
+                {MIDTRANS_METHODS.map(({ id, availabilityKey, icon: Icon, label, caption, logos }) => {
                   const available = metodeTersedia(availabilityKey)
                   return (
                   <button
@@ -621,6 +631,22 @@ export default function Payment() {
                       <Icon className="w-5 h-5" />
                     </span>
                     <span className="text-[11px] sm:text-xs font-semibold text-slate-700 leading-tight">{label}</span>
+
+                    {/* Logo merek. Dibatasi tiga supaya kartunya tidak melar di
+                        layar kecil, dan digelapkan saat metodenya tidak aktif
+                        agar tidak terbaca sebagai pilihan yang bisa diklik. */}
+                    {logos?.length > 0 && (
+                      <span className={`flex items-center justify-center gap-1 mt-0.5 ${available ? '' : 'grayscale opacity-60'}`}>
+                        {logos.slice(0, 3).map(n => (
+                          <img
+                            key={n} src={`/payments/${n}.png`} alt=""
+                            loading="lazy" aria-hidden="true"
+                            className="h-3.5 sm:h-4 w-auto object-contain"
+                            onError={(e) => { e.currentTarget.style.display = 'none' }}
+                          />
+                        ))}
+                      </span>
+                    )}
                     <span className="hidden sm:block text-[9px] text-slate-400 leading-tight line-clamp-2">
                       {available ? caption : 'Belum aktif di Midtrans'}
                     </span>

@@ -692,8 +692,20 @@ export default function UserLayout() {
 function FooterBrand({ deskripsi }) {
   return (
     <div>
-      <div className="flex items-center gap-2 mb-4">
+      {/* Logo ArahInn dan Wonderful Indonesia disejajarkan pada BASELINE yang
+          sama lewat tinggi tetap `h-10`, bukan sekadar ditaruh berdampingan.
+          Kedua berkas punya bidang kosong yang berbeda di atas-bawahnya, jadi
+          menyamakan tingginya saja membuat keduanya tampak miring satu sama
+          lain; `items-center` pada wadahnyalah yang meratakannya. */}
+      <div className="flex items-center gap-3 sm:gap-4 mb-4">
         <img src="/logo-arahin.png" alt="Arahinn" className="h-10 w-auto" />
+        <span className="h-8 w-px bg-slate-200 shrink-0" aria-hidden="true" />
+        <img
+          src="/wonderful-indonesia.png"
+          alt="Wonderful Indonesia"
+          className="h-10 w-auto object-contain"
+          loading="lazy"
+        />
       </div>
       <p className="text-slate-500 text-sm leading-relaxed text-justify whitespace-pre-line">
         {deskripsi}
