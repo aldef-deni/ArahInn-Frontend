@@ -67,14 +67,38 @@ export default function SitePopup() {
     }
   }, [open, dismiss])
 
-  // Suara video.
+  // Suara video: DICOBA bersuara dulu, bisu hanya sebagai cadangan.
   //
-  // Dimulai BISU dengan sengaja: browser memblokir autoplay bersuara, sehingga
-  // video yang langsung bersuara tidak akan diputar sama sekali — bukan
-  // "diputar tanpa suara", melainkan diam total dengan bingkai beku. Sentuhan
-  // pengguna pada tombol suara sekaligus menjadi izin yang dituntut browser.
+  // Autoplay bersuara tidak dilarang mutlak. Chrome mengizinkannya bila
+  // pengunjung punya riwayat interaksi cukup dengan domain ini; yang terjadi
+  // bila tidak diizinkan adalah `play()` ditolak — dan video TANPA cadangan
+  // bisu lalu tidak diputar sama sekali, hanya bingkai beku.
+  //
+  // Maka urutannya: minta bersuara, dan hanya kalau ditolak baru dibisukan lalu
+  // diputar. Pengunjung yang diizinkan browser langsung mendengar suaranya;
+  // yang tidak, tetap melihat videonya berjalan dan bisa menyalakan suara
+  // lewat tombol.
   const [bisu, setBisu] = useState(true)
   const videoRef = useRef(null)
+
+  useEffect(() => {
+    const el = videoRef.current
+    if (!el) return
+
+    let batal = false
+    el.muted = false
+    el.play()
+      .then(() => { if (!batal) setBisu(false) })
+      .catch(() => {
+        // Ditolak browser — turunkan ke bisu supaya videonya tetap berjalan.
+        if (batal) return
+        el.muted = true
+        setBisu(true)
+        el.play().catch(() => {})
+      })
+
+    return () => { batal = true }
+  }, [open, active?.id])
 
   const nyalakanSuara = useCallback(() => {
     const el = videoRef.current
