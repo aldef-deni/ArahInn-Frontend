@@ -464,7 +464,12 @@ export default function AdminPpob() {
                 <td className="px-4 py-3 text-center">
                   <StatusBadge status={trx.status} />
                   {['failed', 'refundable', 'processing'].includes(trx.status) && (() => {
-                    const reason = trx.paymentResponse?.status || trx.failureReason || trx.rcMessage
+                    // `paymentResponse.status` hanyalah kata status vendor
+                    // ("Gagal") — itu mengulang badge di sebelahnya dan tidak
+                    // memberi tahu apa pun. Pesan sebenarnya dari vendor ada di
+                    // failureReason; dialah yang menjelaskan SEBAB gagalnya,
+                    // jadi ia didahulukan dan kata status dipakai paling akhir.
+                    const reason = trx.failureReason || trx.failure_reason || trx.rcMessage || trx.paymentResponse?.message || trx.paymentResponse?.status
                     if (!reason) return null
                     return (
                       <p className="text-[10px] text-slate-400 mt-1 mx-auto max-w-[170px] leading-tight line-clamp-2"
