@@ -477,25 +477,37 @@ export default function AdminPpob() {
                 <td className="px-4 py-3 text-center">
                   <div className="flex items-center justify-center gap-1">
                     <button onClick={() => setDetailTrx(trx)}
-                      title="Lihat detail (ref Rajabiller, token listrik, dll)"
+                      title="Lihat detail (ref vendor, token listrik, dll)"
                       className="p-2 rounded-lg hover:bg-brand/10 text-brand">
                       <Eye className="w-4 h-4" />
                     </button>
                     {trx.status === 'pending' && (
                       <button onClick={() => { setMarkPaidTrx(trx); setMarkPaidNotes('') }}
-                        title="Tandai pembayaran diterima → eksekusi ke Raja Biller"
+                        title="Tandai pembayaran diterima → eksekusi ke vendor"
                         className="p-2 rounded-lg hover:bg-emerald-50 text-emerald-600">
                         <CheckCircle className="w-4 h-4" />
                       </button>
                     )}
-                    {(trx.status === 'pending' || trx.status === 'processing') && (
+                    {/* 'success' IKUT boleh dicek ulang.
+                        Vendor bisa MEMBALIKKAN transaksi yang terlanjur
+                        dilaporkan sukses — operator menolaknya belakangan.
+                        Tanpa tombol ini transaksi semacam itu terkunci:
+                        statusnya beku di "Berhasil", re-hit tertutup (hanya
+                        untuk failed/paid/refundable), dan tak ada satu pun
+                        jalan memeriksanya dari dasbor. Cek status hanya
+                        MEMBACA dari vendor, jadi aman dijalankan kapan saja. */}
+                    {['pending', 'processing', 'success'].includes(trx.status) && (
                       <button onClick={() => {
                         const code = trx.trxCode || trx.trx_code
-                        if (window.confirm(`Cek status transaksi ${code} ke Raja Biller?\n\nSistem query status terakhir pakai trxid & finalisasi otomatis bila vendor sudah punya hasil (untuk transaksi yang callback-nya nyangkut).`))
+                        const vn  = (trx.vendor || 'rajabiller') === 'digiflazz' ? 'Digiflazz' : 'Raja Biller'
+                        const ket = trx.status === 'success'
+                          ? `\n\nTransaksi ini tercatat BERHASIL. Pengecekan hanya MEMBACA dari ${vn} — statusnya berubah HANYA bila ${vn} sendiri menyatakan transaksinya gagal.`
+                          : '\n\nSistem query status terakhir pakai trxid & finalisasi otomatis bila vendor sudah punya hasil (untuk transaksi yang callback-nya nyangkut).'
+                        if (window.confirm(`Cek status transaksi ${code} ke ${vn}?${ket}`))
                           checkStatusMutation.mutate(code)
                       }}
                         disabled={checkStatusMutation.isPending}
-                        title="Cek status ke Raja Biller (finalisasi transaksi nyangkut)"
+                        title="Cek status ke vendor (baca ulang hasil sebenarnya)"
                         className="p-2 rounded-lg hover:bg-amber-50 text-amber-600">
                         <Search className="w-4 h-4" />
                       </button>
@@ -503,11 +515,12 @@ export default function AdminPpob() {
                     {(trx.status === 'failed' || trx.status === 'paid' || trx.status === 'refundable') && (
                       <button onClick={() => {
                         const code = trx.trxCode || trx.trx_code
-                        if (window.confirm(`Re-hit transaksi ${code} (${trx.productName || trx.product_name}) ke Raja Biller?\n\nSistem akan kirim ulang dengan nomor referensi BARU. Lakukan hanya jika produk sudah open kembali.`))
+                        const vn = (trx.vendor || 'rajabiller') === 'digiflazz' ? 'Digiflazz' : 'Raja Biller'
+                        if (window.confirm(`Re-hit transaksi ${code} (${trx.productName || trx.product_name}) ke ${vn}?\n\nSistem akan kirim ulang dengan nomor referensi BARU. Lakukan hanya jika produk sudah open kembali.`))
                           retryMutation.mutate(code)
                       }}
                         disabled={retryMutation.isPending}
-                        title="Re-hit ke Raja Biller (kirim ulang, ref baru)"
+                        title="Re-hit ke vendor (kirim ulang, ref baru)"
                         className="p-2 rounded-lg hover:bg-blue-50 text-blue-600">
                         <RotateCcw className="w-4 h-4" />
                       </button>
