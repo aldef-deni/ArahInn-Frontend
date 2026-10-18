@@ -559,7 +559,21 @@ export default function AdminPpob() {
         const tarif  = struk.tarif_daya || struk.tarifDaya
         const sn     = trx.serialNumber || trx.serial_number
         const isPln  = /pln|listrik|token/i.test(`${trx.productName || trx.product_name || ''} ${trx.category?.name || ''}`)
-        const reason = trx.failureReason || trx.failure_reason || trx.paymentResponse?.status
+        // Hanya diisi untuk transaksi yang BENAR-BENAR gagal.
+        //
+        // `paymentResponse.status` adalah kata status dari vendor — untuk
+        // transaksi sukses isinya "Sukses". Memakainya sebagai cadangan
+        // membuat kotak merah "Alasan Gagal" menampilkan tulisan "Sukses" pada
+        // transaksi yang berhasil, dan itu membuat admin menyangka ada yang
+        // rusak pada transaksi yang justru baik-baik saja.
+        const gagal  = ['failed', 'refundable'].includes(trx.status)
+        const reason = gagal
+          ? (trx.failureReason || trx.failure_reason || trx.paymentResponse?.message || null)
+          : null
+
+        // Nama vendor sebenarnya. Label "Rajabiller" pada transaksi Digiflazz
+        // membuat penelusuran mengarah ke pemasok yang salah.
+        const vendorNama = (trx.vendor || 'rajabiller') === 'digiflazz' ? 'Digiflazz' : 'Rajabiller'
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setDetailTrx(null)}>
             <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -595,9 +609,10 @@ export default function AdminPpob() {
                 {/* Info transaksi */}
                 <div className="grid grid-cols-2 gap-x-5 gap-y-3">
                   <DetailItem label="Kode Transaksi (kita)" value={trx.trxCode || trx.trx_code} mono copy toast={toast} />
-                  <DetailItem label="Ref ke Rajabiller" value={trx.ref1 || '-'} mono copy toast={toast} />
-                  <DetailItem label="Ref Rajabiller (vendor)" value={trx.rajaBillerRef || trx.raja_biller_ref || '-'} mono copy toast={toast} />
+                  <DetailItem label={`Ref ke ${vendorNama}`} value={trx.ref1 || '-'} mono copy toast={toast} />
+                  <DetailItem label={`Ref ${vendorNama} (vendor)`} value={trx.rajaBillerRef || trx.raja_biller_ref || trx.vendorRef || trx.vendor_ref || '-'} mono copy toast={toast} />
                   <DetailItem label="RC Vendor" value={trx.rc || '-'} mono />
+                  <DetailItem label="Pemasok" value={vendorNama} />
                   <DetailItem label="Produk" value={trx.productName || trx.product_name} />
                   <DetailItem label="Kategori" value={trx.category?.name || '-'} />
                   <DetailItem label={isPln ? 'No. Meter / ID Pelanggan' : 'No. Tujuan'} value={trx.customerNumber || trx.customer_number} mono copy toast={toast} />
