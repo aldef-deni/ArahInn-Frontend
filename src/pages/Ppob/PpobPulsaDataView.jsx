@@ -20,6 +20,23 @@ import { Smartphone, Wifi, AlertCircle, Loader2, ChevronDown, Check } from 'luci
 // Deteksi operator HIERARKIS: cek prefix 6 digit dulu (mengisolasi by.U dari blok 0851
 // yang juga dipakai Telkomsel Kartu As lama), lalu fallback ke prefix 4 digit.
 const BYU_PREFIX6 = ['085155','085156','085157','085158','085159']  // sub-blok by.U (bisa diperluas)
+
+// Prefiks yang TIDAK bisa diputuskan dari angkanya saja.
+//
+// 0851 dipakai Telkomsel reguler DAN by.U, dan daftar sub-blok 6 digit di atas
+// hanya menutup sebagian kecilnya — sumber publik pun saling bertentangan soal
+// batas rentangnya. Sebelum ini, nomor 0851 di luar sub-blok itu diklaim
+// "Telkomsel" dengan penuh percaya diri dan tanpa peringatan apa pun, sehingga
+// pemilik kartu by.U membeli produk Telkomsel, membayarnya, lalu ditolak
+// vendor. Re-hit mengirim kode produk yang sama, jadi kegagalannya abadi.
+//
+// Deteksinya tetap dipakai sebagai dugaan awal, tetapi pelanggan HARUS
+// diberitahu bahwa dugaan itu bisa salah dan bisa ia ganti sendiri.
+const AMBIGU_PREFIX4 = ['0851']
+export function isAmbiguousPrefix(phone) {
+  const n = String(phone || '').replace(/\D/g, '').replace(/^62/, '0')
+  return n.length >= 4 && AMBIGU_PREFIX4.includes(n.substring(0, 4))
+}
 const OPERATOR_PREFIX4 = {
   '0811':'Telkomsel','0812':'Telkomsel','0813':'Telkomsel','0821':'Telkomsel','0822':'Telkomsel',
   '0823':'Telkomsel','0851':'Telkomsel','0852':'Telkomsel','0853':'Telkomsel',
@@ -274,6 +291,32 @@ export default function PpobPulsaDataView({
             <AlertCircle className="w-3.5 h-3.5" />
             Prefix {customerNumber.substring(0, 4)} biasanya {detectedOp}, tapi Anda pilih {overrideOp}.
           </p>
+        )}
+        {isAmbiguousPrefix(customerNumber) && !isPostpaidNumber(customerNumber) && (
+          <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-[11px] sm:text-xs font-semibold text-amber-800 leading-snug">
+                Nomor <b>0851</b> bisa <b>Telkomsel</b> biasa ATAU <b>by.U</b>. Pastikan pilihan di bawah
+                sesuai kartu Anda — salah pilih membuat transaksi <b>GAGAL</b>.
+              </p>
+            </div>
+            <div className="mt-2 flex gap-2">
+              {['Telkomsel', 'byU'].map(op => (
+                <button
+                  key={op}
+                  onClick={() => setOverrideOp(op)}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold border transition-colors ${
+                    activeOp === op
+                      ? `${OPERATOR_STYLES[op].bg} text-white border-transparent`
+                      : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                  }`}
+                >
+                  {op}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
         {isPostpaidNumber(customerNumber) && (
           <div className="mt-2 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
