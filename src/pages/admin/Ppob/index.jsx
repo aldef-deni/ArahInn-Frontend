@@ -666,6 +666,21 @@ export default function AdminPpob() {
                   <DetailItem label="Total" value={formatRupiah(trx.totalAmount || trx.total_amount)} />
                   <DetailItem label="Pemesan" value={trx.user?.name || '-'} sub={trx.user?.email} />
                 </div>
+                {(trx.failoverAt || trx.failover_at) && (
+                  <div className="rounded-xl bg-sky-50 border border-sky-200 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-sky-700 mb-0.5">
+                      Dipindahkan otomatis antar pemasok
+                    </p>
+                    <p className="text-sm text-sky-900">
+                      Semula <b className="font-mono">{trx.failoverFrom || trx.failover_from}</b>
+                      {(trx.failoverReason || trx.failover_reason)
+                        ? <> — gagal: {trx.failoverReason || trx.failover_reason}</> : null}
+                    </p>
+                    <p className="text-[11px] text-sky-700 mt-1 leading-snug">
+                      Selisih harga pemasok baru ditanggung ArahInn; pelanggan tidak ditagih lagi.
+                    </p>
+                  </div>
+                )}
                 {reason && (
                   <div className="rounded-xl bg-rose-50 border border-rose-200 p-3">
                     <p className="text-[10px] font-bold uppercase tracking-wide text-rose-600 mb-0.5">Alasan Gagal {trx.rc ? `(RC ${trx.rc})` : ''}</p>
