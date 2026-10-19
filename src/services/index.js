@@ -418,6 +418,7 @@ export const ppobApi = {
   adminRefund     : (code, d) => api.post(`/admin/ppob/transactions/${code}/refund`, d),
   adminRetry      : (code)    => api.post(`/admin/ppob/transactions/${code}/retry`),
   adminCheckStatus: (code)    => api.post(`/admin/ppob/transactions/${code}/check-status`),
+  adminRiwayatNomor: (code)  => api.get(`/admin/ppob/transactions/${code}/riwayat-nomor`),
   adminReprocessPreview: (code, productId) => api.post(`/admin/ppob/transactions/${code}/reprocess-preview`, { product_id: productId }),
   adminReprocess  : (code, productId) => api.post(`/admin/ppob/transactions/${code}/reprocess`, { product_id: productId }),
   adminBalance    : (fresh)   => api.get('/admin/ppob/balance', { params: fresh ? { fresh: 1 } : {} }),

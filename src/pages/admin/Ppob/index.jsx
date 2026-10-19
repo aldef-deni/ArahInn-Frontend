@@ -206,6 +206,18 @@ export default function AdminPpob() {
     }
   }
 
+  // Riwayat nomor — jawaban PASTI atas "nomor ini kartu apa".
+  //
+  // Prefiks tidak bisa menjawabnya untuk blok yang dipakai lebih dari satu
+  // merek (0851 = Telkomsel reguler DAN by.U). Menebaknya berakhir mengirim
+  // produk merek lain ke nomor yang sebetulnya baik-baik saja — dan transaksi
+  // itu gagal lagi, kali ini karena tebakan kita sendiri.
+  const { data: riwayatNomor } = useQuery({
+    queryKey: ['ppob-riwayat-nomor', reproTrx?.trxCode || reproTrx?.trx_code],
+    queryFn : () => ppobApi.adminRiwayatNomor(reproTrx.trxCode || reproTrx.trx_code).then(r => r.data?.data),
+    enabled : !!reproTrx,
+  })
+
   const reprocessMutation = useMutation({
     mutationFn: ({ code, productId }) => ppobApi.adminReprocess(code, productId),
     onSuccess: (res) => {
@@ -789,6 +801,22 @@ export default function AdminPpob() {
               <p className="text-slate-600">{reproTrx.productName || reproTrx.product_name} → <span className="font-mono">{reproTrx.customerNumber || reproTrx.customer_number}</span></p>
               <p className="text-slate-600">Total lama: <b>{formatRupiah(reproTrx.totalAmount || reproTrx.total_amount)}</b></p>
             </div>
+
+            {riwayatNomor?.proven?.length > 0 && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 mb-1">
+                  Nomor ini pernah BERHASIL dengan
+                </p>
+                <ul className="space-y-0.5">
+                  {riwayatNomor.proven.slice(0, 4).map((nama, i) => (
+                    <li key={i} className="text-xs text-emerald-900 font-semibold">• {nama}</li>
+                  ))}
+                </ul>
+                <p className="text-[11px] text-emerald-700 mt-1.5 leading-snug">
+                  Riwayat ini bukti, bukan tebakan — pilih produk dengan merek yang sama.
+                </p>
+              </div>
+            )}
 
             <label className="text-xs font-semibold text-slate-600">Cari produk pengganti (mis. "Telkomsel 100")</label>
             <div className="relative mt-1 mb-2">
