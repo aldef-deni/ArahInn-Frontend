@@ -9,6 +9,16 @@ import {
   Download, Calendar, Zap, ChevronLeft, ChevronRight, Eye, Copy, Power, ArrowLeftRight,
 } from 'lucide-react'
 
+// Pemasok sebuah item katalog.
+//
+// Id produk membawa penanda pemasoknya sendiri: negatif = Digiflazz (lihat
+// App/Support/PpobRef di backend). Daftar pencarian menggabungkan katalog
+// KEDUA pemasok tanpa pernah menyebut yang mana — sehingga proses ulang sebuah
+// transaksi Digiflazz diam-diam bisa berpindah ke Rajabiller, dan nomor yang
+// ditolak satu pemasok dikirim ke pemasok lain yang belum tentu melayaninya.
+const pemasokProduk = (p) => p?.vendor || (Number(p?.id) < 0 ? 'digiflazz' : 'rajabiller')
+const labelPemasok  = (v) => (v === 'digiflazz' ? 'Digiflazz' : 'Rajabiller')
+
 // Format tanggal + jam transaksi (mis. "24 Jul 2026 · 16:44").
 const fmtTrxDateTime = (v) => {
   if (!v) return ''
@@ -793,7 +803,12 @@ export default function AdminPpob() {
                 <button key={p.id} onClick={() => selectReproProduct(p)}
                   className={`w-full text-left px-3 py-2 text-sm hover:bg-violet-50 flex items-center justify-between gap-2 ${reproSel?.id === p.id ? 'bg-violet-50' : ''}`}>
                   <span className="min-w-0"><span className="font-medium text-slate-800 truncate block">{p.name}</span>
-                    <span className="text-[11px] text-slate-400">{p.operator} · {p.rajaBillerCode || p.raja_biller_code}</span></span>
+                    <span className="text-[11px] text-slate-400">
+                      {p.operator} · {p.rajaBillerCode || p.raja_biller_code} ·{' '}
+                      <span className={pemasokProduk(p) === 'digiflazz' ? 'text-violet-600 font-semibold' : 'text-sky-600 font-semibold'}>
+                        {labelPemasok(pemasokProduk(p))}
+                      </span>
+                    </span></span>
                   <span className="font-semibold text-slate-700 shrink-0">{formatRupiah(p.priceSell ?? p.price_sell)}</span>
                 </button>
               ))}
@@ -822,13 +837,25 @@ export default function AdminPpob() {
               )
             })()}
 
+            {reproSel && pemasokProduk(reproSel) !== (reproTrx.vendor || 'rajabiller') && (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 mb-4">
+                <p className="text-[11px] sm:text-xs font-semibold text-amber-800 leading-snug">
+                  Produk ini milik <b>{labelPemasok(pemasokProduk(reproSel))}</b>, sedangkan transaksi lama
+                  memakai <b>{labelPemasok(reproTrx.vendor || 'rajabiller')}</b>. Pemasok akan BERPINDAH.
+                  Pastikan itu memang yang Anda maksud — nomor yang ditolak satu pemasok belum tentu
+                  dilayani pemasok lain.
+                </p>
+              </div>
+            )}
+
             <div className="flex gap-2 justify-end">
               <button onClick={() => setReproTrx(null)}
                 className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50">Batal</button>
               <button
                 onClick={() => {
                   const code = reproTrx.trxCode || reproTrx.trx_code
-                  if (window.confirm(`Proses ulang ${code} ke produk "${reproSel?.name}" untuk nomor ${reproTrx.customerNumber || reproTrx.customer_number}?\n\nTransaksi baru akan dibuat & langsung di-hit ke Raja Biller. Transaksi lama ditutup (canceled). Selisih harga tangani manual.`))
+                  const vnBaru = labelPemasok(pemasokProduk(reproSel))
+                  if (window.confirm(`Proses ulang ${code} ke produk "${reproSel?.name}" untuk nomor ${reproTrx.customerNumber || reproTrx.customer_number}?\n\nTransaksi baru akan dibuat & langsung di-hit ke ${vnBaru}. Transaksi lama ditutup (canceled). Selisih harga tangani manual.`))
                     reprocessMutation.mutate({ code, productId: reproSel.id })
                 }}
                 disabled={!reproSel || reprocessMutation.isPending}
