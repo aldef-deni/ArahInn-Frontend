@@ -547,7 +547,13 @@ export default function AdminPpob() {
                         <ArrowLeftRight className="w-4 h-4" />
                       </button>
                     )}
-                    {(trx.status === 'failed' || trx.status === 'refundable') && (
+                    {/* 'canceled' yang SUDAH DIBAYAR ikut boleh di-refund: proses
+                        ulang menutup transaksi lama menjadi canceled, padahal
+                        itulah transaksi yang dibayar pelanggan. Bila
+                        penggantinya ikut gagal, tanpa tombol ini uangnya
+                        tertinggal pada catatan yang tak punya jalan kembali. */}
+                    {(trx.status === 'failed' || trx.status === 'refundable'
+                      || (trx.status === 'canceled' && (trx.paidAt || trx.paid_at))) && (
                       <button onClick={() => { setRefundTrx(trx); setRefundNotes('') }}
                         title="Manual refund"
                         className="p-2 rounded-lg hover:bg-red-50 text-red-600">
