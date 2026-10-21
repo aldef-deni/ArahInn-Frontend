@@ -26,6 +26,28 @@ function Section({ title, children, defaultOpen = true }) {
 }
 
 /* ─── Row layout: label left, control right ─── */
+/* ─── Durasi menginap ───────────────────────────────────────────────────
+ * Dipisah jadi penolong tersendiri karena `+e.target.value` menyimpan
+ * ANGKA NOL untuk kolom kosong: begitu pemilik menghapus isinya untuk
+ * mengetik angka baru, nilainya terlanjur menjadi 0, dan "minimum 0 malam"
+ * bukan aturan yang masuk akal. Selama mengetik, kolom kosong dibiarkan
+ * kosong; pembulatannya baru dilakukan saat kursor meninggalkan kolom.
+ */
+const MIN_MALAM_BAWAAN = 1
+const MAX_MALAM_BAWAAN = 365
+
+const bacaMalam = (teks) => {
+  if (teks === '') return ''
+  const n = parseInt(teks, 10)
+  return Number.isFinite(n) ? n : ''
+}
+
+const rapikanMalam = (nilai, bawaan) => {
+  const n = parseInt(nilai, 10)
+  if (!Number.isFinite(n) || n < 1) return bawaan
+  return Math.min(n, MAX_MALAM_BAWAAN)
+}
+
 function Row({ label, desc, children, noBorder }) {
   return (
     <div className={cn('grid grid-cols-2 gap-8 px-6 py-5', !noBorder && 'border-b border-slate-100 last:border-0')}>
@@ -227,7 +249,24 @@ export default function RatePlanForm() {
       toast({ title: 'Nama Rate Plan wajib diisi.', variant: 'destructive' })
       return
     }
-    mutation.mutate(form)
+
+    // Durasi dirapikan dulu, lalu diperiksa. Tanpa ini sebuah rate plan bisa
+    // tersimpan dengan maksimum LEBIH KECIL daripada minimum — aturan yang
+    // tidak pernah bisa dipenuhi tamu, sehingga kamarnya tidak muncul sama
+    // sekali di pencarian tanpa satu pun pesan kesalahan.
+    const minMalam = rapikanMalam(form.min_nights, MIN_MALAM_BAWAAN)
+    const maxMalam = rapikanMalam(form.max_nights, MAX_MALAM_BAWAAN)
+
+    if (maxMalam < minMalam) {
+      toast({
+        title: 'Maksimum malam tidak boleh lebih kecil dari minimum.',
+        description: `Saat ini minimum ${minMalam} malam, maksimum ${maxMalam} malam.`,
+        variant: 'destructive',
+      })
+      return
+    }
+
+    mutation.mutate({ ...form, min_nights: minMalam, max_nights: maxMalam })
   }
 
   const goBack = () =>
@@ -292,14 +331,26 @@ export default function RatePlanForm() {
           label="Durasi menginap"
           desc="Anda bisa mengatur durasi menginap minimum dan maksimum yang harus dimasukkan tamu agar mereka bisa memesan properti Anda."
         >
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 flex-1">
-              <div className="relative flex-1">
+          {/* Label DI ATAS kolom, bukan di sampingnya.
+              Sebelumnya label "Minimum Malam" (~85px, shrink-0) berdiri
+              sebaris dengan kolomnya di dalam kolom grid yang hanya separuh
+              lebar baris. Pada layar sempit kolom itu tergencet sampai ruang
+              teksnya habis — padding px-3 ditambah pr-10 untuk tombol reset
+              memakan seluruh lebarnya — sehingga angka yang diketik pemilik
+              TIDAK TERLIHAT dan yang tampak hanya tanda × milik tombol reset.
+              Pemilik mengira × itulah isinya. */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Minimum Malam</label>
+              <div className="relative">
                 <input
                   type="number"
                   min={1}
+                  max={MAX_MALAM_BAWAAN}
+                  inputMode="numeric"
                   value={form.min_nights}
-                  onChange={e => upd('min_nights', +e.target.value)}
+                  onChange={e => upd('min_nights', bacaMalam(e.target.value))}
+                  onBlur={() => upd('min_nights', rapikanMalam(form.min_nights, MIN_MALAM_BAWAAN))}
                   disabled={form.type === 'mingguan' || form.type === 'bulanan'}
                   className={cn(
                     'w-full border rounded-xl px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [appearance:textfield]',
@@ -309,37 +360,42 @@ export default function RatePlanForm() {
                   )}
                   placeholder="1"
                 />
-                {form.type !== 'mingguan' && form.type !== 'bulanan' && form.min_nights !== 1 && (
+                {form.type !== 'mingguan' && form.type !== 'bulanan'
+                  && form.min_nights !== MIN_MALAM_BAWAAN && form.min_nights !== '' && (
                   <button
                     type="button"
-                    onClick={() => upd('min_nights', 1)}
-                    title="Reset ke 1"
+                    onClick={() => upd('min_nights', MIN_MALAM_BAWAAN)}
+                    title="Kembalikan ke 1 malam"
+                    aria-label="Kembalikan minimum ke 1 malam"
                     className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors text-base leading-none"
                   >×</button>
                 )}
               </div>
-              <span className="text-xs text-slate-500 shrink-0">Minimum Malam</span>
             </div>
-            <div className="flex items-center gap-2 flex-1">
-              <div className="relative flex-1">
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Maksimum Malam</label>
+              <div className="relative">
                 <input
                   type="number"
                   min={1}
+                  max={MAX_MALAM_BAWAAN}
+                  inputMode="numeric"
                   value={form.max_nights}
-                  onChange={e => upd('max_nights', +e.target.value)}
+                  onChange={e => upd('max_nights', bacaMalam(e.target.value))}
+                  onBlur={() => upd('max_nights', rapikanMalam(form.max_nights, MAX_MALAM_BAWAAN))}
                   className="w-full border border-slate-200 rounded-xl px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [appearance:textfield]"
                   placeholder="365"
                 />
-                {form.max_nights !== 365 && (
+                {form.max_nights !== MAX_MALAM_BAWAAN && form.max_nights !== '' && (
                   <button
                     type="button"
-                    onClick={() => upd('max_nights', 365)}
-                    title="Reset ke 365"
+                    onClick={() => upd('max_nights', MAX_MALAM_BAWAAN)}
+                    title="Kembalikan ke 365 malam"
+                    aria-label="Kembalikan maksimum ke 365 malam"
                     className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors text-base leading-none"
                   >×</button>
                 )}
               </div>
-              <span className="text-xs text-slate-500 shrink-0">Maksimum Malam</span>
             </div>
           </div>
         </Row>
