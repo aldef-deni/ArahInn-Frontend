@@ -45,6 +45,11 @@ const FLIGHT_BAGGAGE = {
   TPQZ: 'Kabin 7KG (bagasi berbayar)',
 }
 const baggageText = (code) => FLIGHT_BAGGAGE[String(code || '').toUpperCase()] || 'Kabin 7KG + bagasi 20KG'
+// Segmen dari satu leg: hasil pencarian menyimpan `segs` (semua segmen transit),
+// sesi lama hanya punya `cls` (1 segmen) → fallback agar sesi berjalan tidak pecah.
+const legSegs = (leg) => (leg?.segs?.length ? leg.segs : (leg?.cls ? [leg.cls] : []))
+// Vendor mengirim harga PER SEGMEN → harga satu leg = jumlah semua segmen.
+const legPrice = (leg) => legSegs(leg).reduce((sum, c) => sum + (Number(c?.price) || 0), 0)
 // Bandara provider: group "Internasional" = luar negeri, "Domestik" = Indonesia.
 const isIntlAirport = (a) => String(a?.group || '').toLowerCase().startsWith('internas')
 const isIntlRoute = (dep, arr) => isIntlAirport(dep) || isIntlAirport(arr)
@@ -91,7 +96,7 @@ export default function FlightBooking() {
   if (!sel) return null
   // Normalisasi leg: one-way = 1 leg (pergi); pulang-pergi = [pergi, pulang]
   const isRT = sel.tripType === 'roundtrip'
-  const out  = isRT ? sel.outbound : { departure: sel.departure, arrival: sel.arrival, date: sel.date, airline: sel.airline, airlineName: sel.flight?.airlineName ?? sel.airlineName, cls: sel.cls }
+  const out  = isRT ? sel.outbound : { departure: sel.departure, arrival: sel.arrival, date: sel.date, airline: sel.airline, airlineName: sel.flight?.airlineName ?? sel.airlineName, cls: sel.cls, segs: sel.segs }
   const ret  = isRT ? sel.return : null
   // Alias kompat untuk blok lama (booked screen) — pakai leg pergi
   const { departure, arrival, date, cls } = out
@@ -102,23 +107,27 @@ export default function FlightBooking() {
   // ⚠️ Query key WAJIB menyertakan jumlah pax: fare vendor mengembalikan TOTAL untuk semua
   // pax, jadi kalau user ubah jumlah tiket (mis. 3→5) fare HARUS refetch. Tanpa pax di key,
   // React Query kembalikan fare pax lama → harga tampil salah (kekecilan) vs biaya vendor.
+  // ⚠️ Token SEMUA segmen (transit = >1). Vendor menolak fare/book bila token yang
+  // dikirim tidak mewakili seluruh rute departure→arrival ("data tidak sesuai").
+  const outSeats = legSegs(out).map(c => c.seat).filter(Boolean)
+  const retSeats = legSegs(ret).map(c => c.seat).filter(Boolean)
   const fareOut = useQuery({
-    queryKey: ['flight-fare', 'out', out?.cls?.seat, sel.adult || 1, sel.child || 0, sel.infant || 0],
+    queryKey: ['flight-fare', 'out', outSeats.join('|'), sel.adult || 1, sel.child || 0, sel.infant || 0],
     queryFn: () => travelApi.flightFare({
       airline: out.airline, departure: out.departure.code, arrival: out.arrival.code,
       departureDate: out.date, returnDate: '',
-      adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0, seats: [out.cls.seat],
+      adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0, seats: outSeats,
     }).then(r => r.data?.data),
-    enabled: !!out?.cls?.seat, retry: 1,
+    enabled: outSeats.length > 0 && outSeats.length === legSegs(out).length, retry: 1,
   })
   const fareRet = useQuery({
-    queryKey: ['flight-fare', 'ret', ret?.cls?.seat, sel.adult || 1, sel.child || 0, sel.infant || 0],
+    queryKey: ['flight-fare', 'ret', retSeats.join('|'), sel.adult || 1, sel.child || 0, sel.infant || 0],
     queryFn: () => travelApi.flightFare({
       airline: ret.airline, departure: ret.departure.code, arrival: ret.arrival.code,
       departureDate: ret.date, returnDate: '',
-      adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0, seats: [ret.cls.seat],
+      adult: sel.adult || 1, child: sel.child || 0, infant: sel.infant || 0, seats: retSeats,
     }).then(r => r.data?.data),
-    enabled: isRT && !!ret?.cls?.seat, retry: 1,
+    enabled: isRT && retSeats.length > 0 && retSeats.length === legSegs(ret).length, retry: 1,
   })
 
   const fareFailed  = fareOut.isError || (isRT && fareRet.isError)
@@ -153,8 +162,8 @@ export default function FlightBooking() {
     const ft = Number(fareTotal) || 0
     return ft > 0 ? Math.round(ft / Math.max(1, payingPax)) : (Number(searchPrice) || 0)
   }
-  const priceOut  = perPaxFromFare(fareOut.data?.price, out?.cls?.price)
-  const priceRet  = isRT ? perPaxFromFare(fareRet.data?.price, ret?.cls?.price) : 0
+  const priceOut  = perPaxFromFare(fareOut.data?.price, legPrice(out))
+  const priceRet  = isRT ? perPaxFromFare(fareRet.data?.price, legPrice(ret)) : 0
   const ticketSub = (priceOut + priceRet) * payingPax
   // Biaya penanganan: persen → % dari subtotal tiket; selain itu nominal × pax × leg.
   const markupSub = Number(svcFee.percent) > 0
@@ -208,12 +217,20 @@ export default function FlightBooking() {
     return null
   }
 
-  const legPayload = (leg, price) => ({
-    airline: leg.airline, departure: leg.departure.code, arrival: leg.arrival.code,
-    departureDate: leg.date, price,
-    flightCode: leg.cls.flightCode, departureTime: leg.cls.departureTime, arrivalTime: leg.cls.arrivalTime, class: leg.cls.class,
-    flights: [leg.cls.seat],
-  })
+  // Kirim SEMUA segmen: tanpa itu, booking transit ditolak vendor karena token yang
+  // dikirim hanya mewakili segmen pertama (CGK→KUL) padahal rute yang diminta CGK→JED.
+  const legPayload = (leg, price) => {
+    const segs  = legSegs(leg)
+    const first = segs[0] || {}
+    const last  = segs[segs.length - 1] || first
+    return {
+      airline: leg.airline, departure: leg.departure.code, arrival: leg.arrival.code,
+      departureDate: leg.date, price,
+      flightCode: segs.map(c => c.flightCode).filter(Boolean).join(' > ') || undefined,
+      departureTime: first.departureTime, arrivalTime: last.arrivalTime, class: first.class,
+      flights: segs.map(c => c.seat).filter(Boolean),
+    }
+  }
 
   const submit = async () => {
     if (fareFailed) { setError({ msg: fareErrorMsg, searchAgain: true }); return }
@@ -486,19 +503,38 @@ function Row({ label, value, mono }) {
   return <div className="flex justify-between gap-3"><span className="text-sm text-slate-500">{label}</span><span className={`text-sm font-semibold text-slate-900 text-right ${mono ? 'font-mono' : ''}`}>{value}</span></div>
 }
 function LegCard({ leg, label, t }) {
-  const c = leg.cls || {}
+  const segs    = legSegs(leg)
+  const first   = segs[0] || {}
+  const last    = segs[segs.length - 1] || first
+  const transit = segs.length > 1
+  const codes   = segs.map(c => c.flightCode).filter(Boolean).join(' → ')
+  const via     = segs.slice(0, -1).map(c => c.arrival).filter(Boolean).join(', ')
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-3">
       {label && <span className="inline-block mb-2 px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 text-[10px] font-bold uppercase tracking-wide">{label}</span>}
       <div className="flex items-center gap-2 mb-3">
         <div className="w-9 h-9 rounded-lg bg-sky-100 flex items-center justify-center"><Plane className="w-4.5 h-4.5 text-sky-600" /></div>
-        <div className="min-w-0"><p className="font-bold text-sm text-slate-900 truncate">{leg.flight?.airlineName ?? leg.airlineName ?? leg.airline}</p><span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{c.flightCode} · {t('travel.classPrefix')} {c.class}</span></div>
+        <div className="min-w-0"><p className="font-bold text-sm text-slate-900 truncate">{leg.flight?.airlineName ?? leg.airlineName ?? leg.airline}</p><span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{codes || first.flightCode} · {t('travel.classPrefix')} {first.class}</span></div>
       </div>
       <div className="flex items-center gap-3">
-        <div className="text-center"><p className="font-bold text-slate-900">{c.departureTime}</p><p className="text-[10px] text-slate-400">{leg.departure.code}</p></div>
-        <div className="flex-1 flex items-center gap-1.5"><div className="h-px flex-1 bg-slate-200" /><span className="text-[10px] text-slate-400">{c.duration}</span><div className="h-px flex-1 bg-slate-200" /><ArrowRight className="w-3.5 h-3.5 text-slate-300" /></div>
-        <div className="text-center"><p className="font-bold text-slate-900">{c.arrivalTime}</p><p className="text-[10px] text-slate-400">{leg.arrival.code}</p></div>
+        <div className="text-center"><p className="font-bold text-slate-900">{first.departureTime}</p><p className="text-[10px] text-slate-400">{leg.departure.code}</p></div>
+        <div className="flex-1 flex items-center gap-1.5"><div className="h-px flex-1 bg-slate-200" /><span className="text-[10px] text-slate-400">{transit ? `${segs.length - 1}× ${t('travel.transit')}` : first.duration}</span><div className="h-px flex-1 bg-slate-200" /><ArrowRight className="w-3.5 h-3.5 text-slate-300" /></div>
+        <div className="text-center"><p className="font-bold text-slate-900">{last.arrivalTime}</p><p className="text-[10px] text-slate-400">{leg.arrival.code}</p></div>
       </div>
+      {transit && (
+        <div className="mt-2.5 pt-2.5 border-t border-slate-100 space-y-1">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-amber-600">{t('travel.transit')} · {via}</p>
+          {segs.map((c, i) => (
+            <div key={`${c.flightCode}-${i}`} className="flex items-center gap-1.5 text-[11px] text-slate-500 flex-wrap">
+              <span className="font-mono text-[10px] font-semibold text-slate-700">{c.flightCode}</span>
+              <span className="font-semibold text-slate-700">{c.departure} {c.departureTime}</span>
+              <ArrowRight className="w-3 h-3 text-slate-300 shrink-0" />
+              <span className="font-semibold text-slate-700">{c.arrival} {c.arrivalTime}</span>
+              <span className="text-slate-400">· {c.duration}</span>
+            </div>
+          ))}
+        </div>
+      )}
       <p className="text-xs text-slate-400 mt-2 flex items-center gap-1"><Calendar className="w-3 h-3" /> {formatDMY(leg.date)}</p>
       <div className="mt-2.5 pt-2.5 border-t border-slate-100 flex flex-wrap items-center gap-1.5">
         <span className="inline-flex items-center gap-1 text-[11px] text-slate-600 bg-slate-50 border border-slate-200 rounded-md px-2 py-1">

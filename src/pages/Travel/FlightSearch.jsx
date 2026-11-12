@@ -34,6 +34,23 @@ const formatDateFull = (ymd) => { if (!ymd) return '-'; const dt = new Date(`${y
 const titleCase = (s) => (s || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
 const airlineLogo = (code) => `https://api.fastravel.co.id/assets/maskapai/${code}.png`
 
+// Satu itinerary bisa terdiri dari >1 SEGMEN (transit): `classes` = array segmen, tiap
+// segmen = array kelas. Ambil kelas pertama tiap segmen (vendor menaruh kelas termurah
+// lebih dulu). ⚠️ Memakai classes[0][0] saja membuat transit tampil sebagai segmen
+// pertama (CGK→KUL) dan token booking yang dikirim tak cocok dengan rute sebenarnya.
+const flightSegs = (f) => (f?.classes || [])
+  .map(seg => (Array.isArray(seg) ? seg[0] : seg))
+  .filter(Boolean)
+// Vendor mengirim harga PER SEGMEN → harga satu itinerary = jumlah semua segmen.
+// (Sudah dicek ke vendor: fare dengan semua token mengembalikan total ≈ jumlah keduanya.)
+const flightPrice = (f) => flightSegs(f).reduce((sum, c) => sum + (Number(c?.price) || 0), 0)
+// Selisih hari — untuk penanda "+1" bila tiba keesokan harinya (transit malam).
+const dayDiff = (from, to) => {
+  if (!from || !to) return 0
+  const a = new Date(`${from}T00:00:00`), b = new Date(`${to}T00:00:00`)
+  return Math.max(0, Math.round((b - a) / 86400000))
+}
+
 /* ── Highlight teks yang cocok dengan query ───────────────────────────── */
 function Highlight({ text, q }) {
   const s = text ?? ''
@@ -160,7 +177,7 @@ export default function FlightSearch() {
   const cheapest = async (dep, arr, dt) => {
     if (!dep || !arr || !dt) return null
     const r = await travelApi.searchAllFlights({ departure: dep, arrival: arr, departureDate: dt, adult, child, infant })
-    const min = Math.min(...(r.data?.data ?? []).map(f => Number(f.classes?.[0]?.[0]?.price) || Infinity))
+    const min = Math.min(...(r.data?.data ?? []).map(f => flightPrice(f) || Infinity))
     return Number.isFinite(min) ? min + feePerPax(min) : null
   }
   const departPriceQ = useQuery({
@@ -197,8 +214,8 @@ export default function FlightSearch() {
     </div>
   )
 
-  const cls0 = (f) => (f.classes?.[0]?.[0]) || {}
-  const priceOf = (f) => Number(cls0(f).price) || 0
+  const cls0 = (f) => flightSegs(f)[0] || {}
+  const priceOf = (f) => flightPrice(f)
 
   // Filter maskapai + sort
   const view = useMemo(() => {
@@ -287,18 +304,19 @@ export default function FlightSearch() {
     // Sekali jalan → langsung ke form pemesanan
     if (tripType === 'oneway') {
       sessionStorage.setItem('flight_selection', JSON.stringify({
-        departure, arrival, date, airline: flight.airline, adult, child, infant, flight, cls, svcFee,
+        departure, arrival, date, airline: flight.airline, adult, child, infant, flight, cls,
+        segs: flightSegs(flight), svcFee,
       }))
       navigate('/tiket/pesawat/pesan'); return
     }
     // PP — leg PERGI dipilih → simpan, lalu cari leg PULANG
     if (leg === 'depart') {
-      setOutboundSel({ departure, arrival, date, airline: flight.airline, flight, cls })
+      setOutboundSel({ departure, arrival, date, airline: flight.airline, flight, cls, segs: flightSegs(flight) })
       doSearch('return')
       return
     }
     // PP — leg PULANG dipilih (flight ini arrival→departure pada returnDate)
-    const ret = { departure: arrival, arrival: departure, date: returnDate, airline: flight.airline, flight, cls }
+    const ret = { departure: arrival, arrival: departure, date: returnDate, airline: flight.airline, flight, cls, segs: flightSegs(flight) }
     sessionStorage.setItem('flight_selection', JSON.stringify({
       tripType: 'roundtrip', adult, child, infant, svcFee,
       outbound: outboundSel, return: ret,
@@ -442,24 +460,30 @@ export default function FlightSearch() {
             {/* Flight cards */}
             <div className="space-y-3">
               {view.map((flight, i) => {
-                const cls = cls0(flight)
-                const price = Number(cls.price) || 0
+                const segs    = flightSegs(flight)
+                const cls     = segs[0] || {}
+                const last    = segs[segs.length - 1] || cls
+                const transit = segs.length > 1
+                const codes   = segs.map(s => s.flightCode).filter(Boolean).join(' → ')
+                const via     = segs.slice(0, -1).map(s => s.arrival).filter(Boolean).join(', ')
+                const arrPlus = dayDiff(cls.departureDate, last.arrivalDate)
+                const price   = flightPrice(flight)
                 return (
-                  <div key={`${cls.flightCode}-${i}`} className="bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-md transition-shadow">
+                  <div key={`${codes || cls.flightCode}-${i}`} className="bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-2 mb-3">
                       <AirlineLogo code={flight.airlineCode || flight.airline} name={flight.airlineName} />
                       <span className="font-bold text-sm text-slate-900">{flight.airlineName}</span>
-                      <span className="text-[10px] text-slate-400">· {cls.flightCode}</span>
+                      <span className="text-[10px] text-slate-400">· {codes || cls.flightCode}</span>
                     </div>
                     <div className="flex items-center gap-3 sm:gap-5">
                       <div className="flex-1 flex items-center gap-2 sm:gap-3">
                         <div className="text-center"><p className="font-bold text-slate-900 text-sm sm:text-base">{cls.departureTime}</p><p className="text-[10px] text-slate-400 font-semibold">{cls.departure}</p></div>
                         <div className="flex-1 flex flex-col items-center">
-                          <span className="text-[10px] text-slate-400">{cls.duration}</span>
+                          <span className="text-[10px] text-slate-400">{transit ? `via ${via}` : cls.duration}</span>
                           <div className="w-full flex items-center gap-1 my-0.5"><div className="h-px flex-1 bg-slate-200" /><Plane className="w-3 h-3 text-slate-300" /><div className="h-px flex-1 bg-slate-200" /></div>
-                          <span className="text-[9px] text-emerald-600 font-bold">{flight.isTransit ? t('travel.transit') : t('travel.direct')}</span>
+                          <span className="text-[9px] text-emerald-600 font-bold">{transit ? `${segs.length - 1}× ${t('travel.transit')}` : t('travel.direct')}</span>
                         </div>
-                        <div className="text-center"><p className="font-bold text-slate-900 text-sm sm:text-base">{cls.arrivalTime}</p><p className="text-[10px] text-slate-400 font-semibold">{cls.arrival}</p></div>
+                        <div className="text-center"><p className="font-bold text-slate-900 text-sm sm:text-base">{last.arrivalTime}{arrPlus > 0 && <span className="align-super text-[9px] font-bold text-amber-600">+{arrPlus}</span>}</p><p className="text-[10px] text-slate-400 font-semibold">{last.arrival}</p></div>
                       </div>
                       <div className="text-right shrink-0">
                         {price > 0
@@ -468,6 +492,21 @@ export default function FlightSearch() {
                         <button onClick={() => selectFlight(flight)} className="mt-2 px-5 py-2 rounded-full bg-sky-500 hover:bg-sky-600 text-white text-xs sm:text-sm font-bold active:scale-95 transition-all">{t('travel.select')}</button>
                       </div>
                     </div>
+                    {/* Transit: rincian tiap segmen supaya rute & jam tidak menyesatkan */}
+                    {transit && (
+                      <div className="mt-3 pt-2.5 border-t border-slate-100 space-y-1">
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-amber-600">{t('travel.transit')} · {via}</p>
+                        {segs.map((s, si) => (
+                          <div key={`${s.flightCode}-${si}`} className="flex items-center gap-1.5 text-[11px] text-slate-500 flex-wrap">
+                            <span className="font-mono text-[10px] font-semibold text-slate-700">{s.flightCode}</span>
+                            <span className="font-semibold text-slate-700">{s.departure} {s.departureTime}</span>
+                            <ArrowRight className="w-3 h-3 text-slate-300 shrink-0" />
+                            <span className="font-semibold text-slate-700">{s.arrival} {s.arrivalTime}</span>
+                            <span className="text-slate-400">· {s.duration}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )
               })}
