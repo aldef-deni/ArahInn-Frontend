@@ -709,6 +709,17 @@ function SoftblockAllotment({ hotel, rooms }) {
     setTo(pendingTo)
   }
 
+  /* Respons sudah di-camelCase oleh interceptor axios, sedangkan kunci yang
+     DIKIRIM BALIK ke backend tetap snake_case (`softblock_count`, `min_stay`).
+     Seluruh grid ini membaca snake_case terhadap respons yang sudah diubah,
+     jadi setiap nilainya undefined: "Kamar Dipesan" selalu 0, Close Out selalu
+     tampak "Tutup", dan `room_id` yang undefined membuat suntingan tersimpan
+     ke kamar NaN. Pembacaan karena itu menerima KEDUA bentuk. */
+  const keCamel = (k) => String(k).replace(/_([a-z])/g, (_, c) => c.toUpperCase())
+  const bacaSel = (sel, kunci) => sel?.[keCamel(kunci)] ?? sel?.[kunci]
+  const idKamar = (roomData) => roomData?.roomId ?? roomData?.room_id
+  const namaKamar = (roomData) => roomData?.roomName ?? roomData?.room_name
+
   const setCell = (roomId, date, patch) => {
     setDirty(prev => {
       const room = prev[roomId] || {}
@@ -718,17 +729,26 @@ function SoftblockAllotment({ hotel, rooms }) {
   }
 
   const getCellValue = (roomData, date, field) => {
-    const dirtyCell = dirty[roomData.room_id]?.[date]
+    const dirtyCell = dirty[idKamar(roomData)]?.[date]
     if (dirtyCell && field in dirtyCell) return dirtyCell[field]
-    return roomData.cells?.[date]?.[field]
+    return bacaSel(roomData.cells?.[date], field)
   }
 
   const hasDirty = Object.keys(dirty).length > 0
 
   const saveAll = () => {
     Object.entries(dirty).forEach(([roomId, byDate]) => {
+      // Id kamar pernah bernilai undefined karena dibaca dari kunci snake_case;
+      // `+'undefined'` menghasilkan NaN dan permintaannya tertuju ke
+      // /rooms/NaN/prices — gagal tanpa menyimpan apa pun. Dijaga di sini
+      // supaya kekeliruan serupa tidak lagi berakhir senyap.
+      const id = Number(roomId)
+      if (!Number.isFinite(id) || id <= 0) {
+        toast({ title: 'Kamar tidak dikenali, perubahan tidak disimpan.', variant: 'destructive' })
+        return
+      }
       const prices = Object.entries(byDate).map(([date, fields]) => ({ date, ...fields }))
-      upsertMutation.mutate({ roomId: +roomId, prices })
+      upsertMutation.mutate({ roomId: id, prices })
     })
   }
 
@@ -848,13 +868,13 @@ function SoftblockAllotment({ hotel, rooms }) {
                 <tr><td colSpan={(range?.dates?.length || 1) + 1} className="px-5 py-10 text-center text-sm text-slate-400">Memuat...</td></tr>
               )}
               {!isLoading && range?.data?.map(roomData => (
-                <Fragment key={`room-${roomData.room_id}`}>
+                <Fragment key={`room-${idKamar(roomData)}`}>
                   {/* Header row per kamar */}
                   <tr className="bg-blue-50/40 border-t border-blue-100">
                     <td colSpan={(range.dates?.length || 0) + 1} className="px-4 py-2.5 font-bold text-sm text-slate-800">
                       <span className="flex items-center gap-2">
                         <BedDouble className="w-4 h-4 text-blue-600" />
-                        {roomData.room_name}
+                        {namaKamar(roomData)}
                       </span>
                     </td>
                   </tr>
@@ -866,8 +886,8 @@ function SoftblockAllotment({ hotel, rooms }) {
                       </td>
                       {range.dates.map(d => {
                         const cell = roomData.cells?.[d] || {}
-                        const dirtyVal = dirty[roomData.room_id]?.[d]?.[row.key]
-                        const val = dirtyVal !== undefined ? dirtyVal : cell[row.key]
+                        const dirtyVal = dirty[idKamar(roomData)]?.[d]?.[row.key]
+                        const val = dirtyVal !== undefined ? dirtyVal : bacaSel(cell, row.key)
 
                         // Render per row.key
                         if (row.key === 'price') {
@@ -881,18 +901,22 @@ function SoftblockAllotment({ hotel, rooms }) {
                           return (
                             <td key={d} className="px-2 py-2 text-center text-xs">
                               <span className={cn('inline-flex items-center justify-center min-w-[22px] h-6 px-1.5 rounded-md font-semibold',
-                                cell.booked_count > 0 ? 'bg-blue-100 text-blue-700' : 'text-slate-400')}>
-                                {cell.booked_count || 0}
+                                bacaSel(cell, 'booked_count') > 0 ? 'bg-blue-100 text-blue-700' : 'text-slate-400')}>
+                                {bacaSel(cell, 'booked_count') || 0}
                               </span>
                             </td>
                           )
                         }
                         if (row.key === 'is_available') {
-                          const open = dirtyVal !== undefined ? dirtyVal : cell.is_available
+                          const tersimpan = bacaSel(cell, 'is_available')
+                          // Sel yang belum punya baris harga sama sekali dianggap
+                          // BUKA — itu bawaan backend; tanpa ini kamar tanpa
+                          // pengaturan harian tampak tertutup semua.
+                          const open = dirtyVal !== undefined ? dirtyVal : (tersimpan ?? true)
                           return (
                             <td key={d} className="px-2 py-2 text-center">
                               <button
-                                onClick={() => setCell(roomData.room_id, d, { is_available: !open })}
+                                onClick={() => setCell(idKamar(roomData), d, { is_available: !open })}
                                 className={cn('text-[10px] font-bold px-2 py-1 rounded-md',
                                   !open ? 'bg-red-100 text-red-700' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100')}>
                                 {!open ? 'Tutup' : 'Buka'}
@@ -908,7 +932,7 @@ function SoftblockAllotment({ hotel, rooms }) {
                                 min={0}
                                 value={val ?? ''}
                                 placeholder={row.placeholder ?? '0'}
-                                onChange={e => setCell(roomData.room_id, d, { [row.key]: e.target.value === '' ? null : +e.target.value })}
+                                onChange={e => setCell(idKamar(roomData), d, { [row.key]: e.target.value === '' ? null : +e.target.value })}
                                 className="w-16 text-center text-xs border border-slate-200 rounded-md px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-blue-300"
                               />
                             </td>
