@@ -1053,7 +1053,21 @@
     "promoDiscount": "Promo Discount",
     "pointDiscount": "Redeem Points",
     "totalPaid": "Total Paid",
-    "completePayment": "Complete Payment"
+    "completePayment": "Complete Payment",
+    "reschedule": "Change Dates",
+    "rescheduleTitle": "Change Stay Dates",
+    "rescheduleCurrent": "Current schedule",
+    "rescheduleNewCheckin": "New check-in",
+    "rescheduleNewCheckout": "New check-out",
+    "rescheduleNote": "The new dates can only be used if the room is still available. The price you already paid stays the same.",
+    "rescheduleConfirm": "Change Dates",
+    "rescheduleCancel": "Cancel",
+    "rescheduleSaving": "Saving...",
+    "rescheduleSuccess": "Stay dates changed successfully.",
+    "rescheduleFailed": "Dates could not be changed",
+    "rescheduleNights": "{{n}} nights",
+    "rescheduleInvalid": "Check-out must be after check-in.",
+    "rescheduleStarted": "The stay has already started, dates can no longer be changed."
   },
   "propertyMarket": {
     "seoTitle": "Property Marketplace",

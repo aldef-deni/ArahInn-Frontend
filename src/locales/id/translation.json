@@ -1053,7 +1053,21 @@
     "promoDiscount": "Diskon Promo",
     "pointDiscount": "Redeem Poin",
     "totalPaid": "Total Dibayar",
-    "completePayment": "Selesaikan Pembayaran"
+    "completePayment": "Selesaikan Pembayaran",
+    "reschedule": "Ubah Tanggal",
+    "rescheduleTitle": "Ubah Tanggal Menginap",
+    "rescheduleCurrent": "Jadwal saat ini",
+    "rescheduleNewCheckin": "Check-in baru",
+    "rescheduleNewCheckout": "Check-out baru",
+    "rescheduleNote": "Tanggal baru hanya bisa dipakai bila kamarnya masih tersedia. Harga yang sudah dibayar tidak berubah.",
+    "rescheduleConfirm": "Ubah Tanggal",
+    "rescheduleCancel": "Batal",
+    "rescheduleSaving": "Menyimpan...",
+    "rescheduleSuccess": "Tanggal menginap berhasil diubah.",
+    "rescheduleFailed": "Tanggal tidak bisa diubah",
+    "rescheduleNights": "{{n}} malam",
+    "rescheduleInvalid": "Check-out harus setelah check-in.",
+    "rescheduleStarted": "Menginap sudah dimulai, tanggal tidak bisa diubah lagi."
   },
   "propertyMarket": {
     "seoTitle": "Jual Beli Properti",

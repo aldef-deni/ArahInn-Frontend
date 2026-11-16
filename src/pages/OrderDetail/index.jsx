@@ -1,18 +1,152 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { bookingApi } from '@/services/index'
+import { useToast } from '@/hooks/use-toast'
 import { formatRupiah, formatDate, statusBadgeClass, statusLabel, getImageUrl } from '@/utils'
-import { ChevronLeft, Calendar, MapPin, BedDouble, Users, Receipt, Hash } from 'lucide-react'
+import { ChevronLeft, Calendar, MapPin, BedDouble, Users, Receipt, Hash, CalendarClock, X } from 'lucide-react'
+
+/* Tanggal hari ini dalam waktu LOKAL.
+   `toISOString()` memakai UTC, jadi di WIB ia masih menunjuk hari kemarin
+   sampai pukul 07.00 — batas minimum kalender akan meleset sehari. */
+const hariIni = () => {
+  const d = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+const selisihMalam = (masuk, keluar) => {
+  if (!masuk || !keluar) return 0
+  const a = new Date(`${masuk}T00:00:00`)
+  const b = new Date(`${keluar}T00:00:00`)
+  return Math.max(0, Math.round((b - a) / 86400000))
+}
+
+/* Dialog ubah tanggal.
+   Memanggil useTranslation() SENDIRI — meminjam `t` dari induk lolos di dev
+   lalu memunculkan layar putih di produksi (lihat CLAUDE.md). */
+function UbahTanggalDialog({ booking, onClose, onConfirm, isLoading }) {
+  const { t } = useTranslation()
+  const [checkIn, setCheckIn]   = useState('')
+  const [checkOut, setCheckOut] = useState('')
+
+  const minimal = hariIni()
+  const malam   = selisihMalam(checkIn, checkOut)
+  const sah     = checkIn && checkOut && checkOut > checkIn
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+            <CalendarClock className="w-5 h-5 text-amber-600" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-base font-bold text-slate-900">{t('orderDetail.rescheduleTitle')}</h3>
+            <p className="text-xs text-slate-500 font-mono truncate">{booking.bookingCode}</p>
+          </div>
+          <button onClick={onClose} className="ml-auto text-slate-400 hover:text-slate-600 shrink-0">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="bg-slate-50 rounded-xl p-3 mb-5 text-xs text-slate-600">
+          <span className="font-medium text-slate-700">{t('orderDetail.rescheduleCurrent')}:</span>{' '}
+          {formatDate(booking.checkIn)} → {formatDate(booking.checkOut)}
+        </div>
+
+        <div className="space-y-4 mb-5">
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+              {t('orderDetail.rescheduleNewCheckin')}
+            </label>
+            <input
+              type="date"
+              value={checkIn}
+              min={minimal}
+              onChange={e => {
+                setCheckIn(e.target.value)
+                // Check-out yang sudah tidak masuk akal dikosongkan, supaya
+                // tidak ada rentang terbalik yang diam-diam terkirim.
+                if (checkOut && e.target.value >= checkOut) setCheckOut('')
+              }}
+              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+              {t('orderDetail.rescheduleNewCheckout')}
+            </label>
+            <input
+              type="date"
+              value={checkOut}
+              min={checkIn || minimal}
+              disabled={!checkIn}
+              onChange={e => setCheckOut(e.target.value)}
+              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 disabled:bg-slate-100 disabled:cursor-not-allowed"
+            />
+          </div>
+          {malam > 0 && (
+            <p className="text-xs font-semibold text-slate-700">
+              {t('orderDetail.rescheduleNights', { n: malam })}
+            </p>
+          )}
+        </div>
+
+        <p className="text-xs text-slate-500 mb-5 leading-relaxed">{t('orderDetail.rescheduleNote')}</p>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            disabled={isLoading}
+            className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+          >
+            {t('orderDetail.rescheduleCancel')}
+          </button>
+          <button
+            onClick={() => onConfirm({ checkIn, checkOut })}
+            disabled={!sah || isLoading}
+            className="flex-1 py-2.5 rounded-xl bg-brand text-white text-sm font-bold hover:bg-brand-700 disabled:opacity-50"
+          >
+            {isLoading ? t('orderDetail.rescheduleSaving') : t('orderDetail.rescheduleConfirm')}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function OrderDetail() {
   const { t }    = useTranslation()
   const { id }   = useParams()
   const navigate = useNavigate()
 
+  const { toast } = useToast()
+  const qc        = useQueryClient()
+  const [ubahTanggal, setUbahTanggal] = useState(false)
+
   const { data: booking, isLoading } = useQuery({
     queryKey: ['order-detail', id],
     queryFn : () => bookingApi.getById(id).then(r => r.data.data),
+  })
+
+  const ubahMutation = useMutation({
+    mutationFn: ({ checkIn, checkOut }) => bookingApi.reschedule(id, { checkIn, checkOut }),
+    onSuccess : () => {
+      qc.invalidateQueries({ queryKey: ['order-detail', id] })
+      qc.invalidateQueries({ queryKey: ['my-orders'] })
+      toast({ title: t('orderDetail.rescheduleSuccess') })
+      setUbahTanggal(false)
+    },
+    // Pesan dari backend dipakai apa adanya: ia menyebutkan sisa kamar pada
+    // tanggal yang bentrok, dan itu jauh lebih berguna bagi tamu daripada
+    // kalimat umum "gagal".
+    onError: (e) => toast({
+      title: t('orderDetail.rescheduleFailed'),
+      description: e?.response?.data?.message,
+      variant: 'destructive',
+    }),
   })
 
   if (isLoading) return (
@@ -164,6 +298,30 @@ export default function OrderDetail() {
           </div>
         </div>
       </div>
+
+      {/* Ubah tanggal — hanya untuk booking yang sudah dibayar dan BELUM
+          dimulai. Backend mengizinkan pemilik booking melakukannya sendiri;
+          selama ini tombolnya saja yang tidak pernah ada, sehingga tamu harus
+          menghubungi admin. */}
+      {['paid', 'issued', 'rescheduled'].includes(booking.status)
+        && booking.checkIn && String(booking.checkIn).slice(0, 10) > hariIni() && (
+        <button
+          onClick={() => setUbahTanggal(true)}
+          className="w-full mt-4 py-3 border border-slate-200 rounded-2xl font-bold text-sm text-slate-700 hover:bg-slate-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        >
+          <CalendarClock className="w-4 h-4" />
+          {t('orderDetail.reschedule')}
+        </button>
+      )}
+
+      {ubahTanggal && (
+        <UbahTanggalDialog
+          booking={booking}
+          onClose={() => setUbahTanggal(false)}
+          onConfirm={(v) => ubahMutation.mutate(v)}
+          isLoading={ubahMutation.isPending}
+        />
+      )}
 
       {/* Actions */}
       {booking.status === 'pending' && (
