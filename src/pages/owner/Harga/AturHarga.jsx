@@ -162,6 +162,7 @@ function RegularAllotment({ hotel, rooms }) {
     const remaining = saved?.remainingUnits ?? saved?.remaining_units
     const booked    = (saved?.bookedCount   ?? saved?.booked_count)   ?? 0
     const pending   = (saved?.pendingCount  ?? saved?.pending_count)  ?? 0
+    const softblock = (saved?.softblockCount ?? saved?.softblock_count) ?? 0
 
     // Status tutup: kalau allotment 0 ATAU is_available eksplisit false
     const available = allotment > 0 && rawAvail !== false
@@ -172,6 +173,7 @@ function RegularAllotment({ hotel, rooms }) {
       remaining: (remaining !== undefined && remaining !== null) ? Number(remaining) : allotment,
       booked: Number(booked),
       pending: Number(pending),
+      softblock: Number(softblock),
       available,
     }
   }
@@ -193,6 +195,7 @@ function RegularAllotment({ hotel, rooms }) {
       allotment: cell.allotment,
       booked: cell.booked,   // sudah bayar (paid/issued)
       pending: cell.pending, // menunggu pembayaran
+      softblock: cell.softblock, // ditahan pemilik (grid Softblock)
     })
   }
 
@@ -200,10 +203,13 @@ function RegularAllotment({ hotel, rooms }) {
     if (!editing) return
     const remaining = Math.max(0, Number(editing.remaining) || 0)
     const booked    = Number(editing.booked) || 0
-    // Total = sudah bayar + sisa yang masih bisa dipesan.
+    const softblock = Number(editing.softblock) || 0
+    // Total = sudah bayar + softblock + sisa yang masih bisa dipesan.
     // Pending TIDAK dihitung — kalau customer akhirnya bayar, jadi booked.
     // Kalau VA expired, pending hilang. Allotment owner stabil.
-    const units     = booked + remaining
+    // ⚠️ Softblock WAJIB ikut: sisa = allotment − booked − softblock, jadi tanpa
+    // softblock di sini sisa yang tersimpan selalu kurang dari yang diketik.
+    const units     = booked + softblock + remaining
 
     upsertMutation.mutate([{
       date:            fmtKey(editing.date),
@@ -755,6 +761,7 @@ function SoftblockAllotment({ hotel, rooms }) {
   const ROWS = [
     toggles.harga       && { key: 'price',           label: 'Harga' },
     toggles.booked      && { key: 'booked_count',    label: 'Kamar Dipesan' },
+    toggles.booked      && { key: 'remaining_units', label: 'Sisa Allotment' },
     toggles.closeOut    && { key: 'is_available',    label: 'Close Out' },
     toggles.restriction && { key: 'softblock_count', label: 'Softblock Allotment', editable: true },
     toggles.restriction && { key: 'min_stay',        label: 'Min Stay',  editable: true, placeholder: '—' },
@@ -903,6 +910,22 @@ function SoftblockAllotment({ hotel, rooms }) {
                               <span className={cn('inline-flex items-center justify-center min-w-[22px] h-6 px-1.5 rounded-md font-semibold',
                                 bacaSel(cell, 'booked_count') > 0 ? 'bg-blue-100 text-blue-700' : 'text-slate-400')}>
                                 {bacaSel(cell, 'booked_count') || 0}
+                              </span>
+                            </td>
+                          )
+                        }
+                        // Sisa = allotment − dipesan − softblock (dihitung backend,
+                        // satu sumber dengan pemeriksaan saat pelanggan memesan).
+                        // Tanpa baris ini grid hanya menampilkan "Kamar Dipesan",
+                        // sehingga tampak seolah allotment tidak pernah berkurang.
+                        if (row.key === 'remaining_units') {
+                          const sisa  = Number(bacaSel(cell, 'remaining_units') ?? 0)
+                          const total = Number(bacaSel(cell, 'available_units') ?? 0)
+                          return (
+                            <td key={d} className="px-2 py-2 text-center text-xs">
+                              <span className={cn('inline-flex items-center justify-center min-w-[34px] h-6 px-1.5 rounded-md font-bold',
+                                sisa === 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-50 text-emerald-700')}>
+                                {sisa}/{total}
                               </span>
                             </td>
                           )

@@ -77,6 +77,17 @@ cron berikutnya sampai 5 kali, lalu berhenti dengan pesan di
 - **Jangan menguji skrip dengan `git reset --hard HEAD~1` lalu menjalankannya**:
   reset itu ikut mengembalikan skripnya sendiri ke versi lama.
 
+## Allotment di dasbor pemilik
+
+- Angka yang ditampilkan ke pemilik = **sisa** (`remaining_units`), bukan
+  kuota (`available_units`). Kuota tidak pernah turun saat ada booking, dan
+  menampilkannya terbaca persis seperti keluhan "allotment tidak berkurang".
+- Kotak edit di Kalender menyimpan `terpesan + softblock + sisa`. Softblock
+  dulu terlupa, sehingga sisa yang tersimpan selalu kurang dari yang diketik.
+- Grid Softblock punya baris "Sisa Allotment"; dulu hanya "Kamar Dipesan".
+- Hitungannya ada di backend (`App\Support\KetersediaanKamar`). Jangan
+  menghitung ulang di frontend.
+
 ## Sebelum menyatakan selesai
 
 Build lokal (`npx vite build`) **tidak** menangkap ikon lucide yang dipakai tapi
